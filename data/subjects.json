@@ -147,5 +147,14 @@
       "Sampling and Bias",
       "Pandas"
     ]
+  },
+  {
+    "id": "motion_design_and_video",
+    "name": "Motion Design & Video",
+    "icon": "Clapperboard",
+    "color": "#d946ef",
+    "bg": "#fdf4ff",
+    "tags": ["2d animation"],
+    "subtopics": ["2D Animation"]
   }
 ]

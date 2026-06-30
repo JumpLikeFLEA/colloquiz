@@ -9,6 +9,7 @@ import {
   Calculator,
   ChevronLeft,
   ChevronRight,
+  Clapperboard,
   Code,
   FlaskConical,
   Globe,
@@ -31,7 +32,7 @@ import type { SubjectCardData } from "@/app/components/SubjectGrid";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
-  BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages,
+  BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, Clapperboard,
 };
 
 // ── Types ────────────────────────────────────────────────────────────────────

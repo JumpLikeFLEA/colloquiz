@@ -7,6 +7,7 @@ import {
   ChevronRight, ChevronLeft, Settings2, CheckSquare, SlidersHorizontal,
   Hash, Rocket, Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, BarChart3,
+  Clapperboard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ import type { SubjectCardData } from "@/app/components/SubjectGrid";
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, BarChart3,
+  Clapperboard,
 };
 
 const STEPS = ["Subject", "Subtopics", "Settings"];

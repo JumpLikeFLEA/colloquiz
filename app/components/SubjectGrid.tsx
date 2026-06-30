@@ -8,6 +8,7 @@ import {
   BookOpen,
   Brain,
   Calculator,
+  Clapperboard,
   Code,
   FlaskConical,
   Globe,
@@ -39,6 +40,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Palette,
   Music,
   Languages,
+  Clapperboard,
 };
 
 export type SubjectCardData = {
