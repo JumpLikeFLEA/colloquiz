@@ -1,13 +1,11 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronRight, GraduationCap, PanelLeftIcon, Search } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
 import { useSidebar } from "@/app/components/ui/sidebar";
-import { createClient } from "@/lib/supabase/client";
 
 const routeLabels: Record<string, string> = {
   "/": "Basic Quizzes",
@@ -29,24 +27,13 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-export function Topbar() {
+export function Topbar({ displayName }: { displayName: string }) {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
   const base = "/" + (pathname.split("/")[1] ?? "");
   const label = routeLabels[pathname] ?? routeLabels[base] ?? "Learning Curve";
 
-  const [initials, setInitials] = React.useState("S");
-
-  React.useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .single()
-      .then(({ data }) => {
-        if (data?.display_name) setInitials(getInitials(data.display_name));
-      });
-  }, []);
+  const initials = getInitials(displayName);
 
   return (
     <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-card shrink-0">

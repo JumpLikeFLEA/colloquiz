@@ -156,5 +156,14 @@
     "bg": "#fdf4ff",
     "tags": ["2d animation"],
     "subtopics": ["2D Animation"]
+  },
+  {
+    "id": "games",
+    "name": "Games",
+    "icon": "Crown",
+    "color": "#eab308",
+    "bg": "#fefce8",
+    "tags": ["chess history"],
+    "subtopics": ["Chess History"]
   }
 ]

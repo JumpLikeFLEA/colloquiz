@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
@@ -50,7 +49,7 @@ const adminItems = [
   },
 ];
 
-type UserProfile = {
+export type UserProfile = {
   displayName: string;
   xp: number;
   level: number;
@@ -93,37 +92,15 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
   );
 }
 
-export function AppSidebar() {
+export function AppSidebar({
+  profile,
+  isAdmin,
+}: {
+  profile: UserProfile;
+  isAdmin: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [profile, setProfile] = React.useState<UserProfile>({
-    displayName: "Student",
-    xp: 0,
-    level: 1,
-  });
-
-  React.useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      supabase
-        .from("profiles")
-        .select("display_name, role, total_xp")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (!data) return;
-          const xp = data.total_xp ?? 0;
-          setProfile({
-            displayName: data.display_name ?? "Student",
-            xp,
-            level: Math.floor(xp / 500) + 1,
-          });
-          setIsAdmin(data.role === "admin");
-        });
-    });
-  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -177,7 +154,6 @@ export function AppSidebar() {
               <Link
                 key={href}
                 href={href}
-                prefetch={true}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center",
                   active
@@ -220,7 +196,6 @@ export function AppSidebar() {
                   <Link
                     key={href}
                     href={href}
-                    prefetch={true}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all",
                       active

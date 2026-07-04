@@ -12,7 +12,10 @@
  * AI generation path, so dedup against existing rows works the same way.
  *
  * Usage:
- *   npx tsx --env-file=.env.local scripts/import-authored-questions.ts <path-to.json> [--source manual|ai_generated]
+ *   npx tsx --env-file=.env.local scripts/import-authored-questions.ts <path-to.json> [--source manual|ai_generated] [--status pending|approved] [--sync]
+ *
+ * --sync re-imports an updated file idempotently: existing rows (matched by
+ * content_hash) are updated in place rather than skipped as duplicates.
  *
  * --env-file=.env.local is required: tsx does not load .env files automatically.
  * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in env
@@ -46,9 +49,15 @@ function getArg(name: string): string | undefined {
 const filePath = process.argv.slice(2).find((a) => !a.startsWith("--"));
 const source = (getArg("source") ?? "ai_generated") as "manual" | "ai_generated";
 const status = (getArg("status") ?? "pending") as "pending" | "approved";
+// --sync re-imports an updated authored file idempotently: rows whose content_hash
+// already exists are UPDATED in place (difficulty, correct_answer, explanation, tags,
+// source, status) instead of being skipped as duplicates. Use it to "renew" a
+// previously imported file — e.g. after the author re-labels difficulties or fixes
+// an answer without changing the question/options text (which would change the hash).
+const sync = process.argv.includes("--sync");
 
 if (!filePath) {
-  console.error("Usage: import-authored-questions.ts <path-to.json> [--source manual|ai_generated] [--status pending|approved]");
+  console.error("Usage: import-authored-questions.ts <path-to.json> [--source manual|ai_generated] [--status pending|approved] [--sync]");
   process.exit(1);
 }
 if (source !== "manual" && source !== "ai_generated") {
@@ -141,16 +150,41 @@ const rows = authored.map((q) => ({
 const supabase = createClient(url, key);
 
 async function main() {
-  console.log(`Importing ${rows.length} authored questions (source='${source}', status='${status}')...`);
+  console.log(
+    `Importing ${rows.length} authored questions (source='${source}', status='${status}'${sync ? ", sync=on" : ""})...`,
+  );
 
   let inserted = 0;
   let duplicates = 0;
+  let updated = 0;
   for (const row of rows) {
     const { error } = await supabase.from("questions").insert(row);
     if (error) {
       if (error.code === "23505") {
-        console.log(`  duplicate: ${row.question.slice(0, 60)}...`);
-        duplicates++;
+        if (sync) {
+          // Row already exists (same content_hash). Sync the mutable fields so the DB
+          // reflects the latest authored file. Question/options are unchanged by
+          // definition (they define the hash we matched on), so we leave them alone.
+          const { error: updateError } = await supabase
+            .from("questions")
+            .update({
+              difficulty: row.difficulty,
+              correct_answer: row.correct_answer,
+              explanation: row.explanation,
+              tags: row.tags,
+              source: row.source,
+              status: row.status,
+            })
+            .eq("content_hash", row.content_hash);
+          if (updateError) {
+            console.error(`  update error: ${updateError.message}`);
+          } else {
+            updated++;
+          }
+        } else {
+          console.log(`  duplicate: ${row.question.slice(0, 60)}...`);
+          duplicates++;
+        }
       } else {
         console.error(`  insert error: ${error.message}`);
       }
@@ -159,7 +193,10 @@ async function main() {
     }
   }
 
-  console.log(`Done. Inserted: ${inserted}. Duplicates skipped: ${duplicates}.`);
+  console.log(
+    `Done. Inserted: ${inserted}.` +
+      (sync ? ` Updated: ${updated}.` : ` Duplicates skipped: ${duplicates}.`),
+  );
   if (status === "pending") {
     console.log("Review and approve them in the admin review queue (status stays 'pending' until then).");
   } else {
