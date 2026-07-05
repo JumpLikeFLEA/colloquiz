@@ -154,8 +154,8 @@
     "icon": "Clapperboard",
     "color": "#d946ef",
     "bg": "#fdf4ff",
-    "tags": ["2d animation"],
-    "subtopics": ["2D Animation"]
+    "tags": ["2d animation", "after effects", "kinetic typography", "vfx & compositing", "video editing"],
+    "subtopics": ["2D Animation", "After Effects", "Kinetic Typography", "VFX & Compositing", "Video Editing"]
   },
   {
     "id": "games",
