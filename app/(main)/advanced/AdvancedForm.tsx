@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
+import { ErrorDialog } from "@/app/components/ErrorDialog";
+import { slugifyForTag } from "@/lib/utils";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
@@ -35,6 +37,7 @@ export default function AdvancedForm({
   const [difficulty, setDifficulty] = useState(5);
   const [questionCount, setQuestionCount] = useState(15);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const subtopics = selectedSubject ? (subtopicsBySubject[selectedSubject] ?? []) : [];
 
@@ -60,17 +63,20 @@ export default function AdvancedForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject: selectedSubject,
+          tags: selectedSubtopics.map(slugifyForTag),
           difficulty: diffStr,
           size: questionCount,
-          mode: "advanced",
+          mode: "ordinary",
         }),
       });
       const data = (await res.json()) as { id?: string; error?: string };
       if (!res.ok || !data.id) {
-        alert(data.error ?? "Could not start quiz.");
+        setError(data.error ?? "Could not start quiz.");
         return;
       }
       router.push(`/quiz/${data.id}`);
+    } catch {
+      setError("Could not start quiz. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -414,6 +420,12 @@ export default function AdvancedForm({
           </button>
         )}
       </div>
+
+      <ErrorDialog
+        open={error !== null}
+        onClose={() => setError(null)}
+        description={error ?? ""}
+      />
     </div>
   );
 }

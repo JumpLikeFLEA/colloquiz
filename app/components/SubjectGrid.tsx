@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import type { Difficulty } from "@/types";
+import { ErrorDialog } from "@/app/components/ErrorDialog";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator,
@@ -183,6 +184,7 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
   const router = useRouter();
   const [query, setQuery] = React.useState("");
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<
     Record<string, Difficulty>
   >({});
@@ -212,10 +214,12 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
       });
       const data = (await res.json()) as { id?: string; error?: string };
       if (!res.ok || !data.id) {
-        alert(data.error ?? "Could not start quiz.");
+        setError(data.error ?? "Could not start quiz.");
         return;
       }
       router.push(`/quiz/${data.id}`);
+    } catch {
+      setError("Could not start quiz. Check your connection and try again.");
     } finally {
       setLoadingId(null);
     }
@@ -231,10 +235,12 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
       });
       const data = (await res.json()) as { id?: string; error?: string };
       if (!res.ok || !data.id) {
-        alert(data.error ?? "Could not start quiz.");
+        setError(data.error ?? "Could not start quiz.");
         return;
       }
       router.push(`/quiz/${data.id}`);
+    } catch {
+      setError("Could not start quiz. Check your connection and try again.");
     } finally {
       setLoadingId(null);
     }
@@ -297,6 +303,12 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
           ))}
         </div>
       )}
+
+      <ErrorDialog
+        open={error !== null}
+        onClose={() => setError(null)}
+        description={error ?? ""}
+      />
     </div>
   );
 }

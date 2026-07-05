@@ -12,6 +12,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
+import { ErrorDialog } from "@/app/components/ErrorDialog";
 import type { EnrichedResult } from "@/lib/questions";
 import { formatDuration } from "@/lib/format";
 
@@ -37,6 +38,7 @@ export function DashboardView({ userId, email, profile, results }: DashboardView
   const [editing, setEditing] = useState(false);
   const [formFullName, setFormFullName] = useState("");
   const [formCity, setFormCity] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const displayName = profile.full_name ?? profile.display_name ?? "";
   const initials = displayName
@@ -142,7 +144,7 @@ export function DashboardView({ userId, email, profile, results }: DashboardView
       .from("profiles")
       .update({ full_name: formFullName, city: formCity })
       .eq("id", userId);
-    if (error) { alert(error.message); return; }
+    if (error) { setSaveError(error.message); return; }
     router.refresh();
     setEditing(false);
   }
@@ -403,6 +405,12 @@ export function DashboardView({ userId, email, profile, results }: DashboardView
           )}
         </div>
       </div>
+
+      <ErrorDialog
+        open={saveError !== null}
+        onClose={() => setSaveError(null)}
+        description={saveError ?? ""}
+      />
     </div>
   );
 }
