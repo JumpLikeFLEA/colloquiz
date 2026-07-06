@@ -202,9 +202,12 @@ export default function CustomPage() {
 
               <div className="flex flex-col gap-1.5">
                 {questions.map((q, i) => (
-                  <button
+                  <div
                     key={q.id}
                     onClick={() => setActiveQuestion(i)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === "Enter" && setActiveQuestion(i)}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all cursor-pointer group ${
                       activeQuestion === i
                         ? "bg-[#eef2ff] text-[#4f46e5]"
@@ -224,7 +227,7 @@ export default function CustomPage() {
                     >
                       <Trash2 size={12} />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
 

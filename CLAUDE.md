@@ -11,3 +11,6 @@
 ## Intentional deviations from /figma-export
 - Body font: Geist via next/font (Figma export had no font loaded; 
   this is a deliberate choice, do not remove)
+- AuthScreen (app/(auth)/AuthScreen.tsx): stats row ("47 Subjects / 10k+ 
+  Learners / 500k+ Quizzes") and the Terms of Service / Privacy Policy 
+  line removed at user request (2026-07-06); do not restore
