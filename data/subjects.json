@@ -158,12 +158,12 @@
     "subtopics": ["2D Animation", "After Effects", "Kinetic Typography", "VFX & Compositing", "Video Editing"]
   },
   {
-    "id": "games",
-    "name": "Games",
-    "icon": "Crown",
+    "id": "sports",
+    "name": "Sports",
+    "icon": "Trophy",
     "color": "#eab308",
     "bg": "#fefce8",
-    "tags": ["chess history"],
-    "subtopics": ["Chess History"]
+    "tags": ["chess history", "tennis history"],
+    "subtopics": ["Chess History", "Tennis History"]
   }
 ]

@@ -7,7 +7,7 @@ import {
   ChevronRight, ChevronLeft, Settings2, CheckSquare, SlidersHorizontal,
   Hash, Rocket, Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, BarChart3,
-  Clapperboard, Crown,
+  Clapperboard, Trophy,
   type LucideIcon,
 } from "lucide-react";
 
@@ -18,7 +18,7 @@ import { slugifyForTag } from "@/lib/utils";
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, BarChart3,
-  Clapperboard, Crown,
+  Clapperboard, Trophy,
 };
 
 const STEPS = ["Subject", "Subtopics", "Settings"];
