@@ -101,14 +101,17 @@ const FLOAT_SUBJECTS = [
 
 interface AuthScreenProps {
   initialMode: "login" | "register";
+  initialError?: string | null;
+  initialNotice?: string | null;
 }
 
-export function AuthScreen({ initialMode }: AuthScreenProps) {
+export function AuthScreen({ initialMode, initialError, initialNotice }: AuthScreenProps) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [form, setForm] = useState<AuthFormState>({ email: "", password: "", name: "", confirmPassword: "", city: "" });
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState<string | null>(null);
 
   const handleToggle = () => {
     const next = mode === "login" ? "register" : "login";
@@ -130,28 +133,51 @@ export function AuthScreen({ initialMode }: AuthScreenProps) {
     setLoading(true);
     const supabase = createClient();
 
-    const { error } =
-      mode === "login"
-        ? await supabase.auth.signInWithPassword({
-            email: form.email,
-            password: form.password,
-          })
-        : await supabase.auth.signUp({
-            email: form.email,
-            password: form.password,
-            options: {
-              data: { full_name: form.name, city: form.city },
-            },
-          });
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: form.email,
+          password: form.password,
+        });
 
-    if (error) {
-      setError(error.message);
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+          return;
+        }
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: form.email,
+          password: form.password,
+          options: {
+            data: { full_name: form.name, city: form.city },
+            emailRedirectTo: `${window.location.origin}/auth/confirm`,
+          },
+        });
+
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!data.session) {
+          // Email confirmation required. This branch also covers signUp with an
+          // already-registered email (Supabase returns a stub user with empty
+          // identities and no error) — same screen on purpose, to avoid
+          // revealing which emails have accounts.
+          setEmailSent(form.email);
+          setLoading(false);
+          return;
+        }
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
-      return;
     }
-
-    router.push("/");
-    router.refresh();
   }
 
   async function handleGoogleLogin() {
@@ -241,7 +267,7 @@ export function AuthScreen({ initialMode }: AuthScreenProps) {
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
         <motion.div
-          key={mode}
+          key={emailSent ? "email-sent" : mode}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
@@ -256,6 +282,44 @@ export function AuthScreen({ initialMode }: AuthScreenProps) {
             <span className="font-semibold text-foreground">Learning Curve</span>
           </div>
 
+          {emailSent ? (
+            <>
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+                <Mail size={28} className="text-white" />
+              </div>
+
+              <div>
+                <h1 className="text-foreground">Check your email</h1>
+                <p className="text-muted-foreground mt-1.5 text-sm">
+                  We sent a confirmation link to{" "}
+                  <span className="font-medium text-foreground">{emailSent}</span>.
+                  Click it to activate your account.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailSent(null);
+                  setMode("login");
+                  setForm({ email: "", password: "", name: "", confirmPassword: "", city: "" });
+                  setError(null);
+                  window.history.replaceState(null, "", "/login");
+                }}
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors cursor-pointer shadow-lg shadow-[#4f46e5]/25"
+              >
+                <span>Back to sign in</span>
+              </button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Wrong email?{" "}
+                <button type="button" onClick={() => setEmailSent(null)} className="text-[#4f46e5] font-medium hover:underline cursor-pointer">
+                  Try again
+                </button>
+              </p>
+            </>
+          ) : (
+            <>
           <div>
             <h1 className="text-foreground">{mode === "login" ? "Welcome back" : "Create account"}</h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
@@ -340,6 +404,12 @@ export function AuthScreen({ initialMode }: AuthScreenProps) {
             </button>
           )}
 
+          {initialNotice && !error && (
+            <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              {initialNotice}
+            </p>
+          )}
+
           {error && (
             <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {error}
@@ -362,6 +432,8 @@ export function AuthScreen({ initialMode }: AuthScreenProps) {
               {mode === "login" ? "Sign up" : "Sign in"}
             </button>
           </p>
+            </>
+          )}
 
         </motion.div>
       </div>

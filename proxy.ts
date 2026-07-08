@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const authRoutes = ['/login', '/signup', '/auth/callback']
+  const authRoutes = ['/login', '/signup', '/auth/callback', '/auth/confirm']
   const isAuthRoute = authRoutes.includes(pathname)
 
   if (!user && !isAuthRoute) {

@@ -14,3 +14,10 @@
 - AuthScreen (app/(auth)/AuthScreen.tsx): stats row ("47 Subjects / 10k+ 
   Learners / 500k+ Quizzes") and the Terms of Service / Privacy Policy 
   line removed at user request (2026-07-06); do not restore
+- AuthScreen: "Check your email" confirmation view added (2026-07-08) for 
+  the Supabase email-confirmation flow; not in the Figma export (which had 
+  no auth logic). Composed entirely from classes already used elsewhere in 
+  AuthScreen.tsx; do not remove
+- AuthScreen: emerald notice box (2026-07-08) mirroring the error box 
+  structure, for "email confirmed, please sign in" after clicking a 
+  confirmation link on another device; do not remove
