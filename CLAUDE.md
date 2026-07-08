@@ -21,3 +21,7 @@
 - AuthScreen: emerald notice box (2026-07-08) mirroring the error box 
   structure, for "email confirmed, please sign in" after clicking a 
   confirmation link on another device; do not remove
+- AuthScreen: left decorative panel width changed (2026-07-08) from the 
+  Figma fixed widths (w-[460px] xl:w-[520px]) to w-[40%] so the screen 
+  splits roughly 40% panel / 60% form at user request; do not restore the 
+  fixed widths

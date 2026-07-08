@@ -191,7 +191,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice }: AuthScr
   return (
     <div className="flex h-full">
       {/* Left decorative panel */}
-      <div className="hidden lg:flex w-[460px] xl:w-[520px] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-[#3730a3] via-[#4f46e5] to-[#7c3aed]">
+      <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-[#3730a3] via-[#4f46e5] to-[#7c3aed]">
         {/* Dot grid */}
         <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -247,8 +247,8 @@ export function AuthScreen({ initialMode, initialError, initialNotice }: AuthScr
             <GraduationCap size={32} className="text-white" />
           </div>
           <div>
-            <h2 className="text-3xl text-white leading-tight">Your learning<br />journey starts here</h2>
-            <p className="text-white/60 mt-3 text-sm leading-relaxed">Join thousands of learners mastering<br />subjects through intelligent quizzes.</p>
+            <h2 className="text-3xl text-white leading-tight">Your advertisement<br />won't be here</h2>
+            <p className="text-white/60 mt-3 text-sm leading-relaxed">However, you can try out<br />some quizzes.</p>
           </div>
 
         </motion.div>
