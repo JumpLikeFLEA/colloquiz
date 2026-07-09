@@ -6,6 +6,8 @@ export type QuestionSource = "manual" | "ai_generated";
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
+export type Visibility = "shared" | "private";
+
 export interface QuestionCriticNotes {
   correctness_check: "pass" | "fail" | "unsure";
   ambiguity_check: "pass" | "fail" | "unsure";
@@ -32,6 +34,7 @@ export interface Question {
   generation_batch_id?: string | null;
   reviewed_at?: string | null;
   reviewed_by?: string | null;
+  visibility?: Visibility;
 }
 
 export interface Quiz {
@@ -43,6 +46,7 @@ export interface Quiz {
   created_at: string;
   mode?: QuizMode;
   created_by?: string | null;
+  visibility?: Visibility;
 }
 
 export type GradingType = "auto" | "self" | "ai"; // auto = exact-match; self = user-marked; ai = graded in Phase 2
@@ -52,6 +56,11 @@ export type QuizMode = "ordinary" | "exam";
 export interface TagResult {
   correct: number;
   total: number;
+}
+
+export interface StoredAnswer {
+  question_id: string;
+  user_answer: string;
 }
 
 export interface Result {
@@ -67,6 +76,28 @@ export interface Result {
   taken_at: string;
   time_taken?: number;
   user_id?: string | null;
+  answers?: StoredAnswer[];
+}
+
+export type AssignmentStatus = "assigned" | "completed";
+
+export interface Assignment {
+  id: string;
+  quiz_id: string;
+  tutor_id: string;
+  student_id: string;
+  status: AssignmentStatus;
+  assigned_at: string;
+  due_at?: string | null;
+  completed_at?: string | null;
+  result_id?: string | null;
+}
+
+export interface TutorStudent {
+  id: string;
+  tutor_id: string;
+  student_id: string;
+  created_at: string;
 }
 
 export type QuizSize = 5 | 10 | 20;

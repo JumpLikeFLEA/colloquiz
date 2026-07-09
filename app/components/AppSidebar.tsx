@@ -8,12 +8,14 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  PenLine,
   PlusSquare,
   Settings2,
   Shield,
   ShieldCheck,
   Shuffle,
   Trophy,
+  Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -30,8 +32,24 @@ const navItems = [
   { label: "Home", description: "10 questions, pick & go", href: "/", icon: BookOpen },
   { label: "Advanced", description: "Custom topics & difficulty", href: "/advanced", icon: Settings2 },
   { label: "Build Quiz", description: "Create your own quizzes", href: "/build", icon: PlusSquare },
+  { label: "My Quizzes", description: "Assigned & created", href: "/my-quizzes", icon: GraduationCap },
   { label: "Dashboard", description: "Stats & history", href: "/dashboard", icon: LayoutDashboard },
   { label: "Achievements", description: "Badges & rewards", href: "/achievements", icon: Trophy },
+];
+
+const authorItems = [
+  {
+    label: "Quiz Builder",
+    description: "Create a private quiz",
+    href: "/my-quizzes/builder",
+    icon: PenLine,
+  },
+  {
+    label: "Students",
+    description: "Invite & assign",
+    href: "/students",
+    icon: Users,
+  },
 ];
 
 const adminItems = [
@@ -95,9 +113,11 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
 export function AppSidebar({
   profile,
   isAdmin,
+  isAuthor,
 }: {
   profile: UserProfile;
   isAdmin: boolean;
+  isAuthor: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -182,6 +202,50 @@ export function AppSidebar({
             );
           })}
         </nav>
+
+        {/* Author */}
+        {isAuthor && (
+          <div className="mt-4 group-data-[collapsible=icon]:hidden">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2">
+              Author
+            </p>
+            <nav className="flex flex-col gap-1">
+              {authorItems.map(({ label, description, href, icon: Icon }) => {
+                const active = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all",
+                      active
+                        ? "bg-[#eef2ff] text-[#4f46e5]"
+                        : "text-foreground hover:bg-accent",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
+                        active
+                          ? "bg-[#4f46e5] text-white"
+                          : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      <Icon size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-none truncate">{label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
+                    </div>
+                    {active && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0" />
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
 
         {/* Admin */}
         {isAdmin && (

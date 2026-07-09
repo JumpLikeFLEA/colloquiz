@@ -103,10 +103,15 @@ interface AuthScreenProps {
   initialMode: "login" | "register";
   initialError?: string | null;
   initialNotice?: string | null;
+  redirectTo?: string;
 }
 
-export function AuthScreen({ initialMode, initialError, initialNotice }: AuthScreenProps) {
+export function AuthScreen({ initialMode, initialError, initialNotice, redirectTo }: AuthScreenProps) {
   const router = useRouter();
+  // Where to land after auth. Kept relative + single-slash to prevent open redirects.
+  const dest = redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+    ? redirectTo
+    : "/";
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [form, setForm] = useState<AuthFormState>({ email: "", password: "", name: "", confirmPassword: "", city: "" });
   const [error, setError] = useState<string | null>(initialError ?? null);
@@ -172,7 +177,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice }: AuthScr
         }
       }
 
-      router.push("/");
+      router.push(dest);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -182,9 +187,12 @@ export function AuthScreen({ initialMode, initialError, initialNotice }: AuthScr
 
   async function handleGoogleLogin() {
     const supabase = createClient();
+    const callback = dest === "/"
+      ? `${window.location.origin}/auth/callback`
+      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(dest)}`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callback },
     });
   }
 

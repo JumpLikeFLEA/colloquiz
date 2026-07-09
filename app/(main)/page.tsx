@@ -1,5 +1,8 @@
 import { getSubjects, getSubjectStats } from "@/lib/questions";
+import { getMyAssignments, getMyCreatedQuizzes } from "@/lib/author";
+import { createClient } from "@/lib/supabase/server";
 import { SubjectGrid, type SubjectCardData } from "@/app/components/SubjectGrid";
+import { MyQuizzesRow, type MyQuizItem } from "@/app/components/MyQuizzesRow";
 
 export default async function Home() {
   const subjects = getSubjects();
@@ -20,5 +23,42 @@ export default async function Home() {
     })
     .filter((card) => card.questionCount > 0);
 
-  return <SubjectGrid subjects={cards} />;
+  // Compact "My Quizzes" row: pending assignments first, then own quizzes.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let myItems: MyQuizItem[] = [];
+  if (user) {
+    const [assignments, created] = await Promise.all([
+      getMyAssignments(supabase, user.id),
+      getMyCreatedQuizzes(supabase, user.id),
+    ]);
+
+    const pending: MyQuizItem[] = assignments
+      .filter((a) => a.status === "assigned")
+      .map((a) => ({
+        quizId: a.quizId,
+        title: a.quizTitle,
+        subtitle: `from ${a.tutorName}`,
+        badge: { label: "Assigned", className: "bg-amber-50 text-amber-600 border-amber-200" },
+      }));
+
+    const mine: MyQuizItem[] = created.map((q) => ({
+      quizId: q.id,
+      title: q.title,
+      subtitle: `${q.questionCount} question${q.questionCount !== 1 ? "s" : ""}`,
+      badge: { label: "Yours", className: "bg-indigo-50 text-indigo-500 border-indigo-200" },
+    }));
+
+    myItems = [...pending, ...mine].slice(0, 4);
+  }
+
+  return (
+    <div className="flex flex-col gap-10">
+      {myItems.length > 0 && <MyQuizzesRow items={myItems} />}
+      <SubjectGrid subjects={cards} />
+    </div>
+  );
 }

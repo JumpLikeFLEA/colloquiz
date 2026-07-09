@@ -34,7 +34,8 @@ export const getSubjectStats = unstable_cache(
     const { data, error } = await supabase
       .from("questions")
       .select("subject, difficulty")
-      .eq("status", "approved");
+      .eq("status", "approved")
+      .eq("visibility", "shared");
     if (error) throw new Error(error.message);
 
     const map: Record<string, { count: number; diffSet: Set<Difficulty> }> = {};
@@ -139,7 +140,14 @@ export async function sampleQuestions(filter: QuizFilter): Promise<Question[]> {
     if (subject) effectiveTags = subject.tags;
   }
 
-  let query = supabase.from("questions").select("*");
+  // Only ever sample from the public pool. RLS also lets an author read their
+  // own private questions and a student read questions of an assigned quiz —
+  // filter explicitly so private questions never leak into random quizzes.
+  let query = supabase
+    .from("questions")
+    .select("*")
+    .eq("status", "approved")
+    .eq("visibility", "shared");
 
   if (filter.difficulty !== "mixed") {
     query = query.eq("difficulty", filter.difficulty);
@@ -158,7 +166,11 @@ export async function sampleQuestions(filter: QuizFilter): Promise<Question[]> {
 
 export async function getAllTags(): Promise<string[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("questions").select("tags");
+  const { data, error } = await supabase
+    .from("questions")
+    .select("tags")
+    .eq("status", "approved")
+    .eq("visibility", "shared");
   if (error) throw new Error(error.message);
   const tagSet = new Set<string>();
   (data ?? []).forEach((row: { tags: string[] }) => row.tags.forEach((t) => tagSet.add(t)));

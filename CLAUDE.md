@@ -25,3 +25,7 @@
   Figma fixed widths (w-[460px] xl:w-[520px]) to w-[40%] so the screen 
   splits roughly 40% panel / 60% form at user request; do not restore the 
   fixed widths
+- AuthScreen: `redirectTo` prop added (2026-07-09) for the tutor invite-link 
+  flow — after sign-in/sign-up the user lands on the `?next=` destination 
+  (validated relative path) instead of always "/". Logic-only, no visual 
+  change; do not remove

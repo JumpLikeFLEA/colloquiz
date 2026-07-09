@@ -15,11 +15,12 @@ export default async function MainLayout({
 
   let profile: UserProfile = { displayName: "Student", xp: 0, level: 1 };
   let isAdmin = false;
+  let isAuthor = false;
 
   if (user) {
     const { data } = await supabase
       .from("profiles")
-      .select("display_name, role, total_xp")
+      .select("display_name, role, total_xp, is_author")
       .eq("id", user.id)
       .single();
     if (data) {
@@ -30,12 +31,13 @@ export default async function MainLayout({
         level: Math.floor(xp / 500) + 1,
       };
       isAdmin = data.role === "admin";
+      isAuthor = !!data.is_author || data.role === "admin";
     }
   }
 
   return (
     <SidebarProvider>
-      <AppSidebar profile={profile} isAdmin={isAdmin} />
+      <AppSidebar profile={profile} isAdmin={isAdmin} isAuthor={isAuthor} />
       <div className="flex min-h-svh flex-1 flex-col">
         <Topbar displayName={profile.displayName} />
         <main className="flex-1 overflow-y-auto">

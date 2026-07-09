@@ -1,5 +1,10 @@
 import { AuthScreen } from "../AuthScreen";
 
-export default function SignupPage() {
-  return <AuthScreen initialMode="register" />;
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  return <AuthScreen initialMode="register" redirectTo={next} />;
 }

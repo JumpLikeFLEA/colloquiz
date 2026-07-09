@@ -13,11 +13,18 @@ const NOTICE_MESSAGES: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; notice?: string }>;
+  searchParams: Promise<{ error?: string; notice?: string; next?: string }>;
 }) {
-  const { error, notice } = await searchParams;
+  const { error, notice, next } = await searchParams;
   const initialError = error ? ERROR_MESSAGES[error] ?? null : null;
   const initialNotice = notice ? NOTICE_MESSAGES[notice] ?? null : null;
 
-  return <AuthScreen initialMode="login" initialError={initialError} initialNotice={initialNotice} />;
+  return (
+    <AuthScreen
+      initialMode="login"
+      initialError={initialError}
+      initialNotice={initialNotice}
+      redirectTo={next}
+    />
+  );
 }

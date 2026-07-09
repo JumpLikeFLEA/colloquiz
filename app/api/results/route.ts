@@ -78,6 +78,13 @@ export async function POST(req: NextRequest) {
       typeof timeTaken === "number" ? timeTaken : undefined
     );
 
+    // The submitted answers, stored so an assigning tutor can review exactly
+    // what the student chose. Correctness is still computed server-side above.
+    const storedAnswers = (answers ?? []).map((a) => ({
+      question_id: a.questionId,
+      user_answer: a.userAnswer,
+    }));
+
     // Persist server-computed result — never client-supplied correctness data
     const { error: insertError } = await supabase.from("results").insert({
       id: result.id,
@@ -92,8 +99,26 @@ export async function POST(req: NextRequest) {
       taken_at: result.taken_at,
       ...(result.time_taken !== undefined && { time_taken: result.time_taken }),
       user_id: user.id,
+      answers: storedAnswers,
     });
     if (insertError) throw new Error(insertError.message);
+
+    // If this quiz was assigned to the student, mark the assignment complete.
+    // No-op for ordinary self-started quizzes. Best-effort — a failure here
+    // must not fail the whole submission.
+    const { error: assignmentError } = await supabase
+      .from("assignments")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        result_id: result.id,
+      })
+      .eq("student_id", user.id)
+      .eq("quiz_id", quizId)
+      .eq("status", "assigned");
+    if (assignmentError) {
+      console.warn("Failed to mark assignment complete:", assignmentError.message);
+    }
 
     // Load profile for streak + XP update
     const { data: profile } = await supabase

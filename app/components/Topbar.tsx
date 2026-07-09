@@ -16,6 +16,9 @@ const routeLabels: Record<string, string> = {
   "/achievements": "Achievements",
   "/quiz": "Quiz in progress",
   "/admin/quiz-builder": "Admin",
+  "/my-quizzes": "My Quizzes",
+  "/students": "Students",
+  "/invite": "Invitation",
 };
 
 function getInitials(name: string) {

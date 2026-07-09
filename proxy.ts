@@ -41,12 +41,21 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    // Preserve where the user was headed (e.g. an invite link) so they land
+    // there after signing in. Only relative, single-slash paths are kept.
+    url.search = ''
+    const dest = request.nextUrl.pathname + request.nextUrl.search
+    if (dest !== '/' && dest.startsWith('/') && !dest.startsWith('//')) {
+      url.searchParams.set('next', dest)
+    }
     return NextResponse.redirect(url)
   }
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    const next = request.nextUrl.searchParams.get('next')
+    url.pathname = next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+    url.search = ''
     return NextResponse.redirect(url)
   }
 
