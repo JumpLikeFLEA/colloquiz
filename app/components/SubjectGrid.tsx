@@ -10,6 +10,7 @@ import {
   Clapperboard,
   Code,
   Trophy,
+  Gamepad2,
   FlaskConical,
   Globe,
   Languages,
@@ -43,6 +44,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Languages,
   Clapperboard,
   Trophy,
+  Gamepad2,
 };
 
 export type SubjectCardData = {
