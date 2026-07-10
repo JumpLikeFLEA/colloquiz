@@ -163,7 +163,7 @@
     "icon": "Trophy",
     "color": "#eab308",
     "bg": "#fefce8",
-    "tags": ["chess", "tennis"],
-    "subtopics": ["Chess", "Tennis"]
+    "tags": ["chess", "tennis", "football"],
+    "subtopics": ["Chess", "Tennis", "Football"]
   }
 ]
