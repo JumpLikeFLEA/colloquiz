@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Atom,
   BookOpen,
@@ -28,6 +27,7 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { cn, slugifyForTag } from "@/lib/utils";
 import type { Difficulty, QuizMode, QuizSize } from "@/types";
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
+import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 // ── Icon map ────────────────────────────────────────────────────────────────
 
@@ -303,7 +303,7 @@ export default function BuildForm({
   subjects: SubjectCardData[];
   subtopicsBySubject: Record<string, string[]>;
 }) {
-  const router = useRouter();
+  const { startQuiz } = useStartQuiz();
   const [state, setState] = React.useState<WizardState>({
     step: 1,
     subjectId: null,
@@ -313,7 +313,6 @@ export default function BuildForm({
     mode: "ordinary",
   });
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
 
   function patch(updates: Partial<WizardState>) {
     setState((s) => ({ ...s, ...updates }));
@@ -344,24 +343,17 @@ export default function BuildForm({
 
   async function handleStart() {
     setLoading(true);
-    setError("");
     try {
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: state.subjectId,
+      await startQuiz({
+        filter: {
+          subject: state.subjectId ?? undefined,
           tags: state.subtopics.map(slugifyForTag),
           difficulty: state.difficulty,
           size: state.size,
           mode: state.mode,
-        }),
+        },
       });
-      const data = (await res.json()) as { id?: string; error?: string };
-      if (!res.ok || !data.id) throw new Error(data.error ?? "Failed to build quiz");
-      router.push(`/quiz/${data.id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
       setLoading(false);
     }
   }
@@ -397,8 +389,6 @@ export default function BuildForm({
           onChange={(p) => patch(p)}
         />
       )}
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex justify-between gap-3">
         {state.step > 1 ? (

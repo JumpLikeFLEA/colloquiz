@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Atom,
@@ -26,7 +25,7 @@ import {
 } from "lucide-react";
 
 import type { Difficulty } from "@/types";
-import { ErrorDialog } from "@/app/components/ErrorDialog";
+import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator,
@@ -181,10 +180,9 @@ function SubjectCard({
 }
 
 export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
-  const router = useRouter();
+  const { startQuiz: startQuizFlow } = useStartQuiz();
   const [query, setQuery] = React.useState("");
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<
     Record<string, Difficulty>
   >({});
@@ -202,24 +200,9 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
   async function startQuiz(subjectId: string, difficulty: Difficulty) {
     setLoadingId(subjectId);
     try {
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: subjectId,
-          difficulty,
-          size: 10,
-          mode: "ordinary",
-        }),
+      await startQuizFlow({
+        filter: { subject: subjectId, difficulty, size: 10, mode: "ordinary" },
       });
-      const data = (await res.json()) as { id?: string; error?: string };
-      if (!res.ok || !data.id) {
-        setError(data.error ?? "Could not start quiz.");
-        return;
-      }
-      router.push(`/quiz/${data.id}`);
-    } catch {
-      setError("Could not start quiz. Check your connection and try again.");
     } finally {
       setLoadingId(null);
     }
@@ -228,19 +211,7 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
   async function startRandom() {
     setLoadingId("__random__");
     try {
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty: "mixed", size: 10, mode: "ordinary" }),
-      });
-      const data = (await res.json()) as { id?: string; error?: string };
-      if (!res.ok || !data.id) {
-        setError(data.error ?? "Could not start quiz.");
-        return;
-      }
-      router.push(`/quiz/${data.id}`);
-    } catch {
-      setError("Could not start quiz. Check your connection and try again.");
+      await startQuizFlow({ filter: { difficulty: "mixed", size: 10, mode: "ordinary" } });
     } finally {
       setLoadingId(null);
     }
@@ -254,7 +225,7 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
           <div>
             <h1 className="text-foreground">Basic Quizzes</h1>
             <p className="text-muted-foreground mt-1">
-              10 questions per quiz · Select a subject and difficulty to begin
+              10 questions from different subtopics · Select a subject and difficulty to begin
             </p>
           </div>
           <button
@@ -303,12 +274,6 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
           ))}
         </div>
       )}
-
-      <ErrorDialog
-        open={error !== null}
-        onClose={() => setError(null)}
-        description={error ?? ""}
-      />
     </div>
   );
 }

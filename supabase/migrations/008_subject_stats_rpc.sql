@@ -1,5 +1,5 @@
 -- ============================================================
--- 007_subject_stats_rpc.sql
+-- 008_subject_stats_rpc.sql
 --
 -- Home's subject grid needs a per-subject question count and the set of
 -- difficulties present. Previously the app pulled EVERY approved+shared

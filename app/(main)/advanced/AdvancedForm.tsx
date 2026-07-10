@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight, ChevronLeft, Settings2, CheckSquare, SlidersHorizontal,
@@ -12,7 +11,7 @@ import {
 } from "lucide-react";
 
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
-import { ErrorDialog } from "@/app/components/ErrorDialog";
+import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import { slugifyForTag } from "@/lib/utils";
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -30,14 +29,13 @@ export default function AdvancedForm({
   subjects: SubjectCardData[];
   subtopicsBySubject: Record<string, string[]>;
 }) {
-  const router = useRouter();
+  const { startQuiz } = useStartQuiz();
   const [step, setStep] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubtopics, setSelectedSubtopics] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState(5);
   const [questionCount, setQuestionCount] = useState(15);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const subtopics = selectedSubject ? (subtopicsBySubject[selectedSubject] ?? []) : [];
 
@@ -58,25 +56,15 @@ export default function AdvancedForm({
     const diffStr = difficulty <= 2 ? "easy" : difficulty <= 5 ? "medium" : "hard";
     setLoading(true);
     try {
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await startQuiz({
+        filter: {
           subject: selectedSubject,
           tags: selectedSubtopics.map(slugifyForTag),
           difficulty: diffStr,
           size: questionCount,
           mode: "ordinary",
-        }),
+        },
       });
-      const data = (await res.json()) as { id?: string; error?: string };
-      if (!res.ok || !data.id) {
-        setError(data.error ?? "Could not start quiz.");
-        return;
-      }
-      router.push(`/quiz/${data.id}`);
-    } catch {
-      setError("Could not start quiz. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -420,12 +408,6 @@ export default function AdvancedForm({
           </button>
         )}
       </div>
-
-      <ErrorDialog
-        open={error !== null}
-        onClose={() => setError(null)}
-        description={error ?? ""}
-      />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Play, Users, Pencil, Trash2, ClipboardList, BookOpen } from "lucide-react";
+import { Plus, Play, Users, Pencil, Trash2, ClipboardList, BookOpen, Clock, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,23 +14,37 @@ import {
 } from "@/app/components/ui/dialog";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { BecomeAuthorCard } from "@/app/components/BecomeAuthorCard";
+import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import type { CreatedQuiz, MyAssignment, LinkedStudent } from "@/lib/author";
+import type { ActiveSessionSummary } from "@/lib/quizSession";
 
 export function MyQuizzesView({
   isAuthor,
   assignments,
   created,
   students,
+  active,
 }: {
   isAuthor: boolean;
   assignments: MyAssignment[];
   created: CreatedQuiz[];
   students: LinkedStudent[];
+  active: ActiveSessionSummary | null;
 }) {
   const router = useRouter();
+  const { startQuiz } = useStartQuiz();
   const [assignFor, setAssignFor] = useState<CreatedQuiz | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function exitActive(quizId: string) {
+    await fetch("/api/quiz/session", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quizId }),
+    });
+    router.refresh();
+  }
 
   async function deleteQuiz(id: string) {
     setError(null);
@@ -56,6 +70,38 @@ export function MyQuizzesView({
         <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
           {error}
         </div>
+      )}
+
+      {/* In progress (active session) */}
+      {active && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="size-4 text-[#4f46e5]" />
+            <h2 className="text-sm font-semibold text-foreground">In progress</h2>
+          </div>
+          <div className="flex items-center gap-3 p-4 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff]">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{active.title}</p>
+              <p className="text-xs text-muted-foreground">Active quiz &middot; not finished</p>
+            </div>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#4f46e5]/10 text-[#4f46e5] border border-[#4f46e5]/20">
+              Active
+            </span>
+            <Link
+              href={`/quiz/${active.quizId}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+            >
+              <Play className="size-3.5" /> Resume
+            </Link>
+            <button
+              onClick={() => exitActive(active.quizId)}
+              title="Exit quiz"
+              className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </section>
       )}
 
       {/* Assigned to me */}
@@ -96,12 +142,12 @@ export function MyQuizzesView({
                     <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
                       Assigned
                     </span>
-                    <Link
-                      href={`/quiz/${a.quizId}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+                    <button
+                      onClick={() => startQuiz({ quizId: a.quizId })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors cursor-pointer"
                     >
                       <Play className="size-3.5" /> Start
-                    </Link>
+                    </button>
                   </>
                 )}
               </div>
@@ -140,13 +186,13 @@ export function MyQuizzesView({
                       {q.assignedCount > 0 && ` · ${q.assignedCount} assigned · ${q.completedCount} completed`}
                     </p>
                   </div>
-                  <Link
-                    href={`/quiz/${q.id}`}
+                  <button
+                    onClick={() => startQuiz({ quizId: q.id })}
                     title="Preview"
-                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                   >
                     <Play className="size-4" />
-                  </Link>
+                  </button>
                   <button
                     onClick={() => setAssignFor(q)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"

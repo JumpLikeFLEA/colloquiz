@@ -79,6 +79,19 @@ export interface Result {
   answers?: StoredAnswer[];
 }
 
+export type QuizSessionStatus = "active" | "completed" | "abandoned";
+
+export interface QuizSession {
+  id: string;
+  user_id: string;
+  quiz_id: string;
+  status: QuizSessionStatus;
+  current_index: number;
+  answers: (number | null)[];
+  started_at: string;
+  last_activity_at: string;
+}
+
 export type AssignmentStatus = "assigned" | "completed";
 
 export interface Assignment {

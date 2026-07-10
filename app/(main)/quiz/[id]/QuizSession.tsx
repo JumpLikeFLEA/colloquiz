@@ -11,6 +11,16 @@ import {
   Code, Brain, Palette, Music, Languages
 } from "lucide-react";
 import type { Question, Quiz } from "@/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 // Inline subjects for display (same data as figma-export MainMenu SUBJECTS)
 const SUBJECTS = [
@@ -33,6 +43,10 @@ const SUBJECTS = [
 interface Props {
   quiz: Quiz;
   questions: Question[];
+  initialProgress: {
+    currentIndex: number;
+    answers: (number | null)[];
+  };
 }
 
 type SubmissionResult = {
@@ -71,18 +85,40 @@ function getGrade(pct: number) {
   return { letter: "F", label: "Keep practicing!", color: "#ef4444", bg: "#fef2f2" };
 }
 
-export default function QuizSession({ quiz, questions: initialQuestions }: Props) {
+export default function QuizSession({ quiz, questions: initialQuestions, initialProgress }: Props) {
   const router = useRouter();
+  // Resume from saved progress. If the current question was already answered,
+  // open it in the "feedback" phase so the prior choice is shown.
+  const resumeAnswers =
+    initialProgress.answers.length === initialQuestions.length
+      ? initialProgress.answers
+      : Array(initialQuestions.length).fill(null);
+  const resumeAnswered = resumeAnswers[initialProgress.currentIndex] ?? null;
+
   const [questions, setQuestions] = useState(initialQuestions);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [phase, setPhase] = useState<Phase>("quiz");
-  const [answers, setAnswers] = useState<(number | null)[]>(Array(initialQuestions.length).fill(null));
+  const [currentIndex, setCurrentIndex] = useState(initialProgress.currentIndex);
+  const [selectedOption, setSelectedOption] = useState<number | null>(resumeAnswered);
+  const [phase, setPhase] = useState<Phase>(resumeAnswered !== null ? "feedback" : "quiz");
+  const [answers, setAnswers] = useState<(number | null)[]>(resumeAnswers);
   const [showExplanation, setShowExplanation] = useState(false);
   const [reviewExpanded, setReviewExpanded] = useState<number | null>(null);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const timer = useTimer();
   const submittedRef = useRef(false);
+
+  // Persist resume progress (and bump last_activity_at) as the user plays.
+  // Fire-and-forget — a dropped progress write just means a slightly staler resume.
+  const persistProgress = useCallback(
+    (index: number, ans: (number | null)[]) => {
+      fetch("/api/quiz/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizId: quiz.id, currentIndex: index, answers: ans }),
+      }).catch(() => {});
+    },
+    [quiz.id],
+  );
 
   const subjectId = questions[0]?.subject ?? "mathematics";
   const difficulty =
@@ -113,12 +149,11 @@ export default function QuizSession({ quiz, questions: initialQuestions }: Props
   const handleSelect = (optionIndex: number) => {
     if (phase !== "quiz" || selectedOption !== null) return;
     setSelectedOption(optionIndex);
-    setAnswers(prev => {
-      const next = [...prev];
-      next[currentIndex] = optionIndex;
-      return next;
-    });
+    const next = [...answers];
+    next[currentIndex] = optionIndex;
+    setAnswers(next);
     setPhase("feedback");
+    persistProgress(currentIndex, next);
   };
 
   const submitResult = async () => {
@@ -154,10 +189,12 @@ export default function QuizSession({ quiz, questions: initialQuestions }: Props
 
   const handleNext = () => {
     if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex(i => i + 1);
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
       setSelectedOption(null);
       setShowExplanation(false);
       setPhase("quiz");
+      persistProgress(nextIndex, answers);
     } else {
       timer.stop();
       setPhase("results");
@@ -165,7 +202,24 @@ export default function QuizSession({ quiz, questions: initialQuestions }: Props
     }
   };
 
+  // Results screen "Back to Menu" — the session is already completed server-side,
+  // so just navigate.
   const handleBack = () => {
+    router.push("/");
+  };
+
+  // In-quiz "Exit" — confirm, then deactivate the active session.
+  const confirmExit = async () => {
+    setShowExitConfirm(false);
+    try {
+      await fetch("/api/quiz/session", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizId: quiz.id }),
+      });
+    } catch {
+      // best-effort — navigate away regardless
+    }
     router.push("/");
   };
 
@@ -216,7 +270,7 @@ export default function QuizSession({ quiz, questions: initialQuestions }: Props
       {/* Top bar */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <button
-          onClick={handleBack}
+          onClick={() => setShowExitConfirm(true)}
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm cursor-pointer"
         >
           <ArrowLeft size={16} />
@@ -395,6 +449,27 @@ export default function QuizSession({ quiz, questions: initialQuestions }: Props
           )}
         </motion.div>
       </AnimatePresence>
+
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exit this quiz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your quiz will be deactivated and its progress discarded. You can start a new
+              quiz afterwards.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Keep going</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmExit}
+              className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+            >
+              Exit quiz
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

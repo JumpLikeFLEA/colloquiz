@@ -3,6 +3,7 @@ import { getQuizById, getSubjects, getEnrichedResults } from "@/lib/questions";
 import { scoreQuiz, type AnswerRecord } from "@/lib/scoring";
 import { createClient } from "@/lib/supabase/server";
 import { checkAchievements, calcBonusXP, type ResultSummary } from "@/lib/achievements";
+import { completeSession } from "@/lib/quizSession";
 import { QuizMode } from "@/types";
 
 function calcStreak(lastQuizAt: string | null): {
@@ -118,6 +119,13 @@ export async function POST(req: NextRequest) {
       .eq("status", "assigned");
     if (assignmentError) {
       console.warn("Failed to mark assignment complete:", assignmentError.message);
+    }
+
+    // Clear the active quiz session — this quiz is finished. Best-effort.
+    try {
+      await completeSession(supabase, user.id, quizId);
+    } catch (e) {
+      console.warn("Failed to complete quiz session:", e);
     }
 
     // Load profile for streak + XP update

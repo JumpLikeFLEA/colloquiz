@@ -27,6 +27,7 @@ import {
   SidebarRail,
 } from "@/app/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/client";
+import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 const navItems = [
   { label: "Home", description: "10 questions, pick & go", href: "/", icon: BookOpen },
@@ -121,6 +122,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { startQuiz } = useStartQuiz();
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -132,17 +134,7 @@ export function AppSidebar({
   const items = navItems;
 
   async function handleRandomQuiz() {
-    try {
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty: "mixed", size: 10, mode: "ordinary" }),
-      });
-      const data = (await res.json()) as { id?: string; error?: string };
-      if (data.id) router.push(`/quiz/${data.id}`);
-    } catch {
-      // silently fail
-    }
+    await startQuiz({ filter: { difficulty: "mixed", size: 10, mode: "ordinary" } });
   }
 
   return (

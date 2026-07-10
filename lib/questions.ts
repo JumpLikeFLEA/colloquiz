@@ -31,7 +31,7 @@ export const getSubjectStats = unstable_cache(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    // DB-side GROUP BY (see migration 007) — returns one row per (subject,
+    // DB-side GROUP BY (see migration 008) — returns one row per (subject,
     // difficulty) with a count, instead of every question row.
     const { data, error } = await supabase.rpc("get_subject_stats");
     if (error) throw new Error(error.message);

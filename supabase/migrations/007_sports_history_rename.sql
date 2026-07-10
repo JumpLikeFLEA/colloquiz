@@ -1,5 +1,5 @@
 -- ============================================================
--- 006_sports_history_rename.sql
+-- 007_sports_history_rename.sql
 --
 -- Refactor: the "Sports" subject becomes "Sports History", and its
 -- subtopics drop the redundant "History" qualifier (which now lives in

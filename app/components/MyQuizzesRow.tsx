@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Play } from "lucide-react";
+import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 export type MyQuizItem = {
   quizId: string;
@@ -9,6 +12,8 @@ export type MyQuizItem = {
 };
 
 export function MyQuizzesRow({ items }: { items: MyQuizItem[] }) {
+  const { startQuiz } = useStartQuiz();
+
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -38,13 +43,13 @@ export function MyQuizzesRow({ items }: { items: MyQuizItem[] }) {
               <p className="text-xs text-muted-foreground">{item.subtitle}</p>
             </div>
             <div className="px-4 pb-4">
-              <Link
-                href={`/quiz/${item.quizId}`}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors text-sm"
+              <button
+                onClick={() => startQuiz({ quizId: item.quizId })}
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors text-sm cursor-pointer"
               >
                 <Play size={14} />
                 Start Quiz
-              </Link>
+              </button>
             </div>
           </div>
         ))}
