@@ -1,6 +1,7 @@
 import { getSubjects, getSubjectStats } from "@/lib/questions";
 import { getMyAssignments, getMyCreatedQuizzes } from "@/lib/author";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/supabase/queries";
 import { SubjectGrid, type SubjectCardData } from "@/app/components/SubjectGrid";
 import { MyQuizzesRow, type MyQuizItem } from "@/app/components/MyQuizzesRow";
 
@@ -24,16 +25,17 @@ export default async function Home() {
     .filter((card) => card.questionCount > 0);
 
   // Compact "My Quizzes" row: pending assignments first, then own quizzes.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getProfile() is deduped with the layout's call. Only authors have created
+  // quizzes, so skip that query entirely for everyone else (matches my-quizzes).
+  const profile = await getProfile();
 
   let myItems: MyQuizItem[] = [];
-  if (user) {
+  if (profile) {
+    const supabase = await createClient();
+    const isAuthor = !!profile.is_author || profile.role === "admin";
     const [assignments, created] = await Promise.all([
-      getMyAssignments(supabase, user.id),
-      getMyCreatedQuizzes(supabase, user.id),
+      getMyAssignments(supabase, profile.id),
+      isAuthor ? getMyCreatedQuizzes(supabase, profile.id) : Promise.resolve([]),
     ]);
 
     const pending: MyQuizItem[] = assignments

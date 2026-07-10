@@ -31,17 +31,15 @@ export const getSubjectStats = unstable_cache(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    const { data, error } = await supabase
-      .from("questions")
-      .select("subject, difficulty")
-      .eq("status", "approved")
-      .eq("visibility", "shared");
+    // DB-side GROUP BY (see migration 007) — returns one row per (subject,
+    // difficulty) with a count, instead of every question row.
+    const { data, error } = await supabase.rpc("get_subject_stats");
     if (error) throw new Error(error.message);
 
     const map: Record<string, { count: number; diffSet: Set<Difficulty> }> = {};
-    for (const row of data ?? []) {
+    for (const row of (data ?? []) as { subject: string; difficulty: string; cnt: number }[]) {
       const entry = map[row.subject] ?? { count: 0, diffSet: new Set() };
-      entry.count += 1;
+      entry.count += Number(row.cnt);
       entry.diffSet.add(row.difficulty as Difficulty);
       map[row.subject] = entry;
     }
@@ -53,7 +51,7 @@ export const getSubjectStats = unstable_cache(
       ])
     );
   },
-  ["subject-stats-v1"],
+  ["subject-stats-v2"],
   { revalidate: 60, tags: ["subject-stats"] }
 );
 
@@ -200,32 +198,53 @@ export async function getEnrichedResults(
     .order("taken_at", { ascending: false });
 
   if (error) throw new Error(error.message);
+  const rows = results ?? [];
+  if (rows.length === 0) return [];
 
-  const allQuestions = await getQuestions();
   const subjects = getSubjects();
   const subjectMap = new Map(subjects.map((s) => [s.id, s.name]));
 
-  return Promise.all(
-    (results ?? []).map(async (r) => {
-      const quiz = await getQuizById(r.quiz_id);
-      let subject = "Mixed";
-      if (quiz) {
-        const firstQ = allQuestions.find((q) => q.id === quiz.question_ids[0]);
-        if (firstQ?.subject) subject = subjectMap.get(firstQ.subject) ?? firstQ.subject;
-      }
-      return {
-        id: r.id,
-        mode: r.mode,
-        score: r.score,
-        correct: r.correct,
-        total_questions: r.total_questions,
-        taken_at: r.taken_at,
-        time_taken: r.time_taken,
-        subject,
-        difficulty: quiz?.difficulty_mix ?? "mixed",
-      };
-    }),
-  );
+  // Fetch only the quizzes these results reference (not the whole table), then
+  // only the first question of each quiz — its subject drives the label. Two
+  // bounded queries instead of getQuestions() (full table) + one getQuizById per row.
+  const quizIds = [...new Set(rows.map((r) => r.quiz_id))];
+  const { data: quizzes } = await supabase
+    .from("quizzes")
+    .select("id, question_ids, difficulty_mix")
+    .in("id", quizIds);
+  const quizMap = new Map((quizzes ?? []).map((q) => [q.id, q]));
+
+  const firstQIds = [
+    ...new Set(
+      Array.from(quizMap.values())
+        .map((q) => q.question_ids?.[0])
+        .filter(Boolean),
+    ),
+  ];
+  const { data: firstQs } = firstQIds.length
+    ? await supabase.from("questions").select("id, subject").in("id", firstQIds)
+    : { data: [] };
+  const questionSubject = new Map((firstQs ?? []).map((q) => [q.id, q.subject as string]));
+
+  return rows.map((r) => {
+    const quiz = quizMap.get(r.quiz_id);
+    let subject = "Mixed";
+    if (quiz) {
+      const firstSubjectId = questionSubject.get(quiz.question_ids?.[0]);
+      if (firstSubjectId) subject = subjectMap.get(firstSubjectId) ?? firstSubjectId;
+    }
+    return {
+      id: r.id,
+      mode: r.mode,
+      score: r.score,
+      correct: r.correct,
+      total_questions: r.total_questions,
+      taken_at: r.taken_at,
+      time_taken: r.time_taken,
+      subject,
+      difficulty: quiz?.difficulty_mix ?? "mixed",
+    };
+  });
 }
 
 function shuffle<T>(arr: T[]): T[] {

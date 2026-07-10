@@ -1,20 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAssignments, getMyCreatedQuizzes, getLinkedStudents } from "@/lib/author";
+import { getUser, getProfile } from "@/lib/supabase/queries";
 import { MyQuizzesView } from "./MyQuizzesView";
 
 export default async function MyQuizzesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_author, role")
-    .eq("id", user.id)
-    .single();
+  const supabase = await createClient();
+  const profile = await getProfile();
   const isAuthor = !!profile?.is_author || profile?.role === "admin";
 
   const [assignments, created, students] = await Promise.all([
