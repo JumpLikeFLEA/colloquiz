@@ -1,23 +1,23 @@
-import { getSubjects, getQuestions } from "@/lib/questions";
+import { getSubjects, getSubjectStats } from "@/lib/questions";
 import BuildForm from "./BuildForm";
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
 
 export default async function BuildPage() {
   const subjects = getSubjects();
-  const questions = await getQuestions();
+  // Per-subject counts/difficulties come from a DB-side GROUP BY (migration
+  // 008) — cap-safe and cached, unlike scanning the full questions table.
+  const stats = await getSubjectStats();
 
   const subjectCards: SubjectCardData[] = subjects.map((s) => {
-    const qs = questions.filter((q) => q.subject === s.id);
-    const diffSet = Array.from(new Set(qs.map((q) => q.difficulty)));
-    const diffOrder = ["easy", "medium", "hard"] as const;
+    const stat = stats[s.id] ?? { count: 0, difficulties: [] };
     return {
       id: s.id,
       name: s.name,
       icon: s.icon,
       color: s.color,
       bg: s.bg,
-      questionCount: qs.length,
-      difficulties: diffOrder.filter((d) => diffSet.includes(d)),
+      questionCount: stat.count,
+      difficulties: stat.difficulties,
     };
   });
 

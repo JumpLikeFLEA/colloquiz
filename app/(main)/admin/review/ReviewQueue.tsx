@@ -22,7 +22,7 @@ interface Props {
   pageSize: number;
 }
 
-type EditDraft = {
+export type EditDraft = {
   question: string;
   options: [string, string, string, string];
   correct_answer: string;
@@ -247,7 +247,7 @@ function ReviewCard({
 
 // ── Read-only display of the question ───────────────────────────────────────
 
-function ReadMode({ question }: { question: Question }) {
+export function ReadMode({ question }: { question: Question }) {
   return (
     <>
       <p className="font-medium leading-relaxed">{question.question}</p>
@@ -285,18 +285,20 @@ function ReadMode({ question }: { question: Question }) {
 
 // ── Edit form ───────────────────────────────────────────────────────────────
 
-function EditForm({
+export function EditForm({
   initial,
   loading,
   onCancel,
   onSave,
   onSaveAndApprove,
+  saveAndApproveLabel = "Save & Approve",
 }: {
   initial: EditDraft;
   loading: boolean;
   onCancel: () => void;
   onSave: (draft: EditDraft) => void;
   onSaveAndApprove: (draft: EditDraft) => void;
+  saveAndApproveLabel?: string;
 }) {
   const [draft, setDraft] = React.useState<EditDraft>(initial);
 
@@ -385,7 +387,7 @@ function EditForm({
           disabled={loading}
           className="bg-green-600 hover:bg-green-700"
         >
-          <Check className="size-4" /> Save & Approve
+          <Check className="size-4" /> {saveAndApproveLabel}
         </Button>
         <Button onClick={onCancel} disabled={loading} variant="ghost" className="ml-auto">
           <X className="size-4" /> Cancel
@@ -435,7 +437,7 @@ function CheckBadge({ label, value }: { label: string; value: "pass" | "fail" | 
   );
 }
 
-function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
+export function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
   const cls =
     difficulty === "easy"
       ? "bg-green-50 text-green-700 border-green-200"

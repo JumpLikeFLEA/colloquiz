@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getQuizById, getSubjects, getEnrichedResults } from "@/lib/questions";
 import { scoreQuiz, type AnswerRecord } from "@/lib/scoring";
+import { getUserReportedQuestionIds } from "@/lib/reports";
 import { createClient } from "@/lib/supabase/server";
 import { checkAchievements, calcBonusXP, type ResultSummary } from "@/lib/achievements";
 import { completeSession } from "@/lib/quizSession";
@@ -70,11 +71,24 @@ export async function POST(req: NextRequest) {
       console.warn(`scoreQuiz: ${missingCount} submitted question(s) not found in DB — treated as wrong`);
     }
 
+    // A question the user reported and then skipped is excluded from scoring.
+    // Decided here, not by the client: scoreQuiz derives `total` from the
+    // answers array, so a tampered client could otherwise drop its wrong
+    // answers to inflate the score. An unanswered question with NO report from
+    // this user stays in the scoring set and is counted wrong, as before.
+    const reported = new Set(await getUserReportedQuestionIds(user.id, questionIds));
+    const excludedIds = new Set(
+      (answers ?? [])
+        .filter((a) => a.userAnswer === "" && reported.has(a.questionId))
+        .map((a) => a.questionId)
+    );
+    const scoredAnswers = (answers ?? []).filter((a) => !excludedIds.has(a.questionId));
+
     const mode: QuizMode = quiz.mode ?? "ordinary";
     const result = scoreQuiz(
       quizId,
       mode,
-      answers,
+      scoredAnswers,
       correctAnswers,
       typeof timeTaken === "number" ? timeTaken : undefined
     );
@@ -101,6 +115,7 @@ export async function POST(req: NextRequest) {
       ...(result.time_taken !== undefined && { time_taken: result.time_taken }),
       user_id: user.id,
       answers: storedAnswers,
+      excluded_question_ids: [...excludedIds],
     });
     if (insertError) throw new Error(insertError.message);
 

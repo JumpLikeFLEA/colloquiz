@@ -14,11 +14,35 @@ export function getSubjects(): Subject[] {
   return JSON.parse(raw) as Subject[];
 }
 
-export async function getQuestions(): Promise<Question[]> {
+// Fetch only the questions a quiz/result references. Bounded by the id list,
+// so it is immune to PostgREST's 1000-row response cap — unlike a full-table
+// select, which silently truncates once the table exceeds 1000 rows.
+export async function getQuestionsByIds(ids: string[]): Promise<Question[]> {
+  if (ids.length === 0) return [];
   const supabase = await createClient();
-  const { data, error } = await supabase.from("questions").select("*");
+  const { data, error } = await supabase.from("questions").select("*").in("id", ids);
   if (error) throw new Error(error.message);
   return (data ?? []) as Question[];
+}
+
+// Full-table fetch. PostgREST caps a single response at 1000 rows, so page
+// through with .range() to return every question once the table exceeds that.
+// Prefer getQuestionsByIds / getSubjectStats where you don't need the whole set.
+export async function getQuestions(): Promise<Question[]> {
+  const supabase = await createClient();
+  const PAGE = 1000;
+  const all: Question[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("questions")
+      .select("*")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as Question[];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return all;
 }
 
 const DIFF_ORDER: Difficulty[] = ["easy", "medium", "hard"];

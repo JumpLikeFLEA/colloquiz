@@ -3,6 +3,7 @@ import { AppSidebar, type UserProfile } from "@/app/components/AppSidebar";
 import { Topbar } from "@/app/components/Topbar";
 import { StartQuizProvider } from "@/app/components/StartQuizProvider";
 import { ActiveQuizBanner } from "@/app/components/ActiveQuizBanner";
+import { Toaster } from "@/app/components/ui/sonner";
 import { getProfile } from "@/lib/supabase/queries";
 
 export default async function MainLayout({
@@ -40,6 +41,7 @@ export default async function MainLayout({
             </div>
           </main>
         </div>
+        <Toaster />
       </StartQuizProvider>
     </SidebarProvider>
   );

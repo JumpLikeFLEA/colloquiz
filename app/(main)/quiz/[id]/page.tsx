@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { getQuizById, getQuestions } from "@/lib/questions";
+import { getQuizById, getQuestionsByIds } from "@/lib/questions";
+import { getOpenReportedQuestionIds } from "@/lib/reports";
 import { shuffleOptions } from "@/lib/shuffleOptions";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
@@ -10,11 +11,15 @@ import type { Question, Quiz } from "@/types";
 export default async function QuizPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [quiz, allQuestions] = await Promise.all([getQuizById(id), getQuestions()]);
+  const quiz = await getQuizById(id);
   if (!quiz) notFound();
 
+  // Fetch only this quiz's questions by id (cap-safe), then re-order to match
+  // question_ids — the .in() result order is not guaranteed.
+  const fetched = await getQuestionsByIds((quiz as Quiz).question_ids);
+  const byId = new Map(fetched.map((q) => [q.id, q]));
   const questions = (quiz as Quiz).question_ids
-    .map((qid) => (allQuestions as Question[]).find((q) => q.id === qid))
+    .map((qid) => byId.get(qid))
     .filter(Boolean) as Question[];
 
   if (questions.length === 0) notFound();
@@ -32,6 +37,9 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
     currentIndex: 0,
     answers: Array(shuffledQuestions.length).fill(null) as (number | null)[],
   };
+  // Questions the user already has an open report on — so a refresh doesn't
+  // re-offer the report form for one they've already flagged.
+  let initialReportedIds: string[] = [];
   const user = await getUser();
   if (user) {
     const supabase = await createClient();
@@ -46,6 +54,11 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
       ),
       answers: Array.from({ length: shuffledQuestions.length }, (_, i) => saved[i] ?? null),
     };
+
+    initialReportedIds = await getOpenReportedQuestionIds(
+      user.id,
+      shuffledQuestions.map((q) => q.id),
+    );
   }
 
   return (
@@ -53,6 +66,7 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
       quiz={quiz as Quiz}
       questions={shuffledQuestions}
       initialProgress={initialProgress}
+      initialReportedIds={initialReportedIds}
     />
   );
 }

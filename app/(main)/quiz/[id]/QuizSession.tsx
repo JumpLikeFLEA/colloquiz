@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle, ChevronRight,
   Trophy, RotateCcw, Star, Zap, Target, Award, TrendingUp,
-  AlertCircle, BookOpen,
+  AlertCircle, BookOpen, Flag,
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   Code, Brain, Palette, Music, Languages
 } from "lucide-react";
 import type { Question, Quiz } from "@/types";
+import { ReportQuestionInline } from "@/app/components/ReportQuestion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +48,8 @@ interface Props {
     currentIndex: number;
     answers: (number | null)[];
   };
+  /** Question ids the user already has an open report on (survives refresh). */
+  initialReportedIds: string[];
 }
 
 type SubmissionResult = {
@@ -85,7 +88,12 @@ function getGrade(pct: number) {
   return { letter: "F", label: "Keep practicing!", color: "#ef4444", bg: "#fef2f2" };
 }
 
-export default function QuizSession({ quiz, questions: initialQuestions, initialProgress }: Props) {
+export default function QuizSession({
+  quiz,
+  questions: initialQuestions,
+  initialProgress,
+  initialReportedIds,
+}: Props) {
   const router = useRouter();
   // Resume from saved progress. If the current question was already answered,
   // open it in the "feedback" phase so the prior choice is shown.
@@ -104,8 +112,17 @@ export default function QuizSession({ quiz, questions: initialQuestions, initial
   const [reviewExpanded, setReviewExpanded] = useState<number | null>(null);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  // Questions this user has an open report on. Seeded from the server so it
+  // survives a refresh; persists across retry — the reports still exist.
+  const [reportedIds, setReportedIds] = useState<Set<string>>(
+    () => new Set(initialReportedIds),
+  );
   const timer = useTimer();
   const submittedRef = useRef(false);
+
+  const markReported = useCallback((questionId: string) => {
+    setReportedIds((prev) => new Set(prev).add(questionId));
+  }, []);
 
   // Persist resume progress (and bump last_activity_at) as the user plays.
   // Fire-and-forget — a dropped progress write just means a slightly staler resume.
@@ -143,7 +160,16 @@ export default function QuizSession({ quiz, questions: initialQuestions, initial
   const correctCount = answers.filter((a, i) =>
     a !== null && questions[i].options[a] === questions[i].correct_answer
   ).length;
-  const scorePercent = Math.round((correctCount / totalQuestions) * 100);
+
+  // A reported question the user skipped rather than answered is not scored.
+  // Mirrors the server's rule (which is authoritative) so the results screen
+  // shows the same numbers the server stored.
+  const isExcluded = (i: number) =>
+    answers[i] === null && reportedIds.has(questions[i].id);
+  const excludedCount = questions.filter((_, i) => isExcluded(i)).length;
+  const scoredTotal = totalQuestions - excludedCount;
+  const scorePercent =
+    scoredTotal > 0 ? Math.round((correctCount / scoredTotal) * 100) : 0;
   const grade = getGrade(scorePercent);
 
   const handleSelect = (optionIndex: number) => {
@@ -250,7 +276,8 @@ export default function QuizSession({ quiz, questions: initialQuestions, initial
         questions={questions}
         answers={answers}
         score={correctCount}
-        total={totalQuestions}
+        total={scoredTotal}
+        excludedCount={excludedCount}
         scorePercent={scorePercent}
         timeFormatted={timer.formatted}
         submissionResult={submissionResult}
@@ -259,6 +286,8 @@ export default function QuizSession({ quiz, questions: initialQuestions, initial
         difficulty={difficulty}
         reviewExpanded={reviewExpanded}
         setReviewExpanded={setReviewExpanded}
+        reportedIds={reportedIds}
+        onReported={markReported}
         onBack={handleBack}
         onRetry={handleRetry}
       />
@@ -383,6 +412,14 @@ export default function QuizSession({ quiz, questions: initialQuestions, initial
             })}
           </div>
 
+          {/* Report question — inline, below the options */}
+          <ReportQuestionInline
+            questionId={currentQuestion.id}
+            selectedAnswer={selectedOption !== null ? currentQuestion.options[selectedOption] : null}
+            reported={reportedIds.has(currentQuestion.id)}
+            onReported={markReported}
+          />
+
           {/* Feedback area */}
           <AnimatePresence>
             {phase === "feedback" && (
@@ -427,6 +464,33 @@ export default function QuizSession({ quiz, questions: initialQuestions, initial
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Skip — only for a reported question the user hasn't answered.
+              Leaves answers[currentIndex] = null, which marks it as skipped;
+              the server excludes it from scoring once it verifies the report. */}
+          {phase === "quiz" &&
+            selectedOption === null &&
+            reportedIds.has(currentQuestion.id) && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-end gap-2"
+              >
+                <button
+                  onClick={handleNext}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border text-foreground hover:bg-accent transition-colors cursor-pointer"
+                >
+                  {currentIndex < totalQuestions - 1 ? (
+                    <>Skip question <ChevronRight size={16} /></>
+                  ) : (
+                    <>Skip &amp; view results <Trophy size={16} /></>
+                  )}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  You reported this question — skip it and it won&apos;t count towards your score.
+                </p>
+              </motion.div>
+            )}
 
           {/* Navigation */}
           {phase === "feedback" && (
@@ -478,7 +542,9 @@ interface ResultsScreenProps {
   questions: Question[];
   answers: (number | null)[];
   score: number;
+  /** Scored questions only — reported+skipped ones are excluded. */
   total: number;
+  excludedCount: number;
   scorePercent: number;
   timeFormatted: string;
   submissionResult: SubmissionResult | null;
@@ -487,14 +553,16 @@ interface ResultsScreenProps {
   difficulty: string;
   reviewExpanded: number | null;
   setReviewExpanded: (n: number | null) => void;
+  reportedIds: Set<string>;
+  onReported: (questionId: string) => void;
   onBack: () => void;
   onRetry: () => void;
 }
 
 function ResultsScreen({
-  questions, answers, score, total, scorePercent, timeFormatted,
+  questions, answers, score, total, excludedCount, scorePercent, timeFormatted,
   submissionResult, grade, subject, difficulty, reviewExpanded, setReviewExpanded,
-  onBack, onRetry
+  reportedIds, onReported, onBack, onRetry
 }: ResultsScreenProps) {
   const displayCorrect = submissionResult?.correctCount ?? score;
   const displayWrong = total - displayCorrect;
@@ -570,6 +638,12 @@ function ResultsScreen({
             <XCircle size={16} className="text-red-400" />
             <span className="text-sm font-medium">{displayWrong} incorrect</span>
           </div>
+          {excludedCount > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
+              <Flag size={16} className="text-muted-foreground" />
+              <span className="text-sm font-medium">{excludedCount} reported — not scored</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
             <Clock size={16} className="text-muted-foreground" />
             <span className="text-sm font-medium">{timeFormatted}</span>
@@ -652,6 +726,8 @@ function ResultsScreen({
         <div className="flex flex-col gap-2">
           {questions.map((q, i) => {
             const ans = answers[i];
+            // Reported and skipped — not scored, so neither correct nor wrong.
+            const excluded = ans === null && reportedIds.has(q.id);
             const correct = ans !== null && q.options[ans] === q.correct_answer;
             const isOpen = reviewExpanded === i;
 
@@ -659,7 +735,11 @@ function ResultsScreen({
               <div
                 key={i}
                 className={`rounded-2xl border overflow-hidden transition-all ${
-                  correct ? "border-emerald-200 bg-emerald-50/50" : "border-red-200 bg-red-50/50"
+                  excluded
+                    ? "border-border bg-muted/40"
+                    : correct
+                    ? "border-emerald-200 bg-emerald-50/50"
+                    : "border-red-200 bg-red-50/50"
                 }`}
               >
                 <button
@@ -667,13 +747,17 @@ function ResultsScreen({
                   className="flex items-start gap-3 w-full p-4 text-left cursor-pointer"
                 >
                   <span className="shrink-0 mt-0.5">
-                    {correct
+                    {excluded
+                      ? <Flag size={16} className="text-muted-foreground" />
+                      : correct
                       ? <CheckCircle2 size={16} className="text-emerald-500" />
                       : <XCircle size={16} className="text-red-400" />
                     }
                   </span>
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs text-muted-foreground">Q{i + 1}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Q{i + 1}{excluded && " · Reported — not scored"}
+                    </span>
                     <p className="text-sm text-foreground leading-snug line-clamp-2">{q.question}</p>
                   </div>
                   <ChevronRight
@@ -719,6 +803,14 @@ function ResultsScreen({
                             <p className="text-xs text-muted-foreground">{q.explanation}</p>
                           </div>
                         )}
+                        <div className="mt-1">
+                          <ReportQuestionInline
+                            questionId={q.id}
+                            selectedAnswer={ans !== null ? q.options[ans] : null}
+                            reported={reportedIds.has(q.id)}
+                            onReported={onReported}
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   )}

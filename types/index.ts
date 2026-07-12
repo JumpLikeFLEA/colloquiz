@@ -77,6 +77,10 @@ export interface Result {
   time_taken?: number;
   user_id?: string | null;
   answers?: StoredAnswer[];
+  // Questions the user reported and skipped: left out of score/total_questions
+  // and NOT in wrong_question_ids. Needed so the review UI can render them as
+  // "not scored" rather than treating "not wrong" as correct.
+  excluded_question_ids?: string[];
 }
 
 export type QuizSessionStatus = "active" | "completed" | "abandoned";
@@ -110,6 +114,43 @@ export interface TutorStudent {
   id: string;
   tutor_id: string;
   student_id: string;
+  created_at: string;
+}
+
+export type ReportCategory = "wrong_answer" | "unclear" | "typo" | "outdated" | "other";
+
+export type ReportStatus = "open" | "resolved";
+
+export type ReportResolution = "edited" | "removed" | "dismissed";
+
+export interface QuestionReport {
+  id: string;
+  question_id: string;
+  user_id: string;
+  category: ReportCategory;
+  comment?: string | null;
+  reported_answer?: string | null;
+  status: ReportStatus;
+  resolution?: ReportResolution | null;
+  admin_note?: string | null;
+  resolved_by?: string | null;
+  resolved_at?: string | null;
+  created_at: string;
+}
+
+export interface ReportedQuestionGroup {
+  question: Question;
+  reports: QuestionReport[];
+}
+
+// Generic notification stub — a future notification center renders these.
+// Named AppNotification to avoid clashing with the DOM `Notification` global.
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  read_at?: string | null;
   created_at: string;
 }
 
