@@ -174,5 +174,14 @@
     "bg": "#ede9fe",
     "tags": ["counter strike"],
     "subtopics": ["Counter Strike"]
+  },
+  {
+    "id": "science_history",
+    "name": "Science History",
+    "icon": "Microscope",
+    "color": "#65a30d",
+    "bg": "#f7fee7",
+    "tags": ["ancient world", "medieval and islamic golden age", "scientific revolution", "enlightenment", "19th century", "modern era"],
+    "subtopics": ["Ancient World", "Medieval and Islamic Golden Age", "Scientific Revolution", "Enlightenment", "19th Century", "Modern Era"]
   }
 ]
