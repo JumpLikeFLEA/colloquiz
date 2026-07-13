@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { liveStreak } from "@/lib/streak";
 import { redirect } from "next/navigation";
 import { AchievementsView } from "./AchievementsView";
 
@@ -12,7 +13,7 @@ export default async function AchievementsPage() {
   const [profileRes, unlocksRes, resultsRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("total_xp, current_streak")
+      .select("total_xp, current_streak, last_quiz_at")
       .eq("id", user.id)
       .single(),
     supabase
@@ -25,7 +26,7 @@ export default async function AchievementsPage() {
       .eq("user_id", user.id),
   ]);
 
-  const profile = profileRes.data ?? { total_xp: 0, current_streak: 0 };
+  const profile = profileRes.data ?? { total_xp: 0, current_streak: 0, last_quiz_at: null };
   const unlocks = unlocksRes.data ?? [];
   const results = resultsRes.data ?? [];
 
@@ -40,7 +41,7 @@ export default async function AchievementsPage() {
   return (
     <AchievementsView
       totalXp={profile.total_xp}
-      currentStreak={profile.current_streak}
+      currentStreak={liveStreak(profile.last_quiz_at, profile.current_streak)}
       quizCount={results.length}
       avgScore={avgScore}
       totalTimeSeconds={totalTimeSeconds}

@@ -37,6 +37,13 @@ export interface Question {
   visibility?: Visibility;
 }
 
+/**
+ * A question as served to the player: options shuffled, and the empty padding
+ * slots of the stored 4-tuple dropped (see lib/options.ts). A true/false
+ * question therefore arrives with exactly two options.
+ */
+export type PlayableQuestion = Omit<Question, "options"> & { options: string[] };
+
 export interface Quiz {
   id: string;
   title: string;

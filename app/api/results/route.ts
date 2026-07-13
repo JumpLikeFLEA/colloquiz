@@ -5,22 +5,8 @@ import { getUserReportedQuestionIds } from "@/lib/reports";
 import { createClient } from "@/lib/supabase/server";
 import { checkAchievements, calcBonusXP, type ResultSummary } from "@/lib/achievements";
 import { completeSession } from "@/lib/quizSession";
+import { streakAfterQuiz } from "@/lib/streak";
 import { QuizMode } from "@/types";
-
-function calcStreak(lastQuizAt: string | null): {
-  newStreak: number;
-  streakChanged: boolean;
-} {
-  if (!lastQuizAt) return { newStreak: 1, streakChanged: true };
-
-  const lastDate = new Date(lastQuizAt).toISOString().split("T")[0];
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
-  if (lastDate === today) return { newStreak: 0, streakChanged: false };
-  if (lastDate === yesterday) return { newStreak: 1, streakChanged: true };
-  return { newStreak: 1, streakChanged: true };
-}
 
 export async function GET() {
   try {
@@ -150,10 +136,10 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const { newStreak, streakChanged } = calcStreak(profile?.last_quiz_at ?? null);
-    const updatedStreak = streakChanged
-      ? (profile?.current_streak ?? 0) + newStreak
-      : profile?.current_streak ?? 0;
+    const updatedStreak = streakAfterQuiz(
+      profile?.last_quiz_at ?? null,
+      profile?.current_streak ?? 0,
+    );
     const updatedLongest = Math.max(profile?.longest_streak ?? 0, updatedStreak);
 
     // Achievement check — fetch all results for context
@@ -206,15 +192,17 @@ export async function POST(req: NextRequest) {
     }
 
     const totalNewXP = result.xp + achievementXP;
-    const profileUpdate: Record<string, unknown> = {
-      total_xp: (profile?.total_xp ?? 0) + totalNewXP,
-      last_quiz_at: new Date().toISOString(),
-    };
-    if (streakChanged) {
-      profileUpdate.current_streak = updatedStreak;
-      profileUpdate.longest_streak = updatedLongest;
-    }
-    await supabase.from("profiles").update(profileUpdate).eq("id", user.id);
+    // Always write the streak: after a lapse it has to come DOWN to 1, and the
+    // old code only ever wrote it when it grew.
+    await supabase
+      .from("profiles")
+      .update({
+        total_xp: (profile?.total_xp ?? 0) + totalNewXP,
+        last_quiz_at: new Date().toISOString(),
+        current_streak: updatedStreak,
+        longest_streak: updatedLongest,
+      })
+      .eq("id", user.id);
 
     return NextResponse.json({
       id: result.id,

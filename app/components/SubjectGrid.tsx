@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Atom,
   BookOpen,
@@ -21,7 +20,6 @@ import {
   Shuffle,
   TrendingUp,
   Zap,
-  AlertCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -79,6 +77,14 @@ const DIFFICULTY_STYLES: Record<
 
 const ALL_DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 
+// The card's default: questions from every difficulty the subject has. Selected
+// out of the box, so Start Quiz always works and the card has no error state.
+// Same value Random Quiz and the Build wizard send.
+type CardDifficulty = Difficulty | "mixed";
+
+const MIXED_ACTIVE =
+  "text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-100";
+
 function SubjectCard({
   subject,
   selectedDiff,
@@ -88,14 +94,13 @@ function SubjectCard({
   index,
 }: {
   subject: SubjectCardData;
-  selectedDiff: Difficulty | null;
-  onSelectDiff: (id: string, diff: Difficulty) => void;
-  onStart: (id: string, diff: Difficulty) => void;
+  selectedDiff: CardDifficulty;
+  onSelectDiff: (id: string, diff: CardDifficulty) => void;
+  onStart: (id: string, diff: CardDifficulty) => void;
   loading: boolean;
   index: number;
 }) {
   const Icon = ICON_MAP[subject.icon] ?? BookOpen;
-  const [warn, setWarn] = React.useState(false);
 
   return (
     <div
@@ -130,7 +135,7 @@ function SubjectCard({
               <button
                 key={diff}
                 disabled={!isAvailable}
-                onClick={() => { onSelectDiff(subject.id, diff); setWarn(false); }}
+                onClick={() => onSelectDiff(subject.id, diff)}
                 className={`flex-1 px-2 py-1.5 rounded-lg border text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                   isSelected
                     ? style.active + " border-current"
@@ -142,35 +147,26 @@ function SubjectCard({
             );
           })}
         </div>
+        {/* The default. Full-width on its own row so it reads as "no preference"
+            rather than as a fourth difficulty — and so four pills never have to
+            share one row at the 4-column breakpoint. */}
+        <button
+          onClick={() => onSelectDiff(subject.id, "mixed")}
+          className={`w-full mt-1.5 px-2 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
+            selectedDiff === "mixed"
+              ? MIXED_ACTIVE + " border-current"
+              : "border-border text-muted-foreground hover:border-border hover:bg-accent"
+          }`}
+        >
+          Any difficulty
+        </button>
       </div>
 
       {/* Start button */}
-      <div className="px-4 pb-4 mt-auto relative">
-        <AnimatePresence>
-          {warn && (
-            <motion.div
-              initial={{ opacity: 0, y: 4, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 4, scale: 0.96 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-4 right-4 bottom-full mb-2 z-10 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 shadow-md"
-            >
-              <AlertCircle size={13} className="shrink-0" />
-              Choose a difficulty above to start.
-              <span className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-amber-50 border-r border-b border-amber-200" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="px-4 pb-4 mt-auto">
         <button
           disabled={loading}
-          onClick={() => {
-            if (!selectedDiff) {
-              setWarn(true);
-              window.setTimeout(() => setWarn(false), 2500);
-              return;
-            }
-            onStart(subject.id, selectedDiff);
-          }}
+          onClick={() => onStart(subject.id, selectedDiff)}
           className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Zap size={14} />
@@ -185,8 +181,10 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
   const { startQuiz: startQuizFlow } = useStartQuiz();
   const [query, setQuery] = React.useState("");
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
+  // Sparse — a subject with no entry falls back to "mixed" at render, so there
+  // is nothing to seed and every card starts out startable.
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<
-    Record<string, Difficulty>
+    Record<string, CardDifficulty>
   >({});
 
   const filtered = query.trim()
@@ -195,11 +193,11 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
       )
     : subjects;
 
-  function selectDiff(subjectId: string, diff: Difficulty) {
+  function selectDiff(subjectId: string, diff: CardDifficulty) {
     setSelectedDifficulty((prev) => ({ ...prev, [subjectId]: diff }));
   }
 
-  async function startQuiz(subjectId: string, difficulty: Difficulty) {
+  async function startQuiz(subjectId: string, difficulty: CardDifficulty) {
     setLoadingId(subjectId);
     try {
       await startQuizFlow({
@@ -267,7 +265,7 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
             <SubjectCard
               key={s.id}
               subject={s}
-              selectedDiff={selectedDifficulty[s.id] ?? null}
+              selectedDiff={selectedDifficulty[s.id] ?? "mixed"}
               onSelectDiff={selectDiff}
               onStart={startQuiz}
               loading={loadingId === s.id}

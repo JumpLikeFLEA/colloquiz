@@ -101,20 +101,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const quiz = await loadOwnedPrivateQuiz(supabase, id, user.id);
     if (!quiz) return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
 
-    // results.quiz_id has no cascade — a delete would fail once anyone has
-    // taken it. Surface that clearly instead of a 500.
-    const { count } = await supabase
-      .from("results")
-      .select("id", { count: "exact", head: true })
-      .eq("quiz_id", id);
-    if ((count ?? 0) > 0) {
-      return NextResponse.json(
-        { error: "This quiz has recorded attempts and can't be deleted." },
-        { status: 409 },
-      );
-    }
-
-    // Assignments cascade via FK. Delete the quiz, then its private questions.
+    // Results, assignments and sessions cascade via FK (migration 012): every
+    // recorded attempt of this quiz goes with it. Delete the quiz, then its
+    // private questions.
     const { error: delQuizErr } = await supabase.from("quizzes").delete().eq("id", id);
     if (delQuizErr) throw new Error(delQuizErr.message);
 

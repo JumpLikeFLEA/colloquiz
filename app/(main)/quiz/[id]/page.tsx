@@ -5,8 +5,9 @@ import { shuffleOptions } from "@/lib/shuffleOptions";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
 import { startOrResumeSession } from "@/lib/quizSession";
+import { answerOptions } from "@/lib/options";
 import QuizSession from "./QuizSession";
-import type { Question, Quiz } from "@/types";
+import type { PlayableQuestion, Question, Quiz } from "@/types";
 
 export default async function QuizPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,9 +25,11 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
 
   if (questions.length === 0) notFound();
 
-  const shuffledQuestions = questions.map((q) => ({
+  // Drop the empty padding slots of the stored 4-tuple before shuffling, so a
+  // true/false question offers two answers rather than two blank cards.
+  const shuffledQuestions: PlayableQuestion[] = questions.map((q) => ({
     ...q,
-    options: shuffleOptions(q.options, `${id}:${q.id}`) as [string, string, string, string],
+    options: shuffleOptions(answerOptions(q.options), `${id}:${q.id}`),
   }));
 
   // Ensure this quiz is the user's active session and hydrate resume progress.
@@ -40,11 +43,16 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
   // Questions the user already has an open report on — so a refresh doesn't
   // re-offer the report form for one they've already flagged.
   let initialReportedIds: string[] = [];
+  // The session's start time drives the on-screen timer. Resuming keeps the
+  // original started_at, so the clock reflects the whole run, not this visit.
+  // Signed-out users have no session: time this page view instead.
+  let startedAt = new Date().toISOString();
   const user = await getUser();
   if (user) {
     const supabase = await createClient();
     const start = await startOrResumeSession(supabase, user.id, id);
     if (!start.ok) redirect("/my-quizzes");
+    startedAt = start.session.started_at;
 
     const saved = Array.isArray(start.session.answers) ? start.session.answers : [];
     initialProgress = {
@@ -52,7 +60,15 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
         Math.max(start.session.current_index, 0),
         shuffledQuestions.length - 1,
       ),
-      answers: Array.from({ length: shuffledQuestions.length }, (_, i) => saved[i] ?? null),
+      // Answers are option indices. Discard any that no longer address an
+      // option — a session started before the empty slots were dropped can hold
+      // an index past the end of its (now shorter) list.
+      answers: Array.from({ length: shuffledQuestions.length }, (_, i) => {
+        const a = saved[i];
+        return typeof a === "number" && a >= 0 && a < shuffledQuestions[i].options.length
+          ? a
+          : null;
+      }),
     };
 
     initialReportedIds = await getOpenReportedQuestionIds(
@@ -67,6 +83,7 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
       questions={shuffledQuestions}
       initialProgress={initialProgress}
       initialReportedIds={initialReportedIds}
+      startedAt={startedAt}
     />
   );
 }

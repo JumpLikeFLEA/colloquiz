@@ -12,6 +12,7 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import { cn } from "@/lib/utils";
+import { answerOptions } from "@/lib/options";
 import type { Question, QuestionCriticNotes, Difficulty } from "@/types";
 
 interface Props {
@@ -252,7 +253,7 @@ export function ReadMode({ question }: { question: Question }) {
     <>
       <p className="font-medium leading-relaxed">{question.question}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {question.options.map((opt, i) => {
+        {answerOptions(question.options).map((opt, i) => {
           const isCorrect = opt === question.correct_answer;
           return (
             <div

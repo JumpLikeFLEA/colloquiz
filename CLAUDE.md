@@ -29,3 +29,10 @@
   flow — after sign-in/sign-up the user lands on the `?next=` destination 
   (validated relative path) instead of always "/". Logic-only, no visual 
   change; do not remove
+- SubjectGrid (app/components/SubjectGrid.tsx): full-width "Any difficulty" 
+  pill added below the Easy/Medium/Hard row and preselected (2026-07-13), and 
+  the "Choose a difficulty above to start" warning removed with it. The warning 
+  was an absolutely-positioned popover that covered the pill row it pointed at; 
+  a default makes the card startable on render, so the error state cannot occur. 
+  Sends difficulty "mixed", same as Random Quiz. Built from classes already used 
+  by the sibling pills; do not restore the warning

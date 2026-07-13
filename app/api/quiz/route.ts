@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sampleQuestions, saveQuiz } from "@/lib/questions";
+import { sampleQuestions, saveQuiz, getSubjects } from "@/lib/questions";
 import { createClient } from "@/lib/supabase/server";
 import { QuizFilter, Difficulty, QuizSize, QuizMode } from "@/types";
 import { v4 as uuidv4 } from "uuid";
@@ -31,9 +31,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Name the quiz after its subject rather than the generic word "Quiz" —
+    // this title is what the resume banner and My Quizzes show. Taken from the
+    // sampled questions, not the requested filter, since a tag-only or custom
+    // selection has no subject on it. Several subjects in the mix → "Mixed".
+    const subjectIds = new Set(questions.map((q) => q.subject));
+    const subjectLabel =
+      subjectIds.size === 1
+        ? (getSubjects().find((s) => s.id === [...subjectIds][0])?.name ?? "Quiz")
+        : "Mixed";
+
     const quiz = {
       id: uuidv4(),
-      title: `Quiz — ${new Date().toLocaleString()}`,
+      title: `${subjectLabel} — ${new Date().toLocaleString()}`,
       tags: filter.tags,
       difficulty_mix: filter.difficulty,
       mode: filter.mode,

@@ -209,6 +209,7 @@ export function MyQuizzesView({
                   {confirmDelete === q.id ? (
                     <button
                       onClick={() => deleteQuiz(q.id)}
+                      title="Deletes the quiz and every recorded attempt of it"
                       className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors"
                     >
                       Confirm

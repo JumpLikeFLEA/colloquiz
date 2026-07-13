@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { liveStreak } from "@/lib/streak";
 
 // Per-request memoized user + profile.
 //
@@ -24,7 +25,9 @@ export type FullProfile = {
   city: string | null;
   role: string | null;
   total_xp: number;
+  /** Already lapsed — 0 if the last completed quiz is older than yesterday. */
   current_streak: number;
+  last_quiz_at: string | null;
   created_at: string;
   is_author: boolean;
 };
@@ -38,9 +41,16 @@ export const getProfile = cache(async (): Promise<FullProfile | null> => {
   const { data } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, display_name, city, role, total_xp, current_streak, created_at, is_author",
+      "id, full_name, display_name, city, role, total_xp, current_streak, last_quiz_at, created_at, is_author",
     )
     .eq("id", user.id)
     .single();
-  return (data as FullProfile) ?? null;
+  if (!data) return null;
+  const profile = data as FullProfile;
+  // The stored column is only valid as of last_quiz_at; nothing expires it at
+  // midnight, so lapse it here rather than showing a streak the user has lost.
+  return {
+    ...profile,
+    current_streak: liveStreak(profile.last_quiz_at, profile.current_streak),
+  };
 });

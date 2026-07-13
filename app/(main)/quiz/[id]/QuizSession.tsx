@@ -10,7 +10,7 @@ import {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   Code, Brain, Palette, Music, Languages
 } from "lucide-react";
-import type { Question, Quiz } from "@/types";
+import type { PlayableQuestion, Quiz } from "@/types";
 import { ReportQuestionInline } from "@/app/components/ReportQuestion";
 import {
   AlertDialog,
@@ -43,13 +43,16 @@ const SUBJECTS = [
 
 interface Props {
   quiz: Quiz;
-  questions: Question[];
+  questions: PlayableQuestion[];
   initialProgress: {
     currentIndex: number;
     answers: (number | null)[];
   };
   /** Question ids the user already has an open report on (survives refresh). */
   initialReportedIds: string[];
+  /** The session's started_at (ISO). The timer counts from here, so it keeps
+   *  running across navigation away and back. */
+  startedAt: string;
 }
 
 type SubmissionResult = {
@@ -63,20 +66,39 @@ type SubmissionResult = {
 
 type Phase = "quiz" | "feedback" | "results";
 
-function useTimer() {
+/**
+ * Elapsed time since the session's started_at, read off the wall clock rather
+ * than counted up in memory. A tick counter restarts at 0 whenever the
+ * component remounts (leaving the quiz and coming back) and is throttled to a
+ * crawl in a background tab, so it under-reported the real run time; this is
+ * immune to both. Starts at 0 for the first paint so the server and client
+ * markup agree, then the effect corrects it on hydration.
+ */
+function useTimer(startedAtMs: number) {
+  const [startMs, setStartMs] = useState(startedAtMs);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(true);
 
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => setSeconds(s => s + 1), 1000);
+    const tick = () =>
+      setSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [running]);
+  }, [running, startMs]);
 
   const stop = useCallback(() => setRunning(false), []);
 
+  /** "Try Again" is a fresh run — time it from now, not from the first attempt. */
+  const restart = useCallback(() => {
+    setStartMs(Date.now());
+    setSeconds(0);
+    setRunning(true);
+  }, []);
+
   const formatted = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-  return { seconds, formatted, stop };
+  return { seconds, formatted, stop, restart };
 }
 
 function getGrade(pct: number) {
@@ -93,6 +115,7 @@ export default function QuizSession({
   questions: initialQuestions,
   initialProgress,
   initialReportedIds,
+  startedAt,
 }: Props) {
   const router = useRouter();
   // Resume from saved progress. If the current question was already answered,
@@ -117,7 +140,8 @@ export default function QuizSession({
   const [reportedIds, setReportedIds] = useState<Set<string>>(
     () => new Set(initialReportedIds),
   );
-  const timer = useTimer();
+  const startedAtMs = new Date(startedAt).getTime();
+  const timer = useTimer(startedAtMs);
   const submittedRef = useRef(false);
 
   const markReported = useCallback((questionId: string) => {
@@ -260,6 +284,7 @@ export default function QuizSession({
     setAnswers(Array(shuffled.length).fill(null));
     setShowExplanation(false);
     setReviewExpanded(null);
+    timer.restart();
   };
 
   const isCorrect = selectedOption !== null && correctIdx !== -1 && selectedOption === correctIdx;
@@ -539,7 +564,7 @@ export default function QuizSession({
 }
 
 interface ResultsScreenProps {
-  questions: Question[];
+  questions: PlayableQuestion[];
   answers: (number | null)[];
   score: number;
   /** Scored questions only — reported+skipped ones are excluded. */
