@@ -36,3 +36,10 @@
   a default makes the card startable on render, so the error state cannot occur. 
   Sends difficulty "mixed", same as Random Quiz. Built from classes already used 
   by the sibling pills; do not restore the warning
+- NotificationBell (app/components/NotificationBell.tsx): the Topbar's 
+  decorative Bell button (with its hardcoded unread dot) was replaced 
+  (2026-07-17) by a working notification-center popover. No Figma source 
+  exists for this surface; it is composed entirely from classes already used 
+  in Topbar/cards (like the AuthScreen "Check your email" precedent). The 
+  unread dot is unchanged but now rendered only when unread > 0; do not 
+  restore the static button

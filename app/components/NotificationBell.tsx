@@ -1,0 +1,250 @@
+"use client";
+
+import Link from "next/link";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
+import {
+  Bell,
+  CheckCircle2,
+  ClipboardList,
+  FileCheck,
+  Flag,
+  Trophy,
+  UserPlus,
+} from "lucide-react";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover";
+import { ACHIEVEMENTS } from "@/lib/achievements";
+import type { AppNotification } from "@/types";
+
+const achievementTitle = (id: string) =>
+  ACHIEVEMENTS.find((a) => a.id === id)?.title ?? "an achievement";
+
+function relativeTime(iso: string): string {
+  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const days = Math.floor(hr / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+type Rendered = {
+  icon: ComponentType<{ size?: number; className?: string }>;
+  message: ReactNode;
+  href?: string;
+};
+
+// Maps a notification to its icon, one-line message and optional deep link.
+// Unknown/legacy types fall through to a generic row rather than crashing.
+function render(n: AppNotification): Rendered {
+  const p = n.payload as Record<string, unknown>;
+  switch (n.type) {
+    case "report_resolved":
+      return {
+        icon: Flag,
+        message: (
+          <>
+            Your reported question was <b>{String(p.resolution ?? "reviewed")}</b>.
+          </>
+        ),
+      };
+    case "invite_accepted":
+      return {
+        icon: UserPlus,
+        message: (
+          <>
+            <b>{String(p.student_name ?? "A student")}</b> joined as your student.
+          </>
+        ),
+      };
+    case "assignment_created":
+      return {
+        icon: ClipboardList,
+        message: (
+          <>
+            <b>{String(p.tutor_name ?? "Your tutor")}</b> assigned you{" "}
+            {p.quiz_title ? <b>&ldquo;{String(p.quiz_title)}&rdquo;</b> : "a quiz"}.
+          </>
+        ),
+        href: p.quiz_id ? `/quiz/${String(p.quiz_id)}` : undefined,
+      };
+    case "assignment_completed":
+      return {
+        icon: CheckCircle2,
+        message: (
+          <>
+            <b>{String(p.student_name ?? "A student")}</b> completed{" "}
+            {p.quiz_title ? (
+              <b>&ldquo;{String(p.quiz_title)}&rdquo;</b>
+            ) : (
+              "an assignment"
+            )}
+            .
+          </>
+        ),
+        href: p.assignment_id
+          ? `/students/review/${String(p.assignment_id)}`
+          : undefined,
+      };
+    case "achievement_unlocked":
+      return {
+        icon: Trophy,
+        message: (
+          <>
+            Achievement unlocked:{" "}
+            <b>{achievementTitle(String(p.achievement_id))}</b>.
+          </>
+        ),
+        href: "/achievements",
+      };
+    case "question_reviewed":
+      return {
+        icon: FileCheck,
+        message: (
+          <>
+            Your question was <b>{String(p.status ?? "reviewed")}</b>.
+          </>
+        ),
+        href: "/my-quizzes",
+      };
+    default:
+      return { icon: Bell, message: <>You have a new notification.</> };
+  }
+}
+
+export function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [unread, setUnread] = useState(0);
+  // Ids that were unread when the popover opened — kept marked while it stays
+  // open even though the PATCH has already cleared read_at server-side.
+  const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+
+  // Unread count on mount; refreshed whenever the popover is opened.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/notifications")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active && d) setUnread(d.unread ?? 0);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleOpenChange = useCallback(async (next: boolean) => {
+    setOpen(next);
+    if (!next) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const d = await res.json();
+        const list: AppNotification[] = d.notifications ?? [];
+        setItems(list);
+        setUnreadIds(
+          new Set(list.filter((n) => n.read_at == null).map((n) => n.id)),
+        );
+        if ((d.unread ?? 0) > 0) {
+          await fetch("/api/notifications", { method: "PATCH" });
+        }
+        setUnread(0);
+      }
+    } catch {
+      // Non-fatal: a failed fetch just shows the last known state.
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          className="relative p-2 rounded-xl hover:bg-accent transition-colors cursor-pointer"
+          aria-label="Notifications"
+        >
+          <Bell size={17} className="text-muted-foreground" />
+          {unread > 0 && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#4f46e5]" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="px-4 py-3 border-b border-border">
+          <p className="text-sm font-medium text-foreground">Notifications</p>
+        </div>
+        <div className="max-h-96 overflow-y-auto">
+          {loading && items.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-muted-foreground text-center">
+              Loading…
+            </p>
+          ) : items.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-muted-foreground text-center">
+              No notifications yet
+            </p>
+          ) : (
+            items.map((n) => {
+              const { icon: Icon, message, href } = render(n);
+              const wasUnread = unreadIds.has(n.id);
+              const body = (
+                <div
+                  className={`flex gap-3 px-4 py-3 ${
+                    href ? "hover:bg-accent transition-colors" : ""
+                  }`}
+                >
+                  <span className="mt-0.5 shrink-0">
+                    <Icon size={16} className="text-muted-foreground" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm text-foreground">
+                      {message}
+                    </span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">
+                      {relativeTime(n.created_at)}
+                    </span>
+                  </span>
+                  {wasUnread && (
+                    <span className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-[#4f46e5]" />
+                  )}
+                </div>
+              );
+              return href ? (
+                <Link
+                  key={n.id}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className="block border-b border-border last:border-0"
+                >
+                  {body}
+                </Link>
+              ) : (
+                <div
+                  key={n.id}
+                  className="border-b border-border last:border-0"
+                >
+                  {body}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

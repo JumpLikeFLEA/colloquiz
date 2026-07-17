@@ -150,12 +150,23 @@ export interface ReportedQuestionGroup {
   reports: QuestionReport[];
 }
 
-// Generic notification stub — a future notification center renders these.
+// The notification kinds the notification center knows how to render. Written
+// by DB triggers (013) and the resolve_question_reports() RPC (010). Kept as a
+// closed union for exhaustive rendering; the `(string & {})` fallback keeps an
+// unknown/legacy `type` from breaking the type — the UI renders it generically.
+export type NotificationType =
+  | "report_resolved"
+  | "invite_accepted"
+  | "assignment_created"
+  | "assignment_completed"
+  | "achievement_unlocked"
+  | "question_reviewed";
+
 // Named AppNotification to avoid clashing with the DOM `Notification` global.
 export interface AppNotification {
   id: string;
   user_id: string;
-  type: string;
+  type: NotificationType | (string & {});
   payload: Record<string, unknown>;
   read_at?: string | null;
   created_at: string;

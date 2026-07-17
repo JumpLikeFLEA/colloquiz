@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronRight, GraduationCap, PanelLeftIcon, Search } from "lucide-react";
+import { ChevronRight, GraduationCap, PanelLeftIcon, Search } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
+import { NotificationBell } from "@/app/components/NotificationBell";
 import { useSidebar } from "@/app/components/ui/sidebar";
 
 const routeLabels: Record<string, string> = {
@@ -74,13 +75,7 @@ export function Topbar({ displayName }: { displayName: string }) {
         </div>
 
         {/* Notification bell */}
-        <button
-          className="relative p-2 rounded-xl hover:bg-accent transition-colors cursor-pointer"
-          aria-label="Notifications"
-        >
-          <Bell size={17} className="text-muted-foreground" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#4f46e5]" />
-        </button>
+        <NotificationBell />
 
         {/* User avatar → dashboard */}
         <Link
