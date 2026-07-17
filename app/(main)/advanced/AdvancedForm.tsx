@@ -92,7 +92,7 @@ export default function AdvancedForm({
     <div className="flex flex-col gap-8">
       {/* Header */}
       <div>
-        <h1 className="text-foreground">Advanced Quizzes</h1>
+        <h1 className="text-foreground">Deep Dive</h1>
         <p className="text-muted-foreground mt-1">Customize your quiz with specific topics, difficulty, and question count</p>
       </div>
 

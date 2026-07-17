@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, GraduationCap, PanelLeftIcon, Search } from "lucide-react";
+import { ChevronRight, GraduationCap, PanelLeftIcon } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { useSidebar } from "@/app/components/ui/sidebar";
 
 const routeLabels: Record<string, string> = {
-  "/": "Basic Quizzes",
-  "/advanced": "Advanced",
+  "/": "Quick Play",
+  "/advanced": "Deep Dive",
   "/custom": "Create Quiz",
   "/build": "Build Quiz",
   "/dashboard": "Dashboard",
@@ -35,7 +35,7 @@ export function Topbar({ displayName }: { displayName: string }) {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
   const base = "/" + (pathname.split("/")[1] ?? "");
-  const label = routeLabels[pathname] ?? routeLabels[base] ?? "Learning Curve";
+  const label = routeLabels[pathname] ?? routeLabels[base] ?? "Noosphere";
 
   const initials = getInitials(displayName);
 
@@ -55,25 +55,13 @@ export function Topbar({ displayName }: { displayName: string }) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <GraduationCap size={14} />
-        <span>Learning Curve</span>
+        <span>Noosphere</span>
         <ChevronRight size={13} />
         <span className="text-foreground font-medium">{label}</span>
       </div>
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2">
-        {/* Search — hidden on small screens */}
-        <div className="relative hidden sm:flex items-center">
-          <Search
-            size={14}
-            className="absolute left-3 text-muted-foreground pointer-events-none"
-          />
-          <input
-            placeholder="Search..."
-            className="pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all w-44"
-          />
-        </div>
-
         {/* Notification bell */}
         <NotificationBell />
 

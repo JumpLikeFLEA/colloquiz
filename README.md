@@ -1,4 +1,4 @@
-# Learning Curve
+# Noosphere
 
 A personal quiz platform for self-study. Users take subject-based quizzes, compose custom ones from a curated question bank, and track progress through XP and achievements. Designed to grow into an AI-augmented question authoring system where the bulk of the bank is LLM-generated and human-reviewed.
 

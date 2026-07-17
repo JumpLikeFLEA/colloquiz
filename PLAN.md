@@ -1,4 +1,4 @@
-# Learning Curve — MVP Build Plan
+# Noosphere — MVP Build Plan
 
 ## Stack
 Next.js (App Router) · TypeScript · Tailwind v4 · shadcn/ui · lucide-react · framer-motion · Local JSON storage

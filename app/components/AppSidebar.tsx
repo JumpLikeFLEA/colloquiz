@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   LogOut,
   PenLine,
-  PlusSquare,
   Settings2,
   Shield,
   ShieldCheck,
@@ -24,15 +23,13 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
 } from "@/app/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/client";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 const navItems = [
-  { label: "Home", description: "10 questions, pick & go", href: "/", icon: BookOpen },
-  { label: "Advanced", description: "Custom topics & difficulty", href: "/advanced", icon: Settings2 },
-  { label: "Build Quiz", description: "Create your own quizzes", href: "/build", icon: PlusSquare },
+  { label: "Quick Play", description: "10 questions, pick & go", href: "/", icon: BookOpen },
+  { label: "Deep Dive", description: "Fine-tune subjects & difficulty", href: "/advanced", icon: Settings2 },
   { label: "My Quizzes", description: "Assigned & created", href: "/my-quizzes", icon: GraduationCap },
   { label: "Dashboard", description: "Stats & history", href: "/dashboard", icon: LayoutDashboard },
   { label: "Achievements", description: "Badges & rewards", href: "/achievements", icon: Trophy },
@@ -83,7 +80,7 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
     .slice(0, 2);
 
   return (
-    <div className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors">
+    <div className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
         {initials}
       </div>
@@ -140,19 +137,19 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon">
       {/* Logo */}
-      <SidebarHeader className="px-4 py-4 border-b border-sidebar-border">
+      <SidebarHeader className="px-4 py-4 border-b border-sidebar-border group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] shrink-0">
             <GraduationCap size={18} className="text-white" />
           </div>
-          <div className="group-data-[collapsible=icon]:hidden">
-            <p className="font-semibold text-sidebar-foreground leading-none">Learning Curve</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Knowledge Platform</p>
+          <div className="min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
+            <p className="font-semibold text-sidebar-foreground leading-none truncate">Noosphere</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">Knowledge Platform</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
+      <SidebarContent className="px-3 py-4 group-data-[collapsible=icon]:px-2">
         {/* Menu label */}
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
           Menu
@@ -167,7 +164,7 @@ export function AppSidebar({
                 key={href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                   active
                     ? "bg-[#eef2ff] text-[#4f46e5]"
                     : "text-foreground hover:bg-accent",
@@ -197,8 +194,8 @@ export function AppSidebar({
 
         {/* Author */}
         {isAuthor && (
-          <div className="mt-4 group-data-[collapsible=icon]:hidden">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2">
+          <div className="mt-4">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
               Author
             </p>
             <nav className="flex flex-col gap-1">
@@ -209,7 +206,7 @@ export function AppSidebar({
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                       active
                         ? "bg-[#eef2ff] text-[#4f46e5]"
                         : "text-foreground hover:bg-accent",
@@ -225,12 +222,12 @@ export function AppSidebar({
                     >
                       <Icon size={16} />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                       <p className="text-sm font-medium leading-none truncate">{label}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
                     </div>
                     {active && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
                     )}
                   </Link>
                 );
@@ -241,8 +238,8 @@ export function AppSidebar({
 
         {/* Admin */}
         {isAdmin && (
-          <div className="mt-4 group-data-[collapsible=icon]:hidden">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2">
+          <div className="mt-4">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
               Admin
             </p>
             <nav className="flex flex-col gap-1">
@@ -253,7 +250,7 @@ export function AppSidebar({
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                       active
                         ? "bg-[#eef2ff] text-[#4f46e5]"
                         : "text-foreground hover:bg-accent",
@@ -269,12 +266,12 @@ export function AppSidebar({
                     >
                       <Icon size={16} />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                       <p className="text-sm font-medium leading-none truncate">{label}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
                     </div>
                     {active && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
                     )}
                   </Link>
                 );
@@ -284,18 +281,18 @@ export function AppSidebar({
         )}
 
         {/* Quick Actions */}
-        <div className="mt-4 group-data-[collapsible=icon]:hidden">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2">
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
             Quick Actions
           </p>
           <button
             onClick={handleRandomQuiz}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-foreground hover:bg-accent transition-all w-full cursor-pointer"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-foreground hover:bg-accent transition-all w-full cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground shrink-0">
               <Shuffle size={16} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
               <p className="text-sm font-medium leading-none">Random Quiz</p>
               <p className="text-xs text-muted-foreground mt-0.5">Surprise me!</p>
             </div>
@@ -303,11 +300,9 @@ export function AppSidebar({
         </div>
       </SidebarContent>
 
-      <SidebarFooter className="px-3 py-4 border-t border-sidebar-border">
+      <SidebarFooter className="px-3 py-4 border-t border-sidebar-border group-data-[collapsible=icon]:px-2">
         <UserXPCard profile={profile} onSignOut={handleSignOut} />
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   );
 }

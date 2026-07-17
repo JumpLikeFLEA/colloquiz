@@ -225,7 +225,7 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-foreground">Basic Quizzes</h1>
+            <h1 className="text-foreground">Quick Play</h1>
             <p className="text-muted-foreground mt-1">
               10 questions from different subtopics · Select a subject and difficulty to begin
             </p>

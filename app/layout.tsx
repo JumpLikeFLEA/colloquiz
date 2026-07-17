@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Learning Curve",
+  title: "Noosphere",
   description: "Test your knowledge with interactive quizzes",
 };
 
