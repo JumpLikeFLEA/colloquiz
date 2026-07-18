@@ -43,3 +43,13 @@
   in Topbar/cards (like the AuthScreen "Check your email" precedent). The 
   unread dot is unchanged but now rendered only when unread > 0; do not 
   restore the static button
+- AuthScreen: inline "forgot" mode added (2026-07-18) behind the formerly 
+  decorative "Forgot password?" button — email-only form, Google button / 
+  divider / footer-toggle hidden in this mode, reset-specific copy in the 
+  "Check your email" view; the left decorative panel was extracted as 
+  exported `AuthLeftPanel` and `Field` exported for reuse (JSX/classes 
+  unchanged); do not remove
+- ResetPasswordScreen (app/(auth)/reset-password/): set-new-password page 
+  added (2026-07-18) for the Supabase password-recovery flow. No Figma 
+  source exists; composed entirely from AuthScreen.tsx classes 
+  (AuthLeftPanel, Field, header/button/error-box); do not remove

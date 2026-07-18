@@ -38,7 +38,7 @@ interface FieldProps {
   autoComplete?: string;
 }
 
-function Field({ label, type = "text", placeholder, icon, dark, value, onChange, id, name, required, minLength, autoComplete }: FieldProps) {
+export function Field({ label, type = "text", placeholder, icon, dark, value, onChange, id, name, required, minLength, autoComplete }: FieldProps) {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (show ? "text" : "password") : type;
@@ -99,6 +99,83 @@ const FLOAT_SUBJECTS = [
   { icon: Brain,      label: "Psychology",  top: "6%", left: "40%", delay: 2.8 },
 ];
 
+export function AuthLeftPanel() {
+  return (
+    <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-[#3730a3] via-[#4f46e5] to-[#7c3aed]">
+      {/* Dot grid */}
+      <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="dots1" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.5" fill="white" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dots1)" />
+      </svg>
+
+      {/* Glow orb */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+
+      {/* Floating subject cards */}
+      {FLOAT_SUBJECTS.map((s, i) => {
+        const Icon = s.icon;
+        const pos: React.CSSProperties = {
+          position: "absolute",
+          top: s.top,
+          bottom: s.bottom,
+          left: s.left,
+          right: s.right,
+        };
+        return (
+          <motion.div
+            key={s.label}
+            style={pos}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
+            transition={{
+              opacity: { delay: s.delay, duration: 0.4 },
+              scale:   { delay: s.delay, duration: 0.4 },
+              y:       { delay: s.delay, duration: 3 + i * 0.3, repeat: Infinity, ease: "easeInOut" },
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-lg"
+          >
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20">
+              <Icon size={14} className="text-white" />
+            </div>
+            <span className="text-white/90 text-xs font-medium">{s.label}</span>
+          </motion.div>
+        );
+      })}
+
+      {/* Center content */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative z-10 flex flex-col items-center text-center gap-6 px-12"
+      >
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur border border-white/30 shadow-xl">
+          <GraduationCap size={32} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-3xl text-white leading-tight">Your advertisement<br />won't be here</h2>
+          <p className="text-white/60 mt-3 text-sm leading-relaxed">However, you can try out<br />some quizzes.</p>
+        </div>
+
+      </motion.div>
+
+      {/* Bottom rating */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+        className="absolute bottom-8 left-0 right-0 flex justify-center"
+      >
+
+      </motion.div>
+    </div>
+  );
+}
+
 interface AuthScreenProps {
   initialMode: "login" | "register";
   initialError?: string | null;
@@ -112,7 +189,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
   const dest = redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
     ? redirectTo
     : "/";
-  const [mode, setMode] = useState<"login" | "register">(initialMode);
+  const [mode, setMode] = useState<"login" | "register" | "forgot">(initialMode);
   const [form, setForm] = useState<AuthFormState>({ email: "", password: "", name: "", confirmPassword: "", city: "" });
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [loading, setLoading] = useState(false);
@@ -139,6 +216,24 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
     const supabase = createClient();
 
     try {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+          redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
+        });
+
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+          return;
+        }
+
+        // Success is also returned for unknown emails (no enumeration), so
+        // the "Check your email" view shows regardless — same as signup.
+        setEmailSent(form.email);
+        setLoading(false);
+        return;
+      }
+
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email: form.email,
@@ -199,78 +294,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
   return (
     <div className="flex h-full">
       {/* Left decorative panel */}
-      <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-[#3730a3] via-[#4f46e5] to-[#7c3aed]">
-        {/* Dot grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="dots1" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-              <circle cx="2" cy="2" r="1.5" fill="white" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#dots1)" />
-        </svg>
-
-        {/* Glow orb */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-
-        {/* Floating subject cards */}
-        {FLOAT_SUBJECTS.map((s, i) => {
-          const Icon = s.icon;
-          const pos: React.CSSProperties = {
-            position: "absolute",
-            top: s.top,
-            bottom: s.bottom,
-            left: s.left,
-            right: s.right,
-          };
-          return (
-            <motion.div
-              key={s.label}
-              style={pos}
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
-              transition={{
-                opacity: { delay: s.delay, duration: 0.4 },
-                scale:   { delay: s.delay, duration: 0.4 },
-                y:       { delay: s.delay, duration: 3 + i * 0.3, repeat: Infinity, ease: "easeInOut" },
-              }}
-              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-lg"
-            >
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20">
-                <Icon size={14} className="text-white" />
-              </div>
-              <span className="text-white/90 text-xs font-medium">{s.label}</span>
-            </motion.div>
-          );
-        })}
-
-        {/* Center content */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative z-10 flex flex-col items-center text-center gap-6 px-12"
-        >
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur border border-white/30 shadow-xl">
-            <GraduationCap size={32} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-3xl text-white leading-tight">Your advertisement<br />won't be here</h2>
-            <p className="text-white/60 mt-3 text-sm leading-relaxed">However, you can try out<br />some quizzes.</p>
-          </div>
-
-        </motion.div>
-
-        {/* Bottom rating */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="absolute bottom-8 left-0 right-0 flex justify-center"
-        >
-
-        </motion.div>
-      </div>
+      <AuthLeftPanel />
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
@@ -299,9 +323,19 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
               <div>
                 <h1 className="text-foreground">Check your email</h1>
                 <p className="text-muted-foreground mt-1.5 text-sm">
-                  We sent a confirmation link to{" "}
-                  <span className="font-medium text-foreground">{emailSent}</span>.
-                  Click it to activate your account.
+                  {mode === "forgot" ? (
+                    <>
+                      We sent a password reset link to{" "}
+                      <span className="font-medium text-foreground">{emailSent}</span>.
+                      Click it to choose a new password.
+                    </>
+                  ) : (
+                    <>
+                      We sent a confirmation link to{" "}
+                      <span className="font-medium text-foreground">{emailSent}</span>.
+                      Click it to activate your account.
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -329,25 +363,33 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           ) : (
             <>
           <div>
-            <h1 className="text-foreground">{mode === "login" ? "Welcome back" : "Create account"}</h1>
+            <h1 className="text-foreground">
+              {mode === "login" ? "Welcome back" : mode === "register" ? "Create account" : "Reset password"}
+            </h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
               {mode === "login"
                 ? "Sign in to continue your learning journey"
-                : "Start mastering new subjects today"}
+                : mode === "register"
+                ? "Start mastering new subjects today"
+                : "Enter your email and we'll send you a reset link"}
             </p>
           </div>
 
-          {/* Google */}
-          <button type="button" onClick={handleGoogleLogin} className="flex items-center justify-center gap-3 w-full py-3 rounded-xl border border-border bg-white hover:bg-accent transition-colors cursor-pointer shadow-sm">
-            <GoogleIcon />
-            <span className="text-sm font-medium text-foreground">Continue with Google</span>
-          </button>
+          {mode !== "forgot" && (
+            <>
+              {/* Google */}
+              <button type="button" onClick={handleGoogleLogin} className="flex items-center justify-center gap-3 w-full py-3 rounded-xl border border-border bg-white hover:bg-accent transition-colors cursor-pointer shadow-sm">
+                <GoogleIcon />
+                <span className="text-sm font-medium text-foreground">Continue with Google</span>
+              </button>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground">or</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="contents">
           <div className="flex flex-col gap-4">
@@ -384,11 +426,23 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
                 </motion.div>
               )}
             </AnimatePresence>
-            <Field label="Password" type="password" placeholder="••••••••" icon={<Lock size={16} />}
-              id="password" name="password" required
-              minLength={mode === "register" ? 8 : undefined}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              value={form.password} onChange={v => setForm(f => ({ ...f, password: v }))} />
+            <AnimatePresence initial={false}>
+              {mode !== "forgot" && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <Field label="Password" type="password" placeholder="••••••••" icon={<Lock size={16} />}
+                    id="password" name="password" required
+                    minLength={mode === "register" ? 8 : undefined}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    value={form.password} onChange={v => setForm(f => ({ ...f, password: v }))} />
+                </motion.div>
+              )}
+            </AnimatePresence>
             <AnimatePresence initial={false}>
               {mode === "register" && (
                 <motion.div
@@ -407,7 +461,11 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           </div>
 
           {mode === "login" && (
-            <button type="button" className="text-sm text-[#4f46e5] hover:underline self-end -mt-2 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => { setMode("forgot"); setError(null); }}
+              className="text-sm text-[#4f46e5] hover:underline self-end -mt-2 cursor-pointer"
+            >
               Forgot password?
             </button>
           )}
@@ -427,19 +485,32 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors cursor-pointer shadow-lg shadow-[#4f46e5]/25 disabled:opacity-60 disabled:cursor-not-allowed">
             <span>
               {loading
-                ? (mode === "login" ? "Signing in…" : "Creating account…")
-                : (mode === "login" ? "Sign In" : "Create Account")}
+                ? (mode === "login" ? "Signing in…" : mode === "register" ? "Creating account…" : "Sending…")
+                : (mode === "login" ? "Sign In" : mode === "register" ? "Create Account" : "Send reset link")}
             </span>
             <ArrowRight size={16} />
           </button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground">
-            {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <button type="button" onClick={handleToggle} className="text-[#4f46e5] font-medium hover:underline cursor-pointer">
-              {mode === "login" ? "Sign up" : "Sign in"}
-            </button>
-          </p>
+          {mode === "forgot" ? (
+            <p className="text-center text-sm text-muted-foreground">
+              Remember your password?{" "}
+              <button
+                type="button"
+                onClick={() => { setMode("login"); setError(null); }}
+                className="text-[#4f46e5] font-medium hover:underline cursor-pointer"
+              >
+                Back to sign in
+              </button>
+            </p>
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">
+              {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+              <button type="button" onClick={handleToggle} className="text-[#4f46e5] font-medium hover:underline cursor-pointer">
+                {mode === "login" ? "Sign up" : "Sign in"}
+              </button>
+            </p>
+          )}
             </>
           )}
 

@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
-    return NextResponse.redirect(`${origin}/login?notice=confirmed_sign_in`)
+    // For a recovery link (signalled by its destination) "sign in with your
+    // password" would be wrong advice — the user forgot it.
+    return next === '/reset-password'
+      ? NextResponse.redirect(`${origin}/login?error=recovery_expired`)
+      : NextResponse.redirect(`${origin}/login?notice=confirmed_sign_in`)
   }
 
   if (token_hash && type) {
@@ -30,5 +34,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=confirm_expired`)
+  return NextResponse.redirect(
+    `${origin}/login?error=${type === 'recovery' ? 'recovery_expired' : 'confirm_expired'}`
+  )
 }
