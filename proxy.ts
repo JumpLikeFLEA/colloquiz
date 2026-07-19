@@ -38,6 +38,17 @@ export async function proxy(request: NextRequest) {
   const authRoutes = ['/login', '/signup', '/auth/callback', '/auth/confirm']
   const isAuthRoute = authRoutes.includes(pathname)
 
+  if (!user && !isAuthRoute && request.nextUrl.searchParams.has('code')) {
+    // A Supabase OAuth/PKCE code landed on a non-callback path (e.g. Supabase
+    // fell back to the Site URL root because redirectTo wasn't allow-listed).
+    // Forward it to the callback handler — keeping the query intact so
+    // code/state/next survive — so the code is exchanged instead of lost to
+    // the /login bounce below.
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    return NextResponse.redirect(url)
+  }
+
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
