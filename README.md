@@ -1,20 +1,27 @@
 # Colloquiz
 
-A personal quiz platform for self-study. Users take subject-based quizzes, compose custom ones from a curated question bank, and track progress through XP and achievements. Designed to grow into an AI-augmented question authoring system where the bulk of the bank is LLM-generated and human-reviewed.
+A quiz platform for self-study and light tutoring. Learners take subject-based quizzes,
+compose their own, track progress through XP, streaks, and achievements, and can report
+bad questions. Tutors invite students, assign quizzes, and review their answers. Admins
+moderate the shared question bank, which is grown by an AI generator with a human-review
+pipeline.
 
 ---
 
 ## Stack
 
-| Layer        | Choice                                                                 |
-|--------------|------------------------------------------------------------------------|
-| Framework    | Next.js 16 (App Router) · React 19 · TypeScript                        |
-| Styling      | Tailwind CSS v4 · shadcn/ui · lucide-react · framer-motion             |
-| Backend      | Supabase (Postgres + Auth + RLS) via `@supabase/ssr`                   |
-| LLM          | Anthropic SDK (`@anthropic-ai/sdk`) — Phase 2 generator service        |
-| Hosting      | Vercel (planned)                                                       |
+| Layer      | Choice                                                                     |
+|------------|----------------------------------------------------------------------------|
+| Framework  | Next.js 16 (App Router, Turbopack) · React 19 · TypeScript 5               |
+| Styling    | Tailwind CSS v4 · shadcn/ui · lucide-react · framer-motion · recharts       |
+| Backend    | Supabase (Postgres + Auth + Row-Level Security) via `@supabase/ssr`         |
+| LLM        | Anthropic SDK (`@anthropic-ai/sdk`) — question generator + critic           |
+| Validation | zod                                                                        |
+| Hosting    | Vercel (`vercel.json` pins region `dub1`)                                   |
 
-The visual source of truth lives at `figma-export/` (the original Vite + React + Tailwind export). The Next.js app is a faithful port; design fidelity is enforced by `CLAUDE.md`.
+The visual source of truth lives at `figma-export/` (the original Vite + React + Tailwind
+export). The Next.js app is a faithful port; design fidelity is enforced by `CLAUDE.md`.
+The one intentional deviation is the body font (Geist via `next/font`).
 
 ---
 
@@ -23,28 +30,74 @@ The visual source of truth lives at `figma-export/` (the original Vite + React +
 ### Routing & auth
 The `app/` directory uses two route groups:
 
-- `(auth)` — `/login`, `/signup`. Public.
-- `(main)` — everything else: home, build, custom, quiz, results, dashboard, achievements, admin. All gated.
+- **`(auth)`** — `/login`, `/signup`, `/reset-password`. Public entry points.
+- **`(main)`** — everything else (gated): home, advanced/custom quiz builders, quiz player,
+  results, dashboard, achievements, my-quizzes, students, invite acceptance, and admin.
 
-`proxy.ts` runs on every request: it refreshes the Supabase session and redirects unauthenticated users to `/login`. Admin-only routes additionally verify `profiles.role === 'admin'` server-side inside the route handler — never trust client-side role claims.
+`proxy.ts` is this Next.js fork's middleware. It runs on every request, refreshes the
+Supabase session, and redirects unauthenticated users to `/login` — preserving the intended
+destination as `?next=` so invite links land correctly after sign-in. Authorization beyond
+"is signed in" is **not** done here: admin- and author-only actions are enforced per route
+handler and, ultimately, by Postgres Row-Level Security.
+
+### Roles
+Roles are two independent axes on `profiles`:
+
+- **`role`** — `'user'` or `'admin'`. Only an admin (via the Supabase dashboard or the
+  service-role key) can set it; a column-level `GRANT` prevents users from self-escalating.
+  Admins moderate the shared question bank and reports.
+- **`is_author`** — a self-serve boolean (the "become an author/tutor" card). Authors can
+  create private questions and quizzes, invite students via a rotating link, assign quizzes,
+  and review student results. Students are linked to a tutor by accepting an invite.
 
 ### Data layout
 Two stores, each owning a different kind of state:
 
-- **Static config (Git-tracked JSON):** `data/subjects.json`. The canonical list of subjects, their icons/colors, their filterable tags, and their display subtopics.
-- **User and content data (Supabase):** `profiles`, `questions`, `quizzes`, `results`, `user_achievements`, `custom_quizzes`. Row-level security is enabled on every table.
+- **Static config (Git-tracked JSON):** `data/subjects.json` — the 19 subjects, their
+  icons/colors, filterable tags, and display subtopics.
+- **User and content data (Supabase):** `profiles`, `questions`, `quizzes`, `results`,
+  `quiz_sessions`, `user_achievements`, `custom_quizzes`, `tutor_invites`, `tutor_students`,
+  `assignments`, `question_reports`, `notifications`, `generation_batches`. RLS is enabled on
+  every table.
 
-`lib/questions.ts` is the data-access layer that bridges them: `getSubjects()` reads the JSON, everything else hits Supabase.
+`lib/questions.ts` is the data-access layer that bridges them: `getSubjects()` reads the JSON;
+everything else hits Supabase (with `.range()` paging to survive PostgREST's 1000-row cap, and
+a cached DB-side `get_subject_stats` RPC for the home grid).
 
 ### Quiz lifecycle
-1. User picks a subject on the home page or builds a filter via `/build`.
-2. `POST /api/quiz` resolves the filter, samples matching questions, creates a quiz row, returns the id.
-3. User plays at `/quiz/[id]`. **Ordinary mode** reveals correctness + explanation after each answer. **Exam mode** stays silent until the end.
-4. Scores are computed client-side by `lib/scoring.ts`, persisted via `POST /api/results`.
-5. The results page mounts `XPAwarder`, which awards XP and unlocks achievements once per result (idempotent via localStorage flag).
+1. A learner picks a subject on the home page (**Quick Play**), tunes a filter in the
+   **Deep Dive** wizard (`/advanced`), or composes a personal quiz (`/custom`).
+2. `POST /api/quiz` resolves the filter, samples matching **approved + shared** questions,
+   creates a quiz row, and returns its id.
+3. The learner plays at `/quiz/[id]`. **Ordinary mode** reveals correctness + explanation
+   after each answer; **Exam mode** stays silent until the end. Progress is persisted to a
+   `quiz_sessions` row (one active session per user), so a quiz survives navigation and browser
+   close and resumes at the exact spot — surfaced by `ActiveQuizBanner`.
+4. Scores are computed by `lib/scoring.ts` and persisted via `POST /api/results`; the server
+   re-derives correct answers rather than trusting the client.
+5. The result awards XP, updates the streak, and unlocks achievements (idempotently). During or
+   after a quiz, a learner can report a question (`POST /api/reports`).
 
-### Admin manual authoring
-`/admin/quiz-builder` (role-gated) lets an admin compose a quiz with hand-written questions. `POST /api/admin/quiz` inserts them with `source: "manual"`. See `docs/authoring-guide.md` for the field-by-field conventions.
+### Question bank & review
+Every question carries a `status` (`pending` / `approved` / `rejected`) and a `visibility`
+(`shared` / `private`). Only **approved + shared** questions enter random-quiz sampling.
+
+- **AI generation** (`lib/generator/`) — `generateBatch()` validates input, picks few-shot
+  exemplars, calls the **generator** model (Sonnet) for a batch of questions, runs a **critic**
+  model (Haiku) that attaches structured notes, and returns DB-ready rows with a content hash
+  (exact-match dedup) at `status='pending'`. Driven today by the CLI at
+  `scripts/seed-questions-ai.ts`; each run is logged in `generation_batches`.
+- **Human review** — pending questions (AI-generated or externally authored) land in the admin
+  review queue at `/admin/review`, where an admin approves or rejects them. The same page hosts
+  the reported-questions moderation queue.
+
+### Tutoring
+An author generates a rotating invite link (`/api/invites`); a student accepts it at
+`/invite/[token]`, creating a `tutor_students` link. The author assigns owned quizzes to linked
+students (`assignments`), and can review each submission's answers at
+`/students/review/[assignmentId]`. Key events (invite accepted, assignment created/completed,
+question reviewed, achievement unlocked, report resolved) are written to `notifications` by
+database triggers and surfaced by the `NotificationBell` center in the top bar.
 
 ---
 
@@ -53,7 +106,7 @@ Two stores, each owning a different kind of state:
 ### Prerequisites
 - Node.js 20+
 - A Supabase project (free tier is fine)
-- An Anthropic API key (only needed for the Phase 2 generator service)
+- An Anthropic API key (only needed to run the question generator)
 
 ### First-time setup
 
@@ -64,19 +117,20 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in `.env.local` with values from Supabase (Project → Settings → API) and Anthropic (Console → API Keys).
+Fill in `.env.local` with values from Supabase (Project → Settings → API) and Anthropic
+(Console → API Keys).
 
 ### Apply database migrations
 
-Paste each file in `supabase/migrations/` into the Supabase SQL Editor in order, or use the Supabase CLI (`npx supabase db push`).
+Paste each file in `supabase/migrations/` into the Supabase SQL Editor **in numeric order**,
+or use the Supabase CLI (`npx supabase db push`). All migrations are idempotent and safe to
+re-apply.
 
-### Seed any existing questions
+### Configure auth
 
-If `data/questions.json` is present:
-
-```bash
-npx tsx scripts/seed-questions.ts
-```
+Email/password and Google OAuth are supported. Google sign-in and the email-confirmation /
+password-recovery templates are configured in the Supabase dashboard (Authentication →
+Providers / Email Templates); point the confirmation link at `/auth/confirm`.
 
 ### Run the dev server
 
@@ -84,20 +138,22 @@ npx tsx scripts/seed-questions.ts
 npm run dev
 ```
 
-Open <http://localhost:3000>. You'll be redirected to `/login` — sign up an account, then optionally promote yourself to admin in the Supabase dashboard by setting `profiles.role = 'admin'` for your user.
+Open <http://localhost:3000>. You'll be redirected to `/login` — sign up an account, then
+optionally promote yourself to admin in the Supabase dashboard by setting `profiles.role =
+'admin'` for your user.
 
 ---
 
 ## Environment variables
 
-| Variable                          | Purpose                                                                                                          | Exposed to browser? |
-|-----------------------------------|------------------------------------------------------------------------------------------------------------------|---------------------|
-| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL                                                                                              | Yes                 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Supabase anon key (RLS-bounded)                                                                                   | Yes                 |
-| `SUPABASE_SERVICE_ROLE_KEY`       | Service role key — bypasses RLS. Only used by seed scripts and the generator CLI.                                 | **No** — server only |
-| `ANTHROPIC_API_KEY`               | Anthropic API key for the question generator service.                                                              | **No** — server only |
-| `ANTHROPIC_MODEL_GENERATOR`       | Model id for generation, e.g. `claude-sonnet-4-6`.                                                                 | **No** — server only |
-| `ANTHROPIC_MODEL_CRITIC`          | Model id for critique, e.g. `claude-haiku-4-5-20251001`.                                                           | **No** — server only |
+| Variable                        | Purpose                                                          | Exposed to browser?  |
+|---------------------------------|-----------------------------------------------------------------|----------------------|
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                                            | Yes                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (RLS-bounded)                                 | Yes                  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Service role key — bypasses RLS. Used only by seed/import CLIs. | **No** — server only |
+| `ANTHROPIC_API_KEY`             | Anthropic key for the generator + critic.                       | **No** — server only |
+| `ANTHROPIC_MODEL_GENERATOR`     | Generator model id (default `claude-sonnet-4-6`).               | **No** — server only |
+| `ANTHROPIC_MODEL_CRITIC`        | Critic model id (default `claude-haiku-4-5-20251001`).          | **No** — server only |
 
 `.env.local` is in `.gitignore`. Never commit real keys.
 
@@ -108,46 +164,67 @@ Open <http://localhost:3000>. You'll be redirected to `/login` — sign up an ac
 ```
 colloquiz/
 ├── AGENTS.md                       Rules for AI coding agents (Next.js 16 caveats)
-├── CLAUDE.md                       Design-fidelity rules: Figma export is the visual truth
-├── PLAN.md                         Original MVP build plan (10 steps, ✅ complete)
+├── CLAUDE.md                       Design-fidelity rules + intentional deviations
+├── PLAN.md                         Original MVP build plan (historical)
 ├── README.md                       This file
+├── proxy.ts                        Middleware: session refresh + auth gating
+├── next.config.ts · vercel.json · components.json · postcss.config.mjs · tsconfig.json
 ├── app/
-│   ├── (auth)/                     Public — login, signup
-│   ├── (main)/                     Gated — home, build, custom, quiz, results,
-│   │                                  dashboard, achievements, admin/quiz-builder
-│   ├── api/                        Route handlers — /quiz, /results, /admin/quiz
-│   ├── auth/callback/              Supabase OAuth callback
-│   ├── components/                 AppSidebar, Topbar, SubjectGrid, XPAwarder,
-│   │                                  PageTransition, figma/, ui/ (48 shadcn components)
+│   ├── (auth)/                     login, signup, reset-password (+ AuthScreen)
+│   ├── (main)/                     home, advanced, custom, quiz/[id], results/[id],
+│   │                                  dashboard, achievements, my-quizzes(+builder),
+│   │                                  students(+review), invite/[token], admin/*
+│   ├── api/                        Route handlers (see below)
+│   ├── auth/                       callback + confirm (OAuth / email confirmation)
+│   ├── components/                 AppSidebar, Topbar, NotificationBell, SubjectGrid,
+│   │                                  StartQuizProvider, ActiveQuizBanner, ReportQuestion,
+│   │                                  BecomeAuthorCard, figma/, ui/ (shadcn primitives)
 │   ├── globals.css                 Tailwind v4 + Figma theme tokens
-│   └── layout.tsx                  Root shell
+│   └── layout.tsx                  Root shell (Geist font)
 ├── data/
-│   ├── subjects.json               15 subjects × { id, name, icon, color, bg, tags, subtopics }
-│   └── seed-exemplars.json         (Phase 2) Gold-standard few-shot examples for the generator
+│   ├── subjects.json               19 subjects × { id, name, icon, color, bg, tags, subtopics }
+│   └── seed-exemplars.json         Gold-standard few-shot examples for the generator
 ├── docs/
 │   └── authoring-guide.md          How to write a question manually
-├── figma-export/                   Vite-based Figma export — visual source of truth (read-only)
+├── figma-export/                   Vite Figma export — visual source of truth (read-only)
 ├── lib/
-│   ├── achievements.ts             XP formulas + achievement unlock checks
+│   ├── generator/                  AI generation: index, llm, prompts, critic, dedup,
+│   │                                  exemplars, schema, types
+│   ├── supabase/                   server + browser clients, shared queries
+│   ├── achievements.ts             Achievement catalog + unlock checks
 │   ├── questions.ts                Data-access layer (Supabase + subjects.json)
-│   ├── scoring.ts                  scoreQuiz(), isCorrect()
-│   ├── supabase/                   SSR client + browser client
-│   ├── use-mobile.ts               useIsMobile() hook
-│   └── utils.ts                    cn() helper (clsx + tailwind-merge)
-├── proxy.ts                        Session refresh + auth gating
-├── public/                         Static assets
+│   ├── quizSession.ts              Active-session resume logic
+│   ├── scoring.ts · streak.ts · reports.ts · author.ts · authorQuiz.ts
+│   ├── options.ts · shuffleOptions.ts   Deterministic per-quiz option shuffling
+│   ├── format.ts · use-mobile.ts · utils.ts
 ├── scripts/
-│   └── seed-questions.ts           One-off CLI seeder (data/questions.json → Supabase)
+│   ├── seed-questions.ts           Seed data/questions.json into Supabase
+│   ├── seed-questions-ai.ts        AI generator CLI (writes pending questions)
+│   └── import-authored-questions.ts  Import externally-authored JSON into the review queue
 ├── supabase/
-│   └── migrations/
-│       ├── 001_initial_schema.sql  Initial schema (profiles, questions, quizzes, results,
-│       │                                          user_achievements, custom_quizzes + RLS)
-│       └── 002_question_review_pipeline.sql  (Phase 2 — adds status/critic_notes/hash to
-│                                              questions, generation_batches audit table)
-├── types/
-│   └── index.ts                    Question, Quiz, Result, Subject, Difficulty, QuizFilter, ...
-├── package.json
-└── tsconfig.json
+│   └── migrations/                 001–013 (schema + RLS + RPCs + triggers)
+└── types/
+    └── index.ts                    All shared TypeScript types
+```
+
+### API routes
+- **Quiz/results:** `POST /api/quiz`, `/api/quiz/session`, `/api/results`, `/api/reports`
+- **Notifications:** `/api/notifications`
+- **Author/tutor:** `/api/invites`, `/api/invites/accept`, `/api/assignments`(`/[id]`),
+  `/api/students/[studentId]`, `/api/author/enroll`, `/api/author/quiz`(`/[id]`),
+  `/api/author/questions/[id]/submit-to-pool`
+- **Admin:** `/api/admin/quiz`, `/api/admin/questions/[id]`, `/api/admin/reports`
+
+Every protected handler follows the same guard:
+
+```ts
+const supabase = await createClient();
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+// admin-only routes additionally:
+const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 ```
 
 ---
@@ -159,123 +236,121 @@ Each entry conforms to the `Subject` interface in `types/index.ts`:
 
 ```ts
 interface Subject {
-  id: string;          // slug, e.g. "data_analysis"
-  name: string;        // display + value written to questions.subject, e.g. "Data Analysis"
-  icon: string;        // lucide-react icon name, e.g. "BarChart3"
-  color: string;       // hex, e.g. "#0ea5e9"
-  bg: string;          // hex, e.g. "#f0f9ff"
-  tags: string[];      // canonical filterable tags for sampleQuestions()
-  subtopics?: string[]; // Title-Case display labels for the wizard
+  id: string;           // slug, e.g. "data_analysis"
+  name: string;         // display + value written to questions.subject, e.g. "Data Analysis"
+  icon: string;         // lucide-react icon name, e.g. "BarChart3"
+  color: string;        // hex accent
+  bg: string;           // hex background tint
+  tags: string[];       // canonical filterable tags for sampleQuestions()
+  subtopics?: string[]; // Title-Case display labels for the Deep Dive wizard
 }
 ```
 
-`tags` and `subtopics` serve different roles: `tags` is the filter axis (used by `sampleQuestions` and stored verbatim on each question's `tags[]`), `subtopics` is the UI label set (shown in the build wizard's subtopic picker). They are intentionally separate.
+`tags` (lowercase, the filter axis, stored verbatim on each question's `tags[]`) and
+`subtopics` (Title Case, the UI label set) are intentionally separate.
 
-### Questions
-Stored in Supabase. Required fields:
+### Questions (Supabase)
+Selected fields from the `Question` type; see `types/index.ts` and
+`supabase/migrations/001` + `002` + `006` for the full shape and RLS.
 
-| Field            | Type                              | Notes                                                       |
-|------------------|-----------------------------------|-------------------------------------------------------------|
-| `id`             | text (PK)                         | Slug or UUID                                                |
-| `type`           | text                              | Always `"multiple_choice"` in Phase 1                        |
-| `subject`        | text                              | Matches `Subject.name` exactly                              |
-| `tags`           | text[]                            | 1–3 lowercase topic tags                                    |
-| `difficulty`     | text                              | `easy` \| `medium` \| `hard`                                |
-| `question`       | text                              | Single clear question, ends in `?`                          |
-| `options`        | text[4]                           | Exactly 4 options                                            |
-| `correct_answer` | text                              | Must match one of `options` verbatim                        |
-| `explanation`    | text                              | 2–4 sentences explaining the correct answer                 |
-| `created_at`     | timestamptz                       | ISO 8601                                                    |
-| `source`         | text                              | `manual` \| `ai_generated`                                  |
-| `created_by`     | uuid (FK profiles.id, nullable)   | Set by the admin route                                       |
+| Field                 | Type                    | Notes                                              |
+|-----------------------|-------------------------|----------------------------------------------------|
+| `id`                  | text (PK)               | Slug or UUID                                       |
+| `type`                | text                    | `multiple_choice` (others deferred)                |
+| `subject`             | text                    | Matches a `Subject.id`                             |
+| `tags`                | text[]                  | Lowercase topic tags                               |
+| `difficulty`          | text                    | `easy` \| `medium` \| `hard`                       |
+| `question` / `options`/ `correct_answer` / `explanation` | text / text[4] / text / text | 4 options; answer matches one verbatim |
+| `source`              | text                    | `manual` \| `ai_generated`                         |
+| `status`              | text                    | `pending` \| `approved` \| `rejected`              |
+| `visibility`          | text                    | `shared` \| `private`                              |
+| `content_hash`        | text (nullable)         | Exact-match dedup key                              |
+| `critic_notes`        | jsonb (nullable)        | AI critic's structured feedback                    |
+| `created_by` / `reviewed_by` | uuid (nullable)  | FK `profiles.id`                                   |
 
-See `docs/authoring-guide.md` for the manual-entry conventions.
+### Migrations
+`supabase/migrations/` is the DDL truth. In order:
 
-### Quizzes, results, profiles, achievements
-See `supabase/migrations/001_initial_schema.sql` for the full DDL. RLS is enabled on every table; the policies are owner-read/write with admin overrides where appropriate.
+| #   | Adds                                                                          |
+|-----|-------------------------------------------------------------------------------|
+| 001 | Core schema: profiles, questions, quizzes, results, achievements, custom_quizzes + RLS + signup trigger |
+| 002 | Question review pipeline: status/critic_notes/content_hash + `generation_batches` |
+| 003 | `profiles.full_name` + `city`                                                 |
+| 004 | Signup city capture                                                            |
+| 005 | Subject rename (games → sports)                                                |
+| 006 | Author role, tutor invites/links, assignments, question/quiz `visibility`, assigned-content RLS |
+| 007 | Subject rename (sports history)                                                |
+| 008 | `get_subject_stats` RPC (DB-side counts for the home grid)                     |
+| 009 | `quiz_sessions` — resumable, one-active-per-user                               |
+| 010 | `question_reports` + notifications stub + `resolve_question_reports` RPC       |
+| 011 | `results.excluded_question_ids` (reported-and-skipped questions)               |
+| 012 | Result → quiz cascade fix                                                      |
+| 013 | Notification triggers (invite/assignment/achievement/review events)           |
 
 ---
 
 ## Conventions
 
-### Design fidelity (from `CLAUDE.md`)
-> `figma-export/` is the visual source of truth. We are porting it to Next.js, preserving visual output exactly. **Never change, simplify, or substitute Tailwind classes, spacing, colors, or DOM structure.** Only Next.js-specific changes are allowed (`next/link`, `next/image`, app router, `'use client'` directives).
->
-> Intentional deviation: body font is Geist via `next/font` (the Figma export had no font loaded).
+### Design fidelity (`CLAUDE.md`)
+> `figma-export/` is the visual source of truth. Never change, simplify, or substitute Tailwind
+> classes, spacing, colors, or DOM structure. Only Next.js-specific changes are allowed
+> (`next/link`, `next/image`, app router, `'use client'`). Surfaces with no Figma source (auth
+> logic, notification center, reset-password) are composed only from classes already used
+> elsewhere. See `CLAUDE.md` for the full list of intentional deviations.
 
-### Next.js 16 caveats (from `AGENTS.md`)
-This is **not** the Next.js most people remember. APIs, conventions, and file structure differ. Before writing route handlers, server components, or middleware, consult `node_modules/next/dist/docs/` or the official Next.js 16 docs. Notable changes include async `params` in dynamic route pages.
+### Next.js 16 caveats (`AGENTS.md`)
+This is **not** the Next.js most people remember — APIs, conventions, and file structure differ
+(the middleware file is `proxy.ts`, dynamic-route `params` are async, etc.). Consult
+`node_modules/next/dist/docs/` before writing route handlers, server components, or middleware.
 
 ### Tagging
-- **`Subject.tags`** and **`Question.tags`** are lowercase (`pandas`, `sql`, `statistics`).
-- **`Subject.subtopics`** are Title Case (`Pandas`, `Descriptive Statistics`).
-- The build wizard renders `subtopics` to the user and writes their selection into `QuizFilter.tags`. When automating tagging (e.g. from the AI generator), convert the subtopic to its lowercase tag form before writing.
-
-### Auth in route handlers
-Every protected API route follows the same pattern:
-
-```ts
-const supabase = await createClient();
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-// For admin-only routes:
-const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-```
+`Subject.tags` and `Question.tags` are lowercase; `Subject.subtopics` are Title Case. The Deep
+Dive wizard shows `subtopics` and writes the selection into `QuizFilter.tags`. Automated tagging
+(AI generator, authored import) derives the tag from the subtopic via `slugifyForTag`.
 
 ---
 
-## Available scripts
+## Scripts
 
 ```bash
-npm run dev      # local dev server with hot reload
+npm run dev      # local dev server (Turbopack) with hot reload
 npm run build    # production build
 npm run start    # serve the production build
 
-# One-off
-npx tsx scripts/seed-questions.ts    # upsert data/questions.json into Supabase
+# One-off CLIs (tsx does not auto-load .env — pass --env-file):
+npx tsx --env-file=.env.local scripts/seed-questions.ts
+npx tsx --env-file=.env.local scripts/seed-questions-ai.ts \
+  --subject "Data Analysis" --difficulty easy \
+  --subtopics "Pandas,Descriptive Statistics" --count 5 --notes "real-world scenarios"
+npx tsx --env-file=.env.local scripts/import-authored-questions.ts <file.json> [--sync]
 ```
+
+There is no `lint` script or ESLint config; the production build runs the TypeScript type-check.
 
 ---
 
 ## Roadmap
 
-### Phase 1 — MVP ✅
-Foundations are in place: 15 subjects, manual question bank, quiz player (ordinary + exam modes), results with grade letters and breakdowns, dashboard, XP/achievements, role-gated admin quiz builder. The detailed checklist is in `PLAN.md`.
+### Built
+19 subjects; Quick Play / Deep Dive / custom quiz builders; ordinary + exam modes; resumable
+quiz sessions; results with grades, tag breakdowns, XP, streaks, and achievements; question
+reporting; admin review + moderation queues; the AI generator (Sonnet + Haiku critic) with a
+CLI and human-review pipeline; the author/tutor system (invites, assignments, student review);
+and a trigger-driven notification center. Phase 1's original checklist is in `PLAN.md`.
 
-### Phase 2 — AI question generator (in progress)
-LLM-powered question generation with a human-review pipeline. The architecture (decided in design conversations):
-
-- **Tiered models** — Sonnet for generation, Haiku for critique.
-- **Batch of 5** questions per LLM call.
-- **Generation inputs** — `subject`, `difficulty`, `subtopics[]`, free-form notes, count.
-- **Few-shot exemplars** — three hand-curated gold examples in `data/seed-exemplars.json`. Once the approved bank is populated, the exemplars module swaps these for in-bank examples.
-- **Dedup** — exact-match content hash. Will move to embedding similarity once any (subject, difficulty) bucket exceeds ~100 approved questions.
-- **Review queue** — generated questions land with `status='pending'`. The critic adds structured `critic_notes` (correctness, ambiguity, distractor quality) shown alongside the question in the admin review UI. The critic does not auto-reject.
-- **Where the code lives** — `lib/generator/` as a pure TypeScript module, wrapped first by a CLI script (`scripts/seed-questions-ai.ts`) and later by an API route.
-
-Current status:
-- ✅ SDK + env scaffolding
-- ✅ `data/subjects.json` updated with Data Analysis (test subject) + 6 subtopics
-- ⏳ `data/seed-exemplars.json`
-- ⏳ `supabase/migrations/002_question_review_pipeline.sql` (file pending commit; DB may already be migrated)
-- ⏳ `lib/generator/` module
-- ⏳ Admin generation form + review queue UI
-
-### Phase 3 — Scale (planned)
-- Move generator behind an API route with a job-queue (no Vercel timeout risk).
-- Embedding-based dedup once the bank grows.
-- Upgrade the critic to selectively auto-reject once we trust its calibration.
-- Generator-prompt evolution: dynamic in-subject exemplars drawn from the approved bank.
+### Planned
+- Move generation behind an API route with a job queue (no serverless timeout risk).
+- Embedding-based dedup once a `(subject, difficulty)` bucket grows past exact-match's usefulness.
+- Let the critic selectively auto-reject once its calibration is trusted.
+- Dynamic in-subject exemplars drawn from the approved bank.
 
 ---
 
 ## Useful references
 
-- `CLAUDE.md` — design-fidelity rules.
+- `CLAUDE.md` — design-fidelity rules and intentional deviations.
 - `AGENTS.md` — Next.js 16 agent rules.
-- `PLAN.md` — Phase 1 build log.
+- `PLAN.md` — original Phase 1 build log.
 - `docs/authoring-guide.md` — manual question authoring conventions.
-- `supabase/migrations/` — DDL truth.
+- `supabase/migrations/` — DDL, RLS, RPC, and trigger truth.
 - `types/index.ts` — all shared TypeScript types.
