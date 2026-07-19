@@ -1,4 +1,4 @@
-# Noosphere
+# Colloquiz
 
 A personal quiz platform for self-study. Users take subject-based quizzes, compose custom ones from a curated question bank, and track progress through XP and achievements. Designed to grow into an AI-augmented question authoring system where the bulk of the bank is LLM-generated and human-reviewed.
 
@@ -58,8 +58,8 @@ Two stores, each owning a different kind of state:
 ### First-time setup
 
 ```bash
-git clone <repo-url>
-cd learning_curve
+git clone https://github.com/JumpLikeFLEA/colloquiz.git
+cd colloquiz
 npm install
 cp .env.example .env.local
 ```
@@ -106,7 +106,7 @@ Open <http://localhost:3000>. You'll be redirected to `/login` — sign up an ac
 ## Project structure
 
 ```
-learning_curve/
+colloquiz/
 ├── AGENTS.md                       Rules for AI coding agents (Next.js 16 caveats)
 ├── CLAUDE.md                       Design-fidelity rules: Figma export is the visual truth
 ├── PLAN.md                         Original MVP build plan (10 steps, ✅ complete)

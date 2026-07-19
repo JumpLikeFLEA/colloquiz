@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
-for (const line of readFileSync("c:/Users/PC/Git/learning_curve/.env.local", "utf-8").split("\n")) {
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+for (const line of readFileSync(join(__dirname, ".env.local"), "utf-8").split("\n")) {
   const m = line.match(/^([A-Z_]+)=(.*)$/); if (m) process.env[m[1]] = m[2].trim();
 }
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL, service = process.env.SUPABASE_SERVICE_ROLE_KEY, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

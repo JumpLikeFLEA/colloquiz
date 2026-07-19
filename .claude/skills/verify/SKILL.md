@@ -3,7 +3,7 @@ name: verify
 description: How to build, run, and drive this app to verify changes end-to-end (Next.js + cloud Supabase, Windows)
 ---
 
-# Verifying changes in learning_curve
+# Verifying changes in colloquiz
 
 ## Launch
 - `npm run dev` (background) → http://localhost:3000. Ready when `/login` returns 200 (takes ~10-20s).

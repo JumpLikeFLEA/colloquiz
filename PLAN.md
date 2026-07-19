@@ -1,5 +1,7 @@
 # Noosphere — MVP Build Plan
 
+> Historical planning document. The project has since been rebranded to **Colloquiz**.
+
 ## Stack
 Next.js (App Router) · TypeScript · Tailwind v4 · shadcn/ui · lucide-react · framer-motion · Local JSON storage
 

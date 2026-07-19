@@ -62,7 +62,7 @@ export function ResetPasswordScreen() {
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
               <GraduationCap size={16} className="text-white" />
             </div>
-            <span className="font-semibold text-foreground">Noosphere</span>
+            <span className="font-semibold text-foreground">Colloquiz</span>
           </div>
 
           <div>

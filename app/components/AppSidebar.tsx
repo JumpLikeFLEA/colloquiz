@@ -143,7 +143,7 @@ export function AppSidebar({
             <GraduationCap size={18} className="text-white" />
           </div>
           <div className="min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
-            <p className="font-semibold text-sidebar-foreground leading-none truncate">Noosphere</p>
+            <p className="font-semibold text-sidebar-foreground leading-none truncate">Colloquiz</p>
             <p className="text-xs text-muted-foreground mt-0.5 truncate">Knowledge Platform</p>
           </div>
         </div>

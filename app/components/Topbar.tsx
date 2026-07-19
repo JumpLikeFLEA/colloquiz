@@ -35,7 +35,7 @@ export function Topbar({ displayName }: { displayName: string }) {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
   const base = "/" + (pathname.split("/")[1] ?? "");
-  const label = routeLabels[pathname] ?? routeLabels[base] ?? "Noosphere";
+  const label = routeLabels[pathname] ?? routeLabels[base] ?? "Colloquiz";
 
   const initials = getInitials(displayName);
 
@@ -55,7 +55,7 @@ export function Topbar({ displayName }: { displayName: string }) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <GraduationCap size={14} />
-        <span>Noosphere</span>
+        <span>Colloquiz</span>
         <ChevronRight size={13} />
         <span className="text-foreground font-medium">{label}</span>
       </div>
