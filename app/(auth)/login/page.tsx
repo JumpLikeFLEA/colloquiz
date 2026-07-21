@@ -3,7 +3,7 @@ import { AuthScreen } from "../AuthScreen";
 const ERROR_MESSAGES: Record<string, string> = {
   confirm_expired:
     "Your confirmation link is invalid or has expired. Please sign in, or sign up again to receive a new link.",
-  oauth: "Google sign-in failed. Please try again.",
+  oauth: "Social sign-in failed. Please try again.",
   recovery_expired:
     "Your password reset link is invalid or has expired. Please request a new one via “Forgot password?”.",
 };

@@ -49,6 +49,11 @@
   "Check your email" view; the left decorative panel was extracted as 
   exported `AuthLeftPanel` and `Field` exported for reuse (JSX/classes 
   unchanged); do not remove
+- AuthScreen: Discord OAuth added (2026-07-21). The single full-width 
+  "Continue with Google" button became a 2-column row of compact 
+  Google / Discord buttons (same button classes, `grid grid-cols-2 gap-3`) 
+  so the form height is unchanged; both get a disabled state while any 
+  auth request is in flight. Do not restore the single Google button
 - ResetPasswordScreen (app/(auth)/reset-password/): set-new-password page 
   added (2026-07-18) for the Supabase password-recovery flow. No Figma 
   source exists; composed entirely from AuthScreen.tsx classes 

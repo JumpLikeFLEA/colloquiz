@@ -128,9 +128,12 @@ re-apply.
 
 ### Configure auth
 
-Email/password and Google OAuth are supported. Google sign-in and the email-confirmation /
-password-recovery templates are configured in the Supabase dashboard (Authentication →
-Providers / Email Templates); point the confirmation link at `/auth/confirm`.
+Email/password, Google OAuth and Discord OAuth are supported. The social providers and the
+email-confirmation / password-recovery templates are configured in the Supabase dashboard
+(Authentication → Providers / Email Templates); point the confirmation link at
+`/auth/confirm`. Both OAuth providers return to `/auth/callback`, so add that URL (plus the
+`?next=` variant) to the allowed redirect list; no extra migration is needed — the
+`handle_new_user` trigger already reads `full_name`/`name` from the provider metadata.
 
 ### Run the dev server
 
