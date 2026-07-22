@@ -31,9 +31,15 @@ const navItems = [
   { label: "Quick Play", description: "10 questions, pick & go", href: "/", icon: BookOpen },
   { label: "Deep Dive", description: "Fine-tune subjects & difficulty", href: "/advanced", icon: Settings2 },
   { label: "My Quizzes", description: "Assigned & created", href: "/my-quizzes", icon: GraduationCap },
+  { label: "Groups", description: "Build quizzes together", href: "/groups", icon: Users },
   { label: "Dashboard", description: "Stats & history", href: "/dashboard", icon: LayoutDashboard },
   { label: "Achievements", description: "Badges & rewards", href: "/achievements", icon: Trophy },
 ];
+
+// The tutor/author flow is dormant while Groups is the active collaboration
+// surface. The routes, RLS and data layer are all intact — only the nav entry
+// points are hidden, so restoring the flow is this one flag.
+const SHOW_AUTHOR_NAV = false;
 
 const authorItems = [
   {
@@ -99,7 +105,7 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
         <button
           onClick={onSignOut}
           aria-label="Sign out"
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
         >
           <LogOut size={14} />
         </button>
@@ -193,7 +199,7 @@ export function AppSidebar({
         </nav>
 
         {/* Author */}
-        {isAuthor && (
+        {SHOW_AUTHOR_NAV && isAuthor && (
           <div className="mt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
               Author

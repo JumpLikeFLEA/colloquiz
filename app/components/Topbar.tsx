@@ -20,6 +20,10 @@ const routeLabels: Record<string, string> = {
   "/my-quizzes": "My Quizzes",
   "/students": "Students",
   "/invite": "Invitation",
+  // Matched by first path segment below, so this also covers /groups/[id],
+  // /groups/[id]/review, /groups/[id]/builder and /groups/join/[token] —
+  // the same base-level convention /my-quizzes/builder already relies on.
+  "/groups": "Groups",
 };
 
 function getInitials(name: string) {

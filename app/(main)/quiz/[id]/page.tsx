@@ -19,9 +19,19 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
   // question_ids — the .in() result order is not guaranteed.
   const fetched = await getQuestionsByIds((quiz as Quiz).question_ids);
   const byId = new Map(fetched.map((q) => [q.id, q]));
-  const questions = (quiz as Quiz).question_ids
+  let questions = (quiz as Quiz).question_ids
     .map((qid) => byId.get(qid))
     .filter(Boolean) as Question[];
+
+  // A group quiz stays playable while its members are still drafting, so it
+  // can hold questions that haven't passed the group's review yet. Serve only
+  // the approved ones — the group page shows both counts ("5 questions ·
+  // 3 approved") so the shorter run isn't a surprise. Scoped to group quizzes
+  // so the solo submit-to-pool flow, where an author plays their own quiz
+  // while a question sits in admin review, is unaffected.
+  if ((quiz as Quiz).group_id) {
+    questions = questions.filter((q) => q.status === "approved");
+  }
 
   if (questions.length === 0) notFound();
 

@@ -90,6 +90,12 @@ export async function getPendingQuestions(
     .from("questions")
     .select("*", { count: "exact" })
     .eq("status", "pending")
+    // The admin queue moderates the PUBLIC pool only. Group questions are
+    // also 'pending' while they await their own group's peer review, and must
+    // not appear here — they reach this queue only once a group promotes one,
+    // which flips visibility to 'shared'. Private questions are created
+    // 'approved' (buildQuestionRows), so this filter hides no existing row.
+    .eq("visibility", "shared")
     .order("created_at", { ascending: false })
     .range(from, to);
   if (error) throw new Error(error.message);

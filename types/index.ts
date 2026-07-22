@@ -6,7 +6,7 @@ export type QuestionSource = "manual" | "ai_generated";
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
-export type Visibility = "shared" | "private";
+export type Visibility = "shared" | "private" | "group";
 
 export interface QuestionCriticNotes {
   correctness_check: "pass" | "fail" | "unsure";
@@ -35,6 +35,7 @@ export interface Question {
   reviewed_at?: string | null;
   reviewed_by?: string | null;
   visibility?: Visibility;
+  group_id?: string | null;
 }
 
 /**
@@ -54,6 +55,7 @@ export interface Quiz {
   mode?: QuizMode;
   created_by?: string | null;
   visibility?: Visibility;
+  group_id?: string | null;
 }
 
 export type GradingType = "auto" | "self" | "ai"; // auto = exact-match; self = user-marked; ai = graded in Phase 2
@@ -124,6 +126,26 @@ export interface TutorStudent {
   created_at: string;
 }
 
+export type GroupRole = "owner" | "member";
+
+export interface Group {
+  id: string;
+  name: string;
+  description?: string | null;
+  owner_id: string;
+  // Opt-in to team rankings. Stored but unused until that feature ships.
+  competes: boolean;
+  created_at: string;
+}
+
+export interface GroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: GroupRole;
+  created_at: string;
+}
+
 export type ReportCategory = "wrong_answer" | "unclear" | "typo" | "outdated" | "other";
 
 export type ReportStatus = "open" | "resolved";
@@ -160,7 +182,9 @@ export type NotificationType =
   | "assignment_created"
   | "assignment_completed"
   | "achievement_unlocked"
-  | "question_reviewed";
+  | "question_reviewed"
+  | "group_member_joined"
+  | "group_question_pending";
 
 // Named AppNotification to avoid clashing with the DOM `Notification` global.
 export interface AppNotification {

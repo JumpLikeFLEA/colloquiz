@@ -16,6 +16,7 @@ import {
   Flag,
   Trophy,
   UserPlus,
+  Users,
 } from "lucide-react";
 
 import {
@@ -117,7 +118,32 @@ function render(n: AppNotification): Rendered {
             Your question was <b>{String(p.status ?? "reviewed")}</b>.
           </>
         ),
-        href: "/my-quizzes",
+        // Group peer review reuses this same trigger (013), so a group
+        // question's verdict lands here too — deep-link to its group when the
+        // payload carries one.
+        href: p.group_id ? `/groups/${String(p.group_id)}/review` : "/my-quizzes",
+      };
+    case "group_member_joined":
+      return {
+        icon: Users,
+        message: (
+          <>
+            <b>{String(p.member_name ?? "Someone")}</b> joined{" "}
+            {p.group_name ? <b>{String(p.group_name)}</b> : "your group"}.
+          </>
+        ),
+        href: p.group_id ? `/groups/${String(p.group_id)}` : "/groups",
+      };
+    case "group_question_pending":
+      return {
+        icon: FileCheck,
+        message: (
+          <>
+            <b>{String(p.author_name ?? "A member")}</b> added a question to{" "}
+            {p.group_name ? <b>{String(p.group_name)}</b> : "your group"} for review.
+          </>
+        ),
+        href: p.group_id ? `/groups/${String(p.group_id)}/review` : "/groups",
       };
     default:
       return { icon: Bell, message: <>You have a new notification.</> };
