@@ -74,6 +74,31 @@
   and it alters no spacing, color or DOM structure. Note buttonVariants 
   already sets `disabled:pointer-events-none`, so no `disabled:cursor-not-allowed` 
   is needed there; hand-rolled buttons elsewhere do pair the two
+- Leaderboard (app/(main)/leaderboard/**): the casual XP ranking surface added
+  (2026-07-22) — global and per-subject boards over 7-day / 30-day / all-time
+  windows, a one-time privacy notice, and a hide-me toggle. A "Standings"
+  section was added to groups/[id]/GroupDetailView.tsx (as a section, not a
+  tab — that view is a stack of sections, it has no tab bar), and a rank strip
+  plus a "Public name" field to dashboard/DashboardView.tsx. No Figma source
+  exists for any of it; composed entirely from classes already used in
+  AchievementsView.tsx (filter pills), StudentsView.tsx (roster rows, empty
+  states) and the Dashboard cards — same precedent as NotificationBell and
+  Groups. The sidebar entry uses `Medal` because `Trophy` is Achievements.
+  Do not remove
+- Duels (app/(main)/leaderboard/ Competitive tab, app/api/duels/**): async
+  1v1 duels between group co-members added (2026-07-22), rated with Glicko-2.
+  A duel is metadata over an ordinary shared quiz, so both players play it
+  through the existing /quiz/[id] flow and it earns XP like any other quiz.
+  The challenge dialog lives in GroupDetailView's member rows (Swords icon).
+  No Figma source; composed from the existing dialog, pill and row classes.
+  The rating number is NEVER rendered — player_ratings has RLS on with no
+  policies and no grants, so it is unreadable even by its owner; only the
+  tier reaches the client. Do not add a rating display
+- Public name (2026-07-22): leaderboards render profiles.display_name and
+  never full_name. The app elsewhere resolves `full_name || display_name`, and
+  full_name is what the Dashboard form writes — typically a real name — so
+  display_name was repurposed as the public handle rather than publishing it.
+  Keep leaderboard surfaces on display_name only
 - AppSidebar (app/components/AppSidebar.tsx): "Groups" added to navItems and 
   the Author section hidden (2026-07-22) behind the `SHOW_AUTHOR_NAV = false` 
   constant, because the tutor/author flow is dormant while Groups is the 
@@ -81,3 +106,23 @@
   /my-quizzes/builder routes, and all tutor RLS/data code are deliberately 
   left intact — flip the constant to restore the nav. Do not delete the 
   author code
+- Duel live UX (2026-07-24, migration 018 + app/components/DuelRealtime.tsx +
+  app/(main)/duels/**): made the duel loop live and navigable. The app's FIRST
+  realtime usage — a single global channel (DuelRealtime, mounted in the (main)
+  layout) subscribes to the user's own notifications INSERTs and, per row, lights
+  the bell, fires a sonner toast, and calls router.refresh() so every open server
+  surface re-renders. Every duel transition already writes a notification to the
+  user who cares, so one channel drives everything; delivery is scoped by the
+  notifications owner-read RLS policy. Duels moved to their own surface: a /duels
+  list (inbox) and /duels/[id] detail, added to the sidebar (Swords icon) with an
+  action-needed count badge fed by isActionableDuel() from the (main) layout. The
+  duel inbox was REMOVED from the Leaderboard Competitive tab (now rankings-only,
+  with a link to /duels); all four duel notifications now deep-link to /duels/[id]
+  instead of /leaderboard?tab=competitive. A lapsed pending challenge now emits a
+  duel_expired notification, and declined/expired duels render explicit pills
+  instead of silent dead rows. The quiz page shows a "Duel vs X" banner + a
+  server-anchored countdown while playing a duel leg (start_duel_leg_for_quiz now
+  returns the leg context as JSONB) and auto-submits at zero; the results screen
+  links back to the duel. No Figma source for any of it; composed from existing
+  classes — same precedent as Groups/Leaderboard. The rating number is still
+  NEVER rendered. Do not remove

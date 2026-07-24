@@ -4,7 +4,9 @@ import { Topbar } from "@/app/components/Topbar";
 import { StartQuizProvider } from "@/app/components/StartQuizProvider";
 import { ActiveQuizBanner } from "@/app/components/ActiveQuizBanner";
 import { Toaster } from "@/app/components/ui/sonner";
+import { DuelRealtime } from "@/app/components/DuelRealtime";
 import { getProfile } from "@/lib/supabase/queries";
+import { getMyDuels, isActionableDuel } from "@/lib/duels";
 
 export default async function MainLayout({
   children,
@@ -28,10 +30,18 @@ export default async function MainLayout({
     isAuthor = !!data.is_author || data.role === "admin";
   }
 
+  // Duels awaiting this user's move, for the sidebar badge. getMyDuels also runs
+  // the lazy expire sweep; degrade to 0 so a duel hiccup never breaks the shell.
+  const duelCount = data
+    ? await getMyDuels()
+        .then((duels) => duels.filter(isActionableDuel).length)
+        .catch(() => 0)
+    : 0;
+
   return (
     <SidebarProvider>
       <StartQuizProvider>
-        <AppSidebar profile={profile} isAdmin={isAdmin} isAuthor={isAuthor} />
+        <AppSidebar profile={profile} isAdmin={isAdmin} isAuthor={isAuthor} duelCount={duelCount} />
         <div className="flex min-h-svh flex-1 flex-col">
           <Topbar displayName={profile.displayName} />
           <ActiveQuizBanner />
@@ -42,6 +52,7 @@ export default async function MainLayout({
           </main>
         </div>
         <Toaster />
+        {data?.id && <DuelRealtime userId={data.id} />}
       </StartQuizProvider>
     </SidebarProvider>
   );

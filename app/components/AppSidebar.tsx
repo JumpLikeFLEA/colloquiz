@@ -8,11 +8,13 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  Medal,
   PenLine,
   Settings2,
   Shield,
   ShieldCheck,
   Shuffle,
+  Swords,
   Trophy,
   Users,
 } from "lucide-react";
@@ -33,6 +35,8 @@ const navItems = [
   { label: "My Quizzes", description: "Assigned & created", href: "/my-quizzes", icon: GraduationCap },
   { label: "Groups", description: "Build quizzes together", href: "/groups", icon: Users },
   { label: "Dashboard", description: "Stats & history", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Leaderboard", description: "See where you rank", href: "/leaderboard", icon: Medal },
+  { label: "Duels", description: "1v1 challenges", href: "/duels", icon: Swords },
   { label: "Achievements", description: "Badges & rewards", href: "/achievements", icon: Trophy },
 ];
 
@@ -118,10 +122,13 @@ export function AppSidebar({
   profile,
   isAdmin,
   isAuthor,
+  duelCount = 0,
 }: {
   profile: UserProfile;
   isAdmin: boolean;
   isAuthor: boolean;
+  /** Duels awaiting this user's move — shown as a badge on the Duels entry. */
+  duelCount?: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -165,6 +172,7 @@ export function AppSidebar({
         <nav className="flex flex-col gap-1">
           {items.map(({ label, description, href, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            const badge = href === "/duels" && duelCount > 0 ? duelCount : null;
             return (
               <Link
                 key={href}
@@ -190,7 +198,12 @@ export function AppSidebar({
                   <p className="text-sm font-medium leading-none truncate">{label}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
                 </div>
-                {active && (
+                {badge !== null && (
+                  <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-[#4f46e5] text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
+                    {badge}
+                  </span>
+                )}
+                {active && !badge && (
                   <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
                 )}
               </Link>

@@ -143,6 +143,62 @@ export async function getMyGroups(
   }));
 }
 
+// ── Challengeable co-members, for the /duels "New duel" picker ─
+
+export type DuelTarget = {
+  opponentId: string;
+  opponentName: string;
+  groupId: string;
+  groupName: string;
+};
+
+/**
+ * Every (co-member, shared group) pair the user can duel — one row per pairing,
+ * excluding the user themselves. A person shared across two groups yields two
+ * rows so the picker can carry the specific group create_duel needs. Reuses the
+ * same batch pattern and `full_name || display_name` roster naming as getGroup.
+ */
+export async function getMyDuelTargets(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<DuelTarget[]> {
+  const { data: myMemberships } = await supabase
+    .from("group_members")
+    .select("group_id")
+    .eq("user_id", userId);
+
+  const groupIds = (myMemberships ?? []).map((m) => m.group_id as string);
+  if (groupIds.length === 0) return [];
+
+  const [{ data: groups }, { data: allMembers }] = await Promise.all([
+    supabase.from("groups").select("id, name").in("id", groupIds),
+    supabase.from("group_members").select("group_id, user_id").in("group_id", groupIds),
+  ]);
+
+  const otherIds = [
+    ...new Set(
+      (allMembers ?? []).map((m) => m.user_id as string).filter((id) => id !== userId),
+    ),
+  ];
+  const { data: profiles } = otherIds.length
+    ? await supabase.from("profiles").select("id, display_name, full_name").in("id", otherIds)
+    : { data: [] };
+
+  const nameById = new Map(
+    (profiles ?? []).map((p) => [p.id, (p.full_name || p.display_name || "Member") as string]),
+  );
+  const groupName = new Map((groups ?? []).map((g) => [g.id as string, g.name as string]));
+
+  return (allMembers ?? [])
+    .filter((m) => m.user_id !== userId)
+    .map((m) => ({
+      opponentId: m.user_id as string,
+      opponentName: nameById.get(m.user_id as string) ?? "Member",
+      groupId: m.group_id as string,
+      groupName: groupName.get(m.group_id as string) ?? "Group",
+    }));
+}
+
 // ── A single group, prepared for the detail view ────────────
 
 export type GroupMemberView = {

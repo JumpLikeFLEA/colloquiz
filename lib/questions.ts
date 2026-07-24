@@ -161,13 +161,6 @@ export async function saveQuestions(newQuestions: Question[], userId?: string): 
 export async function sampleQuestions(filter: QuizFilter): Promise<Question[]> {
   const supabase = await createClient();
 
-  let effectiveTags = filter.tags;
-  if (filter.subject && effectiveTags.length === 0) {
-    const subjects = getSubjects();
-    const subject = subjects.find((s) => s.id === filter.subject);
-    if (subject) effectiveTags = subject.tags;
-  }
-
   // Only ever sample from the public pool. RLS also lets an author read their
   // own private questions and a student read questions of an assigned quiz —
   // filter explicitly so private questions never leak into random quizzes.
@@ -177,11 +170,22 @@ export async function sampleQuestions(filter: QuizFilter): Promise<Question[]> {
     .eq("status", "approved")
     .eq("visibility", "shared");
 
+  // A requested subject filters on questions.subject directly. This used to be
+  // approximated by looking up subjects.json `tags` and doing a tag overlap —
+  // but 13 of the 19 subjects have `tags: []`, so the overlap was skipped
+  // entirely and "Mathematics → Medium" sampled the whole pool. Deep Dive was
+  // hit too: it sends subject AND subtopic tags, so a tag-only match pulled in
+  // same-named subtopics from other subjects.
+  if (filter.subject) {
+    query = query.eq("subject", filter.subject);
+  }
   if (filter.difficulty !== "mixed") {
     query = query.eq("difficulty", filter.difficulty);
   }
-  if (effectiveTags.length > 0) {
-    query = query.overlaps("tags", effectiveTags);
+  // Subtopics narrow within the subject. With no subject (Random Quiz, tag-only
+  // selections) this is the only content filter, as before.
+  if (filter.tags.length > 0) {
+    query = query.overlaps("tags", filter.tags);
   }
 
   const { data, error } = await query;

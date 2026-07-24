@@ -14,6 +14,7 @@ import {
   ClipboardList,
   FileCheck,
   Flag,
+  Swords,
   Trophy,
   UserPlus,
   Users,
@@ -145,6 +146,73 @@ function render(n: AppNotification): Rendered {
         ),
         href: p.group_id ? `/groups/${String(p.group_id)}/review` : "/groups",
       };
+    // Duel notifications (017). The payloads deliberately carry only the
+    // outcome — never a rating number, which is hidden by design.
+    case "duel_challenge":
+      return {
+        icon: Swords,
+        message: (
+          <>
+            <b>{String(p.from ?? "Someone")}</b> challenged you to a duel
+            {p.subject ? <> on <b>{String(p.subject)}</b></> : null}.
+          </>
+        ),
+        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+      };
+    case "duel_accepted":
+      return {
+        icon: Swords,
+        message: (
+          <>
+            <b>{String(p.by ?? "Your opponent")}</b> accepted your duel — it&rsquo;s
+            your turn to play.
+          </>
+        ),
+        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+      };
+    case "duel_declined":
+      return {
+        icon: Swords,
+        message: (
+          <>
+            <b>{String(p.by ?? "Your opponent")}</b> declined your duel.
+          </>
+        ),
+        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+      };
+    case "duel_resolved":
+      return {
+        icon: Swords,
+        message:
+          p.outcome === "win" ? (
+            <>You <b>won</b> your duel.</>
+          ) : p.outcome === "loss" ? (
+            <>You <b>lost</b> your duel.</>
+          ) : (
+            <>Your duel ended in a <b>draw</b>.</>
+          ),
+        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+      };
+    case "duel_expired":
+      return {
+        icon: Swords,
+        message: (
+          <>
+            Your duel challenge <b>expired</b> unanswered.
+          </>
+        ),
+        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+      };
+    case "duel_cancelled":
+      return {
+        icon: Swords,
+        message: (
+          <>
+            <b>{String(p.by ?? "Your opponent")}</b> withdrew their duel challenge.
+          </>
+        ),
+        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+      };
     default:
       return { icon: Bell, message: <>You have a new notification.</> };
   }
@@ -171,6 +239,14 @@ export function NotificationBell() {
     return () => {
       active = false;
     };
+  }, []);
+
+  // Realtime nudge from DuelRealtime: a notification just arrived. Light the dot
+  // immediately; the full list is refetched when the popover next opens.
+  useEffect(() => {
+    const onNew = () => setUnread((u) => u + 1);
+    window.addEventListener("notification:new", onNew);
+    return () => window.removeEventListener("notification:new", onNew);
   }, []);
 
   const handleOpenChange = useCallback(async (next: boolean) => {

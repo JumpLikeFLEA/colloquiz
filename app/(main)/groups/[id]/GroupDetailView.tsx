@@ -15,6 +15,8 @@ import {
   ClipboardList,
   LogOut,
   BookOpen,
+  Medal,
+  Swords,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,13 +28,19 @@ import {
 } from "@/app/components/ui/dialog";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import type { GroupDetail } from "@/lib/groups";
+import type { LeaderboardRow } from "@/lib/leaderboard";
 
 export function GroupDetailView({
   detail,
   userId,
+  standings,
+  subjects,
 }: {
   detail: GroupDetail;
   userId: string;
+  standings: LeaderboardRow[];
+  /** Subjects that actually have pool questions — the duel dialog's options. */
+  subjects: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const { startQuiz } = useStartQuiz();
@@ -52,6 +60,42 @@ export function GroupDetailView({
   );
   const [creatingQuiz, setCreatingQuiz] = useState(false);
   const [quizTitle, setQuizTitle] = useState("");
+  const [challenging, setChallenging] = useState<{ id: string; name: string } | null>(null);
+  const [duelSubject, setDuelSubject] = useState("");
+  const [duelDifficulty, setDuelDifficulty] = useState<"mixed" | "easy" | "medium" | "hard">("mixed");
+  const [duelSize, setDuelSize] = useState(10);
+  const [sendingDuel, setSendingDuel] = useState(false);
+  const [duelError, setDuelError] = useState<string | null>(null);
+
+  async function sendChallenge() {
+    if (!challenging) return;
+    setSendingDuel(true);
+    setDuelError(null);
+    try {
+      const res = await fetch("/api/duels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          opponentId: challenging.id,
+          groupId: group.id,
+          subject: duelSubject || null,
+          difficulty: duelDifficulty,
+          size: duelSize,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDuelError(data.error ?? "Could not send the challenge.");
+        return;
+      }
+      setChallenging(null);
+      // The challenge is not playable until they accept, so send the challenger
+      // to their duel list rather than straight into the quiz.
+      router.push("/duels");
+    } finally {
+      setSendingDuel(false);
+    }
+  }
 
   useEffect(() => {
     if (!isOwner) return;
@@ -355,6 +399,16 @@ export function GroupDetailView({
                   )}
                 </div>
               </div>
+              {m.id !== userId && (
+                <button
+                  onClick={() => setChallenging({ id: m.id, name: m.name })}
+                  aria-label={`Challenge ${m.name} to a duel`}
+                  title="Challenge to a duel"
+                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-[#4f46e5] hover:bg-[#eef2ff] transition-colors"
+                >
+                  <Swords size={15} />
+                </button>
+              )}
               {/* The owner's row has no action: the RLS policy refuses to
                   delete it, so an owner leaves by deleting the group. */}
               {m.role === "member" && (m.id === userId || isOwner) && (
@@ -370,6 +424,145 @@ export function GroupDetailView({
           ))}
         </div>
       </div>
+
+      {/* Standings — the same global XP as the main leaderboard, restricted to
+          this group's members, so the two boards can never disagree. Members
+          with no eligible XP yet simply don't appear. */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-3">Standings</h2>
+        {standings.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-10 px-6 text-center rounded-2xl border border-border bg-card">
+            <Medal size={20} className="text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">No XP yet</p>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Standings count XP from the public question pool. Group quizzes build
+              the material — they don&apos;t feed the ranking.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {standings.map((s) => (
+              <div
+                key={s.user_id}
+                className={`flex items-center gap-3 p-4 rounded-2xl border border-border ${
+                  s.is_me ? "bg-[#eef2ff]" : "bg-card"
+                }`}
+              >
+                <span className="w-6 text-sm text-muted-foreground shrink-0">{s.rank}</span>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0">
+                  {s.display_name
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {s.display_name}
+                    </p>
+                    {s.is_me && (
+                      <span className="text-xs text-muted-foreground shrink-0">you</span>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-foreground shrink-0">
+                  {s.xp.toLocaleString()} XP
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Challenge to a duel. The challenger picks subject and difficulty; the
+          server samples the questions and pins them, so both players get an
+          identical set. */}
+      <Dialog
+        open={challenging !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setChallenging(null);
+            setDuelError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Challenge {challenging?.name}</DialogTitle>
+            <DialogDescription>
+              You both answer the same questions, whenever suits you. Higher score
+              wins; if you tie, the faster run takes it.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3">
+            <select
+              value={duelSubject}
+              onChange={(e) => setDuelSubject(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none cursor-pointer"
+            >
+              <option value="">Any subject</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex gap-1.5">
+              {(["mixed", "easy", "medium", "hard"] as const).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDuelDifficulty(d)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                    duelDifficulty === d
+                      ? "bg-[#eef2ff] text-[#4f46e5]"
+                      : "border border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {d === "mixed" ? "Any" : d.charAt(0).toUpperCase() + d.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-1.5">
+              {[5, 10, 20].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setDuelSize(n)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                    duelSize === n
+                      ? "bg-[#eef2ff] text-[#4f46e5]"
+                      : "border border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {n} questions
+                </button>
+              ))}
+            </div>
+
+            {duelError && <p className="text-sm text-red-600">{duelError}</p>}
+          </div>
+
+          <DialogFooter>
+            <button
+              onClick={() => setChallenging(null)}
+              className="cursor-pointer px-3 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={sendChallenge}
+              disabled={sendingDuel}
+              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+            >
+              {sendingDuel ? "Sending…" : "Send challenge"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* New quiz dialog */}
       <Dialog open={creatingQuiz} onOpenChange={setCreatingQuiz}>

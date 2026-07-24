@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   User, Mail, Calendar, MapPin, Edit3, TrendingUp, Target, Clock,
-  Award, Flame, BarChart2, CheckCircle2, XCircle, ChevronRight, Star
+  Award, Flame, BarChart2, CheckCircle2, XCircle, ChevronRight, Star, Medal
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -31,13 +32,16 @@ type DashboardViewProps = {
     created_at: string;
   };
   results: EnrichedResult[];
+  /** 7-day standing, or null when the user has no eligible XP this week. */
+  myRank: { rank: number; xp: number; total_ranked: number } | null;
 };
 
-export function DashboardView({ userId, email, profile, results }: DashboardViewProps) {
+export function DashboardView({ userId, email, profile, results, myRank }: DashboardViewProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [formFullName, setFormFullName] = useState("");
   const [formCity, setFormCity] = useState("");
+  const [formPublicName, setFormPublicName] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const displayName = profile.full_name ?? profile.display_name ?? "";
@@ -135,14 +139,24 @@ export function DashboardView({ userId, email, profile, results }: DashboardView
   function enterEdit() {
     setFormFullName(profile.full_name ?? profile.display_name ?? "");
     setFormCity(profile.city ?? "");
+    // Seed the public name from the real name only as a starting point — it is
+    // stored separately so changing one never changes the other.
+    setFormPublicName(profile.display_name ?? profile.full_name ?? "");
     setEditing(true);
   }
 
   async function handleSave() {
     const supabase = createClient();
+    // display_name is the only name shown on leaderboards; full_name never
+    // leaves the surfaces that already showed it (rosters, attribution).
+    const publicName = formPublicName.trim();
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: formFullName, city: formCity })
+      .update({
+        full_name: formFullName,
+        city: formCity,
+        ...(publicName && { display_name: publicName }),
+      })
       .eq("id", userId);
     if (error) { setSaveError(error.message); return; }
     router.refresh();
@@ -182,6 +196,16 @@ export function DashboardView({ userId, email, profile, results }: DashboardView
                     className="w-full px-3 py-1.5 rounded-lg border border-border text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
                   />
                   <p className="text-xs text-muted-foreground text-center py-1.5">{email}</p>
+                  <input
+                    value={formPublicName}
+                    onChange={e => setFormPublicName(e.target.value)}
+                    placeholder="Public name"
+                    aria-label="Public name, shown on leaderboards"
+                    className="w-full px-3 py-1.5 rounded-lg border border-border text-xs text-center focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
+                  />
+                  <p className="text-xs text-muted-foreground text-center leading-snug">
+                    Shown on leaderboards
+                  </p>
                   <input
                     value={formCity}
                     onChange={e => setFormCity(e.target.value)}
@@ -286,6 +310,31 @@ export function DashboardView({ userId, email, profile, results }: DashboardView
           })}
         </div>
       </div>
+
+      {/* Leaderboard standing — rendered only when the user is actually ranked,
+          so a new learner is not shown an empty "unranked" tile. */}
+      {myRank && (
+        <Link
+          href="/leaderboard"
+          className="flex items-center gap-4 p-5 rounded-2xl border border-border bg-card hover:bg-accent transition-colors"
+        >
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+            style={{ backgroundColor: "#fffbeb", color: "#f59e0b" }}
+          >
+            <Medal size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-foreground leading-none">
+              #{myRank.rank} of {myRank.total_ranked} this week
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {myRank.xp.toLocaleString()} XP earned in the last 7 days
+            </p>
+          </div>
+          <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+        </Link>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">

@@ -57,12 +57,47 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
   // original started_at, so the clock reflects the whole run, not this visit.
   // Signed-out users have no session: time this page view instead.
   let startedAt = new Date().toISOString();
+  // Populated only when this quiz is an active duel leg for the current user;
+  // drives the in-quiz "Duel vs X" banner + countdown and the results banner.
+  let duel: {
+    duelId: string;
+    opponentName: string;
+    startedAt: string;
+    timeLimitSeconds: number;
+  } | null = null;
   const user = await getUser();
   if (user) {
     const supabase = await createClient();
     const start = await startOrResumeSession(supabase, user.id, id);
     if (!start.ok) redirect("/my-quizzes");
     startedAt = start.session.started_at;
+
+    // If this quiz is a duel leg, the duel's server-side clock starts HERE —
+    // only once the session is confirmed. Starting it back on the "Play" button
+    // would run the timer while a player with another quiz already active sits
+    // on the redirect above, and could time them out of a duel they never saw.
+    // start_duel_leg is idempotent, so resuming does not restart the clock, and
+    // it is a no-op for an ordinary quiz. It now returns the duel context (or
+    // { is_duel: false }) so the quiz can show the banner and countdown without
+    // a second round-trip.
+    const { data: legData } = await supabase.rpc("start_duel_leg_for_quiz", {
+      p_quiz_id: id,
+    });
+    const leg = legData as {
+      is_duel?: boolean;
+      duel_id?: string;
+      opponent_name?: string;
+      started_at?: string;
+      time_limit_seconds?: number;
+    } | null;
+    if (leg?.is_duel && leg.duel_id && leg.started_at) {
+      duel = {
+        duelId: leg.duel_id,
+        opponentName: leg.opponent_name ?? "your opponent",
+        startedAt: leg.started_at,
+        timeLimitSeconds: leg.time_limit_seconds ?? 900,
+      };
+    }
 
     const saved = Array.isArray(start.session.answers) ? start.session.answers : [];
     initialProgress = {
@@ -94,6 +129,7 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
       initialProgress={initialProgress}
       initialReportedIds={initialReportedIds}
       startedAt={startedAt}
+      duel={duel}
     />
   );
 }

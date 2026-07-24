@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle, ChevronRight,
   Trophy, RotateCcw, Star, Zap, Target, Award, TrendingUp,
-  AlertCircle, BookOpen, Flag,
+  AlertCircle, BookOpen, Flag, Swords,
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   Code, Brain, Palette, Music, Languages
 } from "lucide-react";
@@ -53,6 +54,14 @@ interface Props {
   /** The session's started_at (ISO). The timer counts from here, so it keeps
    *  running across navigation away and back. */
   startedAt: string;
+  /** Present only when this quiz is an active duel leg for the current user.
+   *  Drives the duel banner, the server-anchored countdown, and auto-submit. */
+  duel: {
+    duelId: string;
+    opponentName: string;
+    startedAt: string;
+    timeLimitSeconds: number;
+  } | null;
 }
 
 type SubmissionResult = {
@@ -116,6 +125,7 @@ export default function QuizSession({
   initialProgress,
   initialReportedIds,
   startedAt,
+  duel,
 }: Props) {
   const router = useRouter();
   // Resume from saved progress. If the current question was already answered,
@@ -143,6 +153,21 @@ export default function QuizSession({
   const startedAtMs = new Date(startedAt).getTime();
   const timer = useTimer(startedAtMs);
   const submittedRef = useRef(false);
+  // Latest answers, so a timeout auto-submit reads current selections rather
+  // than a stale closure captured when the countdown effect last ran.
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+
+  // Duel countdown. The deadline is server-anchored (the leg's started_at +
+  // limit), matching the trigger's timed_out check. Initialised to the full
+  // limit — a constant, so server and client first paint agree — then the
+  // effect corrects it on mount.
+  const duelDeadlineMs = duel
+    ? new Date(duel.startedAt).getTime() + duel.timeLimitSeconds * 1000
+    : null;
+  const [duelRemaining, setDuelRemaining] = useState<number | null>(
+    duel ? duel.timeLimitSeconds : null,
+  );
 
   const markReported = useCallback((questionId: string) => {
     setReportedIds((prev) => new Set(prev).add(questionId));
@@ -211,7 +236,7 @@ export default function QuizSession({
     submittedRef.current = true;
     try {
       const answerRecords = questions.map((q, i) => {
-        const ans = answers[i];
+        const ans = answersRef.current[i];
         return {
           questionId: q.id,
           userAnswer: ans !== null ? q.options[ans] : "",
@@ -236,6 +261,28 @@ export default function QuizSession({
       console.error("Failed to save quiz result", e);
     }
   };
+
+  // Duel timeout: when the server-anchored clock reaches zero, auto-submit
+  // whatever's answered so the leg is recorded now instead of waiting for the
+  // 3-day deadline sweep. A late leg forfeits either way (the trigger scores a
+  // timed-out submission zero), so this only spares the player the wait.
+  useEffect(() => {
+    if (duelDeadlineMs === null || phase === "results") return;
+    const tick = () => {
+      const rem = Math.max(0, Math.ceil((duelDeadlineMs - Date.now()) / 1000));
+      setDuelRemaining(rem);
+      if (rem <= 0 && !submittedRef.current) {
+        timer.stop();
+        setPhase("results");
+        submitResult();
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+    // submitResult reads live state through answersRef; timer.stop is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duelDeadlineMs, phase]);
 
   const handleNext = () => {
     if (currentIndex < totalQuestions - 1) {
@@ -315,12 +362,43 @@ export default function QuizSession({
         onReported={markReported}
         onBack={handleBack}
         onRetry={handleRetry}
+        duel={duel}
       />
     );
   }
 
   return (
     <div className="flex flex-col gap-0 min-h-full">
+      {/* Duel banner + server-anchored countdown */}
+      {duel && (
+        <div className="flex items-center gap-3 mb-6 p-3.5 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff]">
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4f46e5] text-white shrink-0">
+            <Swords size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              Duel vs {duel.opponentName}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Beat their score before time runs out.
+            </p>
+          </div>
+          {duelRemaining !== null && (
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono shrink-0 ${
+                duelRemaining <= 60
+                  ? "bg-red-100 text-red-600"
+                  : "bg-white text-foreground"
+              }`}
+            >
+              <Clock size={14} />
+              {String(Math.floor(duelRemaining / 60)).padStart(2, "0")}:
+              {String(duelRemaining % 60).padStart(2, "0")}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <button
@@ -582,12 +660,13 @@ interface ResultsScreenProps {
   onReported: (questionId: string) => void;
   onBack: () => void;
   onRetry: () => void;
+  duel: Props["duel"];
 }
 
 function ResultsScreen({
   questions, answers, score, total, excludedCount, scorePercent, timeFormatted,
   submissionResult, grade, subject, difficulty, reviewExpanded, setReviewExpanded,
-  reportedIds, onReported, onBack, onRetry
+  reportedIds, onReported, onBack, onRetry, duel
 }: ResultsScreenProps) {
   const displayCorrect = submissionResult?.correctCount ?? score;
   const displayWrong = total - displayCorrect;
@@ -599,6 +678,26 @@ function ResultsScreen({
       animate={{ opacity: 1, scale: 1 }}
       className="flex flex-col gap-8"
     >
+      {/* Duel: link back to the duel to see the opponent's leg + outcome */}
+      {duel && (
+        <Link
+          href={`/duels/${duel.duelId}`}
+          className="flex items-center gap-3 p-4 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff] hover:bg-[#e0e7ff] transition-colors"
+        >
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4f46e5] text-white shrink-0">
+            <Swords size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">
+              Duel leg submitted vs {duel.opponentName}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              See the duel status and result →
+            </p>
+          </div>
+        </Link>
+      )}
+
       {/* Hero result */}
       <div
         className="relative overflow-hidden flex flex-col items-center text-center gap-4 p-8 rounded-3xl border"
