@@ -14,20 +14,26 @@ exactly seven keys — no system fields:
   "explanation": "..." }
 ```
 
+`options` is either 4 strings (multiple choice) or exactly `["True","False"]`
+(true/false). The importer derives `type` from the count and pads a true/false row to
+the stored 4-tuple `["True","False","",""]` — do not treat a 2-option row as broken.
+
 The import machinery already exists — **do not rebuild it**. Your job is to inspect,
 gate, register any new subject, then run the importer.
 
 ## 1. Locate & inspect
 
 Default location is `authored/*.json` (one file per subtopic), or the path the user gives.
-For each file confirm: array shape, 4 options per row, `correct_answer` is one of the
-options verbatim, difficulty spread, and the `subject` / `subtopic` values.
+For each file confirm: array shape, 4 options per row (or exactly `["True","False"]` for a
+true/false row), `correct_answer` is one of the options verbatim, difficulty spread, and the
+`subject` / `subtopic` values.
 
 ## 2. Coherence gate — report, don't silently import
 
 Reject and surface rows that are **genuinely broken**: missing keys, `correct_answer` not
-among the options, not exactly 4 options, empty/duplicate options, or an off-topic /
-factually wrong answer. If a batch is largely broken, stop and report — don't import junk.
+among the options, an option count that is neither 4 nor a valid `["True","False"]` pair,
+empty/duplicate options, or an off-topic / factually wrong answer. If a batch is largely
+broken, stop and report — don't import junk.
 
 These are **NOT** blockers (standard handling, do not flag as problems):
 

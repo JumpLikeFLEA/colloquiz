@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, GraduationCap, PanelLeftIcon } from "lucide-react";
 
@@ -13,8 +12,7 @@ const routeLabels: Record<string, string> = {
   "/advanced": "Deep Dive",
   "/custom": "Create Quiz",
   "/build": "Build Quiz",
-  "/dashboard": "Dashboard",
-  "/achievements": "Achievements",
+  "/progress": "Progress",
   "/quiz": "Quiz in progress",
   "/admin/quiz-builder": "Admin",
   "/my-quizzes": "My Quizzes",
@@ -26,22 +24,17 @@ const routeLabels: Record<string, string> = {
   "/groups": "Groups",
 };
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-export function Topbar({ displayName }: { displayName: string }) {
+export function Topbar({ displayName: _displayName }: { displayName: string }) {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
-  const base = "/" + (pathname.split("/")[1] ?? "");
+  const segments = pathname.split("/").filter(Boolean);
+  const base = "/" + (segments[0] ?? "");
   const label = routeLabels[pathname] ?? routeLabels[base] ?? "Colloquiz";
-
-  const initials = getInitials(displayName);
+  // Top-level pages (depth 0-1, e.g. "/", "/advanced", "/groups") would render a
+  // one-level crumb pointing at the page you're already on — pure noise. Show the
+  // breadcrumb only for genuinely nested screens ("/groups/[id]", "/duels/[id]").
+  // Derived from segment count, so new top-level routes get this automatically.
+  const showBreadcrumb = segments.length > 1;
 
   return (
     <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-card shrink-0">
@@ -56,27 +49,20 @@ export function Topbar({ displayName }: { displayName: string }) {
         <PanelLeftIcon className="size-4" />
       </Button>
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <GraduationCap size={14} />
-        <span>Colloquiz</span>
-        <ChevronRight size={13} />
-        <span className="text-foreground font-medium">{label}</span>
-      </div>
+      {/* Breadcrumb — nested screens only */}
+      {showBreadcrumb && (
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <GraduationCap size={14} />
+          <span>Colloquiz</span>
+          <ChevronRight size={13} />
+          <span className="text-foreground font-medium">{label}</span>
+        </div>
+      )}
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2">
         {/* Notification bell */}
         <NotificationBell />
-
-        {/* User avatar → dashboard */}
-        <Link
-          href="/dashboard"
-          className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-xs font-medium select-none"
-          aria-label="Go to dashboard"
-        >
-          {initials}
-        </Link>
       </div>
     </header>
   );

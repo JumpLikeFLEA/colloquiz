@@ -5,18 +5,19 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  ChevronDown,
   GraduationCap,
-  LayoutDashboard,
   LogOut,
   Medal,
   PenLine,
+  Settings,
   Settings2,
   Shield,
   ShieldCheck,
-  Shuffle,
   Swords,
-  Trophy,
+  TrendingUp,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -26,18 +27,48 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "@/app/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
-import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
-const navItems = [
-  { label: "Quick Play", description: "10 questions, pick & go", href: "/", icon: BookOpen },
-  { label: "Deep Dive", description: "Fine-tune subjects & difficulty", href: "/advanced", icon: Settings2 },
-  { label: "My Quizzes", description: "Assigned & created", href: "/my-quizzes", icon: GraduationCap },
-  { label: "Groups", description: "Build quizzes together", href: "/groups", icon: Users },
-  { label: "Dashboard", description: "Stats & history", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Leaderboard", description: "See where you rank", href: "/leaderboard", icon: Medal },
-  { label: "Duels", description: "1v1 challenges", href: "/duels", icon: Swords },
-  { label: "Achievements", description: "Badges & rewards", href: "/achievements", icon: Trophy },
+type NavItem = {
+  label: string;
+  description?: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+// Descriptions are intentionally sparse: only the two items whose purpose isn't
+// obvious from the label keep a subtitle. Achievements rides in My learning for
+// now — a later change merges it with Dashboard.
+const navSections: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Play",
+    items: [
+      { label: "Quick Play", href: "/", icon: BookOpen },
+      { label: "Deep Dive", description: "Mix subjects, set length", href: "/advanced", icon: Settings2 },
+    ],
+  },
+  {
+    label: "My learning",
+    items: [
+      { label: "My Quizzes", href: "/my-quizzes", icon: GraduationCap },
+      { label: "Groups", href: "/groups", icon: Users },
+      { label: "Progress", href: "/progress", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Compete",
+    items: [
+      { label: "Duels", description: "1v1 challenges", href: "/duels", icon: Swords },
+      { label: "Leaderboard", href: "/leaderboard", icon: Medal },
+    ],
+  },
 ];
 
 // The tutor/author flow is dormant while Groups is the active collaboration
@@ -60,16 +91,14 @@ const authorItems = [
   },
 ];
 
-const adminItems = [
+const adminItems: NavItem[] = [
   {
     label: "Quiz Builder",
-    description: "Author manual questions",
     href: "/admin/quiz-builder",
     icon: Shield,
   },
   {
     label: "Review Queue",
-    description: "Review AI-generated questions",
     href: "/admin/review",
     icon: ShieldCheck,
   },
@@ -79,6 +108,10 @@ export type UserProfile = {
   displayName: string;
   xp: number;
   level: number;
+  /** XP remaining to reach the next level (from getLevelProgress). */
+  xpToNext: number;
+  /** Progress toward the next level, 0–100 (from getLevelProgress). */
+  progress: number;
 };
 
 function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: () => void }) {
@@ -88,33 +121,83 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const firstName = profile.displayName.split(" ")[0] || profile.displayName;
+  const pct = Math.min(100, Math.max(0, profile.progress));
+
+  // Progress ring geometry for the collapsed rail. The ring hugs the 36px
+  // (w-9) avatar; -inset-[3px] grows the SVG box to 42px so a 3px stroke sits
+  // just outside the avatar edge.
+  const R = 19.5;
+  const CIRC = 2 * Math.PI * R;
 
   return (
-    <div className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
-        {initials}
-      </div>
-      <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-        <p className="text-sm font-medium text-sidebar-foreground leading-none truncate">
-          {profile.displayName}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Level {profile.level} · {profile.xp} XP
-        </p>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0 group-data-[collapsible=icon]:hidden">
-        <div className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
-          <span className="text-amber-600 text-xs font-medium">Lv.{profile.level}</span>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Account menu"
+        className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+      >
+        <div className="relative shrink-0">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium select-none">
+            {initials}
+          </div>
+          {/* Progress ring — collapsed rail only (bar replaces it when expanded) */}
+          <svg
+            className="absolute -inset-[3px] hidden -rotate-90 group-data-[collapsible=icon]:block"
+            viewBox="0 0 42 42"
+            aria-hidden
+          >
+            <circle cx="21" cy="21" r={R} fill="none" strokeWidth="3" className="stroke-muted" />
+            <circle
+              cx="21"
+              cy="21"
+              r={R}
+              fill="none"
+              strokeWidth="3"
+              strokeLinecap="round"
+              className="stroke-[#4f46e5]"
+              strokeDasharray={CIRC}
+              strokeDashoffset={CIRC * (1 - pct / 100)}
+            />
+          </svg>
         </div>
-        <button
-          onClick={onSignOut}
-          aria-label="Sign out"
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+        <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
+          <p className="text-sm font-medium text-sidebar-foreground leading-none">
+            {firstName}
+          </p>
+          {/* Progress bar toward next level */}
+          <div className="mt-1.5 h-[3px] w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#4f46e5] to-[#7c3aed]"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Level {profile.level} · {profile.xpToNext} XP to level {profile.level + 1}
+          </p>
+        </div>
+        <ChevronDown
+          size={14}
+          className="text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden"
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" className="w-56">
+        <DropdownMenuItem asChild>
+          <Link href="/settings" className="cursor-pointer">
+            <Settings size={16} />
+            Settings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={onSignOut}
+          className="cursor-pointer"
         >
-          <LogOut size={14} />
-        </button>
-      </div>
-    </div>
+          <LogOut size={16} />
+          Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -132,7 +215,6 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { startQuiz } = useStartQuiz();
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -141,11 +223,47 @@ export function AppSidebar({
     router.refresh();
   }
 
-  const items = navItems;
-
-  async function handleRandomQuiz() {
-    await startQuiz({ filter: { difficulty: "mixed", size: 10, mode: "ordinary" } });
-  }
+  const renderNavLink = ({ label, description, href, icon: Icon }: NavItem) => {
+    const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    const badge = href === "/duels" && duelCount > 0 ? duelCount : null;
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+          active
+            ? "bg-[#eef2ff] text-[#4f46e5]"
+            : "text-foreground hover:bg-accent",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
+            active
+              ? "bg-[#4f46e5] text-white"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          <Icon size={16} />
+        </div>
+        <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+          <p className="text-sm font-medium leading-none truncate">{label}</p>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
+          )}
+        </div>
+        {badge !== null && (
+          <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-[#4f46e5] text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
+            {badge}
+          </span>
+        )}
+        {active && !badge && (
+          <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
+        )}
+      </Link>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -163,53 +281,16 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4 group-data-[collapsible=icon]:px-2">
-        {/* Menu label */}
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
-          Menu
-        </p>
-
-        {/* Nav items */}
-        <nav className="flex flex-col gap-1">
-          {items.map(({ label, description, href, icon: Icon }) => {
-            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-            const badge = href === "/duels" && duelCount > 0 ? duelCount : null;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                  active
-                    ? "bg-[#eef2ff] text-[#4f46e5]"
-                    : "text-foreground hover:bg-accent",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
-                    active
-                      ? "bg-[#4f46e5] text-white"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  <Icon size={16} />
-                </div>
-                <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                  <p className="text-sm font-medium leading-none truncate">{label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
-                </div>
-                {badge !== null && (
-                  <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-[#4f46e5] text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
-                    {badge}
-                  </span>
-                )}
-                {active && !badge && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+        {navSections.map((section, i) => (
+          <div key={section.label} className={i === 0 ? undefined : "mt-4"}>
+            <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+              {section.label}
+            </p>
+            <nav className="flex flex-col gap-1">
+              {section.items.map(renderNavLink)}
+            </nav>
+          </div>
+        ))}
 
         {/* Author */}
         {SHOW_AUTHOR_NAV && isAuthor && (
@@ -258,65 +339,15 @@ export function AppSidebar({
         {/* Admin */}
         {isAdmin && (
           <div className="mt-4">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+            <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
               Admin
             </p>
             <nav className="flex flex-col gap-1">
-              {adminItems.map(({ label, description, href, icon: Icon }) => {
-                const active = pathname.startsWith(href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                      active
-                        ? "bg-[#eef2ff] text-[#4f46e5]"
-                        : "text-foreground hover:bg-accent",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
-                        active
-                          ? "bg-[#4f46e5] text-white"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      <Icon size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                      <p className="text-sm font-medium leading-none truncate">{label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
-                    </div>
-                    {active && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
-                    )}
-                  </Link>
-                );
-              })}
+              {adminItems.map(renderNavLink)}
             </nav>
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="mt-4">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
-            Quick Actions
-          </p>
-          <button
-            onClick={handleRandomQuiz}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-foreground hover:bg-accent transition-all w-full cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground shrink-0">
-              <Shuffle size={16} />
-            </div>
-            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <p className="text-sm font-medium leading-none">Random Quiz</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Surprise me!</p>
-            </div>
-          </button>
-        </div>
       </SidebarContent>
 
       <SidebarFooter className="px-3 py-4 border-t border-sidebar-border group-data-[collapsible=icon]:px-2">

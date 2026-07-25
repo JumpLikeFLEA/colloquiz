@@ -109,7 +109,7 @@ function render(n: AppNotification): Rendered {
             <b>{achievementTitle(String(p.achievement_id))}</b>.
           </>
         ),
-        href: "/achievements",
+        href: "/progress?tab=achievements",
       };
     case "question_reviewed":
       return {

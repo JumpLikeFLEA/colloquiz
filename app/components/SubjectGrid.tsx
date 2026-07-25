@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Atom,
   BookOpen,
@@ -278,6 +279,15 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
           ))}
         </div>
       )}
+
+      {/* Quiet path to the advanced flow — muted so it doesn't compete with the
+          per-card Start Quiz buttons. */}
+      <p className="text-center text-sm text-muted-foreground">
+        Need more control? Mix subjects, pick subtopics, and set quiz length in{" "}
+        <Link href="/advanced" className="text-brand font-medium hover:underline">
+          Deep Dive →
+        </Link>
+      </p>
     </div>
   );
 }

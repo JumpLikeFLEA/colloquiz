@@ -16,8 +16,8 @@ import { createClient } from "@/lib/supabase/client";
 import { ErrorDialog } from "@/app/components/ErrorDialog";
 import type { EnrichedResult } from "@/lib/questions";
 import { formatDuration } from "@/lib/format";
+import { XP_PER_LEVEL, getLevelProgress } from "@/lib/levels";
 
-const XP_PER_LEVEL = 500;
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type DashboardViewProps = {
@@ -52,9 +52,7 @@ export function DashboardView({ userId, email, profile, results, myRank }: Dashb
     .toUpperCase()
     .slice(0, 2);
 
-  const level = Math.floor(profile.total_xp / XP_PER_LEVEL) + 1;
-  const xpIntoLevel = profile.total_xp % XP_PER_LEVEL;
-  const xpProgress = (xpIntoLevel / XP_PER_LEVEL) * 100;
+  const { level, xpIntoLevel, progress: xpProgress } = getLevelProgress(profile.total_xp);
 
   const memberSince = new Date(profile.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -165,12 +163,6 @@ export function DashboardView({ userId, email, profile, results, myRank }: Dashb
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Your learning journey at a glance</p>
-      </div>
-
       {/* Profile + Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5">
         {/* Profile Card */}
@@ -271,7 +263,7 @@ export function DashboardView({ userId, email, profile, results, myRank }: Dashb
           </div>
 
           <button
-            onClick={() => router.push("/achievements")}
+            onClick={() => router.push("/progress?tab=achievements")}
             className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm cursor-pointer"
           >
             <Award size={15} />

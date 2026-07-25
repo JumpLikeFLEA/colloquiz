@@ -7,6 +7,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { DuelRealtime } from "@/app/components/DuelRealtime";
 import { getProfile } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
+import { getLevelProgress } from "@/lib/levels";
 
 export default async function MainLayout({
   children,
@@ -15,16 +16,25 @@ export default async function MainLayout({
 }) {
   const data = await getProfile();
 
-  let profile: UserProfile = { displayName: "Student", xp: 0, level: 1 };
+  let profile: UserProfile = {
+    displayName: "Student",
+    xp: 0,
+    level: 1,
+    xpToNext: getLevelProgress(0).xpToNext,
+    progress: 0,
+  };
   let isAdmin = false;
   let isAuthor = false;
 
   if (data) {
     const xp = data.total_xp ?? 0;
+    const { level, xpToNext, progress } = getLevelProgress(xp);
     profile = {
       displayName: data.display_name ?? "Student",
       xp,
-      level: Math.floor(xp / 500) + 1,
+      level,
+      xpToNext,
+      progress,
     };
     isAdmin = data.role === "admin";
     isAuthor = !!data.is_author || data.role === "admin";

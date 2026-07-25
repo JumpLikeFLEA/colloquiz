@@ -3,13 +3,19 @@
  *
  * Authored JSON is produced by an external LLM following the question-authoring
  * instruction. Each element carries exactly the seven authored keys:
- *   { subject, subtopic, difficulty, question, options[4], correct_answer, explanation }
+ *   { subject, subtopic, difficulty, question, options, correct_answer, explanation }
+ * options is either 4 strings (multiple choice) or exactly ["True","False"]
+ * (true/false).
  *
  * This script assigns the system fields authors must NOT provide
  * (id, type, tags, source, status, content_hash) and inserts each row as
- * status='pending', landing it in the admin review queue. tags is derived from
- * subtopic via slugifyForTag; content_hash via hashQuestion — identical to the
- * AI generation path, so dedup against existing rows works the same way.
+ * status='pending', landing it in the admin review queue. type is derived from
+ * option count ("true_false" for 2, "multiple_choice" for 4); a true/false row is
+ * padded to the stored 4-tuple ["True","False","",""] to match buildQuestionRows
+ * (lib/authorQuiz.ts), and answerOptions() drops the empty slots at serve time.
+ * tags is derived from subtopic via slugifyForTag; content_hash via hashQuestion
+ * over the FILLED options — identical to the AI generation path, so dedup against
+ * existing rows works the same way.
  *
  * Before validation, each row is passed through stripAuthoringArtifacts to remove
  * any authoring scaffolding the generator leaked into visible text — stem ids
@@ -81,17 +87,18 @@ const AuthoredQuestionSchema = z
     subtopic: z.string().min(1),
     difficulty: DifficultySchema,
     question: z.string().min(10),
-    options: z.tuple([
-      z.string().min(1),
-      z.string().min(1),
-      z.string().min(1),
-      z.string().min(1),
-    ]),
+    // Either 4 options (multiple choice) or exactly 2 (true/false). True/false is
+    // stored padded to a 4-tuple on assembly; here we validate the authored shape.
+    options: z
+      .array(z.string().min(1))
+      .refine((a) => a.length === 2 || a.length === 4, {
+        message: "options must have exactly 2 (True/False) or 4 items",
+      }),
     correct_answer: z.string().min(1),
     explanation: z.string().min(10),
   })
   .refine((q) => q.options.includes(q.correct_answer), {
-    message: "correct_answer must match one of the four options verbatim",
+    message: "correct_answer must match one of the options verbatim",
   });
 
 const AuthoredArraySchema = z.array(AuthoredQuestionSchema).min(1);
@@ -168,21 +175,52 @@ if (taxonomyErrors.length > 0) {
   process.exit(1);
 }
 
+// ── Validate the true/false shape ───────────────────────────
+// A 2-option row is a true/false question; its options must be exactly
+// {"True","False"} so it matches the canonical served form and buildQuestionRows
+// (lib/authorQuiz.ts). 4-option rows are ordinary multiple choice.
+const shapeErrors: string[] = [];
+authored.forEach((q, i) => {
+  if (q.options.length === 2) {
+    const set = new Set(q.options);
+    if (!(set.size === 2 && set.has("True") && set.has("False"))) {
+      shapeErrors.push(
+        `[${i}] a 2-option (true/false) question's options must be exactly ` +
+          `["True","False"]; got ${JSON.stringify(q.options)}`,
+      );
+    }
+  }
+});
+
+if (shapeErrors.length > 0) {
+  console.error("Option-shape validation failed:");
+  shapeErrors.forEach((e) => console.error(`  ${e}`));
+  process.exit(1);
+}
+
 // ── Assemble DB-ready rows (system fields assigned here) ────
-const rows = authored.map((q) => ({
-  id: `gen-${uuidv4().slice(0, 8)}`,
-  type: "multiple_choice" as const,
-  subject: q.subject,
-  tags: [slugifyForTag(q.subtopic)],
-  difficulty: q.difficulty,
-  question: q.question,
-  options: q.options,
-  correct_answer: q.correct_answer,
-  explanation: q.explanation,
-  source,
-  status,
-  content_hash: hashQuestion(q.question, q.options),
-}));
+// content_hash is computed over the FILLED (authored) options — before padding —
+// so a true/false question's identity does not depend on storage padding.
+const rows = authored.map((q) => {
+  const isTrueFalse = q.options.length === 2;
+  const options: [string, string, string, string] = isTrueFalse
+    ? ["True", "False", "", ""]
+    : (q.options as [string, string, string, string]);
+  return {
+    id: `gen-${uuidv4().slice(0, 8)}`,
+    type: isTrueFalse ? ("true_false" as const) : ("multiple_choice" as const),
+    subject: q.subject,
+    tags: [slugifyForTag(q.subtopic)],
+    difficulty: q.difficulty,
+    question: q.question,
+    options,
+    correct_answer: q.correct_answer,
+    explanation: q.explanation,
+    source,
+    status,
+    content_hash: hashQuestion(q.question, q.options),
+  };
+});
 
 // ── Insert ──────────────────────────────────────────────────
 const supabase = createClient(url, key);

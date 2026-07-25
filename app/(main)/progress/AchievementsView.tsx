@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { ACHIEVEMENTS } from "@/lib/achievements";
 import { formatDuration } from "@/lib/format";
+import { XP_PER_LEVEL, getLevelProgress } from "@/lib/levels";
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Star, Award, TrendingUp, CheckCircle: CheckCircle2, RefreshCw, Flame, Zap,
@@ -29,8 +30,6 @@ const RARITY_CONFIG = {
 
 const CATEGORIES = ["All", "performance", "consistency", "exploration", "volume"] as const;
 type CategoryFilter = (typeof CATEGORIES)[number];
-
-const XP_PER_LEVEL = 500;
 
 function getRarity(xpReward: number): keyof typeof RARITY_CONFIG {
   if (xpReward <= 75)  return "common";
@@ -59,8 +58,7 @@ export function AchievementsView({
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("All");
   const [showUnlocked, setShowUnlocked] = useState<"all" | "unlocked" | "locked">("all");
 
-  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1;
-  const xpIntoLevel = totalXp % XP_PER_LEVEL;
+  const { level, xpIntoLevel } = getLevelProgress(totalXp);
 
   const unlockedCount = ACHIEVEMENTS.filter(a => !!unlockedMap[a.id]).length;
 
@@ -82,12 +80,6 @@ export function AchievementsView({
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-foreground">Achievements</h1>
-        <p className="text-muted-foreground mt-1">Track your progress and unlock rewards as you learn</p>
-      </div>
-
       {/* Level & XP Banner */}
       <div
         className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-r from-[#4f46e5] to-[#7c3aed] text-white animate-in fade-in slide-in-from-bottom-4 fill-mode-both duration-300 motion-reduce:animate-none"
