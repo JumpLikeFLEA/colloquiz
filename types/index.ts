@@ -184,7 +184,8 @@ export type NotificationType =
   | "achievement_unlocked"
   | "question_reviewed"
   | "group_member_joined"
-  | "group_question_pending";
+  | "group_question_pending"
+  | "quiz_shared";
 
 // Named AppNotification to avoid clashing with the DOM `Notification` global.
 export interface AppNotification {

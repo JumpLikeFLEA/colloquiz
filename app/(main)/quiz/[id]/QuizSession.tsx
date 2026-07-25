@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { PlayableQuestion, Quiz } from "@/types";
 import { ReportQuestionInline } from "@/app/components/ReportQuestion";
+import { ShareQuizBlock } from "./ShareQuizBlock";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,8 @@ interface Props {
     startedAt: string;
     timeLimitSeconds: number;
   } | null;
+  /** True only for public-bank quizzes a signed-in player may share (page.tsx). */
+  shareable: boolean;
 }
 
 type SubmissionResult = {
@@ -126,6 +129,7 @@ export default function QuizSession({
   initialReportedIds,
   startedAt,
   duel,
+  shareable,
 }: Props) {
   const router = useRouter();
   // Resume from saved progress. If the current question was already answered,
@@ -363,6 +367,8 @@ export default function QuizSession({
         onBack={handleBack}
         onRetry={handleRetry}
         duel={duel}
+        shareable={shareable}
+        quizId={quiz.id}
       />
     );
   }
@@ -661,12 +667,14 @@ interface ResultsScreenProps {
   onBack: () => void;
   onRetry: () => void;
   duel: Props["duel"];
+  shareable: boolean;
+  quizId: string;
 }
 
 function ResultsScreen({
   questions, answers, score, total, excludedCount, scorePercent, timeFormatted,
   submissionResult, grade, subject, difficulty, reviewExpanded, setReviewExpanded,
-  reportedIds, onReported, onBack, onRetry, duel
+  reportedIds, onReported, onBack, onRetry, duel, shareable, quizId
 }: ResultsScreenProps) {
   const displayCorrect = submissionResult?.correctCount ?? score;
   const displayWrong = total - displayCorrect;
@@ -944,6 +952,17 @@ function ResultsScreen({
           })}
         </div>
       </motion.div>
+
+      {/* Share with a friend (public-bank quizzes only) */}
+      {shareable && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.52 }}
+        >
+          <ShareQuizBlock quizId={quizId} />
+        </motion.div>
+      )}
 
       {/* Action buttons */}
       <motion.div

@@ -49,6 +49,13 @@ function duelToast(n: AppNotification): { text: string; href?: string } | null {
       return { text: "Your duel challenge expired unanswered.", href };
     case "duel_cancelled":
       return { text: `${String(p.by ?? "Your opponent")} withdrew their duel challenge.`, href };
+    case "quiz_shared":
+      return {
+        text: `${String(p.from ?? "Someone")} shared a quiz with you${
+          p.subject && p.subject !== "a quiz" ? ` on ${String(p.subject)}` : ""
+        }.`,
+        href: p.token ? `/s/${String(p.token)}` : undefined,
+      };
     default:
       return null; // non-duel notifications: bump the bell, but don't toast
   }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Play, Users, Pencil, Trash2, ClipboardList, BookOpen, Clock, X } from "lucide-react";
+import { Plus, Play, Users, Pencil, Trash2, ClipboardList, BookOpen, Clock, X, Share2, Copy, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { BecomeAuthorCard } from "@/app/components/BecomeAuthorCard";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import type { CreatedQuiz, MyAssignment, LinkedStudent } from "@/lib/author";
 import type { ActiveSessionSummary } from "@/lib/quizSession";
+import type { QuizShareRow } from "./page";
 
 export function MyQuizzesView({
   isAuthor,
@@ -24,18 +25,44 @@ export function MyQuizzesView({
   created,
   students,
   active,
+  shares,
 }: {
   isAuthor: boolean;
   assignments: MyAssignment[];
   created: CreatedQuiz[];
   students: LinkedStudent[];
   active: ActiveSessionSummary | null;
+  shares: QuizShareRow[];
 }) {
   const router = useRouter();
   const { startQuiz } = useStartQuiz();
   const [assignFor, setAssignFor] = useState<CreatedQuiz | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [revokeToken, setRevokeToken] = useState<string | null>(null);
+
+  async function copyShareLink(token: string) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/s/${token}`);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken((t) => (t === token ? null : t)), 2000);
+    } catch {
+      // Clipboard blocked — nothing to do.
+    }
+  }
+
+  async function revokeShare(token: string) {
+    setError(null);
+    const res = await fetch(`/api/quiz-shares/${token}/revoke`, { method: "POST" });
+    setRevokeToken(null);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Could not stop sharing.");
+      return;
+    }
+    router.refresh();
+  }
 
   async function exitActive(quizId: string) {
     await fetch("/api/quiz/session", {
@@ -155,6 +182,52 @@ export function MyQuizzesView({
           </div>
         )}
       </section>
+
+      {/* Shared with friends (created on the results screen; managed here) */}
+      {shares.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Share2 className="size-4 text-[#4f46e5]" />
+            <h2 className="text-sm font-semibold text-foreground">Shared with friends</h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            {shares.map((s) => (
+              <div key={s.token} className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-card">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{s.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.questionCount} question{s.questionCount !== 1 ? "s" : ""} &middot; link active
+                  </p>
+                </div>
+                <button
+                  onClick={() => copyShareLink(s.token)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors cursor-pointer"
+                >
+                  {copiedToken === s.token ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+                  {copiedToken === s.token ? "Copied" : "Copy link"}
+                </button>
+                {revokeToken === s.token ? (
+                  <button
+                    onClick={() => revokeShare(s.token)}
+                    title="Revokes the link — the quiz stays, but the link stops working"
+                    className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                  >
+                    Confirm
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setRevokeToken(s.token)}
+                    title="Stop sharing"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Created by me */}
       {isAuthor ? (

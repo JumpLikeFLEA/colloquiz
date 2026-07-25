@@ -122,6 +122,12 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
     );
   }
 
+  // "Share with a friend" is offered only for public-bank quizzes (Quick Play):
+  // visibility='shared', not a group quiz, not a duel leg — so every question is
+  // approved+shared and readable by any friend. Signed-out players can't share.
+  const q = quiz as Quiz;
+  const shareable = !!user && q.visibility === "shared" && !q.group_id && !duel;
+
   return (
     <QuizSession
       quiz={quiz as Quiz}
@@ -130,6 +136,7 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
       initialReportedIds={initialReportedIds}
       startedAt={startedAt}
       duel={duel}
+      shareable={shareable}
     />
   );
 }

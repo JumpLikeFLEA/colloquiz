@@ -11,6 +11,11 @@
  * subtopic via slugifyForTag; content_hash via hashQuestion — identical to the
  * AI generation path, so dedup against existing rows works the same way.
  *
+ * Before validation, each row is passed through stripAuthoringArtifacts to remove
+ * any authoring scaffolding the generator leaked into visible text — stem ids
+ * "(ID/Ref/Code #..)" and answer-key labels "(Landmark/Distractor/… #..)". This is
+ * idempotent and no-ops on clean batches.
+ *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/import-authored-questions.ts <path-to.json> [--source manual|ai_generated] [--status pending|approved] [--sync]
  *
@@ -91,9 +96,42 @@ const AuthoredQuestionSchema = z
 
 const AuthoredArraySchema = z.array(AuthoredQuestionSchema).min(1);
 
-// ── Load + structurally validate the authored file ──────────
+// ── Strip authoring scaffolding leaked into visible text ────
+// The generator appends internal markers — stem ids like "(ID #101_ab)" / "(Ref #..)"
+// / "(Code #..)" and answer-key labels like "(Landmark #101)", "(Distractor A #..)",
+// "(Technical Principle #..)" and domain-varying ones such as "(Workflow Impact #..)"
+// / "(Analytical Impact #..)" — which must never reach users (they also reveal the
+// answer). Rather than enumerate the open-ended label vocabulary, match the STRUCTURE
+// they all share: a parenthetical of "<Capitalized label words> #<digits>[_<hex>]".
+// The " #<digits>" signature is what legitimate parentheticals lack — "(Forward
+// Kinematics)", "(Python 3)", "(RFC 2616)", "(C# 11)" are all preserved (no " #digit").
+// The one residual false-positive shape is a bare trailing citation like "(RFC #2616)";
+// accepted as far rarer than leaking an answer-key label. Applied to question, options
+// and correct_answer identically so the "correct_answer ∈ options" invariant holds.
+// No-ops on already-clean batches once the generator is fixed upstream.
+const ARTIFACT_RE = /\s*\(\s*[A-Z][A-Za-z ]*\s#\d+(?:_[0-9a-fA-F]+)?\s*\)/g;
+function stripAuthoringArtifacts(s: string): string {
+  return s.replace(ARTIFACT_RE, "").replace(/\s{2,}/g, " ").trim();
+}
+function normalizeRow(row: unknown): unknown {
+  if (!row || typeof row !== "object") return row;
+  const r = row as Record<string, unknown>;
+  return {
+    ...r,
+    ...(typeof r.question === "string" && { question: stripAuthoringArtifacts(r.question) }),
+    ...(typeof r.correct_answer === "string" && {
+      correct_answer: stripAuthoringArtifacts(r.correct_answer),
+    }),
+    ...(Array.isArray(r.options) && {
+      options: r.options.map((o) => (typeof o === "string" ? stripAuthoringArtifacts(o) : o)),
+    }),
+  };
+}
+
+// ── Load, strip scaffolding, then structurally validate ─────
 const raw = JSON.parse(readFileSync(filePath, "utf-8"));
-const parsed = AuthoredArraySchema.safeParse(raw);
+const normalized = Array.isArray(raw) ? raw.map(normalizeRow) : raw;
+const parsed = AuthoredArraySchema.safeParse(normalized);
 if (!parsed.success) {
   console.error("Authored JSON failed validation:");
   for (const issue of parsed.error.issues) {
