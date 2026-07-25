@@ -16,6 +16,7 @@ import {
   Languages,
   Landmark,
   Leaf,
+  Lightbulb,
   Music,
   Palette,
   Shuffle,
@@ -45,6 +46,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Trophy,
   Gamepad2,
   Microscope,
+  Lightbulb,
 };
 
 export type SubjectCardData = {

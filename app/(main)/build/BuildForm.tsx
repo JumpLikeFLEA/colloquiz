@@ -16,6 +16,7 @@ import {
   Languages,
   Landmark,
   Leaf,
+  Lightbulb,
   Microscope,
   Music,
   Palette,
@@ -35,7 +36,7 @@ import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
-  BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, Clapperboard, Trophy, Gamepad2, Microscope,
+  BookOpen, Code, TrendingUp, Brain, Palette, Music, Languages, Clapperboard, Trophy, Gamepad2, Microscope, Lightbulb,
 };
 
 // ── Types ────────────────────────────────────────────────────────────────────

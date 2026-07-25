@@ -183,5 +183,14 @@
     "bg": "#f7fee7",
     "tags": ["ancient world", "medieval and islamic golden age", "scientific revolution", "enlightenment", "19th century", "modern era"],
     "subtopics": ["Ancient World", "Medieval and Islamic Golden Age", "Scientific Revolution", "Enlightenment", "19th Century", "Modern Era"]
+  },
+  {
+    "id": "trivium",
+    "name": "Trivium",
+    "icon": "Lightbulb",
+    "color": "#ca8a04",
+    "bg": "#fefce8",
+    "tags": ["history and society", "natural world", "earth and space", "numbers and logic", "culture and arts", "human mind"],
+    "subtopics": ["History and Society", "Natural World", "Earth and Space", "Numbers and Logic", "Culture and Arts", "Human Mind"]
   }
 ]
