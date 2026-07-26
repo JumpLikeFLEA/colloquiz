@@ -29,13 +29,44 @@
   flow — after sign-in/sign-up the user lands on the `?next=` destination 
   (validated relative path) instead of always "/". Logic-only, no visual 
   change; do not remove
-- SubjectGrid (app/components/SubjectGrid.tsx): full-width "Any difficulty" 
-  pill added below the Easy/Medium/Hard row and preselected (2026-07-13), and 
-  the "Choose a difficulty above to start" warning removed with it. The warning 
-  was an absolutely-positioned popover that covered the pill row it pointed at; 
-  a default makes the card startable on render, so the error state cannot occur. 
-  Sends difficulty "mixed", same as Random Quiz. Built from classes already used 
-  by the sibling pills; do not restore the warning
+- SubjectGrid (app/components/SubjectGrid.tsx): the per-card difficulty pills 
+  are GONE (2026-07-26), superseding the 2026-07-13 entry that added a 
+  preselected "Any difficulty" pill and removed the "Choose a difficulty above 
+  to start" warning. Twelve subjects × four pills was ~48 controls for one 
+  decision, so difficulty became a single page-level segmented control (Any · 
+  Easy · Medium · Hard) in the filter row, right of the search field, driven by 
+  `?difficulty=` — allow-listed in lib/difficultyFilter.ts, anything 
+  unrecognized falls back to "any", which still sends "mixed" to the quiz API 
+  like Random Quiz does. Search stays client-side and instant: difficulty is 
+  structural and shareable, search is not — the asymmetry is deliberate. Card 
+  counts come from getSubjectStats().byDifficulty (one grouped RPC, migration 
+  008) so the number always matches what a quiz at that difficulty would serve. 
+  The segmented control uses the --brand / --brand-subtle tokens, not literal 
+  hex. Do not restore the per-card pills or the warning
+- SubjectGrid: subjects below the 10-question quiz size at the selected 
+  difficulty render as unavailable (2026-07-26) — dimmed to opacity-50, 
+  `disabled` on the card button (so unclickable and out of the tab order), the 
+  affordance omitted, and the count line replaced by the reason with the real 
+  number: "Only 3 questions · needs 10". Deliberately DIMMED, NOT HIDDEN: 
+  hiding makes the catalogue look smaller than it is, dimming says the subject 
+  exists and is worth returning to at another difficulty. The page therefore 
+  filters subjects only on their all-difficulty total (a subject with zero 
+  questions anywhere is still absent) — difficulty never removes a card. When 
+  search + difficulty leaves nothing playable, a notice sits ABOVE the grid 
+  (not in place of it) naming the reason and offering "Try any difficulty" / 
+  "Clear search". Availability is derived from questionCount, which is already 
+  difficulty-aware, so it needs no state of its own
+- SubjectGrid: the per-card "Start Quiz" button is GONE (2026-07-26) and the 
+  card itself is the start action — twelve identical primary buttons on one 
+  screen was the whole problem. The card root is a real `<button type="button">` 
+  (not a div with onClick), so keyboard focus, Enter and Space come from the 
+  platform; its accessible name is an aria-label naming the subject, count and 
+  difficulty. Inner `<p>`/`<div>` became `<span className="block …">` because a 
+  button's content model is phrasing content — same rendering, valid HTML, and 
+  it keeps the tree free of nested interactives. Hover/focus reveals a "Start →" 
+  affordance and shifts the border; focus-visible draws a brand ring. The 
+  page-level Random Quiz button and the Deep Dive link are untouched. Do not 
+  restore the per-card button
 - NotificationBell (app/components/NotificationBell.tsx): the Topbar's 
   decorative Bell button (with its hardcoded unread dot) was replaced 
   (2026-07-17) by a working notification-center popover. No Figma source 

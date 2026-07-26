@@ -47,8 +47,18 @@ export async function getQuestions(): Promise<Question[]> {
 
 const DIFF_ORDER: Difficulty[] = ["easy", "medium", "hard"];
 
+export type SubjectStat = {
+  count: number;
+  difficulties: Difficulty[];
+  // Per-difficulty counts, so a difficulty-filtered surface (Quick Play's
+  // ?difficulty= filter) can show the number of questions it would actually
+  // sample instead of the subject total. Always carries all three keys, 0 for
+  // a difficulty the subject has none of.
+  byDifficulty: Record<Difficulty, number>;
+};
+
 export const getSubjectStats = unstable_cache(
-  async (): Promise<Record<string, { count: number; difficulties: Difficulty[] }>> => {
+  async (): Promise<Record<string, SubjectStat>> => {
     // Cannot use createClient() here — it calls cookies() which is forbidden inside unstable_cache.
     // The anon key hits the same RLS policies; no service-role bypass.
     const supabase = createAnonClient(
@@ -60,22 +70,29 @@ export const getSubjectStats = unstable_cache(
     const { data, error } = await supabase.rpc("get_subject_stats");
     if (error) throw new Error(error.message);
 
-    const map: Record<string, { count: number; diffSet: Set<Difficulty> }> = {};
+    const map: Record<string, SubjectStat> = {};
     for (const row of (data ?? []) as { subject: string; difficulty: string; cnt: number }[]) {
-      const entry = map[row.subject] ?? { count: 0, diffSet: new Set() };
-      entry.count += Number(row.cnt);
-      entry.diffSet.add(row.difficulty as Difficulty);
-      map[row.subject] = entry;
+      const entry = (map[row.subject] ??= {
+        count: 0,
+        difficulties: [],
+        byDifficulty: { easy: 0, medium: 0, hard: 0 },
+      });
+      const cnt = Number(row.cnt);
+      // count stays the subject total, including any row whose difficulty is
+      // outside the known three — byDifficulty only tracks the known ones.
+      entry.count += cnt;
+      const diff = row.difficulty as Difficulty;
+      if (DIFF_ORDER.includes(diff)) entry.byDifficulty[diff] += cnt;
     }
 
-    return Object.fromEntries(
-      Object.entries(map).map(([subject, { count, diffSet }]) => [
-        subject,
-        { count, difficulties: DIFF_ORDER.filter((d) => diffSet.has(d)) },
-      ])
-    );
+    for (const entry of Object.values(map)) {
+      entry.difficulties = DIFF_ORDER.filter((d) => entry.byDifficulty[d] > 0);
+    }
+
+    return map;
   },
-  ["subject-stats-v2"],
+  // v3: the cached value gained byDifficulty; a warm v2 entry would not have it.
+  ["subject-stats-v3"],
   { revalidate: 60, tags: ["subject-stats"] }
 );
 
@@ -207,6 +224,64 @@ export async function getAllTags(): Promise<string[]> {
   const tagSet = new Set<string>();
   (data ?? []).forEach((row: { tags: string[] }) => row.tags.forEach((t) => tagSet.add(t)));
   return Array.from(tagSet).sort();
+}
+
+/**
+ * Subject ids the user played most recently, most recent first, de-duplicated
+ * and capped — the ordering signal for Quick Play's grid.
+ *
+ * Two bounded queries regardless of how many subjects exist: one pass over the
+ * user's latest results (embedding the quiz's question_ids through the
+ * results_quiz_id_fkey), then one `in` lookup for those questions' subjects.
+ * Nothing here is per-subject or per-card.
+ *
+ * A result's subject is taken from its quiz's FIRST question, the same
+ * attribution getEnrichedResults() uses for history labels. For Quick Play's
+ * own single-subject quizzes that is exact; a Random Quiz spanning subjects is
+ * credited to one of them, which is fine — the user did play it.
+ */
+export async function getRecentlyPlayedSubjectIds(
+  supabase: SupabaseClient,
+  userId: string,
+  limit: number = 5,
+): Promise<string[]> {
+  // Replaying one subject is the common case, so scan more results than the
+  // number of distinct subjects wanted — but stay bounded, not full history.
+  const SCAN = 60;
+  const { data, error } = await supabase
+    .from("results")
+    .select("taken_at, quizzes(question_ids)")
+    .eq("user_id", userId)
+    .order("taken_at", { ascending: false })
+    .limit(SCAN);
+  if (error || !data?.length) return [];
+
+  const rows = data as unknown as { quizzes: { question_ids: string[] | null } | null }[];
+
+  // Walk newest → oldest, keeping first-question ids in that order.
+  const firstQuestionIds: string[] = [];
+  for (const row of rows) {
+    const id = row.quizzes?.question_ids?.[0];
+    if (id && !firstQuestionIds.includes(id)) firstQuestionIds.push(id);
+  }
+  if (firstQuestionIds.length === 0) return [];
+
+  const { data: questions } = await supabase
+    .from("questions")
+    .select("id, subject")
+    .in("id", firstQuestionIds);
+  const subjectOf = new Map(
+    ((questions ?? []) as { id: string; subject: string }[]).map((q) => [q.id, q.subject]),
+  );
+
+  // Re-walk in recency order so the first sighting of a subject fixes its rank.
+  const recent: string[] = [];
+  for (const questionId of firstQuestionIds) {
+    const subject = subjectOf.get(questionId);
+    if (subject && !recent.includes(subject)) recent.push(subject);
+    if (recent.length === limit) break;
+  }
+  return recent;
 }
 
 export type EnrichedResult = {

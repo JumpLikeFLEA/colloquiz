@@ -54,3 +54,5 @@ next-env.d.ts
 .design-sync/learnings/
 .design-sync/node_modules
 .design-sync/tw-input.css
+
+instruction_external_LLM.txt

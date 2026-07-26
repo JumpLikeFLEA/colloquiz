@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  ArrowRight,
   Atom,
   BookOpen,
   Brain,
@@ -22,11 +23,16 @@ import {
   Palette,
   Shuffle,
   TrendingUp,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 
 import type { Difficulty } from "@/types";
+import { cn } from "@/lib/utils";
+import {
+  DIFFICULTY_FILTERS,
+  toQuizDifficulty,
+  type DifficultyFilter,
+} from "@/lib/difficultyFilter";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -60,137 +66,120 @@ export type SubjectCardData = {
   difficulties: Difficulty[];
 };
 
-const DIFFICULTY_STYLES: Record<
-  Difficulty,
-  { active: string; label: string }
-> = {
-  easy: {
-    active:
-      "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100",
-    label: "Easy",
-  },
-  medium: {
-    active:
-      "text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100",
-    label: "Medium",
-  },
-  hard: {
-    active: "text-red-600 bg-red-50 border-red-200 hover:bg-red-100",
-    label: "Hard",
-  },
-};
+function difficultyHref(value: DifficultyFilter): string {
+  return value === "any" ? "/" : `/?difficulty=${value}`;
+}
 
-const ALL_DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
+// Quick Play always asks for a full 10-question quiz, so a subject holding
+// fewer than that at the selected difficulty cannot fill one — it is shown
+// dimmed and inert rather than left to fail after a click. One constant, since
+// the minimum IS the quiz size.
+const QUIZ_SIZE = 10;
 
-// The card's default: questions from every difficulty the subject has. Selected
-// out of the box, so Start Quiz always works and the card has no error state.
-// Same value Random Quiz and the Build wizard send.
-type CardDifficulty = Difficulty | "mixed";
-
-const MIXED_ACTIVE =
-  "text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-100";
+// The whole card is the start action — twelve identical primary buttons on one
+// screen was the thing worth removing. It is a real <button>, so focusability,
+// Enter and Space all come from the platform rather than hand-rolled key
+// handlers. A <button> may only contain phrasing content, so the inner boxes
+// are <span className="block|flex …"> instead of <div>/<p>: same rendering,
+// valid HTML, and nothing interactive nested inside an interactive.
+// True when the subject cannot fill a quiz at the selected difficulty. Derived
+// from questionCount, which is already difficulty-aware, so it re-evaluates on
+// every filter change with no state to keep in sync.
+function isUnavailable(subject: SubjectCardData): boolean {
+  return subject.questionCount < QUIZ_SIZE;
+}
 
 function SubjectCard({
   subject,
-  selectedDiff,
-  onSelectDiff,
+  difficultyLabel,
+  difficultyWord,
   onStart,
   loading,
   index,
 }: {
   subject: SubjectCardData;
-  selectedDiff: CardDifficulty;
-  onSelectDiff: (id: string, diff: CardDifficulty) => void;
-  onStart: (id: string, diff: CardDifficulty) => void;
+  difficultyLabel: string;
+  difficultyWord: string;
+  onStart: (id: string) => void;
   loading: boolean;
   index: number;
 }) {
   const Icon = ICON_MAP[subject.icon] ?? BookOpen;
+  const n = subject.questionCount;
+  const unavailable = isUnavailable(subject);
 
+  // Say the actual number, not just "unavailable" — "Only 3 questions" tells
+  // the user the subject is nearly there and worth coming back to, and naming
+  // the minimum says why 3 isn't enough.
+  const countLine = unavailable
+    ? `${n === 0 ? `No ${difficultyWord}questions` : `Only ${n} question${n !== 1 ? "s" : ""}`} · needs ${QUIZ_SIZE}`
+    : `${n} question${n !== 1 ? "s" : ""}`;
+
+  // A disabled <button> is already unclickable and out of the tab order, so
+  // "non-interactive and not keyboard focusable" needs no tabIndex juggling.
   return (
-    <div
+    <button
+      type="button"
+      disabled={unavailable || loading}
+      aria-busy={loading}
+      // The visible text is just the subject and a count; spell out what
+      // activating the card does — or why it cannot be activated.
+      aria-label={
+        unavailable
+          ? `${subject.name} — unavailable at ${difficultyLabel}: ${
+              n === 0 ? "no questions" : `only ${n} question${n !== 1 ? "s" : ""}`
+            }, ${QUIZ_SIZE} needed`
+          : `Start ${subject.name} quiz — ${n} question${n !== 1 ? "s" : ""}, ${difficultyLabel}`
+      }
+      onClick={() => onStart(subject.id)}
       style={{ animationDelay: `${index * 0.03}s` }}
-      className="group flex flex-col rounded-2xl border border-border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-in fade-in slide-in-from-bottom-4 fill-mode-both motion-reduce:animate-none"
+      className={cn(
+        "group flex w-full items-center gap-3 p-4 text-left rounded-2xl border border-border bg-card transition-all duration-200 ease-out animate-in fade-in slide-in-from-bottom-4 fill-mode-both motion-reduce:animate-none motion-reduce:transition-none",
+        unavailable
+          ? // Dimmed but still legible, and still in the grid: the subject
+            // exists and is worth returning to at another difficulty.
+            "opacity-50 cursor-not-allowed"
+          : "cursor-pointer hover:border-brand/40 hover:shadow-md hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-wait",
+      )}
     >
-      {/* Subject header */}
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <div
-          className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
-          style={{ backgroundColor: subject.bg, color: subject.color }}
-        >
-          <Icon size={20} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-foreground truncate">{subject.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {`${subject.questionCount} question${subject.questionCount !== 1 ? "s" : ""}`}
-          </p>
-        </div>
-      </div>
+      <span
+        className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+        style={{ backgroundColor: subject.bg, color: subject.color }}
+      >
+        <Icon size={20} />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block font-medium text-foreground truncate">{subject.name}</span>
+        <span className="block text-xs text-muted-foreground">{countLine}</span>
+      </span>
 
-      {/* Difficulty selector */}
-      <div className="px-4 pb-3">
-        <p className="text-xs text-muted-foreground mb-2">Difficulty</p>
-        <div className="flex gap-1.5">
-          {ALL_DIFFICULTIES.map((diff) => {
-            const style = DIFFICULTY_STYLES[diff];
-            const isAvailable = subject.difficulties.includes(diff);
-            const isSelected = selectedDiff === diff;
-            return (
-              <button
-                key={diff}
-                disabled={!isAvailable}
-                onClick={() => onSelectDiff(subject.id, diff)}
-                className={`flex-1 px-2 py-1.5 rounded-lg border text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  isSelected
-                    ? style.active + " border-current"
-                    : "border-border text-muted-foreground hover:border-border hover:bg-accent"
-                }`}
-              >
-                {style.label}
-              </button>
-            );
-          })}
-        </div>
-        {/* The default. Full-width on its own row so it reads as "no preference"
-            rather than as a fourth difficulty — and so four pills never have to
-            share one row at the 4-column breakpoint. */}
-        <button
-          onClick={() => onSelectDiff(subject.id, "mixed")}
-          className={`w-full mt-1.5 px-2 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
-            selectedDiff === "mixed"
-              ? MIXED_ACTIVE + " border-current"
-              : "border-border text-muted-foreground hover:border-border hover:bg-accent"
-          }`}
+      {/* The affordance: hidden until the card is hovered or keyboard-focused,
+          so the grid stays calm but never looks unclickable once pointed at.
+          aria-hidden — the button's own label already says "Start". Omitted
+          entirely when unavailable; there is nothing to afford. */}
+      {!unavailable && (
+        <span
+          aria-hidden="true"
+          className="flex items-center gap-1 shrink-0 text-xs font-medium text-brand opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 group-disabled:opacity-100 group-disabled:translate-x-0 motion-reduce:transition-none motion-reduce:translate-x-0"
         >
-          Any difficulty
-        </button>
-      </div>
-
-      {/* Start button */}
-      <div className="px-4 pb-4 mt-auto">
-        <button
-          disabled={loading}
-          onClick={() => onStart(subject.id, selectedDiff)}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Zap size={14} />
-          {loading ? "Starting…" : "Start Quiz"}
-        </button>
-      </div>
-    </div>
+          {loading ? "Starting…" : "Start"}
+          {!loading && <ArrowRight size={14} />}
+        </span>
+      )}
+    </button>
   );
 }
 
-export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
+export function SubjectGrid({
+  subjects,
+  difficulty,
+}: {
+  subjects: SubjectCardData[];
+  difficulty: DifficultyFilter;
+}) {
   const { startQuiz: startQuizFlow } = useStartQuiz();
   const [query, setQuery] = React.useState("");
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
-  // Sparse — a subject with no entry falls back to "mixed" at render, so there
-  // is nothing to seed and every card starts out startable.
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState<
-    Record<string, CardDifficulty>
-  >({});
 
   const filtered = query.trim()
     ? subjects.filter((s) =>
@@ -198,15 +187,29 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
       )
     : subjects;
 
-  function selectDiff(subjectId: string, diff: CardDifficulty) {
-    setSelectedDifficulty((prev) => ({ ...prev, [subjectId]: diff }));
-  }
+  // Spoken as part of each card's accessible name, e.g. "…, hard difficulty".
+  const difficultyLabel =
+    difficulty === "any" ? "any difficulty" : `${difficulty} difficulty`;
+  // Inline in "No hard questions"; empty at Any so it reads "No questions".
+  const difficultyWord = difficulty === "any" ? "" : `${difficulty} `;
 
-  async function startQuiz(subjectId: string, difficulty: CardDifficulty) {
+  const trimmedQuery = query.trim();
+  // Every card is rendered either way — this only decides whether to also
+  // explain the dead end and offer a way out of it.
+  const noneAvailable = filtered.length > 0 && filtered.every(isUnavailable);
+  const canClearSearch = trimmedQuery !== "";
+  const canRelaxDifficulty = difficulty !== "any";
+
+  async function startQuiz(subjectId: string) {
     setLoadingId(subjectId);
     try {
       await startQuizFlow({
-        filter: { subject: subjectId, difficulty, size: 10, mode: "ordinary" },
+        filter: {
+          subject: subjectId,
+          difficulty: toQuizDifficulty(difficulty),
+          size: QUIZ_SIZE,
+          mode: "ordinary",
+        },
       });
     } finally {
       setLoadingId(null);
@@ -216,7 +219,7 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
   async function startRandom() {
     setLoadingId("__random__");
     try {
-      await startQuizFlow({ filter: { difficulty: "mixed", size: 10, mode: "ordinary" } });
+      await startQuizFlow({ filter: { difficulty: "mixed", size: QUIZ_SIZE, mode: "ordinary" } });
     } finally {
       setLoadingId(null);
     }
@@ -243,17 +246,45 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
           </button>
         </div>
 
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search subjects..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full max-w-sm px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all"
-        />
+        {/* Filter row: search (client-side, instant) + difficulty (URL-driven) */}
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="text"
+            placeholder="Search subjects..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1 min-w-56 max-w-sm px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all"
+          />
+
+          {/* Real navigations, so these are links with aria-current rather than
+              an ARIA radiogroup. scroll={false} keeps the grid in place — the
+              search box holds client state that a scroll jump would strand. */}
+          <div className="flex items-center gap-1 p-1 rounded-xl border border-border bg-background">
+            {DIFFICULTY_FILTERS.map(({ value, label }) => {
+              const active = difficulty === value;
+              return (
+                <Link
+                  key={value}
+                  href={difficultyHref(value)}
+                  scroll={false}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm transition-colors",
+                    active
+                      ? "bg-brand-subtle text-brand font-medium"
+                      : "text-muted-foreground hover:bg-accent",
+                  )}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid. Difficulty never removes a card — an unplayable subject is
+          dimmed in place — so this branch is only the truly-empty catalogue. */}
       {subjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <BookOpen size={40} className="mb-3 opacity-30" />
@@ -265,23 +296,67 @@ export function SubjectGrid({ subjects }: { subjects: SubjectCardData[] }) {
           <p>No subjects match &ldquo;{query}&rdquo;</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((s, i) => (
-            <SubjectCard
-              key={s.id}
-              subject={s}
-              selectedDiff={selectedDifficulty[s.id] ?? "mixed"}
-              onSelectDiff={selectDiff}
-              onStart={startQuiz}
-              loading={loadingId === s.id}
-              index={i}
-            />
-          ))}
+        <div className="flex flex-col gap-6">
+          {/* Nothing here can be played. Explain it once above the grid rather
+              than replacing the grid — the dimmed cards are the point, and
+              swapping them for a panel would hide the catalogue. */}
+          {noneAvailable && (
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-8 text-center">
+              <BookOpen size={32} className="text-muted-foreground opacity-30" />
+              <div>
+                <p className="font-medium text-foreground">
+                  {canClearSearch
+                    ? `Nothing matching “${trimmedQuery}” has ${QUIZ_SIZE} questions at ${difficultyLabel}`
+                    : `No subject has ${QUIZ_SIZE} questions at ${difficultyLabel}`}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Every subject below is short of the {QUIZ_SIZE}-question minimum.
+                </p>
+              </div>
+              {(canClearSearch || canRelaxDifficulty) && (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {canRelaxDifficulty && (
+                    // Keeps the typed search — only the difficulty is relaxed.
+                    <Link
+                      href="/"
+                      scroll={false}
+                      className="inline-flex items-center rounded-xl bg-brand-subtle px-4 py-2 text-sm font-medium text-brand transition-colors hover:bg-accent"
+                    >
+                      Try any difficulty
+                    </Link>
+                  )}
+                  {canClearSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      className="inline-flex items-center rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition-colors cursor-pointer hover:bg-accent"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filtered.map((s, i) => (
+              <SubjectCard
+                key={s.id}
+                subject={s}
+                difficultyLabel={difficultyLabel}
+                difficultyWord={difficultyWord}
+                onStart={startQuiz}
+                loading={loadingId === s.id}
+                index={i}
+              />
+            ))}
+          </div>
         </div>
       )}
 
       {/* Quiet path to the advanced flow — muted so it doesn't compete with the
-          per-card Start Quiz buttons. */}
+          subject cards. */}
       <p className="text-center text-sm text-muted-foreground">
         Need more control? Mix subjects, pick subtopics, and set quiz length in{" "}
         <Link href="/advanced" className="text-brand font-medium hover:underline">
