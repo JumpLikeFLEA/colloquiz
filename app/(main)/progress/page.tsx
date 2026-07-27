@@ -4,23 +4,34 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser, getProfile } from "@/lib/supabase/queries";
 import { getEnrichedResults } from "@/lib/questions";
 import { getMyRank } from "@/lib/leaderboard";
+import { aggregateBySubject, byAvgScoreDesc, toRadarPoints } from "@/lib/subjectStats";
+import { getHistorySubjects, getQuizHistory, parseHistoryFilters } from "@/lib/history";
+import { hasActiveFilters } from "@/lib/historyFilters";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { DashboardView } from "./DashboardView";
 import { AchievementsView } from "./AchievementsView";
+import { HistoryView } from "./HistoryView";
 import { ProgressTabs, type ProgressTab } from "./ProgressTabs";
 
 interface Props {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    subject?: string;
+    difficulty?: string;
+    page?: string;
+  }>;
 }
 
 export default async function ProgressPage({ searchParams }: Props) {
   const user = await getUser();
   if (!user) redirect("/login");
 
-  // Allow-list normalize: only "achievements" selects that tab; anything else
-  // (missing, "", "banana") falls back to Stats rather than rendering blank.
-  const { tab: tabParam } = await searchParams;
-  const tab: ProgressTab = tabParam === "achievements" ? "achievements" : "stats";
+  // Allow-list normalize: only "achievements" and "history" select those tabs;
+  // anything else (missing, "", "banana") falls back to Stats rather than
+  // rendering blank.
+  const params = await searchParams;
+  const tab: ProgressTab =
+    params.tab === "achievements" || params.tab === "history" ? params.tab : "stats";
 
   return (
     <div className="flex flex-col gap-8">
@@ -40,8 +51,20 @@ export default async function ProgressPage({ searchParams }: Props) {
           The fallback then only runs where nothing is on screen yet (a page load
           or arriving from another route), and even there it stays invisible
           until the wait is worth reporting. */}
-      <Suspense fallback={<TabSkeleton />}>
-        {tab === "achievements" ? <AchievementsTab /> : <StatsTab />}
+      {/* Keyed on the filters so a filter change re-suspends and shows the
+          skeleton, rather than holding a stale page of rows. The tab itself is
+          deliberately NOT part of the key — see above. */}
+      <Suspense
+        fallback={<TabSkeleton />}
+        key={tab === "history" ? `${params.subject}|${params.difficulty}|${params.page}` : undefined}
+      >
+        {tab === "achievements" ? (
+          <AchievementsTab />
+        ) : tab === "history" ? (
+          <HistoryTab params={params} />
+        ) : (
+          <StatsTab />
+        )}
       </Suspense>
     </div>
   );
@@ -65,11 +88,44 @@ async function StatsTab() {
     throw new Error("Could not load profile");
   }
 
+  // One aggregate, two charts. Grouped here on the server from the results this
+  // page already loaded — the radar and the bar chart are different slices of the
+  // same numbers, so neither costs a query and they cannot disagree.
+  const bySubject = aggregateBySubject(results);
+
   return (
     <DashboardView
       profile={profile}
       results={results}
       myRank={myRank}
+      radarSubjects={toRadarPoints(bySubject)}
+      scoreBySubject={byAvgScoreDesc(bySubject)}
+    />
+  );
+}
+
+async function HistoryTab({
+  params,
+}: {
+  params: { subject?: string; difficulty?: string; page?: string };
+}) {
+  const user = await getUser();
+  if (!user) return null;
+
+  const filters = parseHistoryFilters(params);
+  // One page of rows (with its filtered total) plus the subject list for the
+  // dropdown. Both are RPCs from migration 021 — the full table is never read.
+  const [page, subjects] = await Promise.all([
+    getQuizHistory(filters),
+    getHistorySubjects(),
+  ]);
+
+  return (
+    <HistoryView
+      page={page}
+      filters={filters}
+      subjects={subjects}
+      filtered={hasActiveFilters(filters)}
     />
   );
 }

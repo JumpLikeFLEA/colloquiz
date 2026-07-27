@@ -1,0 +1,27 @@
+-- ============================================================
+-- 023_avatar_url_grant.sql
+--
+-- Fixes "permission denied for table profiles" when saving an avatar.
+--
+-- 006 closed a privilege-escalation hole: the "profiles: owner read/write"
+-- policy is FOR ALL USING (auth.uid() = id), which would let a user set their
+-- own role = 'admin'. RLS cannot restrict WHICH columns are writable, so 006
+-- revoked blanket UPDATE and re-granted it column by column.
+--
+-- That grant is therefore an ALLOW-LIST, and 022 added profiles.avatar_url
+-- without extending it. The grant is checked before RLS, so the avatar write
+-- failed with a table-level permission error even though the row was the
+-- caller's own.
+--
+-- ANY future column the app writes from a user session needs a line here too.
+-- Adding a column to profiles is not enough on its own. role and created_at
+-- stay excluded on purpose — that is the whole point of the allow-list.
+--
+-- Safe to re-apply: GRANT is idempotent and this adds to the existing set
+-- rather than replacing it (no REVOKE here — that would drop 006's columns).
+--
+-- Run via Supabase SQL Editor, or:
+--   npx supabase db push
+-- ============================================================
+
+GRANT UPDATE (avatar_url) ON profiles TO authenticated;

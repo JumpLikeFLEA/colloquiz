@@ -4,17 +4,93 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  TrendingUp, Clock, Flame, BarChart2, CheckCircle2, XCircle, ChevronRight, Star, Medal
+  TrendingUp, Clock, Flame, BarChart2, ChevronRight, Star, Medal, Target
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from "recharts";
+import type { BaseTickContentProps } from "recharts/types/util/types";
 import type { EnrichedResult } from "@/lib/questions";
 import { formatDuration, pluralize } from "@/lib/format";
 import { getLevelProgress } from "@/lib/levels";
+import { RADAR_MIN_SUBJECTS, type RadarPoint, type SubjectStat } from "@/lib/subjectStats";
+import { SubjectScoreBars } from "./SubjectScoreBars";
+import { QuizResultsTable } from "./QuizResultsTable";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** Rows the Stats tab shows before sending the user to History. */
+const RECENT_QUIZ_ROWS = 10;
+
+/** Baseline-to-baseline spacing for a wrapped axis label, in SVG units. */
+const TICK_LINE_HEIGHT = 12;
+
+/**
+ * Multi-line polar axis label. Recharts' own tick is a single `<text>` run, which
+ * the SVG viewport then clips — that is where "Motion Desi…" and the two
+ * indistinguishable "History" axes came from. This renders each pre-wrapped line
+ * as its own `<tspan>` and centres the block on the tick, so nothing is ever cut.
+ */
+function renderSubjectTick(points: RadarPoint[]) {
+  const linesBySubject = new Map(points.map(p => [p.subject, p.lines]));
+
+  return function SubjectTick({ x, y, textAnchor, payload, fill }: BaseTickContentProps) {
+    const subject = String(payload?.value ?? "");
+    const lines = linesBySubject.get(subject) ?? [subject];
+    const cx = Number(x);
+    const cy = Number(y);
+    // Lift the block by half its height so two lines straddle the tick point
+    // rather than hanging below it and colliding with the polygon.
+    const firstLineOffset = -((lines.length - 1) * TICK_LINE_HEIGHT) / 2;
+
+    return (
+      <text x={cx} y={cy} textAnchor={textAnchor} dominantBaseline="central" fontSize={11} fill={fill ?? "#666"}>
+        {lines.map((line, i) => (
+          <tspan key={line} x={cx} dy={i === 0 ? firstLineOffset : TICK_LINE_HEIGHT}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    );
+  };
+}
+
+/**
+ * Stand-in for the radar below three subjects. A two-axis radar is a line and a
+ * one-axis radar is a dot — a shape that looks broken rather than empty — so the
+ * chart is withheld until it can say something, and the gap says what unlocks it.
+ */
+function SubjectMasteryEmpty({ played }: { played: number }) {
+  const remaining = RADAR_MIN_SUBJECTS - played;
+  return (
+    <div className="h-80 flex flex-col items-center justify-center gap-3 text-center">
+      <div
+        className="flex items-center justify-center w-10 h-10 rounded-xl"
+        style={{ backgroundColor: "#eef2ff", color: "#4f46e5" }}
+      >
+        <Target size={20} />
+      </div>
+      <div>
+        <p className="font-medium text-foreground">
+          {played === 0
+            ? "No subjects played yet"
+            : `${pluralize(played, "subject")} so far`}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1 max-w-[16rem]">
+          Play {pluralize(remaining, "more subject")} to compare your strengths side by side.
+        </p>
+      </div>
+      <Link
+        href="/"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm"
+      >
+        Browse subjects
+        <ChevronRight size={14} />
+      </Link>
+    </div>
+  );
+}
 
 type DashboardViewProps = {
   profile: {
@@ -24,9 +100,19 @@ type DashboardViewProps = {
   results: EnrichedResult[];
   /** 7-day standing, or null when the user has no eligible XP this week. */
   myRank: { rank: number; xp: number; total_ranked: number } | null;
+  /** Most-played subjects, capped and labelled for the radar (see lib/subjectStats). */
+  radarSubjects: RadarPoint[];
+  /** Every attempted subject, strongest first. Same aggregate, different slice. */
+  scoreBySubject: SubjectStat[];
 };
 
-export function DashboardView({ profile, results, myRank }: DashboardViewProps) {
+export function DashboardView({
+  profile,
+  results,
+  myRank,
+  radarSubjects,
+  scoreBySubject,
+}: DashboardViewProps) {
   const statCards = useMemo(() => {
     const totalTimeSec = results.reduce((a, r) => a + (r.time_taken ?? 0), 0);
     const avgScore =
@@ -74,38 +160,17 @@ export function DashboardView({ profile, results, myRank }: DashboardViewProps) 
     }));
   }, [results]);
 
-  const subjectRadar = useMemo(() => {
-    const subjectScores: Record<string, number[]> = {};
-    for (const r of results) {
-      if (!subjectScores[r.subject]) subjectScores[r.subject] = [];
-      subjectScores[r.subject].push(r.score);
-    }
-    return Object.entries(subjectScores).map(([subject, scores]) => ({
-      subject,
-      score: Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100),
-    }));
-  }, [results]);
+  const subjectTick = useMemo(() => renderSubjectTick(radarSubjects), [radarSubjects]);
 
+  // Stats shows only the latest RECENT_QUIZ_ROWS; the full list lives on the
+  // History tab, which "View all" links to.
   const recentQuizzes = useMemo(
     () =>
       [...results]
         .sort((a, b) => new Date(b.taken_at).getTime() - new Date(a.taken_at).getTime())
-        .slice(0, 10),
+        .slice(0, RECENT_QUIZ_ROWS),
     [results],
   );
-
-  const difficultyColor = (d: string) => {
-    const lower = d.toLowerCase();
-    if (lower === "easy") return "text-emerald-600 bg-emerald-50";
-    if (lower === "medium") return "text-amber-600 bg-amber-50";
-    return "text-red-600 bg-red-50";
-  };
-
-  const scoreColor = (s: number) => {
-    if (s >= 80) return "text-emerald-600";
-    if (s >= 60) return "text-amber-600";
-    return "text-red-500";
-  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -164,8 +229,10 @@ export function DashboardView({ profile, results, myRank }: DashboardViewProps) 
         </Link>
       )}
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+      {/* Charts Row. Two equal columns rather than the old [1fr_280px]: the radar
+          was squeezed into a 280px card, which is what forced its labels into the
+          SVG edge. It has the room now that the profile card is gone. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Weekly performance chart */}
         <div className="p-5 rounded-2xl border border-border bg-card flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -175,8 +242,8 @@ export function DashboardView({ profile, results, myRank }: DashboardViewProps) 
             </div>
             <span className="text-xs text-muted-foreground px-2 py-1 rounded-lg bg-accent">This week</span>
           </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 300, height: 192 }}>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 300, height: 320 }}>
               <AreaChart data={weeklyData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
@@ -197,23 +264,49 @@ export function DashboardView({ profile, results, myRank }: DashboardViewProps) 
           </div>
         </div>
 
-        {/* Subject radar */}
+        {/* Subject radar — capped at the most-played subjects. Past ~8 axes the
+            shape stops being readable, and the catalogue only grows. */}
         <div className="p-5 rounded-2xl border border-border bg-card flex flex-col gap-4">
           <div>
             <p className="font-medium text-foreground">Subject Mastery</p>
-            <p className="text-xs text-muted-foreground">Performance by subject</p>
+            <p className="text-xs text-muted-foreground">
+              {radarSubjects.length >= RADAR_MIN_SUBJECTS
+                ? `Average score across your ${radarSubjects.length} most-played subjects`
+                : "Average score across your most-played subjects"}
+            </p>
           </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 300, height: 192 }}>
-              <RadarChart data={subjectRadar}>
-                <PolarGrid stroke="#e5e7eb" />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                <Radar dataKey="score" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.15} strokeWidth={2} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
+          {radarSubjects.length < RADAR_MIN_SUBJECTS ? (
+            <SubjectMasteryEmpty played={radarSubjects.length} />
+          ) : (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 400, height: 320 }}>
+                <RadarChart
+                  data={radarSubjects}
+                  outerRadius="72%"
+                  margin={{ top: 16, right: 32, bottom: 16, left: 32 }}
+                >
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis dataKey="subject" tick={subjectTick} />
+                  {/* Fixed 0–100. Auto-scaling made a flat 45% profile fill the whole
+                      polygon, which reads as mastery the user has not earned. */}
+                  <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "13px" }}
+                    formatter={(v, _n, item) => [
+                      `${v}% · ${pluralize((item?.payload as RadarPoint | undefined)?.quizzes ?? 0, "quiz", "quizzes")}`,
+                      "Average",
+                    ]}
+                  />
+                  <Radar dataKey="avgScore" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.15} strokeWidth={2} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Average score by subject — every attempted subject, not just the top 8 */}
+      <SubjectScoreBars subjects={scoreBySubject} />
 
       {/* Quiz History */}
       <div className="flex flex-col gap-4">
@@ -222,65 +315,22 @@ export function DashboardView({ profile, results, myRank }: DashboardViewProps) 
             <p className="font-medium text-foreground">Recent Quizzes</p>
             <p className="text-xs text-muted-foreground">Your latest quiz results</p>
           </div>
-          <button className="text-xs text-[#4f46e5] hover:underline flex items-center gap-1 cursor-pointer">
+          <Link
+            href="/progress?tab=history"
+            className="text-xs text-[#4f46e5] hover:underline flex items-center gap-1"
+          >
             View all <ChevronRight size={13} />
-          </button>
+          </Link>
         </div>
 
-        <div className="rounded-2xl border border-border overflow-hidden bg-card">
-          <div className="hidden sm:grid grid-cols-[1fr_100px_80px_70px_90px_80px] gap-4 px-5 py-3 bg-accent/50 border-b border-border text-xs text-muted-foreground font-medium">
-            <span>Subject / Topic</span>
-            <span>Difficulty</span>
-            <span>Score</span>
-            <span>Questions</span>
-            <span>Time</span>
-            <span>Date</span>
-          </div>
-          {results.length === 0 ? (
+        <QuizResultsTable
+          results={recentQuizzes}
+          empty={
             <div className="px-5 py-8 text-center text-sm text-muted-foreground">
               No quizzes yet — start one from Home to see history here.
             </div>
-          ) : (
-            recentQuizzes.map((r, i) => {
-              const passed = r.score >= 0.6;
-              const scorePercent = Math.round(r.score * 100);
-              const diffDisplay = r.difficulty.charAt(0).toUpperCase() + r.difficulty.slice(1);
-              const dateDisplay = new Intl.DateTimeFormat(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(new Date(r.taken_at));
-              return (
-                <motion.div
-                  key={r.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="grid grid-cols-1 sm:grid-cols-[1fr_100px_80px_70px_90px_80px] gap-2 sm:gap-4 px-5 py-4 border-b border-border last:border-0 hover:bg-accent/30 transition-colors items-center"
-                >
-                  <div className="flex items-center gap-3">
-                    {passed
-                      ? <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                      : <XCircle size={16} className="text-red-400 shrink-0" />
-                    }
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{r.subject}</p>
-                      <p className="text-xs text-muted-foreground">{r.mode.charAt(0).toUpperCase() + r.mode.slice(1)}</p>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit ${difficultyColor(r.difficulty)}`}>
-                    {diffDisplay}
-                  </span>
-                  <span className={`text-sm font-semibold ${scoreColor(scorePercent)}`}>
-                    {scorePercent}%
-                  </span>
-                  <span className="text-sm text-muted-foreground">{r.total_questions} Q</span>
-                  <span className="text-sm text-muted-foreground">{formatDuration(r.time_taken ?? 0, "verbose")}</span>
-                  <span className="text-xs text-muted-foreground">{dateDisplay}</span>
-                </motion.div>
-              );
-            })
-          )}
-        </div>
+          }
+        />
       </div>
     </div>
   );

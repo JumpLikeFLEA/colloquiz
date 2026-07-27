@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
@@ -113,6 +114,8 @@ export type UserProfile = {
   xpToNext: number;
   /** Progress toward the next level, 0–100 (from getLevelProgress). */
   progress: number;
+  /** Uploaded avatar, or null to fall back to initials. */
+  avatarUrl?: string | null;
 };
 
 function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: () => void }) {
@@ -153,8 +156,10 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
         className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
       >
         <div className="relative shrink-0">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium select-none">
-            {initials}
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium select-none overflow-hidden">
+            {profile.avatarUrl
+              ? <Image src={profile.avatarUrl} alt="" width={36} height={36} className="w-full h-full object-cover" />
+              : initials}
           </div>
           {/* Progress ring — collapsed rail only (bar replaces it when expanded) */}
           <svg

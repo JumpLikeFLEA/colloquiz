@@ -24,6 +24,8 @@ export type FullProfile = {
   full_name: string | null;
   display_name: string;
   city: string | null;
+  /** Public storage URL of the uploaded avatar, or null for the initials fallback. */
+  avatar_url: string | null;
   role: string | null;
   total_xp: number;
   /** Already lapsed — 0 if the last completed quiz is older than yesterday. */
@@ -44,7 +46,7 @@ export const getProfile = cache(async (): Promise<FullProfile | null> => {
   const { data } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, display_name, city, role, total_xp, current_streak, last_quiz_at, created_at, is_author, leaderboard_opt_out",
+      "id, full_name, display_name, city, avatar_url, role, total_xp, current_streak, last_quiz_at, created_at, is_author, leaderboard_opt_out",
     )
     .eq("id", user.id)
     .single();

@@ -168,6 +168,71 @@
   /my-quizzes/builder routes, and all tutor RLS/data code are deliberately 
   left intact — flip the constant to restore the nav. Do not delete the 
   author code
+- Settings > Account made functional (2026-07-27, migration 022 + lib/avatar.ts +
+  lib/profileFields.ts + settings/AccountSection.tsx + settings/ProvidersSection.tsx):
+  the pencil-toggle edit form from the identity move became a real labelled form
+  with per-field validation, dirty tracking and a Save/Discard pair. REQUIRES
+  MIGRATIONS 022 AND 023 (profiles.avatar_url + a public "avatars" storage bucket
+  with owner-scoped policies; then the column-level GRANT that makes the new
+  column writable). 006 revoked blanket UPDATE on profiles in favour of a column
+  ALLOW-LIST, so EVERY new profiles column the app writes from a user session
+  needs its own GRANT — without it the write fails with "permission denied for
+  table profiles", which is a grant error checked BEFORE RLS, not a policy
+  failure. Avatar limits (2 MB; PNG/JPEG/WebP) are declared once in
+  lib/avatar.ts, stated in the UI BEFORE the picker opens, and enforced again on
+  the bucket — the client check is a courtesy, the bucket is the enforcement.
+  Objects are "<user_id>/<uuid>.<ext>": the first segment is what the storage
+  policy checks, and the uuid means a replacement never reuses a URL, so no CDN
+  cache-busting is needed; the previous object is deleted after a successful
+  replace. EMAIL IS DELIBERATELY READ-ONLY with a note — changing it needs a
+  confirmation round trip to the new address, which is not built; do not turn the
+  field into an editable control without that. Sign-in methods are read from
+  Supabase IDENTITIES (never inferred from the profile), fetched SERVER-side in
+  page.tsx so the list is right on first paint and a fetch failure leaves the
+  "last method" guard ON rather than off. THE HARD RULE: when identities.length
+  <= 1 the Disconnect action is disabled with the reason in the row — Supabase
+  also rejects it server-side, but a control that always fails is not a control.
+  Provider icons moved from AuthScreen to app/components/ProviderIcons.tsx (a
+  move, not a redraw) so Settings does not import the whole auth screen. Avatars
+  render through next/image; next.config derives the allowed remote host from
+  NEXT_PUBLIC_SUPABASE_URL rather than hardcoding a project ref
+- Progress > History tab (2026-07-27, migration 021 + lib/history.ts +
+  lib/historyFilters.ts + progress/HistoryView.tsx + progress/QuizResultsTable.tsx):
+  the Figma "View all" control beside Recent Quizzes was a dead `<button>`; it is
+  now a Link to ?tab=history, and Progress has a third tab. The row markup was
+  extracted VERBATIM from DashboardView into QuizResultsTable so Stats (latest 10)
+  and History (paginated 25/page) cannot drift; the two grid templates are written
+  out in full rather than composed, because Tailwind only sees complete class
+  names in source. State is entirely in the URL
+  (?tab=history&subject=&difficulty=&page=), all four params allow-listed.
+  REQUIRES MIGRATION 021: a result's subject is derived from
+  quizzes.question_ids[1] -> questions.subject, and question_ids is a TEXT[] with
+  no FK, so PostgREST cannot filter through it — you cannot take page 3 of a
+  filter you can only evaluate after loading every row. get_quiz_history() does
+  that lookup in SQL and returns one page plus the filtered total (the count
+  rides on every row, so page and count share a snapshot);
+  get_quiz_history_subjects() feeds the dropdown only the subjects the user has
+  actually played, so no option is a dead end. Both SECURITY INVOKER, so RLS
+  still scopes them. Do not "simplify" this back to a PostgREST select
+- Subject Mastery split in two (2026-07-27, lib/subjectStats.ts +
+  progress/SubjectScoreBars.tsx): the Figma radar plotted EVERY attempted subject,
+  so labels ran off the SVG — "Motion Desi…", "Comput…", and two axes both reading
+  "History" (one of them Sports/Science/Esports History). The radar now shows only
+  the 8 most-played subjects, in a half-width card (the row went from
+  [1fr_280px] to lg:grid-cols-2) at h-80, with a fixed 0–100 PolarRadiusAxis —
+  auto-scaling let a flat 45% profile fill the polygon. Axis labels are pre-wrapped
+  server-side into `lines[]` and rendered as one `<tspan>` per line by a custom
+  tick, so NOTHING is ever truncated; only SHORT_NAMES may shorten a name, and any
+  label collision falls back to the full name (unique by catalogue construction).
+  Under 3 subjects the radar is replaced by an encouragement state — a 2-axis
+  radar is a line. A second card, "Average Score by Subject", lists every attempted
+  subject strongest-first and collapses past BAR_COLLAPSED_ROWS behind "Show all N
+  subjects"; it is hand-built HTML, NOT a Recharts BarChart, because a category
+  axis has a fixed pixel width and clips the long names this work exists to fix.
+  One hue for every bar (a value-ramp would re-encode bar length as brightness);
+  the number at the tip carries the value in text colour. Both charts are slices of
+  ONE aggregate computed in page.tsx from the results already fetched — no new
+  query. Do not restore the uncapped radar
 - Identity moved out of Progress (2026-07-27): the Figma profile card that
   opened Progress › Stats (avatar, name, email, location, member-since, level,
   total XP, XP bar, "View Achievements") was split. Identity — avatar, name,
@@ -203,4 +268,58 @@
   returns the leg context as JSONB) and auto-submits at zero; the results screen
   links back to the duel. No Figma source for any of it; composed from existing
   classes — same precedent as Groups/Leaderboard. The rating number is still
-  NEVER rendered. Do not remove
+  NEVER rendered. Do not remove- Settings > Notifications made functional (2026-07-27, migration 024 +
+  lib/notificationPrefs.ts + settings/NotificationsSection.tsx): the "Coming soon."
+  placeholder became an event x channel matrix (5 events, in-app + email).
+  REQUIRES MIGRATION 024. THE GATE IS AT WRITE TIME, in notify(), NOT at read
+  time in the bell's query — because the bell is not the only consumer:
+  DuelRealtime subscribes to notifications INSERTs and fires a sonner toast plus
+  router.refresh() per row, so a read-time filter would leave the toast popping
+  for an event the user just muted. No row means no bell entry, no unread count,
+  no toast, no refresh. The trade is that muting is not retroactive — nothing is
+  queued and replayed — which the section copy states outright. 024 REDEFINES
+  notify() FROM 013; re-applying 013 silently restores the ungated version.
+  DEFAULTS ARE IMPLIED BY ABSENCE: no row means in-app on, so a new user is
+  correct with zero rows and existing users need no backfill; the signup trigger
+  is untouched. notification_pref_key() in SQL is the source of truth for which
+  notification types a preference covers, and the `covers` lists in
+  lib/notificationPrefs.ts mirror it for UI copy only. A type mapping to NULL is
+  ungated and ALWAYS delivered — that is deliberate for question_reviewed,
+  invite_accepted, assignment_completed, group_question_pending and
+  report_resolved (which additionally bypasses notify() entirely, INSERTing
+  direct from resolve_question_reports() in 010, so adding it to the map would
+  NOT gate it). THE EMAIL COLUMN IS RENDERED DISABLED, and there is deliberately
+  NO email column in the table: the app sends no transactional email for these
+  events (no mail dependency, no edge function, no webhook — the only mail is
+  Supabase Auth's own confirmation/reset), so a stored email preference would be
+  a value nothing reads. Add the BOOLEAN column and enable the UI column
+  together when delivery exists. The matrix is a real <table> with scope="col" /
+  scope="row" headers so a screen reader can say which channel a switch belongs
+  to; the Radix switches are textless buttons and carry their own aria-label. No
+  Figma source; composed from existing card/switch classes — same precedent as
+  NotificationBell. Do not remove
+- Settings > Data and privacy (2026-07-27, lib/accountExport.ts +
+  settings/DataPrivacySection.tsx + app/api/account/export/route.ts): a new
+  LAST section, deliberately set apart from the settings stack by a heavier
+  rule (mt-4 pt-8 border-t-2) — these are rights, not preferences, and the
+  destructive half must never read as one more row next to a theme toggle.
+  Ships the EXPORT half only. GET /api/account/export streams a JSON
+  attachment (profile, quiz_results, achievements, group_memberships,
+  duel_history) with Cache-Control: no-store. It takes NO caller-supplied
+  input — no params, no body — so the caller's own JWT is the only thing that
+  selects rows; RLS is the scoping boundary and the .eq("user_id", …) filters
+  are belt-and-braces for the indexes. SYNCHRONOUS on purpose: five indexed
+  owner-scoped reads with no join fan-out, so a job runner would add a store, a
+  status endpoint and a delivery path to save milliseconds. NO RATING is in the
+  export and none can be — player_ratings is unreadable even by its owner
+  (017), so the standing "never render the rating" rule holds for free.
+  buildExportPayload() is pure and lives in lib/ so the document shape is
+  testable without a database. ACCOUNT DELETION IS DELIBERATELY NOT BUILT and
+  renders nothing at all — it is blocked on a decision about content other
+  users depend on. Note for whoever builds it: six FKs to profiles have NO
+  ON DELETE action (results.user_id, questions.created_by, questions.reviewed_by,
+  quizzes.created_by, generation_batches.created_by, question_reports.resolved_by),
+  so deleting an auth user FAILS TODAY; and groups.owner_id ON DELETE CASCADE
+  chains through questions/quizzes.group_id into results, so cascading an owner
+  would destroy other members' quiz history. Do not add a delete control before
+  that is resolved

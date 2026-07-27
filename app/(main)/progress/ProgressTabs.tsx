@@ -6,11 +6,14 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-export type ProgressTab = "stats" | "achievements";
+export type ProgressTab = "stats" | "achievements" | "history";
 
 const TABS: { tab: ProgressTab; href: string; label: string }[] = [
   { tab: "stats", href: "/progress?tab=stats", label: "Stats" },
   { tab: "achievements", href: "/progress?tab=achievements", label: "Achievements" },
+  // Deliberately no filter params: the tab link is the unfiltered view, and a
+  // filtered history is reached by the controls on the tab itself.
+  { tab: "history", href: "/progress?tab=history", label: "History" },
 ];
 
 /**

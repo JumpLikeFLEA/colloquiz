@@ -35,6 +35,7 @@ export default async function MainLayout({
       level,
       xpToNext,
       progress,
+      avatarUrl: data.avatar_url,
     };
     isAdmin = data.role === "admin";
     isAuthor = !!data.is_author || data.role === "admin";
