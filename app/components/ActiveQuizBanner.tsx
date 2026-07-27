@@ -17,10 +17,10 @@ export function ActiveQuizBanner() {
   const onQuizScreen = pathname.startsWith("/quiz/");
 
   useEffect(() => {
-    if (onQuizScreen) {
-      setSummary(null);
-      return;
-    }
+    // No clearing here — the render guard below already hides the banner on a
+    // quiz screen, and the refetch on the next pathname change replaces the
+    // summary with the current session.
+    if (onQuizScreen) return;
     let cancelled = false;
     fetch("/api/quiz/session")
       .then((r) => (r.ok ? r.json() : null))

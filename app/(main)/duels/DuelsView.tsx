@@ -16,7 +16,7 @@ import {
 import { tierStyle } from "@/lib/glicko2";
 import type { Duel, MyTier } from "@/lib/duels";
 import type { DuelTarget } from "@/lib/groups";
-import { formatDuration } from "@/lib/format";
+import { formatDuration, pluralize } from "@/lib/format";
 
 // The compact inbox row. The info column links to the duel's detail page; the
 // action column (accept/decline/play/status) sits outside that link so its
@@ -52,7 +52,7 @@ function DuelRow({
             vs {duel.opponent_name}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {label} · {duel.size} questions · {duel.group_name}
+            {label} · {pluralize(duel.size, "question")} · {duel.group_name}
             {duel.status === "resolved" && duel.my_correct !== null && (
               <>
                 {" · "}
@@ -477,7 +477,7 @@ export function DuelsView({
                       : "border border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
-                  {n} questions
+                  {pluralize(n, "question")}
                 </button>
               ))}
             </div>

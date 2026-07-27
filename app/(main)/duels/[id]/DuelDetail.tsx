@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Swords } from "lucide-react";
 
 import type { Duel } from "@/lib/duels";
-import { formatDuration } from "@/lib/format";
+import { formatDuration, pluralize } from "@/lib/format";
 
 function formatDeadline(iso: string | null): string | null {
   if (!iso) return null;
@@ -109,7 +109,7 @@ export function DuelDetail({ duel }: { duel: Duel }) {
         <div className="min-w-0">
           <h1 className="text-foreground leading-tight">vs {duel.opponent_name}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {label} · {duel.size} questions · {duel.group_name}
+            {label} · {pluralize(duel.size, "question")} · {duel.group_name}
           </p>
         </div>
       </div>

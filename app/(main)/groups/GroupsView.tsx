@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import type { MyGroup } from "@/lib/groups";
+import { pluralize } from "@/lib/format";
 
 export function GroupsView({ groups }: { groups: MyGroup[] }) {
   const router = useRouter();
@@ -101,7 +102,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
                 <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
                   <span className="flex items-center gap-1">
                     <Users size={12} />
-                    {g.memberCount} {g.memberCount === 1 ? "member" : "members"}
+                    {pluralize(g.memberCount, "member")}
                   </span>
                   <span className="flex items-center gap-1">
                     <BookOpen size={12} />

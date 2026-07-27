@@ -29,6 +29,7 @@ import {
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import type { GroupDetail } from "@/lib/groups";
 import type { LeaderboardRow } from "@/lib/leaderboard";
+import { pluralize } from "@/lib/format";
 
 export function GroupDetailView({
   detail,
@@ -538,7 +539,7 @@ export function GroupDetailView({
                       : "border border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
-                  {n} questions
+                  {pluralize(n, "question")}
                 </button>
               ))}
             </div>

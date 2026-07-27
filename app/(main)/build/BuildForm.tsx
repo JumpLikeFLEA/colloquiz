@@ -31,6 +31,7 @@ import { cn, slugifyForTag } from "@/lib/utils";
 import type { Difficulty, QuizMode, QuizSize } from "@/types";
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
+import { pluralize } from "@/lib/format";
 
 // ── Icon map ────────────────────────────────────────────────────────────────
 
@@ -151,7 +152,7 @@ function Step1({
               <div className="min-w-0">
                 <p className="truncate font-medium text-sm">{s.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {s.questionCount === 0 ? "No questions" : `${s.questionCount} questions`}
+                  {s.questionCount === 0 ? "No questions" : pluralize(s.questionCount, "question")}
                 </p>
               </div>
             </button>

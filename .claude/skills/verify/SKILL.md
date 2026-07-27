@@ -5,6 +5,11 @@ description: How to build, run, and drive this app to verify changes end-to-end 
 
 # Verifying changes in colloquiz
 
+## Static check first
+- `npm run check` (= `tsc --noEmit && eslint .`). It exits 0 on a clean tree, so any output is something you introduced.
+- Do this before starting the dev server: a lint error costs seconds to fix, a failed E2E run costs a real Supabase test user and part of the ~2-4/hour project email cap.
+- `next lint` does not exist in Next.js 16 — use `npm run lint` / `npm run lint:fix`.
+
 ## Launch
 - `npm run dev` (background) → http://localhost:3000. Ready when `/login` returns 200 (takes ~10-20s).
 - Cloud Supabase is configured in `.env.local` (project kumrlovftctxcbbbmnfy). There is no local Supabase CLI stack — auth calls hit the real cloud project.

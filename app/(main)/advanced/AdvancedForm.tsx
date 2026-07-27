@@ -13,6 +13,7 @@ import {
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import { slugifyForTag } from "@/lib/utils";
+import { pluralize } from "@/lib/format";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
@@ -310,7 +311,7 @@ export default function AdvancedForm({
                     <Hash size={16} />
                     Number of Questions
                   </label>
-                  <span className="text-muted-foreground text-sm">{questionCount} questions</span>
+                  <span className="text-muted-foreground text-sm">{pluralize(questionCount, "question")}</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {[5, 10, 15, 20, 25].map(n => (

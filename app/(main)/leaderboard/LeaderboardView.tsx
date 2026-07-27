@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Crown, EyeOff, Eye, Medal, Swords, X } from "lucide-react";
@@ -23,6 +23,24 @@ import { tierStyle, type TierId } from "@/lib/glicko2";
 import type { CompetitiveRow, MyTier } from "@/lib/duels";
 
 const NOTICE_KEY = "colloquiz.leaderboard.notice.dismissed";
+const NOTICE_EVENT = "colloquiz:leaderboard-notice";
+
+// localStorage is unavailable during SSR, so the dismissed flag is read through
+// an external store instead of being mirrored into state from an effect. The
+// server snapshot reports "dismissed" so the notice never appears in server
+// HTML; the client re-reads the real value after hydration.
+function subscribeNotice(onStoreChange: () => void) {
+  window.addEventListener(NOTICE_EVENT, onStoreChange);
+  return () => window.removeEventListener(NOTICE_EVENT, onStoreChange);
+}
+
+function getNoticeDismissed() {
+  return localStorage.getItem(NOTICE_KEY) !== null;
+}
+
+function getNoticeDismissedOnServer() {
+  return true;
+}
 
 function TierBadge({ tier }: { tier: TierId | null }) {
   if (!tier || tier === "unranked") return null;
@@ -125,17 +143,15 @@ export function LeaderboardView({
   const [pending, startTransition] = useTransition();
   const [hidden, setHidden] = useState(optedOut);
   const [saving, setSaving] = useState(false);
-  // Rendered only after mount: localStorage is unavailable during SSR, and
-  // reading it in render would desync the server and client HTML.
-  const [showNotice, setShowNotice] = useState(false);
-
-  useEffect(() => {
-    if (!localStorage.getItem(NOTICE_KEY)) setShowNotice(true);
-  }, []);
+  const showNotice = !useSyncExternalStore(
+    subscribeNotice,
+    getNoticeDismissed,
+    getNoticeDismissedOnServer,
+  );
 
   function dismissNotice() {
     localStorage.setItem(NOTICE_KEY, "1");
-    setShowNotice(false);
+    window.dispatchEvent(new Event(NOTICE_EVENT));
   }
 
   function navigate(next: { subject?: string | null; window?: LeaderboardWindow }) {

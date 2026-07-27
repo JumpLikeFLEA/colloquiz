@@ -167,7 +167,7 @@ export function AuthLeftPanel() {
           <GraduationCap size={32} className="text-white" />
         </div>
         <div>
-          <h2 className="text-3xl text-white leading-tight">Your advertisement<br />won't be here</h2>
+          <h2 className="text-3xl text-white leading-tight">Your advertisement<br />won&apos;t be here</h2>
           <p className="text-white/60 mt-3 text-sm leading-relaxed">However, you can try out<br />some quizzes.</p>
         </div>
 

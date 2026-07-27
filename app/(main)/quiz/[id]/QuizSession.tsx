@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle, ChevronRight,
-  Trophy, RotateCcw, Star, Zap, Target, Award, TrendingUp,
+  Trophy, RotateCcw, Star, Zap, Target, TrendingUp,
   AlertCircle, BookOpen, Flag, Swords,
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
   Code, Brain, Palette, Music, Languages
@@ -14,6 +14,7 @@ import {
 import type { PlayableQuestion, Quiz } from "@/types";
 import { ReportQuestionInline } from "@/app/components/ReportQuestion";
 import { ShareQuizBlock } from "./ShareQuizBlock";
+import { pluralize } from "@/lib/format";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -160,6 +161,11 @@ export default function QuizSession({
   // Latest answers, so a timeout auto-submit reads current selections rather
   // than a stale closure captured when the countdown effect last ran.
   const answersRef = useRef(answers);
+  // Assigned during render on purpose. react-hooks/refs is right that this is
+  // unsound under concurrent rendering, but the alternative (syncing in an
+  // effect) reintroduces the stale-closure bug this ref exists to fix, on the
+  // duel timeout auto-submit path. Revisit together with the countdown effect.
+  // eslint-disable-next-line react-hooks/refs
   answersRef.current = answers;
 
   // Duel countdown. The deadline is server-anchored (the leg's started_at +
@@ -198,7 +204,6 @@ export default function QuizSession({
           const diffs = new Set(questions.map((q) => q.difficulty));
           return diffs.size === 1 ? [...diffs][0] : "mixed";
         })();
-  const questionCount = questions.length;
 
   const subject = SUBJECTS.find(s => s.id === subjectId);
   const currentQuestion = questions[currentIndex];
@@ -750,7 +755,7 @@ function ResultsScreen({
               transition={{ delay: 0.3 }}
               className="text-muted-foreground mt-1 text-sm"
             >
-              {subject.name} · {difficulty} · {total} questions
+              {subject.name} · {difficulty} · {pluralize(total, "question")}
             </motion.p>
           )}
         </div>

@@ -1,77 +1,50 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  User, Mail, Calendar, MapPin, Edit3, TrendingUp, Target, Clock,
-  Award, Flame, BarChart2, CheckCircle2, XCircle, ChevronRight, Star, Medal
+  TrendingUp, Clock, Flame, BarChart2, CheckCircle2, XCircle, ChevronRight, Star, Medal
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis
 } from "recharts";
-import { createClient } from "@/lib/supabase/client";
-import { ErrorDialog } from "@/app/components/ErrorDialog";
 import type { EnrichedResult } from "@/lib/questions";
-import { formatDuration } from "@/lib/format";
-import { XP_PER_LEVEL, getLevelProgress } from "@/lib/levels";
+import { formatDuration, pluralize } from "@/lib/format";
+import { getLevelProgress } from "@/lib/levels";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type DashboardViewProps = {
-  userId: string;
-  email: string;
   profile: {
-    full_name: string | null;
-    display_name: string | null;
-    city: string | null;
     total_xp: number;
     current_streak: number;
-    created_at: string;
   };
   results: EnrichedResult[];
   /** 7-day standing, or null when the user has no eligible XP this week. */
   myRank: { rank: number; xp: number; total_ranked: number } | null;
 };
 
-export function DashboardView({ userId, email, profile, results, myRank }: DashboardViewProps) {
-  const router = useRouter();
-  const [editing, setEditing] = useState(false);
-  const [formFullName, setFormFullName] = useState("");
-  const [formCity, setFormCity] = useState("");
-  const [formPublicName, setFormPublicName] = useState("");
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  const displayName = profile.full_name ?? profile.display_name ?? "";
-  const initials = displayName
-    .split(" ")
-    .map(n => n[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  const { level, xpIntoLevel, progress: xpProgress } = getLevelProgress(profile.total_xp);
-
-  const memberSince = new Date(profile.created_at).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
-
+export function DashboardView({ profile, results, myRank }: DashboardViewProps) {
   const statCards = useMemo(() => {
     const totalTimeSec = results.reduce((a, r) => a + (r.time_taken ?? 0), 0);
     const avgScore =
       results.length === 0
         ? 0
         : Math.round((results.reduce((a, r) => a + r.score, 0) / results.length) * 100);
+    // Level and total XP share one card: the level is the headline number and
+    // the XP that earned it sits in the card's footnote slot, so progression
+    // reads as a stat here rather than as a second identity block.
+    const { level } = getLevelProgress(profile.total_xp);
     return [
       { label: "Total Quizzes", value: String(results.length), change: "", icon: BarChart2, color: "#4f46e5", bg: "#eef2ff" },
       { label: "Avg. Score", value: `${avgScore}%`, change: "", icon: TrendingUp, color: "#10b981", bg: "#ecfdf5" },
-      { label: "Current Streak", value: `${profile.current_streak} days`, change: "", icon: Flame, color: "#f97316", bg: "#fff7ed" },
+      { label: "Current Streak", value: pluralize(profile.current_streak, "day"), change: "", icon: Flame, color: "#f97316", bg: "#fff7ed" },
       { label: "Time Spent", value: formatDuration(totalTimeSec, "compact"), change: "", icon: Clock, color: "#8b5cf6", bg: "#f5f3ff" },
+      { label: "Current Level", value: `Level ${level}`, change: `${profile.total_xp.toLocaleString()} XP total earned`, icon: Star, color: "#f59e0b", bg: "#fffbeb" },
     ];
-  }, [results, profile.current_streak]);
+  }, [results, profile.current_streak, profile.total_xp]);
 
   const weeklyData = useMemo(() => {
     const dayScores: Record<string, number[]> = {};
@@ -134,173 +107,36 @@ export function DashboardView({ userId, email, profile, results, myRank }: Dashb
     return "text-red-500";
   };
 
-  function enterEdit() {
-    setFormFullName(profile.full_name ?? profile.display_name ?? "");
-    setFormCity(profile.city ?? "");
-    // Seed the public name from the real name only as a starting point — it is
-    // stored separately so changing one never changes the other.
-    setFormPublicName(profile.display_name ?? profile.full_name ?? "");
-    setEditing(true);
-  }
-
-  async function handleSave() {
-    const supabase = createClient();
-    // display_name is the only name shown on leaderboards; full_name never
-    // leaves the surfaces that already showed it (rosters, attribution).
-    const publicName = formPublicName.trim();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: formFullName,
-        city: formCity,
-        ...(publicName && { display_name: publicName }),
-      })
-      .eq("id", userId);
-    if (error) { setSaveError(error.message); return; }
-    router.refresh();
-    setEditing(false);
-  }
-
   return (
     <div className="flex flex-col gap-8">
-      {/* Profile + Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5">
-        {/* Profile Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-5 rounded-2xl border border-border bg-card flex flex-col gap-5"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex flex-col items-center gap-3 flex-1">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-2xl font-medium select-none">
-                  {initials}
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-card" title="Online" />
-              </div>
-
-              {editing ? (
-                <div className="w-full flex flex-col gap-2">
-                  <input
-                    value={formFullName}
-                    onChange={e => setFormFullName(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg border border-border text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
-                  />
-                  <p className="text-xs text-muted-foreground text-center py-1.5">{email}</p>
-                  <input
-                    value={formPublicName}
-                    onChange={e => setFormPublicName(e.target.value)}
-                    placeholder="Public name"
-                    aria-label="Public name, shown on leaderboards"
-                    className="w-full px-3 py-1.5 rounded-lg border border-border text-xs text-center focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
-                  />
-                  <p className="text-xs text-muted-foreground text-center leading-snug">
-                    Shown on leaderboards
-                  </p>
-                  <input
-                    value={formCity}
-                    onChange={e => setFormCity(e.target.value)}
-                    placeholder="City"
-                    className="w-full px-3 py-1.5 rounded-lg border border-border text-xs text-center focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
-                  />
-                  <button
-                    onClick={handleSave}
-                    className="w-full py-1.5 rounded-lg bg-[#4f46e5] text-white text-xs font-medium hover:bg-[#4338ca] transition-colors cursor-pointer"
-                  >
-                    Save
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <p className="font-medium text-foreground">{displayName}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
-                  <p className="text-xs text-muted-foreground">{profile.city ?? ""}</p>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => editing ? setEditing(false) : enterEdit()}
-              className="p-1.5 rounded-lg hover:bg-accent transition-colors cursor-pointer shrink-0"
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {statCards.map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="p-5 rounded-2xl border border-border bg-card flex flex-col gap-3"
             >
-              <Edit3 size={14} className="text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Profile info */}
-          <div className="flex flex-col gap-2 pt-3 border-t border-border">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User size={13} />
-              <span>Level {level} · Advanced Learner</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar size={13} />
-              <span>Member since {memberSince}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin size={13} />
-              <span>{profile.city ?? ""}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Star size={13} className="text-amber-500" />
-              <span>{profile.total_xp.toLocaleString()} XP total earned</span>
-            </div>
-          </div>
-
-          {/* XP Progress */}
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Level {level}</span>
-              <span>{xpIntoLevel} / {XP_PER_LEVEL} XP</span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#4f46e5] to-[#7c3aed]"
-                style={{ width: `${xpProgress}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">{XP_PER_LEVEL - xpIntoLevel} XP to Level {level + 1}</p>
-          </div>
-
-          <button
-            onClick={() => router.push("/progress?tab=achievements")}
-            className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm cursor-pointer"
-          >
-            <Award size={15} />
-            View Achievements
-            <ChevronRight size={14} />
-          </button>
-        </motion.div>
-
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
-          {statCards.map((card, i) => {
-            const Icon = card.icon;
-            return (
-              <motion.div
-                key={card.label}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="p-5 rounded-2xl border border-border bg-card flex flex-col gap-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div
-                    className="flex items-center justify-center w-10 h-10 rounded-xl"
-                    style={{ backgroundColor: card.bg, color: card.color }}
-                  >
-                    <Icon size={20} />
-                  </div>
+              <div className="flex items-center justify-between">
+                <div
+                  className="flex items-center justify-center w-10 h-10 rounded-xl"
+                  style={{ backgroundColor: card.bg, color: card.color }}
+                >
+                  <Icon size={20} />
                 </div>
-                <div>
-                  <p className="text-2xl font-semibold text-foreground">{card.value}</p>
-                  <p className="text-sm text-muted-foreground">{card.label}</p>
-                </div>
-                <p className="text-xs text-muted-foreground border-t border-border pt-2">{card.change}</p>
-              </motion.div>
-            );
-          })}
-        </div>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold text-foreground">{card.value}</p>
+                <p className="text-sm text-muted-foreground">{card.label}</p>
+              </div>
+              <p className="text-xs text-muted-foreground border-t border-border pt-2">{card.change}</p>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Leaderboard standing — rendered only when the user is actually ranked,
@@ -446,12 +282,6 @@ export function DashboardView({ userId, email, profile, results, myRank }: Dashb
           )}
         </div>
       </div>
-
-      <ErrorDialog
-        open={saveError !== null}
-        onClose={() => setSaveError(null)}
-        description={saveError ?? ""}
-      />
     </div>
   );
 }

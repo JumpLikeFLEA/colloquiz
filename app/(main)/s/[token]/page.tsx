@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Share2, AlertCircle, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
+import { pluralize } from "@/lib/format";
 
 // Landing for a shared-quiz link (/s/[token]). get_share_preview resolves the
 // token (granted to anon, so a logged-out friend sees a real preview) and
@@ -65,7 +66,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   }
 
   const label = subjectLabel(preview.subject);
-  const meta = [label, preview.question_count ? `${preview.question_count} questions` : null]
+  const meta = [label, preview.question_count ? pluralize(preview.question_count, "question") : null]
     .filter(Boolean)
     .join(" · ");
   const next = encodeURIComponent(`/s/${token}`);

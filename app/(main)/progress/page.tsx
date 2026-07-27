@@ -67,8 +67,6 @@ async function StatsTab() {
 
   return (
     <DashboardView
-      userId={user.id}
-      email={user.email ?? ""}
       profile={profile}
       results={results}
       myRank={myRank}

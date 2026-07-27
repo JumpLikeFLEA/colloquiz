@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getQuestionsByIds, getQuizById, getSubjects } from "@/lib/questions";
+import { getQuestionsByIds, getQuizById } from "@/lib/questions";
 import { createClient } from "@/lib/supabase/server";
 import { QuizMode } from "@/types";
+import { pluralize } from "@/lib/format";
 
 function getGrade(pct: number): { letter: string; color: string; bg: string } {
   if (pct >= 90) return { letter: "A", color: "text-green-700", bg: "bg-green-50 border-green-200" };
@@ -48,13 +49,6 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
   const grade = getGrade(pct);
   const xp = calcXP(result.correct, result.total_questions, result.mode);
 
-  const subjects = getSubjects();
-  const subjectMap = new Map(subjects.map((s) => [s.id, s.name]));
-  let subjectLabel = "Mixed";
-  if (quiz) {
-    const firstQ = allQuestions.find((q) => q.id === quiz.question_ids[0]);
-    if (firstQ?.subject) subjectLabel = subjectMap.get(firstQ.subject) ?? firstQ.subject;
-  }
   const wrongIds = result.wrong_question_ids as string[];
   const wrongSet = new Set(wrongIds);
   // Reported+skipped questions. They are absent from wrong_question_ids, and
@@ -75,7 +69,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
         {/* Header */}
         <h1 className="text-xl font-semibold mb-1">Quiz Complete</h1>
         <p className="text-sm text-zinc-400 mb-8 capitalize">
-          {result.mode} mode · {result.total_questions} questions
+          {result.mode} mode · {pluralize(result.total_questions, "question")}
           {result.time_taken != null && ` · ${formatTime(result.time_taken)}`}
         </p>
 
@@ -159,7 +153,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
               Review
             </p>
             <div className="flex flex-col gap-2">
-              {reviewQuestions.map((q, i) => {
+              {reviewQuestions.map((q) => {
                 const isExcluded = excludedSet.has(q.id);
                 const isWrong = !isExcluded && wrongSet.has(q.id);
                 return (

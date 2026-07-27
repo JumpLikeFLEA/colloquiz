@@ -67,6 +67,10 @@ export function DuelRealtime({ userId }: { userId: string }) {
   // every navigation.
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
+  // Assigned during render on purpose — see the note in QuizSession. Syncing in
+  // an effect would either re-subscribe the realtime channel on every
+  // navigation or hand the channel callback a stale path.
+  // eslint-disable-next-line react-hooks/refs
   pathnameRef.current = pathname;
 
   useEffect(() => {

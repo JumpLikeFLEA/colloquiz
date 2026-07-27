@@ -34,6 +34,7 @@ import {
   type DifficultyFilter,
 } from "@/lib/difficultyFilter";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
+import { pluralize } from "@/lib/format";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator,
@@ -112,8 +113,8 @@ function SubjectCard({
   // the user the subject is nearly there and worth coming back to, and naming
   // the minimum says why 3 isn't enough.
   const countLine = unavailable
-    ? `${n === 0 ? `No ${difficultyWord}questions` : `Only ${n} question${n !== 1 ? "s" : ""}`} · needs ${QUIZ_SIZE}`
-    : `${n} question${n !== 1 ? "s" : ""}`;
+    ? `${n === 0 ? `No ${difficultyWord}questions` : `Only ${pluralize(n, "question")}`} · needs ${QUIZ_SIZE}`
+    : pluralize(n, "question");
 
   // A disabled <button> is already unclickable and out of the tab order, so
   // "non-interactive and not keyboard focusable" needs no tabIndex juggling.

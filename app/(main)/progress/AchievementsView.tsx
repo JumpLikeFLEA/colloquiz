@@ -6,7 +6,7 @@ import {
   Lock, CheckCircle2, Crown, RefreshCw, Calendar, CalendarCheck, Layers, Play
 } from "lucide-react";
 import { ACHIEVEMENTS } from "@/lib/achievements";
-import { formatDuration } from "@/lib/format";
+import { formatDuration, pluralize } from "@/lib/format";
 import { XP_PER_LEVEL, getLevelProgress } from "@/lib/levels";
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -72,7 +72,7 @@ export function AchievementsView({
   const STATS = [
     { label: "Achievements Unlocked", value: `${unlockedCount} / ${ACHIEVEMENTS.length}`, icon: Trophy, color: "#4f46e5" },
     { label: "Total XP Earned", value: totalXp.toLocaleString(), icon: Star, color: "#f59e0b" },
-    { label: "Current Streak", value: `${currentStreak} days`, icon: Flame, color: "#f97316" },
+    { label: "Current Streak", value: pluralize(currentStreak, "day"), icon: Flame, color: "#f97316" },
     { label: "Quizzes Completed", value: String(quizCount), icon: Hash, color: "#10b981" },
     { label: "Avg. Score", value: `${avgScore}%`, icon: TrendingUp, color: "#8b5cf6" },
     { label: "Total Time", value: formatDuration(totalTimeSeconds, "compact"), icon: Clock, color: "#ec4899" },

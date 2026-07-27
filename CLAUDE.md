@@ -1,5 +1,33 @@
 @AGENTS.md
 
+# Linting
+
+- `npm run check` (`tsc --noEmit && eslint .`) is the static gate; it exits 0 on
+  a clean tree. Also `npm run lint` / `npm run lint:fix`.
+- **`next lint` does not exist** — Next.js 16 removed it along with the `eslint`
+  key in `next.config`. Config is flat (`eslint.config.mjs`), invoked as
+  `eslint .`. Do not add a `"lint": "next lint"` script.
+- Tier is `eslint-config-next/core-web-vitals` + `/typescript`. Type-aware rules
+  (`projectService`) are deliberately NOT enabled — they would roughly triple
+  run time for rules we have not needed yet.
+- **Prettier is deliberately declined.** A formatter would reflow JSX across the
+  whole ported codebase in one commit and destroy the ability to audit the
+  Figma-port diff, which the design fidelity rules below depend on. Do not add it.
+- ESLint 9 does NOT read `.gitignore`, so `figma-export/`, `authored/`,
+  `ds-bundle/` etc. are listed explicitly in `globalIgnores`. Note that
+  supplying `globalIgnores` overrides eslint-config-next's own defaults, so
+  `.next/**`, `out/**`, `build/**` and `next-env.d.ts` are re-listed by hand.
+- `app/components/ui/**` (vendored shadcn/Radix) and `app/components/figma/**`
+  (vendored Figma export) are unlinted on purpose — upstream code, re-vendored
+  on each add. `ImageWithFallback`'s manual `<img>` handling is the point of the
+  component, not a `no-img-element` violation to fix.
+- Deliberately-unused bindings use the `_name` convention, honoured via
+  `argsIgnorePattern` / `varsIgnorePattern` in the config.
+- Two `react-hooks/refs` suppressions exist (`QuizSession.tsx`,
+  `DuelRealtime.tsx`), each with a comment explaining why the ref is assigned
+  during render. These are known debt, not oversights — read the comment before
+  "fixing" them.
+
 # Design fidelity rules
 
 - `/figma-export` is the visual source of truth (Vite + React + Tailwind)
@@ -11,6 +39,9 @@
 ## Intentional deviations from /figma-export
 - Body font: Geist via next/font (Figma export had no font loaded; 
   this is a deliberate choice, do not remove)
+- AuthScreen: the apostrophe in "won't be here" is written `won&apos;t`
+  (2026-07-27) to satisfy react/no-unescaped-entities. Rendered output is
+  byte-identical; do not revert to a bare `'`
 - AuthScreen (app/(auth)/AuthScreen.tsx): stats row ("47 Subjects / 10k+ 
   Learners / 500k+ Quizzes") and the Terms of Service / Privacy Policy 
   line removed at user request (2026-07-06); do not restore
@@ -137,6 +168,22 @@
   /my-quizzes/builder routes, and all tutor RLS/data code are deliberately 
   left intact — flip the constant to restore the nav. Do not delete the 
   author code
+- Identity moved out of Progress (2026-07-27): the Figma profile card that
+  opened Progress › Stats (avatar, name, email, location, member-since, level,
+  total XP, XP bar, "View Achievements") was split. Identity — avatar, name,
+  email, location, member-since and the pencil edit affordance with its
+  full_name / public-name / city form — moved verbatim into Settings › Account,
+  replacing that section's "Coming soon." placeholder; this supersedes the
+  Leaderboard entry's "Public name field in dashboard/DashboardView.tsx", which
+  now lives in settings/SettingsView.tsx unchanged. Level and total XP became a
+  fifth stat card ("Current Level" / "Level N", XP in the card's footnote slot),
+  and the stat row widened to the full page (grid-cols-2 sm:3 lg:5). DELETED,
+  do not restore: the XP progress bar (the sidebar profile block already shows
+  level and progress to next level), the "View Achievements" button (the
+  Achievements tab three lines above does the same thing), and the duplicate
+  city line under the email — the MapPin row is the one that survived, and it
+  is now rendered only when a city is set. DashboardView no longer takes
+  userId/email and holds no profile state
 - Duel live UX (2026-07-24, migration 018 + app/components/DuelRealtime.tsx +
   app/(main)/duels/**): made the duel loop live and navigable. The app's FIRST
   realtime usage — a single global channel (DuelRealtime, mounted in the (main)

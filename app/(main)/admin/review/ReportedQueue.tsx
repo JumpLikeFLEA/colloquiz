@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
 import type { ReportCategory, ReportResolution, ReportedQuestionGroup } from "@/types";
 import { ReadMode, EditForm, DifficultyBadge, type EditDraft } from "./ReviewQueue";
 

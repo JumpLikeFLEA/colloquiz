@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -388,10 +388,14 @@ function QuestionCard({
   // `expanded` alone: depending on `draft` would clobber the buffer on every
   // re-render, since the parent maps a fresh object each time.
   const [local, setLocal] = useState(draft);
-  useEffect(() => {
+  // Adjusted during render rather than in an effect (the pattern React
+  // documents for "reset state when a prop changes"), so the reload happens on
+  // the same pass that opens the editor instead of a second cascading render.
+  const [wasExpanded, setWasExpanded] = useState(expanded);
+  if (expanded !== wasExpanded) {
+    setWasExpanded(expanded);
     if (expanded) setLocal(draft);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded]);
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
