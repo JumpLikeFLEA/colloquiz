@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/queries";
 import { getAssignmentForReview } from "@/lib/author";
 
 function getGrade(pct: number): { letter: string; color: string; bg: string } {
@@ -19,9 +20,7 @@ export default async function ReviewAttemptPage({
 }) {
   const { assignmentId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
 
   const review = await getAssignmentForReview(supabase, assignmentId, user.id);

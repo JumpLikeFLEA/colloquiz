@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 import {
   BookOpen,
   ChevronDown,
@@ -130,10 +131,25 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
   const R = 19.5;
   const CIRC = 2 * Math.PI * R;
 
+  // Radix restores focus to the trigger when the menu closes, and the browser
+  // carries :focus-visible over from the menu content — so dismissing with a
+  // click left a keyboard focus ring stuck on the card. Skip the restore only
+  // for pointer dismissals; Escape and item selection keep it.
+  const dismissedByPointer = useRef(false);
+
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) dismissedByPointer.current = false;
+      }}
+    >
       <DropdownMenuTrigger
         aria-label="Account menu"
+        // The trigger is excluded from onPointerDownOutside, so clicking it to
+        // close needs its own flag. Reopening resets it via onOpenChange.
+        onPointerDown={() => {
+          dismissedByPointer.current = true;
+        }}
         className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
       >
         <div className="relative shrink-0">
@@ -180,7 +196,17 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
           className="text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden"
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-56">
+      <DropdownMenuContent
+        side="top"
+        align="start"
+        className="w-56"
+        onPointerDownOutside={() => {
+          dismissedByPointer.current = true;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (dismissedByPointer.current) event.preventDefault();
+        }}
+      >
         <DropdownMenuItem asChild>
           <Link href="/settings" className="cursor-pointer">
             <Settings size={16} />

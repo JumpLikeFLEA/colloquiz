@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { authUserFrom } from "@/lib/auth";
 
 // Tutor unlinks a student. RLS restricts the delete to links the caller owns.
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { studentId } = await params;

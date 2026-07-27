@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/queries";
 import { getGroup } from "@/lib/groups";
 import { getLeaderboard } from "@/lib/leaderboard";
 import { getSubjects, getSubjectStats } from "@/lib/questions";
@@ -9,9 +10,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
 
   // getGroup returns null both when the group doesn't exist and when the

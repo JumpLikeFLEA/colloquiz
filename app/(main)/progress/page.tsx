@@ -1,16 +1,13 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUser, getProfile } from "@/lib/supabase/queries";
 import { getEnrichedResults } from "@/lib/questions";
 import { getMyRank } from "@/lib/leaderboard";
-import { cn } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { DashboardView } from "./DashboardView";
 import { AchievementsView } from "./AchievementsView";
-
-type Tab = "stats" | "achievements";
+import { ProgressTabs, type ProgressTab } from "./ProgressTabs";
 
 interface Props {
   searchParams: Promise<{ tab?: string }>;
@@ -23,7 +20,7 @@ export default async function ProgressPage({ searchParams }: Props) {
   // Allow-list normalize: only "achievements" selects that tab; anything else
   // (missing, "", "banana") falls back to Stats rather than rendering blank.
   const { tab: tabParam } = await searchParams;
-  const tab: Tab = tabParam === "achievements" ? "achievements" : "stats";
+  const tab: ProgressTab = tabParam === "achievements" ? "achievements" : "stats";
 
   return (
     <div className="flex flex-col gap-8">
@@ -33,19 +30,17 @@ export default async function ProgressPage({ searchParams }: Props) {
         <p className="text-muted-foreground mt-1">Your stats, history, and achievements</p>
       </div>
 
-      {/* Tabs — real navigations (URL-driven), so links with aria-current, not an ARIA tablist */}
-      <div className="flex items-center gap-2">
-        <TabLink href="/progress?tab=stats" active={tab === "stats"}>
-          Stats
-        </TabLink>
-        <TabLink href="/progress?tab=achievements" active={tab === "achievements"}>
-          Achievements
-        </TabLink>
-      </div>
+      <ProgressTabs tab={tab} />
 
-      {/* key={tab} remounts the boundary on switch, so the skeleton shows while the
-          new tab's server data streams instead of stalling on a blank page. */}
-      <Suspense key={tab} fallback={<TabSkeleton />}>
+      {/* Deliberately NOT keyed on `tab`. A key remounts the boundary on every
+          switch, which tears the current tab down to a skeleton for the ~300ms
+          the server takes — a flash of grey where readable content already was.
+          Unkeyed, React holds the rendered tab until the new one is ready, and
+          ProgressTabs moves the pill immediately so the click still registers.
+          The fallback then only runs where nothing is on screen yet (a page load
+          or arriving from another route), and even there it stays invisible
+          until the wait is worth reporting. */}
+      <Suspense fallback={<TabSkeleton />}>
         {tab === "achievements" ? <AchievementsTab /> : <StatsTab />}
       </Suspense>
     </div>
@@ -124,36 +119,13 @@ async function AchievementsTab() {
   );
 }
 
-function TabLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium transition-colors",
-        active
-          ? "bg-brand-subtle text-brand"
-          : "text-muted-foreground hover:bg-accent",
-      )}
-    >
-      {children}
-    </Link>
-  );
-}
-
 // Generic placeholder shaped like both tabs' content (a banner-ish block over a
 // grid of cards), shown while the active tab's server data streams in.
+// delayed-reveal holds it invisible for the first 400ms so a normal response
+// never paints it — see globals.css.
 function TabSkeleton() {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="delayed-reveal flex flex-col gap-5">
       <Skeleton className="h-40 rounded-2xl" />
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (

@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { authUserFrom } from "@/lib/auth";
 
 // Self-serve author enrollment. Any signed-in user may opt in — authoring is
 // sandboxed to their own private content, so there is no approval gate.
 export async function POST() {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { error } = await supabase

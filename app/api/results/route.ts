@@ -7,13 +7,12 @@ import { checkAchievements, calcBonusXP, type ResultSummary } from "@/lib/achiev
 import { completeSession } from "@/lib/quizSession";
 import { streakAfterQuiz } from "@/lib/streak";
 import { QuizMode } from "@/types";
+import { authUserFrom } from "@/lib/auth";
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const enriched = await getEnrichedResults(supabase, user.id);
@@ -27,9 +26,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { quizId, answers, timeTaken } = await req.json() as {

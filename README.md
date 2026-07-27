@@ -222,13 +222,19 @@ Every protected handler follows the same guard:
 
 ```ts
 const supabase = await createClient();
-const { data: { user } } = await supabase.auth.getUser();
+const user = await authUserFrom(supabase); // lib/auth.ts
 if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 // admin-only routes additionally:
 const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
 if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 ```
+
+`authUserFrom()` verifies the JWT locally against the project's JWKS instead of
+calling `supabase.auth.getUser()`, which would spend a network round trip on
+every request. Use it anywhere on the server; in Server Components prefer the
+`cache()`d `getUser()` in `lib/supabase/queries.ts`. Note the proxy deliberately
+does **not** run in front of `/api` — handlers return their own 401.
 
 ---
 

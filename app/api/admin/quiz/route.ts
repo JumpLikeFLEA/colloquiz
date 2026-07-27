@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { saveQuestions, saveQuiz } from "@/lib/questions";
 import { createClient } from "@/lib/supabase/server";
 import { Question, Quiz, Difficulty, QuizMode } from "@/types";
+import { authUserFrom } from "@/lib/auth";
 
 type IncomingQuestion = {
   question: string;
@@ -28,9 +29,7 @@ function generateId(prefix: string): string {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

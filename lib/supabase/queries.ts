@@ -1,21 +1,22 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { authUserFrom, type AuthUser } from "@/lib/auth";
 import { liveStreak } from "@/lib/streak";
 
 // Per-request memoized user + profile.
 //
-// `supabase.auth.getUser()` and the profiles lookup each cost a round-trip and
-// are needed by the (main) layout AND the page it wraps. React's cache() dedupes
-// them to a single call within one server render, so a navigation pays each once
-// instead of once per component. (The proxy's getUser runs in a separate request
-// context and is not deduped here.)
+// The profiles lookup costs a round-trip and is needed by the (main) layout AND
+// the page it wraps. React's cache() dedupes it to a single call within one
+// server render, so a navigation pays it once instead of once per component.
+//
+// The user no longer costs a round-trip at all — authUserFrom() verifies the JWT
+// locally rather than asking Supabase Auth to. cache() is kept because it also
+// dedupes the client construction and the verify, and because getProfile()
+// depends on it.
 
-export const getUser = cache(async () => {
+export const getUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  return authUserFrom(supabase);
 });
 
 export type FullProfile = {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { authUserFrom } from "@/lib/auth";
 import type { Question, Difficulty } from "@/types";
 
 export type IncomingQuestion = {
@@ -52,9 +53,7 @@ export function validateIncomingQuestion(q: IncomingQuestion): string | null {
 export async function requireAuthor(
   supabase: SupabaseClient,
 ): Promise<{ user: { id: string }; error?: never } | { user?: never; error: NextResponse }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await authUserFrom(supabase);
   if (!user) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }

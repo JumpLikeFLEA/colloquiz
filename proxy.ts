@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { authUserFrom } from '@/lib/auth'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -28,10 +29,11 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Refresh the session — must happen before any response is returned
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Resolve the caller and refresh the session — must happen before any response
+  // is returned. authUserFrom verifies the JWT locally, but it still calls
+  // getSession() underneath, so a near-expiry token is refreshed and the new
+  // cookies are written through setAll above exactly as before.
+  const user = await authUserFrom(supabase)
 
   const { pathname } = request.nextUrl
 
@@ -73,8 +75,13 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse
 }
 
+// /api is excluded deliberately. Route handlers authenticate themselves and
+// return 401 JSON; running the proxy in front of them added a second auth pass
+// per request AND meant an unauthenticated fetch() got a 307 to /login and an
+// HTML login page instead of that 401. Handlers can write cookies, so session
+// refresh still happens there.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

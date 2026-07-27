@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/queries";
 import { getPendingQuestions } from "@/lib/questions";
 import { getReportedQuestions } from "@/lib/reports";
 import { cn } from "@/lib/utils";
@@ -18,9 +19,7 @@ interface Props {
 
 export default async function AdminReviewPage({ searchParams }: Props) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
 
   const { data: profile } = await supabase

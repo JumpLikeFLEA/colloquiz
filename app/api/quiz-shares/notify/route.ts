@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { authUserFrom } from "@/lib/auth";
 
 const ERROR_COPY: Record<string, string> = {
   invalid_share: "This share link is invalid or has been revoked.",
@@ -14,9 +15,7 @@ const ERROR_COPY: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { token, recipientId } = (await req.json()) as { token?: string; recipientId?: string };

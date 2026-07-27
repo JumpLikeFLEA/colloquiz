@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/queries";
 import { getLinkedStudents, getTutorAssignments } from "@/lib/author";
 import { BecomeAuthorCard } from "@/app/components/BecomeAuthorCard";
 import { StudentsView } from "./StudentsView";
 
 export default async function StudentsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase

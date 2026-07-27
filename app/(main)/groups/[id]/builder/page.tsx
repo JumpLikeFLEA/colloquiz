@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/queries";
 import { getGroup, loadGroupQuiz } from "@/lib/groups";
 import { getSubjects } from "@/lib/questions";
 import { GroupBuilderView } from "./GroupBuilderView";
@@ -16,9 +17,7 @@ export default async function GroupBuilderPage({
   const { quiz: quizId } = await searchParams;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
 
   const detail = await getGroup(supabase, id, user.id);

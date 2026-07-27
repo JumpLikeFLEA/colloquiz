@@ -5,6 +5,7 @@ import { createClient as createAnonClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Question, Quiz, Result, QuizFilter, Subject, Difficulty } from "@/types";
 import { createClient } from "@/lib/supabase/server";
+import { authUserFrom } from "@/lib/auth";
 
 // subjects.json stays on disk — it's static config, not user data
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -135,9 +136,7 @@ export async function getQuizById(id: string): Promise<Quiz | undefined> {
 
 export async function getResults(): Promise<Result[]> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await authUserFrom(supabase);
   if (!user) return [];
 
   const { data, error } = await supabase
@@ -300,9 +299,13 @@ export async function getEnrichedResults(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<EnrichedResult[]> {
+  // The quiz rides along on the results select via the results_quiz_id_fkey FK
+  // (migration 012) rather than a second `.in("id", quizIds)` round trip. This
+  // is on the Progress > Stats critical path, where every serial hop to Supabase
+  // is ~120ms of skeleton.
   const { data: results, error } = await supabase
     .from("results")
-    .select("*")
+    .select("*, quiz:quizzes(id, question_ids, difficulty_mix)")
     .eq("user_id", userId)
     .order("taken_at", { ascending: false });
 
@@ -313,20 +316,13 @@ export async function getEnrichedResults(
   const subjects = getSubjects();
   const subjectMap = new Map(subjects.map((s) => [s.id, s.name]));
 
-  // Fetch only the quizzes these results reference (not the whole table), then
-  // only the first question of each quiz — its subject drives the label. Two
-  // bounded queries instead of getQuestions() (full table) + one getQuizById per row.
-  const quizIds = [...new Set(rows.map((r) => r.quiz_id))];
-  const { data: quizzes } = await supabase
-    .from("quizzes")
-    .select("id, question_ids, difficulty_mix")
-    .in("id", quizIds);
-  const quizMap = new Map((quizzes ?? []).map((q) => [q.id, q]));
-
+  // Only the first question of each quiz — its subject drives the label. Still
+  // its own query because quizzes.question_ids is a TEXT[], not an FK, so
+  // PostgREST cannot embed through it.
   const firstQIds = [
     ...new Set(
-      Array.from(quizMap.values())
-        .map((q) => q.question_ids?.[0])
+      rows
+        .map((r: { quiz?: { question_ids?: string[] } | null }) => r.quiz?.question_ids?.[0])
         .filter(Boolean),
     ),
   ];
@@ -336,7 +332,7 @@ export async function getEnrichedResults(
   const questionSubject = new Map((firstQs ?? []).map((q) => [q.id, q.subject as string]));
 
   return rows.map((r) => {
-    const quiz = quizMap.get(r.quiz_id);
+    const quiz = r.quiz;
     let subject = "Mixed";
     if (quiz) {
       const firstSubjectId = questionSubject.get(quiz.question_ids?.[0]);

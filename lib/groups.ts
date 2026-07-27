@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { authUserFrom } from "@/lib/auth";
 import type { Group, GroupRole, Question, Quiz } from "@/types";
 
 // ── Route guards ────────────────────────────────────────────
@@ -16,9 +17,7 @@ async function requireGroupRole(
   groupId: string,
   ownerOnly: boolean,
 ): Promise<Guard> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await authUserFrom(supabase);
   if (!user) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }

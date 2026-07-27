@@ -182,3 +182,26 @@
     line-height: 1.5;
   }
 }
+
+/* Loading placeholders that only earn their keep on a slow response. Starts
+   invisible and fades in after 400ms, so a normal server round trip resolves
+   before anything grey is ever painted — a skeleton that flashes for 300ms
+   reads as a glitch, not as progress. The element still occupies its box the
+   whole time, so revealing it shifts nothing. */
+.delayed-reveal {
+  opacity: 0;
+  animation: delayed-reveal 200ms ease 400ms forwards;
+}
+
+@keyframes delayed-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the delay (it is the point), drop the fade. */
+  .delayed-reveal {
+    animation-duration: 1ms;
+  }
+}

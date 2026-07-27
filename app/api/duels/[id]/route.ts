@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { respondToDuel, cancelDuel, DUEL_ERRORS } from "@/lib/duels";
+import { authUserFrom } from "@/lib/auth";
 
 /**
  * Accept or decline a challenge (opponent), or cancel it (challenger).
@@ -15,9 +16,7 @@ export async function POST(
   try {
     const { id } = await params;
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await authUserFrom(supabase);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { action } = (await req.json()) as { action?: string };

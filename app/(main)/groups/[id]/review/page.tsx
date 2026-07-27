@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/queries";
 import { getGroup, getGroupReviewQueue } from "@/lib/groups";
 import { GroupReviewView } from "./GroupReviewView";
 
@@ -11,9 +12,7 @@ export default async function GroupReviewPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
 
   const detail = await getGroup(supabase, id, user.id);
