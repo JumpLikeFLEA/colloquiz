@@ -52,7 +52,7 @@ export function SubjectScoreBars({ subjects }: { subjects: SubjectStat[] }) {
                 </span>
                 <span className="flex-1 h-2 bg-muted rounded-sm overflow-hidden">
                   <span
-                    className="block h-full rounded-r-sm bg-[#4f46e5]"
+                    className="block h-full rounded-r-sm bg-brand"
                     style={{ width: `${s.avgScore}%` }}
                   />
                 </span>
@@ -67,7 +67,7 @@ export function SubjectScoreBars({ subjects }: { subjects: SubjectStat[] }) {
             <button
               onClick={() => setExpanded(!expanded)}
               aria-expanded={expanded}
-              className="self-start text-xs text-[#4f46e5] hover:underline flex items-center gap-1 cursor-pointer"
+              className="self-start text-xs text-brand-text hover:underline flex items-center gap-1 cursor-pointer"
             >
               {expanded ? (
                 <>

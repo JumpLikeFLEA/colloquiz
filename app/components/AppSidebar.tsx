@@ -156,7 +156,7 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
         className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
       >
         <div className="relative shrink-0">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium select-none overflow-hidden">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium select-none overflow-hidden">
             {profile.avatarUrl
               ? <Image src={profile.avatarUrl} alt="" width={36} height={36} className="w-full h-full object-cover" />
               : initials}
@@ -175,7 +175,7 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
               fill="none"
               strokeWidth="3"
               strokeLinecap="round"
-              className="stroke-[#4f46e5]"
+              className="stroke-brand"
               strokeDasharray={CIRC}
               strokeDashoffset={CIRC * (1 - pct / 100)}
             />
@@ -188,7 +188,7 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
           {/* Progress bar toward next level */}
           <div className="mt-1.5 h-[3px] w-full rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#4f46e5] to-[#7c3aed]"
+              className="h-full rounded-full bg-gradient-to-r from-brand to-brand-accent"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -264,7 +264,7 @@ export function AppSidebar({
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
           active
-            ? "bg-[#eef2ff] text-[#4f46e5]"
+            ? "bg-brand-subtle text-brand-text"
             : "text-foreground hover:bg-accent",
         )}
       >
@@ -272,7 +272,7 @@ export function AppSidebar({
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
             active
-              ? "bg-[#4f46e5] text-white"
+              ? "bg-brand text-white"
               : "bg-muted text-muted-foreground",
           )}
         >
@@ -285,12 +285,12 @@ export function AppSidebar({
           )}
         </div>
         {badge !== null && (
-          <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-[#4f46e5] text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
+          <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-brand text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
             {badge}
           </span>
         )}
         {active && !badge && (
-          <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
+          <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
         )}
       </Link>
     );
@@ -301,7 +301,7 @@ export function AppSidebar({
       {/* Logo */}
       <SidebarHeader className="px-4 py-4 border-b border-sidebar-border group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-accent shrink-0">
             <GraduationCap size={18} className="text-white" />
           </div>
           <div className="min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
@@ -339,7 +339,7 @@ export function AppSidebar({
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                       active
-                        ? "bg-[#eef2ff] text-[#4f46e5]"
+                        ? "bg-brand-subtle text-brand-text"
                         : "text-foreground hover:bg-accent",
                     )}
                   >
@@ -347,7 +347,7 @@ export function AppSidebar({
                       className={cn(
                         "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
                         active
-                          ? "bg-[#4f46e5] text-white"
+                          ? "bg-brand text-white"
                           : "bg-muted text-muted-foreground",
                       )}
                     >
@@ -358,7 +358,7 @@ export function AppSidebar({
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
                     </div>
                     {active && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] shrink-0 group-data-[collapsible=icon]:hidden" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
                     )}
                   </Link>
                 );

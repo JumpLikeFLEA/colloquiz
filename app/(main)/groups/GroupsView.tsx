@@ -60,7 +60,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors shrink-0"
+          className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors shrink-0"
         >
           <Plus className="size-4" />
           New group
@@ -82,7 +82,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
               href={`/groups/${g.id}`}
               className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-card hover:bg-accent transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
                 {g.name
                   .split(" ")
                   .map((w) => w[0])
@@ -94,7 +94,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{g.name}</p>
                   {g.role === "owner" && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#eef2ff] text-[#4f46e5] border border-[#c7d2fe] shrink-0">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text border border-[#c7d2fe] shrink-0">
                       Owner
                     </span>
                   )}
@@ -155,7 +155,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
             <button
               onClick={create}
               disabled={saving || name.trim().length < 2}
-              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {saving ? "Creating…" : "Create group"}
             </button>

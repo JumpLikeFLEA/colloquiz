@@ -105,9 +105,9 @@ export default function AdvancedForm({
               <div
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-sm transition-all ${
                   i < step
-                    ? "bg-[#4f46e5] text-white"
+                    ? "bg-brand text-white"
                     : i === step
-                    ? "bg-[#4f46e5] text-white ring-4 ring-[#4f46e5]/20"
+                    ? "bg-brand text-white ring-4 ring-brand/20"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
@@ -118,7 +118,7 @@ export default function AdvancedForm({
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`h-px w-8 sm:w-16 ${i < step ? "bg-[#4f46e5]" : "bg-border"} transition-colors`} />
+              <div className={`h-px w-8 sm:w-16 ${i < step ? "bg-brand" : "bg-border"} transition-colors`} />
             )}
           </div>
         ))}
@@ -154,8 +154,8 @@ export default function AdvancedForm({
                         onClick={() => { setSelectedSubject(s.id); setSelectedSubtopics([]); }}
                         className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all cursor-pointer ${
                           selectedSubject === s.id
-                            ? "border-[#4f46e5] bg-[#eef2ff]"
-                            : "border-border bg-card hover:border-[#4f46e5]/40 hover:bg-accent"
+                            ? "border-brand bg-brand-subtle"
+                            : "border-border bg-card hover:border-brand/40 hover:bg-accent"
                         }`}
                       >
                         <div
@@ -165,7 +165,7 @@ export default function AdvancedForm({
                           <Icon size={20} />
                         </div>
                         <span className={`text-sm font-medium text-center leading-tight ${
-                          selectedSubject === s.id ? "text-[#4f46e5]" : "text-foreground"
+                          selectedSubject === s.id ? "text-brand-text" : "text-foreground"
                         }`}>
                           {s.name}
                         </span>
@@ -187,7 +187,7 @@ export default function AdvancedForm({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSelectedSubtopics(subtopics)}
-                    className="text-xs text-[#4f46e5] hover:underline cursor-pointer"
+                    className="text-xs text-brand-text hover:underline cursor-pointer"
                   >
                     Select all
                   </button>
@@ -224,13 +224,13 @@ export default function AdvancedForm({
                     onClick={() => toggleSubtopic(topic)}
                     className={`flex items-center gap-2 p-3 rounded-xl border text-sm transition-all text-left cursor-pointer ${
                       selectedSubtopics.includes(topic)
-                        ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5]"
-                        : "border-border bg-card hover:border-[#4f46e5]/40 hover:bg-accent text-foreground"
+                        ? "border-brand bg-brand-subtle text-brand-text"
+                        : "border-border bg-card hover:border-brand/40 hover:bg-accent text-foreground"
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${
                       selectedSubtopics.includes(topic)
-                        ? "bg-[#4f46e5] border-[#4f46e5]"
+                        ? "bg-brand border-brand"
                         : "border-muted-foreground/40"
                     }`}>
                       {selectedSubtopics.includes(topic) && (
@@ -258,7 +258,7 @@ export default function AdvancedForm({
                 <p className="text-sm font-medium mb-2">Selected focus areas</p>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedSubtopics.map(t => (
-                    <span key={t} className="px-2 py-0.5 rounded-full bg-[#eef2ff] text-[#4f46e5] text-xs">
+                    <span key={t} className="px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text text-xs">
                       {t}
                     </span>
                   ))}
@@ -295,7 +295,7 @@ export default function AdvancedForm({
                     max={10}
                     value={difficulty}
                     onChange={e => setDifficulty(Number(e.target.value))}
-                    className="w-full accent-[#4f46e5] cursor-pointer"
+                    className="w-full accent-brand cursor-pointer"
                   />
                   <div className="flex justify-between mt-1">
                     <span className="text-xs text-muted-foreground">Beginner</span>
@@ -320,8 +320,8 @@ export default function AdvancedForm({
                       onClick={() => setQuestionCount(n)}
                       className={`px-2 py-2.5 rounded-xl border text-sm font-medium transition-all cursor-pointer ${
                         questionCount === n
-                          ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5]"
-                          : "border-border bg-card hover:border-[#4f46e5]/40 text-foreground"
+                          ? "border-brand bg-brand-subtle text-brand-text"
+                          : "border-border bg-card hover:border-brand/40 text-foreground"
                       }`}
                     >
                       {n}
@@ -335,7 +335,7 @@ export default function AdvancedForm({
                     max={50}
                     value={questionCount}
                     onChange={e => setQuestionCount(Number(e.target.value))}
-                    className="flex-1 accent-[#4f46e5] cursor-pointer"
+                    className="flex-1 accent-brand cursor-pointer"
                   />
                   <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden">
                     <button
@@ -352,8 +352,8 @@ export default function AdvancedForm({
               </div>
 
               {/* Summary */}
-              <div className="p-4 rounded-2xl border border-[#4f46e5]/20 bg-[#eef2ff]">
-                <p className="text-sm font-medium text-[#4f46e5] mb-2">Quiz Summary</p>
+              <div className="p-4 rounded-2xl border border-brand/20 bg-brand-subtle">
+                <p className="text-sm font-medium text-brand-text mb-2">Quiz Summary</p>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-muted-foreground">Subject: </span>
@@ -393,7 +393,7 @@ export default function AdvancedForm({
           <button
             onClick={() => setStep(s => s + 1)}
             disabled={!canProceed()}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-sm"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-sm"
           >
             Continue
             <ChevronRight size={16} />
@@ -402,7 +402,7 @@ export default function AdvancedForm({
           <button
             onClick={handleLaunch}
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Rocket size={16} />
             {loading ? "Starting…" : "Launch Quiz"}

@@ -26,6 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import type { GroupDetail } from "@/lib/groups";
 import type { LeaderboardRow } from "@/lib/leaderboard";
@@ -62,7 +69,9 @@ export function GroupDetailView({
   const [creatingQuiz, setCreatingQuiz] = useState(false);
   const [quizTitle, setQuizTitle] = useState("");
   const [challenging, setChallenging] = useState<{ id: string; name: string } | null>(null);
-  const [duelSubject, setDuelSubject] = useState("");
+  // "any" rather than "" because a Select item cannot carry an empty value —
+  // that is reserved for "nothing selected". Mapped back to null on submit.
+  const [duelSubject, setDuelSubject] = useState("any");
   const [duelDifficulty, setDuelDifficulty] = useState<"mixed" | "easy" | "medium" | "hard">("mixed");
   const [duelSize, setDuelSize] = useState(10);
   const [sendingDuel, setSendingDuel] = useState(false);
@@ -79,7 +88,7 @@ export function GroupDetailView({
         body: JSON.stringify({
           opponentId: challenging.id,
           groupId: group.id,
-          subject: duelSubject || null,
+          subject: duelSubject === "any" ? null : duelSubject,
           difficulty: duelDifficulty,
           size: duelSize,
         }),
@@ -245,7 +254,7 @@ export function GroupDetailView({
       {isOwner && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Link2 className="size-4 text-[#4f46e5]" />
+            <Link2 className="size-4 text-brand-text" />
             <h2 className="text-sm font-semibold text-foreground">Invite link</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
@@ -263,7 +272,7 @@ export function GroupDetailView({
               <button
                 onClick={copy}
                 disabled={!inviteUrl}
-                className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+                className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
               >
                 {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
                 {copied ? "Copied" : "Copy"}
@@ -343,7 +352,7 @@ export function GroupDetailView({
                       ? "No approved questions yet — review them first"
                       : "Play this quiz"
                   }
-                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                 >
                   <Play className="size-3.5" />
                   Play
@@ -379,7 +388,7 @@ export function GroupDetailView({
               key={m.id}
               className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-card"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
                 {m.name
                   .split(" ")
                   .map((w) => w[0])
@@ -391,7 +400,7 @@ export function GroupDetailView({
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
                   {m.role === "owner" && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#eef2ff] text-[#4f46e5] border border-[#c7d2fe] shrink-0">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text border border-[#c7d2fe] shrink-0">
                       Owner
                     </span>
                   )}
@@ -405,7 +414,7 @@ export function GroupDetailView({
                   onClick={() => setChallenging({ id: m.id, name: m.name })}
                   aria-label={`Challenge ${m.name} to a duel`}
                   title="Challenge to a duel"
-                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-[#4f46e5] hover:bg-[#eef2ff] transition-colors"
+                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-brand-text hover:bg-brand-subtle transition-colors"
                 >
                   <Swords size={15} />
                 </button>
@@ -446,11 +455,11 @@ export function GroupDetailView({
               <div
                 key={s.user_id}
                 className={`flex items-center gap-3 p-4 rounded-2xl border border-border ${
-                  s.is_me ? "bg-[#eef2ff]" : "bg-card"
+                  s.is_me ? "bg-brand-subtle" : "bg-card"
                 }`}
               >
                 <span className="w-6 text-sm text-muted-foreground shrink-0">{s.rank}</span>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
                   {s.display_name
                     .split(" ")
                     .map((w) => w[0])
@@ -499,18 +508,19 @@ export function GroupDetailView({
           </DialogHeader>
 
           <div className="flex flex-col gap-3">
-            <select
-              value={duelSubject}
-              onChange={(e) => setDuelSubject(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none cursor-pointer"
-            >
-              <option value="">Any subject</option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <Select value={duelSubject} onValueChange={setDuelSubject}>
+              <SelectTrigger className="rounded-lg border-border bg-background text-foreground cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any subject</SelectItem>
+                {subjects.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="flex gap-1.5">
               {(["mixed", "easy", "medium", "hard"] as const).map((d) => (
@@ -519,7 +529,7 @@ export function GroupDetailView({
                   onClick={() => setDuelDifficulty(d)}
                   className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
                     duelDifficulty === d
-                      ? "bg-[#eef2ff] text-[#4f46e5]"
+                      ? "bg-brand-subtle text-brand-text"
                       : "border border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -535,7 +545,7 @@ export function GroupDetailView({
                   onClick={() => setDuelSize(n)}
                   className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
                     duelSize === n
-                      ? "bg-[#eef2ff] text-[#4f46e5]"
+                      ? "bg-brand-subtle text-brand-text"
                       : "border border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -557,7 +567,7 @@ export function GroupDetailView({
             <button
               onClick={sendChallenge}
               disabled={sendingDuel}
-              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {sendingDuel ? "Sending…" : "Send challenge"}
             </button>
@@ -590,7 +600,7 @@ export function GroupDetailView({
             <button
               onClick={createQuiz}
               disabled={!quizTitle.trim()}
-              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               Create
             </button>

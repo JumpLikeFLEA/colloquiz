@@ -75,7 +75,7 @@ export function StudentsView({
       {/* Invite link */}
       <div className="rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Link2 className="size-4 text-[#4f46e5]" />
+          <Link2 className="size-4 text-brand-text" />
           <h2 className="text-sm font-semibold text-foreground">Your invite link</h2>
         </div>
         <p className="text-sm text-muted-foreground mb-3">
@@ -93,7 +93,7 @@ export function StudentsView({
             <button
               onClick={copy}
               disabled={!inviteUrl}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copied ? "Copied" : "Copy"}
@@ -133,7 +133,7 @@ export function StudentsView({
                       onClick={() => setExpanded(isOpen ? null : s.id)}
                       className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
                     >
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
                         {s.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -172,7 +172,7 @@ export function StudentsView({
                                   </span>
                                   <Link
                                     href={`/students/review/${a.id}`}
-                                    className="text-xs font-medium text-[#4f46e5] hover:underline"
+                                    className="text-xs font-medium text-brand-text hover:underline"
                                   >
                                     Review
                                   </Link>

@@ -5,7 +5,7 @@ import { Share2, Copy, Check, Users, AlertCircle } from "lucide-react";
 
 // Results-screen "Share with a friend" block. No Figma source — composed from
 // classes already used on the results screen (the duel banner block, rounded-2xl
-// cards, the indigo #4f46e5 button, roster-style rows). Shown only for
+// cards, the brand-filled button, roster-style rows). Shown only for
 // public-bank quizzes (see the `shareable` guard in page.tsx), whose questions
 // every friend can read.
 //
@@ -105,7 +105,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
   return (
     <div className="flex flex-col gap-3 p-5 rounded-2xl border border-border bg-card">
       <div className="flex items-center gap-2">
-        <Share2 size={16} className="text-[#4f46e5]" />
+        <Share2 size={16} className="text-brand-text" />
         <p className="font-medium text-foreground">Share with a friend</p>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -125,7 +125,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
           <button
             onClick={copyLink}
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <Share2 size={15} />
             {loading ? "Creating link…" : "Create share link"}
@@ -151,7 +151,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
             />
             <button
               onClick={copyLink}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors cursor-pointer shrink-0"
             >
               {copied ? <Check size={15} /> : <Copy size={15} />}
               {copied ? "Copied" : "Copy"}
@@ -160,7 +160,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
 
           <button
             onClick={openPicker}
-            className="flex items-center gap-2 self-start text-sm font-medium text-[#4f46e5] hover:underline cursor-pointer"
+            className="flex items-center gap-2 self-start text-sm font-medium text-brand-text hover:underline cursor-pointer"
           >
             <Users size={15} />
             {pickerOpen ? "Hide group members" : "Send to a group member"}
@@ -182,7 +182,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
                       key={t.id}
                       className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card"
                     >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#eef2ff] text-[#4f46e5] text-xs font-semibold shrink-0">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-subtle text-brand-text text-xs font-semibold shrink-0">
                         {t.name.slice(0, 1).toUpperCase()}
                       </div>
                       <span className="flex-1 min-w-0 text-sm text-foreground truncate">{t.name}</span>

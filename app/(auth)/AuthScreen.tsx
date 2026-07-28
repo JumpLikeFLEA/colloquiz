@@ -35,7 +35,7 @@ export function Field({ label, type = "text", placeholder, icon, dark, value, on
 
   const baseInput = dark
     ? "bg-white/10 border-white/15 text-white placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
-    : "bg-white border-border text-foreground placeholder:text-muted-foreground focus:border-[#4f46e5]";
+    : "bg-white border-border text-foreground placeholder:text-muted-foreground focus:border-brand";
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -54,7 +54,7 @@ export function Field({ label, type = "text", placeholder, icon, dark, value, on
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
-          className={`w-full pl-10 ${isPassword ? "pr-10" : "pr-4"} py-3 rounded-xl border transition-all outline-none focus:ring-2 ${dark ? "focus:ring-white/20" : "focus:ring-[#4f46e5]/20"} ${baseInput}`}
+          className={`w-full pl-10 ${isPassword ? "pr-10" : "pr-4"} py-3 rounded-xl border transition-all outline-none focus:ring-2 ${dark ? "focus:ring-white/20" : "focus:ring-brand/20"} ${baseInput}`}
         />
         {isPassword && (
           <button
@@ -93,6 +93,11 @@ const FLOAT_SUBJECTS = [
 
 export function AuthLeftPanel() {
   return (
+    // These gradient stops stay hardcoded on purpose. The panel is decorative and
+    // already dark, it carries white text and a white dot grid, and it reads
+    // correctly against either form background — so it is the one brand surface
+    // that does not need to flip with the theme. Tokenising it would only add a
+    // dark-mode value nobody can tell apart from this one.
     <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-[#3730a3] via-[#4f46e5] to-[#7c3aed]">
       {/* Dot grid */}
       <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
@@ -306,7 +311,9 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           transition={{ duration: 0.25 }}
           className="w-full max-w-sm flex flex-col gap-7"
         >
-          {/* Logo (mobile only) */}
+          {/* Logo (mobile only) — same exemption as AuthLeftPanel above: a small
+              decorative gradient chip carrying a white glyph, correct in either
+              theme without a token. */}
           <div className="flex items-center gap-2 lg:hidden">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
               <GraduationCap size={16} className="text-white" />
@@ -316,6 +323,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
 
           {emailSent ? (
             <>
+              {/* Decorative gradient chip, exempt for the same reason as the logo. */}
               <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
                 <Mail size={28} className="text-white" />
               </div>
@@ -348,14 +356,14 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
                   setError(null);
                   window.history.replaceState(null, "", "/login");
                 }}
-                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors cursor-pointer shadow-lg shadow-[#4f46e5]/25"
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white transition-colors cursor-pointer shadow-lg shadow-brand/25"
               >
                 <span>Back to sign in</span>
               </button>
 
               <p className="text-center text-sm text-muted-foreground">
                 Wrong email?{" "}
-                <button type="button" onClick={() => setEmailSent(null)} className="text-[#4f46e5] font-medium hover:underline cursor-pointer">
+                <button type="button" onClick={() => setEmailSent(null)} className="text-brand-text font-medium hover:underline cursor-pointer">
                   Try again
                 </button>
               </p>
@@ -470,7 +478,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
             <button
               type="button"
               onClick={() => { setMode("forgot"); setError(null); }}
-              className="text-sm text-[#4f46e5] hover:underline self-end -mt-2 cursor-pointer"
+              className="text-sm text-brand-text hover:underline self-end -mt-2 cursor-pointer"
             >
               Forgot password?
             </button>
@@ -488,7 +496,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
             </p>
           )}
 
-          <button type="submit" disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors cursor-pointer shadow-lg shadow-[#4f46e5]/25 disabled:opacity-60 disabled:cursor-not-allowed">
+          <button type="submit" disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white transition-colors cursor-pointer shadow-lg shadow-brand/25 disabled:opacity-60 disabled:cursor-not-allowed">
             <span>
               {loading
                 ? (mode === "login" ? "Signing in…" : mode === "register" ? "Creating account…" : "Sending…")
@@ -504,7 +512,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
               <button
                 type="button"
                 onClick={() => { setMode("login"); setError(null); }}
-                className="text-[#4f46e5] font-medium hover:underline cursor-pointer"
+                className="text-brand-text font-medium hover:underline cursor-pointer"
               >
                 Back to sign in
               </button>
@@ -512,7 +520,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           ) : (
             <p className="text-center text-sm text-muted-foreground">
               {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-              <button type="button" onClick={handleToggle} className="text-[#4f46e5] font-medium hover:underline cursor-pointer">
+              <button type="button" onClick={handleToggle} className="text-brand-text font-medium hover:underline cursor-pointer">
                 {mode === "login" ? "Sign up" : "Sign in"}
               </button>
             </p>

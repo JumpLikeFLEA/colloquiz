@@ -11,6 +11,13 @@ import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { cn } from "@/lib/utils";
 import { answerOptions } from "@/lib/options";
 import type { Question, QuestionCriticNotes, Difficulty } from "@/types";
@@ -367,16 +374,19 @@ export function EditForm({
 
       <div>
         <Label htmlFor="q-diff">Difficulty</Label>
-        <select
-          id="q-diff"
+        <Select
           value={draft.difficulty}
-          onChange={(e) => patchDraft({ difficulty: e.target.value as Difficulty })}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+          onValueChange={(v) => patchDraft({ difficulty: v as Difficulty })}
         >
-          <option value="easy">easy</option>
-          <option value="medium">medium</option>
-          <option value="hard">hard</option>
-        </select>
+          <SelectTrigger id="q-diff" className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="easy">easy</SelectItem>
+            <SelectItem value="medium">medium</SelectItem>
+            <SelectItem value="hard">hard</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex gap-2 pt-2">

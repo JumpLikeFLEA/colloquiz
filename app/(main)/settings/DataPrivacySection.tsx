@@ -81,7 +81,7 @@ export function DataPrivacySection() {
           type="button"
           onClick={() => void handleExport()}
           disabled={busy}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
           {busy ? "Preparing…" : "Download export"}

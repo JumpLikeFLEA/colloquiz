@@ -186,7 +186,7 @@ export function AccountSection({
     <div className="p-5 rounded-2xl border border-border bg-card flex flex-col gap-6">
       {/* Avatar */}
       <div className="flex items-center gap-5">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-2xl font-medium select-none shrink-0 overflow-hidden">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-2xl font-medium select-none shrink-0 overflow-hidden">
           {profile.avatar_url
             ? <Image src={profile.avatar_url} alt="" width={80} height={80} className="w-full h-full object-cover" />
             : initials}
@@ -198,7 +198,7 @@ export function AccountSection({
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={avatarBusy}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               {avatarBusy ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
               {profile.avatar_url ? "Replace" : "Upload"}
@@ -294,7 +294,7 @@ export function AccountSection({
           type="button"
           onClick={handleSave}
           disabled={saving || unchanged}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving && <Loader2 size={15} className="animate-spin" />}
           Save changes
@@ -348,7 +348,7 @@ function SettingsField({
         onChange={e => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={`${id}-hint`}
-        className={`w-full px-3 py-2 rounded-xl border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 ${
+        className={`w-full px-3 py-2 rounded-xl border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 ${
           error ? "border-destructive" : "border-border"
         }`}
       />

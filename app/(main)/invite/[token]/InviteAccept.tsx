@@ -49,7 +49,7 @@ export function InviteAccept({ token }: { token: string }) {
             </div>
             <Link
               href="/my-quizzes"
-              className="w-full py-3 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+              className="w-full py-3 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
             >
               Go to My Quizzes
             </Link>
@@ -72,7 +72,7 @@ export function InviteAccept({ token }: { token: string }) {
           </>
         ) : (
           <>
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-accent">
               <GraduationCap className="size-7 text-white" />
             </div>
             <div>
@@ -84,7 +84,7 @@ export function InviteAccept({ token }: { token: string }) {
             <button
               onClick={accept}
               disabled={status === "loading"}
-              className="w-full py-3 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="w-full py-3 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {status === "loading" ? "Linking…" : "Accept invitation"}
             </button>

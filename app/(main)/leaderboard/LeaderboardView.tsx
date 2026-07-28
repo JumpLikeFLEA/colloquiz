@@ -89,17 +89,17 @@ function Row({ row }: { row: LeaderboardRow }) {
   return (
     <div
       className={`flex items-center gap-3 px-4 py-3 ${
-        row.is_me ? "bg-[#eef2ff]" : ""
+        row.is_me ? "bg-brand-subtle" : ""
       }`}
     >
       <RankBadge rank={row.rank} />
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
         {initials}
       </div>
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm font-medium leading-none truncate ${
-            row.is_me ? "text-[#4f46e5]" : "text-foreground"
+            row.is_me ? "text-brand-text" : "text-foreground"
           }`}
         >
           {row.display_name}
@@ -201,7 +201,7 @@ export function LeaderboardView({
             }
             className={`px-3.5 py-1.5 rounded-full text-sm transition-all cursor-pointer ${
               activeTab === t
-                ? "bg-[#4f46e5] text-white"
+                ? "bg-brand text-white"
                 : "border border-border hover:bg-accent text-foreground"
             }`}
           >
@@ -241,7 +241,7 @@ export function LeaderboardView({
             onClick={() => navigate({ subject: null })}
             className={`px-3.5 py-1.5 rounded-full text-sm transition-all cursor-pointer ${
               activeSubject === null
-                ? "bg-[#4f46e5] text-white"
+                ? "bg-brand text-white"
                 : "border border-border hover:bg-accent text-foreground"
             }`}
           >
@@ -253,7 +253,7 @@ export function LeaderboardView({
               onClick={() => navigate({ subject: s.id })}
               className={`px-3.5 py-1.5 rounded-full text-sm transition-all cursor-pointer ${
                 activeSubject === s.id
-                  ? "bg-[#4f46e5] text-white"
+                  ? "bg-brand text-white"
                   : "border border-border hover:bg-accent text-foreground"
               }`}
             >
@@ -269,7 +269,7 @@ export function LeaderboardView({
               onClick={() => navigate({ window: w.value })}
               className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
                 activeWindow === w.value
-                  ? "bg-[#eef2ff] text-[#4f46e5]"
+                  ? "bg-brand-subtle text-brand-text"
                   : "text-muted-foreground hover:bg-accent"
               }`}
             >
@@ -389,7 +389,7 @@ export function LeaderboardView({
               Challenges to answer, legs to play, and results
             </p>
           </div>
-          <span className="text-sm text-[#4f46e5] shrink-0">Open →</span>
+          <span className="text-sm text-brand-text shrink-0">Open →</span>
         </Link>
 
         {/* Ranked players */}
@@ -410,11 +410,11 @@ export function LeaderboardView({
                 <div
                   key={c.user_id}
                   className={`flex items-center gap-3 px-4 py-3 ${
-                    c.is_me ? "bg-[#eef2ff]" : ""
+                    c.is_me ? "bg-brand-subtle" : ""
                   }`}
                 >
                   <RankBadge rank={c.rank} />
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
                     {c.display_name
                       .split(" ")
                       .map((w) => w[0])
@@ -425,7 +425,7 @@ export function LeaderboardView({
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm font-medium leading-none truncate ${
-                        c.is_me ? "text-[#4f46e5]" : "text-foreground"
+                        c.is_me ? "text-brand-text" : "text-foreground"
                       }`}
                     >
                       {c.display_name}

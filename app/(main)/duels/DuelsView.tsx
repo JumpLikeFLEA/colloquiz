@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { tierStyle } from "@/lib/glicko2";
 import type { Duel, MyTier } from "@/lib/duels";
 import type { DuelTarget } from "@/lib/groups";
@@ -48,7 +55,7 @@ function DuelRow({
           <Swords size={16} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate group-hover:text-[#4f46e5] transition-colors">
+          <p className="text-sm font-medium text-foreground truncate group-hover:text-brand-text transition-colors">
             vs {duel.opponent_name}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -93,7 +100,7 @@ function DuelRow({
           <button
             onClick={() => onAction(duel.duel_id, "accept")}
             disabled={busy}
-            className="px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-xs font-medium hover:bg-[#4338ca] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 rounded-lg bg-brand text-white text-xs font-medium hover:bg-brand-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Accept
           </button>
@@ -128,7 +135,7 @@ function DuelRow({
           // session is confirmed, not by this button.
           <Link
             href={`/quiz/${duel.quiz_id}`}
-            className="px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-xs font-medium hover:bg-[#4338ca] transition-colors cursor-pointer shrink-0"
+            className="px-3 py-1.5 rounded-lg bg-brand text-white text-xs font-medium hover:bg-brand-hover transition-colors cursor-pointer shrink-0"
           >
             Play
           </Link>
@@ -162,7 +169,9 @@ export function DuelsView({
     opponentName: string;
     groupId: string;
   } | null>(null);
-  const [duelSubject, setDuelSubject] = useState("");
+  // "any" rather than "" because a Select item cannot carry an empty value —
+  // that is reserved for "nothing selected". Mapped back to null on submit.
+  const [duelSubject, setDuelSubject] = useState("any");
   const [duelDifficulty, setDuelDifficulty] = useState<"mixed" | "easy" | "medium" | "hard">(
     "mixed",
   );
@@ -216,7 +225,7 @@ export function DuelsView({
         body: JSON.stringify({
           opponentId: challenging.opponentId,
           groupId: challenging.groupId,
-          subject: duelSubject || null,
+          subject: duelSubject === "any" ? null : duelSubject,
           difficulty: duelDifficulty,
           size: duelSize,
         }),
@@ -246,7 +255,7 @@ export function DuelsView({
         </div>
         <button
           onClick={openPicker}
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors shrink-0"
+          className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors shrink-0"
         >
           <Plus size={16} />
           New duel
@@ -278,7 +287,7 @@ export function DuelsView({
         </div>
         <Link
           href="/leaderboard?tab=competitive"
-          className="text-xs text-[#4f46e5] hover:underline shrink-0"
+          className="text-xs text-brand-text hover:underline shrink-0"
         >
           Rankings →
         </Link>
@@ -303,7 +312,7 @@ export function DuelsView({
             {targets.length > 0 ? (
               <button
                 onClick={openPicker}
-                className="mt-2 cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+                className="mt-2 cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
               >
                 <Plus size={16} />
                 New duel
@@ -311,7 +320,7 @@ export function DuelsView({
             ) : (
               <Link
                 href="/groups"
-                className="mt-2 text-xs text-[#4f46e5] hover:underline"
+                className="mt-2 text-xs text-brand-text hover:underline"
               >
                 Go to groups →
               </Link>
@@ -351,7 +360,7 @@ export function DuelsView({
               <Link
                 href="/groups"
                 onClick={() => setPicking(false)}
-                className="text-xs text-[#4f46e5] hover:underline"
+                className="text-xs text-brand-text hover:underline"
               >
                 Go to groups →
               </Link>
@@ -437,18 +446,19 @@ export function DuelsView({
           </DialogHeader>
 
           <div className="flex flex-col gap-3">
-            <select
-              value={duelSubject}
-              onChange={(e) => setDuelSubject(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none cursor-pointer"
-            >
-              <option value="">Any subject</option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <Select value={duelSubject} onValueChange={setDuelSubject}>
+              <SelectTrigger className="rounded-lg border-border bg-background text-foreground cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any subject</SelectItem>
+                {subjects.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="flex gap-1.5">
               {(["mixed", "easy", "medium", "hard"] as const).map((d) => (
@@ -457,7 +467,7 @@ export function DuelsView({
                   onClick={() => setDuelDifficulty(d)}
                   className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
                     duelDifficulty === d
-                      ? "bg-[#eef2ff] text-[#4f46e5]"
+                      ? "bg-brand-subtle text-brand-text"
                       : "border border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -473,7 +483,7 @@ export function DuelsView({
                   onClick={() => setDuelSize(n)}
                   className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
                     duelSize === n
-                      ? "bg-[#eef2ff] text-[#4f46e5]"
+                      ? "bg-brand-subtle text-brand-text"
                       : "border border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -495,7 +505,7 @@ export function DuelsView({
             <button
               onClick={sendChallenge}
               disabled={sendingDuel}
-              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {sendingDuel ? "Sending…" : "Send challenge"}
             </button>

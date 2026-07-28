@@ -111,7 +111,7 @@ export function GroupReviewView({
                     <button
                       onClick={() => review(question.id, "approved")}
                       disabled={busy === question.id}
-                      className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+                      className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
                     >
                       <Check className="size-4" />
                       Approve

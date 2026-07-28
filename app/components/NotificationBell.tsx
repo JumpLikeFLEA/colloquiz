@@ -283,7 +283,7 @@ export function NotificationBell() {
         >
           <Bell size={17} className="text-muted-foreground" />
           {unread > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#4f46e5]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand" />
           )}
         </button>
       </PopoverTrigger>
@@ -322,7 +322,7 @@ export function NotificationBell() {
                     </span>
                   </span>
                   {wasUnread && (
-                    <span className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-[#4f46e5]" />
+                    <span className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-brand" />
                   )}
                 </div>
               );

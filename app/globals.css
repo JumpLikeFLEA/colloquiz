@@ -13,7 +13,17 @@
   --primary: #030213;
   --primary-foreground: oklch(1 0 0);
   --brand: #4f46e5;
+  /* Brand indigo used as TEXT rather than as a fill. Identical to --brand in
+     light mode; the two only diverge in .dark, where a single indigo cannot be
+     both a fill that white sits on and a label legible against a dark surface. */
+  --brand-text: #4f46e5;
   --brand-subtle: #eef2ff;
+  /* Hover/active state of a brand fill. */
+  --brand-hover: #4338ca;
+  /* The second stop of the brand gradient (logo chips, the auth panel). */
+  --brand-accent: #7c3aed;
+  /* Border of a brand-tinted block — the outline that pairs with --brand-subtle. */
+  --brand-border: #e0e7ff;
   --secondary: oklch(0.95 0.0058 264.53);
   --secondary-foreground: #030213;
   --muted: #ececf0;
@@ -22,6 +32,12 @@
   --accent-foreground: #030213;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
+  /* Status pair — a completed/passing outcome. The counterpart to --destructive,
+     which is why it is here and not in the categorical ramp: the amber and orange
+     hues nearby (streak, gold, bronze, legendary) are IDENTITY, not status, and
+     belong with the subject and tier colours instead. */
+  --success: #10b981;
+  --success-subtle: #ecfdf5;
   --border: rgba(0, 0, 0, 0.1);
   --input: transparent;
   --input-background: #f3f3f5;
@@ -34,6 +50,19 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  /* Chart furniture. Distinct from --chart-1..5 above, which are the vendored
+     shadcn categorical ramp for ChartContainer; these are the parts of the app's
+     own Recharts surfaces that are passed as JS props rather than classes.
+     --chart-series-1 is the single primary series (score over time, the radar
+     outline), brand-coloured by intent — it is not "chart-1 renamed". */
+  --chart-grid: #e5e7eb;
+  --chart-tick: #666666;
+  --chart-series-1: #4f46e5;
+  /* A COMPLETE colour, alpha included, because the light and dark fills are not
+     one colour at one opacity: indigo at 15% over white and the same indigo at
+     15% over near-black are different designs. Consumers set fill to this and
+     leave fillOpacity alone. */
+  --chart-radar-fill: rgb(79 70 229 / 0.15);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -48,12 +77,59 @@
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
+  /* Raised one step above --background. In light mode a white card separates
+     from a white page via border and shadow; in dark mode shadows are invisible,
+     so the surface itself has to carry the elevation. This was identical to
+     --background, which flattened every card in the app. */
+  --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.985 0 0);
   --primary-foreground: oklch(0.205 0 0);
+  /* Lightened from the light-mode #4f46e5 (L 0.511 -> 0.545) so it reads as a
+     fill against a dark page while white text on it stays at 5.14:1 (AA).
+     Lightening further would push white below 4.5:1 — this is the ceiling for a
+     white-on-brand button, which is why --brand-text exists separately. */
+  --brand: oklch(0.545 0.22 277);
+  /* Lightened much further (L 0.72) for use as TEXT: 7.05:1 on --card, 7.79:1
+     on --background, and 5.79:1 on --brand-subtle — the bg-brand-subtle /
+     text-brand pairing the app already uses. All AA, the first two AAA. */
+  --brand-text: oklch(0.72 0.13 277);
+  /* Was a near-white indigo (#eef2ff), which in dark mode painted a glaring
+     white block wherever a subtle brand wash was intended. Now a low-lightness
+     wash that sits just above --card. */
+  --brand-subtle: oklch(0.28 0.05 277);
+  /* Hover moves in OPPOSITE directions by theme, both meaning "more emphatic":
+     on white the brand darkens (0.511 -> 0.457), on black it lightens. The step
+     is capped at +0.02 because --brand is already near the ceiling where a white
+     label still clears AA — this lands at 4.71:1, and +0.04 would drop it to 4.32. */
+  --brand-hover: oklch(0.565 0.22 277);
+  /* Same +0.024 lightening as --brand, at the source violet's own hue (293) so
+     the gradient keeps its indigo -> violet travel rather than flattening. */
+  --brand-accent: oklch(0.565 0.22 293);
+  /* Sits between --brand-subtle and the text on it; 1.76:1 against --card, a
+     little stronger than the light pair's 1.24:1 because a low-contrast border
+     disappears far faster on a dark surface than on a white one. */
+  --brand-border: oklch(0.38 0.07 277);
+  /* Chroma is capped at 0.05: at this lightness and hue, 0.06 leaves sRGB and
+     clamps to a flat #003221. --success reads 7.10:1 on it. */
+  --success: oklch(0.76 0.15 165);
+  --success-subtle: oklch(0.28 0.05 165);
+  /* Matched to the light values by RATIO against their own surface, not by hue:
+     grid 1.41:1 (light 1.24:1), tick 5.54:1 (light 5.74:1), series 5.51:1
+     (light 6.29:1). L 0.70 on the series would leave sRGB, so 0.66 is the cap. */
+  --chart-grid: oklch(0.32 0 0);
+  --chart-tick: oklch(0.65 0 0);
+  --chart-series-1: oklch(0.66 0.18 277);
+  /* Deliberately NOT 15%. At 0.15 over a dark card the fill all but vanishes;
+     0.28 composites to 1.53:1, the dark-mode equivalent of the light fill's
+     1.26:1 — a touch stronger, since a wash loses legibility faster on black. */
+  --chart-radar-fill: oklch(0.66 0.18 277 / 0.28);
+  /* Both absent from this block entirely, so inputs and switch tracks inherited
+     their light values and rendered near-white on a dark page. */
+  --input-background: oklch(0.269 0 0);
+  --switch-background: oklch(0.439 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -61,7 +137,10 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
+  /* Was oklch(0.637 0.237 25.331) — a bright red ON the dark red --destructive,
+     2.63:1 and effectively unreadable. Near-white matches the light-mode pairing
+     (#ffffff on #d4183d) and lands at 9.63:1. */
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -92,7 +171,13 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
   --color-brand-subtle: var(--brand-subtle);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-border: var(--brand-border);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -111,6 +196,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-tick: var(--chart-tick);
+  --color-chart-series-1: var(--chart-series-1);
+  --color-chart-radar-fill: var(--chart-radar-fill);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

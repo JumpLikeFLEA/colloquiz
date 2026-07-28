@@ -36,15 +36,15 @@ export function ActiveQuizBanner() {
   if (!summary || onQuizScreen) return null;
 
   return (
-    <div className="flex items-center gap-3 px-5 py-2.5 bg-[#eef2ff] border-b border-[#4f46e5]/20">
-      <Clock size={15} className="text-[#4f46e5] shrink-0" />
-      <p className="text-sm text-[#4f46e5] min-w-0 truncate">
+    <div className="flex items-center gap-3 px-5 py-2.5 bg-brand-subtle border-b border-brand/20">
+      <Clock size={15} className="text-brand-text shrink-0" />
+      <p className="text-sm text-brand-text min-w-0 truncate">
         You have a quiz in progress
         <span className="text-muted-foreground"> — {summary.title}</span>
       </p>
       <Link
         href={`/quiz/${summary.quizId}`}
-        className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+        className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
       >
         <Play size={14} />
         Resume

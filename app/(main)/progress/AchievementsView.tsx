@@ -14,6 +14,10 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
   Calendar, CalendarCheck, Globe, BookOpen, Layers, Play, Trophy, Medal,
 };
 
+// The indigo here is NOT the brand token, and the brand sweep deliberately left
+// it alone: these four are one categorical ramp, and tokenising a single member
+// would make "performance" shift in dark mode while its three siblings stayed
+// put. The whole ramp moves together, with subject and tier, in its own pass.
 const CATEGORY_STYLE: Record<string, { color: string; bg: string }> = {
   performance: { color: "#4f46e5", bg: "#eef2ff" },
   consistency:  { color: "#f97316", bg: "#fff7ed" },
@@ -69,6 +73,8 @@ export function AchievementsView({
     return catMatch && lockMatch;
   });
 
+  // Another six-hue categorical ramp — see the note on CATEGORY_STYLE for why
+  // the leading indigo is still a literal.
   const STATS = [
     { label: "Achievements Unlocked", value: `${unlockedCount} / ${ACHIEVEMENTS.length}`, icon: Trophy, color: "#4f46e5" },
     { label: "Total XP Earned", value: totalXp.toLocaleString(), icon: Star, color: "#f59e0b" },
@@ -82,7 +88,7 @@ export function AchievementsView({
     <div className="flex flex-col gap-8">
       {/* Level & XP Banner */}
       <div
-        className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-r from-[#4f46e5] to-[#7c3aed] text-white animate-in fade-in slide-in-from-bottom-4 fill-mode-both duration-300 motion-reduce:animate-none"
+        className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-r from-brand to-brand-accent text-white animate-in fade-in slide-in-from-bottom-4 fill-mode-both duration-300 motion-reduce:animate-none"
       >
         <div className="absolute inset-0 opacity-10">
           {[...Array(6)].map((_, i) => (
@@ -156,7 +162,7 @@ export function AchievementsView({
               onClick={() => setActiveCategory(cat)}
               className={`px-3.5 py-1.5 rounded-full text-sm transition-all cursor-pointer ${
                 activeCategory === cat
-                  ? "bg-[#4f46e5] text-white"
+                  ? "bg-brand text-white"
                   : "border border-border hover:bg-accent text-foreground"
               }`}
             >

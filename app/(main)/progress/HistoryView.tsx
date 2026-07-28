@@ -12,7 +12,24 @@ import {
   type HistoryPage,
   type HistorySubjectOption,
 } from "@/lib/historyFilters";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { QuizResultsTable } from "./QuizResultsTable";
+
+/**
+ * Both filter triggers, sized to their content rather than the Select's default
+ * full width — they sit side by side in a wrap row, not in a form grid. The
+ * rounded-xl and the brand focus ring are what the native controls had; the rest
+ * of the colour comes from the component's own tokens so it follows the theme.
+ */
+const FILTER_TRIGGER =
+  "w-auto rounded-xl border-border bg-card text-foreground cursor-pointer " +
+  "focus-visible:border-brand focus-visible:ring-brand/30";
 
 /**
  * The full quiz history: one page at a time, filterable by subject and
@@ -55,36 +72,39 @@ export function HistoryView({
       {/* Filter row — above the table, scoping everything below it */}
       <div className="flex flex-wrap items-center gap-3">
         <label className="sr-only" htmlFor="history-subject">Filter by subject</label>
-        <select
-          id="history-subject"
-          value={filters.subject}
-          onChange={e => setFilter({ subject: e.target.value })}
-          className="px-3 py-2 rounded-xl border border-border bg-card text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
-        >
-          <option value="all">All subjects</option>
-          {subjects.map(s => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.count})
-            </option>
-          ))}
-        </select>
+        <Select value={filters.subject} onValueChange={v => setFilter({ subject: v })}>
+          <SelectTrigger id="history-subject" className={FILTER_TRIGGER}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All subjects</SelectItem>
+            {subjects.map(s => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name} ({s.count})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <label className="sr-only" htmlFor="history-difficulty">Filter by difficulty</label>
-        <select
-          id="history-difficulty"
+        <Select
           value={filters.difficulty}
-          onChange={e => setFilter({ difficulty: e.target.value as HistoryFilters["difficulty"] })}
-          className="px-3 py-2 rounded-xl border border-border bg-card text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30"
+          onValueChange={v => setFilter({ difficulty: v as HistoryFilters["difficulty"] })}
         >
-          {HISTORY_DIFFICULTIES.map(d => (
-            <option key={d.value} value={d.value}>{d.label}</option>
-          ))}
-        </select>
+          <SelectTrigger id="history-difficulty" className={FILTER_TRIGGER}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HISTORY_DIFFICULTIES.map(d => (
+              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {filtered && (
           <Link
             href="/progress?tab=history"
-            className="text-xs text-[#4f46e5] hover:underline flex items-center gap-1"
+            className="text-xs text-brand-text hover:underline flex items-center gap-1"
           >
             Clear filters
           </Link>
@@ -166,7 +186,7 @@ function NoHistory() {
     <div className="px-5 py-12 flex flex-col items-center gap-3 text-center">
       <div
         className="flex items-center justify-center w-10 h-10 rounded-xl"
-        style={{ backgroundColor: "#eef2ff", color: "#4f46e5" }}
+        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand-text)" }}
       >
         <HistoryIcon size={20} />
       </div>
@@ -178,7 +198,7 @@ function NoHistory() {
       </div>
       <Link
         href="/"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm"
       >
         Browse subjects
         <ChevronRight size={14} />
@@ -204,7 +224,7 @@ function NoMatches() {
       </div>
       <Link
         href="/progress?tab=history"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm"
       >
         Clear filters
       </Link>

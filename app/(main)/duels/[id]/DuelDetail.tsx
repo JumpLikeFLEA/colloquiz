@@ -41,7 +41,7 @@ function ScoreSide({
         won ? "border-emerald-200 bg-emerald-50" : "border-border bg-card"
       }`}
     >
-      <p className={`text-sm font-medium truncate ${me ? "text-[#4f46e5]" : "text-foreground"}`}>
+      <p className={`text-sm font-medium truncate ${me ? "text-brand-text" : "text-foreground"}`}>
         {me ? "You" : name}
       </p>
       <p className="text-2xl font-semibold text-foreground mt-2">
@@ -131,7 +131,7 @@ export function DuelDetail({ duel }: { duel: Duel }) {
             <button
               onClick={() => act("accept")}
               disabled={busy}
-              className="px-4 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Accept challenge
             </button>
@@ -165,7 +165,7 @@ export function DuelDetail({ duel }: { duel: Duel }) {
 
       {/* Active — your move */}
       {duel.status === "active" && !duel.i_submitted && (
-        <div className="flex flex-col gap-4 p-5 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff]">
+        <div className="flex flex-col gap-4 p-5 rounded-2xl border border-brand/30 bg-brand-subtle">
           <div>
             <p className="text-sm font-medium text-foreground">It&apos;s your turn to play.</p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -182,7 +182,7 @@ export function DuelDetail({ duel }: { duel: Duel }) {
           </div>
           <Link
             href={`/quiz/${duel.quiz_id}`}
-            className="w-fit px-4 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors cursor-pointer"
+            className="w-fit px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors cursor-pointer"
           >
             Play your leg
           </Link>

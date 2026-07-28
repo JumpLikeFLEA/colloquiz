@@ -103,20 +103,20 @@ export function MyQuizzesView({
       {active && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <Clock className="size-4 text-[#4f46e5]" />
+            <Clock className="size-4 text-brand-text" />
             <h2 className="text-sm font-semibold text-foreground">In progress</h2>
           </div>
-          <div className="flex items-center gap-3 p-4 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff]">
+          <div className="flex items-center gap-3 p-4 rounded-2xl border border-brand/30 bg-brand-subtle">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{active.title}</p>
               <p className="text-xs text-muted-foreground">Active quiz &middot; not finished</p>
             </div>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#4f46e5]/10 text-[#4f46e5] border border-[#4f46e5]/20">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-brand/10 text-brand-text border border-brand/20">
               Active
             </span>
             <Link
               href={`/quiz/${active.quizId}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
             >
               <Play className="size-3.5" /> Resume
             </Link>
@@ -134,7 +134,7 @@ export function MyQuizzesView({
       {/* Assigned to me */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <ClipboardList className="size-4 text-[#4f46e5]" />
+          <ClipboardList className="size-4 text-brand-text" />
           <h2 className="text-sm font-semibold text-foreground">Assigned to me</h2>
         </div>
         {assignments.length === 0 ? (
@@ -158,7 +158,7 @@ export function MyQuizzesView({
                     {a.resultId ? (
                       <Link
                         href={`/results/${a.resultId}`}
-                        className="text-sm font-medium text-[#4f46e5] hover:underline"
+                        className="text-sm font-medium text-brand-text hover:underline"
                       >
                         View result
                       </Link>
@@ -171,7 +171,7 @@ export function MyQuizzesView({
                     </span>
                     <button
                       onClick={() => startQuiz({ quizId: a.quizId })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors cursor-pointer"
                     >
                       <Play className="size-3.5" /> Start
                     </button>
@@ -187,7 +187,7 @@ export function MyQuizzesView({
       {shares.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <Share2 className="size-4 text-[#4f46e5]" />
+            <Share2 className="size-4 text-brand-text" />
             <h2 className="text-sm font-semibold text-foreground">Shared with friends</h2>
           </div>
           <div className="flex flex-col gap-2">
@@ -234,12 +234,12 @@ export function MyQuizzesView({
         <section>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Pencil className="size-4 text-[#4f46e5]" />
+              <Pencil className="size-4 text-brand-text" />
               <h2 className="text-sm font-semibold text-foreground">Created by me</h2>
             </div>
             <Link
               href="/my-quizzes/builder"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
             >
               <Plus className="size-4" /> New Quiz
             </Link>
@@ -378,7 +378,7 @@ function AssignDialog({
         {students.length === 0 ? (
           <div className="py-4 text-center text-sm text-muted-foreground">
             You have no linked students yet.{" "}
-            <Link href="/students" className="text-[#4f46e5] font-medium hover:underline" onClick={onClose}>
+            <Link href="/students" className="text-brand-text font-medium hover:underline" onClick={onClose}>
               Invite a student
             </Link>
             .
@@ -409,7 +409,7 @@ function AssignDialog({
           <button
             onClick={assign}
             disabled={saving || selected.size === 0}
-            className="px-4 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
           >
             {saving ? "Assigning…" : `Assign${selected.size ? ` (${selected.size})` : ""}`}
           </button>

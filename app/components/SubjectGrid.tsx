@@ -240,7 +240,7 @@ export function SubjectGrid({
           <button
             onClick={startRandom}
             disabled={loadingId === "__random__"}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             <Shuffle size={16} />
             Random Quiz
@@ -254,7 +254,7 @@ export function SubjectGrid({
             placeholder="Search subjects..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 min-w-56 max-w-sm px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all"
+            className="flex-1 min-w-56 max-w-sm px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
           />
 
           {/* Real navigations, so these are links with aria-current rather than

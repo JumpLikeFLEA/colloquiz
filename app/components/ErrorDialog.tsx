@@ -35,7 +35,7 @@ export function ErrorDialog({
         <AlertDialogFooter>
           <AlertDialogAction
             onClick={onClose}
-            className="rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca]"
+            className="rounded-xl bg-brand text-white hover:bg-brand-hover"
           >
             OK
           </AlertDialogAction>

@@ -74,7 +74,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className={card}>
-        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-accent">
           <Share2 className="size-7 text-white" />
         </div>
         <div>
@@ -88,7 +88,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
         {/* Quiz preview */}
         <div className="w-full flex items-center gap-3 p-4 rounded-2xl border border-border bg-muted/40 text-left">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#eef2ff] text-[#4f46e5] shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-subtle text-brand-text shrink-0">
             <BookOpen size={16} />
           </div>
           <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         {user ? (
           <Link
             href={`/quiz/${preview.snapshot_quiz_id}`}
-            className="w-full py-3 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+            className="w-full py-3 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
           >
             Play now
           </Link>
@@ -110,7 +110,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <div className="w-full flex flex-col gap-2.5">
             <Link
               href={`/signup?next=${next}`}
-              className="w-full py-3 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] transition-colors"
+              className="w-full py-3 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
             >
               Sign up &amp; play
             </Link>

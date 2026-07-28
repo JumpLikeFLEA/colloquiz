@@ -67,7 +67,7 @@ function SubjectMasteryEmpty({ played }: { played: number }) {
     <div className="h-80 flex flex-col items-center justify-center gap-3 text-center">
       <div
         className="flex items-center justify-center w-10 h-10 rounded-xl"
-        style={{ backgroundColor: "#eef2ff", color: "#4f46e5" }}
+        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand-text)" }}
       >
         <Target size={20} />
       </div>
@@ -83,7 +83,7 @@ function SubjectMasteryEmpty({ played }: { played: number }) {
       </div>
       <Link
         href="/"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2ff] text-[#4f46e5] hover:bg-[#e0e7ff] transition-colors text-sm"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm"
       >
         Browse subjects
         <ChevronRight size={14} />
@@ -123,6 +123,9 @@ export function DashboardView({
     // the XP that earned it sits in the card's footnote slot, so progression
     // reads as a stat here rather than as a second identity block.
     const { level } = getLevelProgress(profile.total_xp);
+    // Five-hue categorical ramp, left as literals by the brand sweep on purpose:
+    // tokenising only the indigo would leave one card flipping in dark mode and
+    // four not. See the note on CATEGORY_STYLE in AchievementsView.
     return [
       { label: "Total Quizzes", value: String(results.length), change: "", icon: BarChart2, color: "#4f46e5", bg: "#eef2ff" },
       { label: "Avg. Score", value: `${avgScore}%`, change: "", icon: TrendingUp, color: "#10b981", bg: "#ecfdf5" },
@@ -247,8 +250,8 @@ export function DashboardView({
               <AreaChart data={weeklyData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--chart-series-1)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--chart-series-1)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -258,7 +261,7 @@ export function DashboardView({
                   contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "13px" }}
                   formatter={(v) => [`${v}%`, "Score"]}
                 />
-                <Area type="monotone" dataKey="score" stroke="#4f46e5" strokeWidth={2} fill="url(#scoreGrad)" dot={{ fill: "#4f46e5", r: 4 }} />
+                <Area type="monotone" dataKey="score" stroke="var(--chart-series-1)" strokeWidth={2} fill="url(#scoreGrad)" dot={{ fill: "var(--chart-series-1)", r: 4 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -297,7 +300,11 @@ export function DashboardView({
                       "Average",
                     ]}
                   />
-                  <Radar dataKey="avgScore" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.15} strokeWidth={2} />
+                  {/* No fillOpacity: --chart-radar-fill is a complete colour, alpha
+                      included, so the two would multiply. It resolves to the same
+                      15% indigo here and to a heavier wash in dark, where 15% over
+                      a near-black card is invisible. */}
+                  <Radar dataKey="avgScore" stroke="var(--chart-series-1)" fill="var(--chart-radar-fill)" strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -317,7 +324,7 @@ export function DashboardView({
           </div>
           <Link
             href="/progress?tab=history"
-            className="text-xs text-[#4f46e5] hover:underline flex items-center gap-1"
+            className="text-xs text-brand-text hover:underline flex items-center gap-1"
           >
             View all <ChevronRight size={13} />
           </Link>

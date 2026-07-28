@@ -159,7 +159,7 @@ function ReportForm({
         <button
           onClick={submit}
           disabled={submitting}
-          className="px-3 py-1.5 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
         >
           {submitting ? "Submitting…" : "Submit report"}
         </button>

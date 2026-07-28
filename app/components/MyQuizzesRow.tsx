@@ -21,7 +21,7 @@ export function MyQuizzesRow({ items }: { items: MyQuizItem[] }) {
           <h2 className="text-foreground font-medium">My Quizzes</h2>
           <p className="text-xs text-muted-foreground">Assigned to you and quizzes you created</p>
         </div>
-        <Link href="/my-quizzes" className="text-sm text-[#4f46e5] hover:underline shrink-0">
+        <Link href="/my-quizzes" className="text-sm text-brand-text hover:underline shrink-0">
           See all
         </Link>
       </div>
@@ -45,7 +45,7 @@ export function MyQuizzesRow({ items }: { items: MyQuizItem[] }) {
             <div className="px-4 pb-4">
               <button
                 onClick={() => startQuiz({ quizId: item.quizId })}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors text-sm cursor-pointer"
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors text-sm cursor-pointer"
               >
                 <Play size={14} />
                 Start Quiz

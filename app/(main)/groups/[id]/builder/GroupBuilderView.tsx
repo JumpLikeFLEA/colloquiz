@@ -22,9 +22,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { answerOptions } from "@/lib/options";
 import type { Difficulty, Question, Quiz } from "@/types";
+
+/** Select triggers, matching the text inputs beside them. */
+const FIELD_TRIGGER = "rounded-lg border-border bg-background text-foreground";
 
 type QuestionType = "multiple_choice" | "true_false";
 
@@ -292,17 +302,18 @@ export function GroupBuilderView({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Subject
             </label>
-            <select
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
-            >
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <Select value={subject} onValueChange={setSubject}>
+              <SelectTrigger className={FIELD_TRIGGER}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -458,7 +469,7 @@ function QuestionCard({
             <button
               onClick={() => onSave(local)}
               disabled={busy}
-              className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               <Save className="size-4" />
               Save changes
@@ -500,7 +511,7 @@ function QuestionEditor({
         <button
           onClick={onSubmit}
           disabled={busy}
-          className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+          className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
         >
           <Save className="size-4" />
           {submitLabel}
@@ -528,10 +539,10 @@ function Fields({ draft, onChange }: { draft: Draft; onChange: (d: Draft) => voi
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Type</label>
-          <select
+          <Select
             value={draft.type}
-            onChange={(e) => {
-              const t = e.target.value as QuestionType;
+            onValueChange={(v) => {
+              const t = v as QuestionType;
               onChange({
                 ...draft,
                 type: t,
@@ -539,27 +550,35 @@ function Fields({ draft, onChange }: { draft: Draft; onChange: (d: Draft) => voi
                 correct_answer: "",
               });
             }}
-            className="w-full px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
           >
-            <option value="multiple_choice">Multiple Choice</option>
-            <option value="true_false">True / False</option>
-          </select>
+            <SelectTrigger size="sm" className={FIELD_TRIGGER}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+              <SelectItem value="true_false">True / False</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
             Difficulty
           </label>
-          <select
+          <Select
             value={draft.difficulty}
-            onChange={(e) => onChange({ ...draft, difficulty: e.target.value as Difficulty })}
-            className="w-full px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none capitalize"
+            onValueChange={(v) => onChange({ ...draft, difficulty: v as Difficulty })}
           >
-            {DIFFICULTIES.map((d) => (
-              <option key={d} value={d}>
-                {d.charAt(0).toUpperCase() + d.slice(1)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger size="sm" className={FIELD_TRIGGER}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DIFFICULTIES.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {d.charAt(0).toUpperCase() + d.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -778,7 +797,7 @@ function ImportButton({
                     }
                     className={`cursor-pointer flex items-start gap-2 px-3 py-2 rounded-lg border text-left transition-colors ${
                       on
-                        ? "bg-[#eef2ff] border-[#c7d2fe]"
+                        ? "bg-brand-subtle border-[#c7d2fe]"
                         : "bg-background border-border hover:bg-accent"
                     }`}
                   >
@@ -789,7 +808,7 @@ function ImportButton({
                         {answerOptions(q.options).length} options · {q.difficulty}
                       </span>
                     </span>
-                    {on && <X className="size-4 text-[#4f46e5] shrink-0" />}
+                    {on && <X className="size-4 text-brand-text shrink-0" />}
                   </button>
                 );
               })
@@ -806,7 +825,7 @@ function ImportButton({
             <button
               onClick={importPicked}
               disabled={picked.length === 0 || loading}
-              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+              className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               Import {picked.length > 0 ? `(${picked.length})` : ""}
             </button>

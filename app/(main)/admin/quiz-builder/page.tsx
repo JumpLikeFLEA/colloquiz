@@ -4,7 +4,21 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronUp, Save, ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { Difficulty, QuizMode } from "@/types";
+
+/**
+ * Shared by every select on this page, matching the text inputs beside them.
+ * The compact pair inside an expanded question card differ only in height,
+ * which comes from the trigger's own size="sm" rather than from here.
+ */
+const FIELD_TRIGGER = "rounded-lg border-border bg-card text-foreground";
 
 type QuestionType = "multiple_choice" | "true_false";
 
@@ -239,41 +253,47 @@ export default function QuizBuilderPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-medium text-zinc-500 mb-1 block">Subject</label>
-              <select
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 text-sm outline-none focus:border-zinc-400 bg-white transition-colors"
-              >
-                {SUBJECTS.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+              <Select value={subject} onValueChange={setSubject}>
+                <SelectTrigger className={FIELD_TRIGGER}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUBJECTS.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="text-xs font-medium text-zinc-500 mb-1 block">Mode</label>
-              <select
-                value={mode}
-                onChange={(e) => setMode(e.target.value as QuizMode)}
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 text-sm outline-none focus:border-zinc-400 bg-white transition-colors"
-              >
-                <option value="ordinary">Ordinary</option>
-                <option value="exam">Exam</option>
-              </select>
+              <Select value={mode} onValueChange={(v) => setMode(v as QuizMode)}>
+                <SelectTrigger className={FIELD_TRIGGER}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ordinary">Ordinary</SelectItem>
+                  <SelectItem value="exam">Exam</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="text-xs font-medium text-zinc-500 mb-1 block">Difficulty</label>
-              <select
+              <Select
                 value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value as Difficulty | "mixed")}
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 text-sm outline-none focus:border-zinc-400 bg-white transition-colors"
+                onValueChange={(v) => setDifficulty(v as Difficulty | "mixed")}
               >
-                <option value="mixed">Mixed</option>
-                {DIFFICULTIES.map((d) => (
-                  <option key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-                ))}
-              </select>
+                <SelectTrigger className={FIELD_TRIGGER}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mixed">Mixed</SelectItem>
+                  {DIFFICULTIES.map((d) => (
+                    <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -357,33 +377,41 @@ function QuestionCard({ q, idx, onToggle, onRemove, onUpdate, onOptionChange }: 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-zinc-500 mb-1 block">Type</label>
-              <select
+              <Select
                 value={q.type}
-                onChange={(e) => {
-                  const t = e.target.value as QuestionType;
+                onValueChange={(v) => {
+                  const t = v as QuestionType;
                   onUpdate({
                     type: t,
                     options: t === "true_false" ? ["True", "False", "", ""] : ["", "", "", ""],
                     correct_answer: "",
                   });
                 }}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 text-sm outline-none focus:border-zinc-400 bg-white"
               >
-                <option value="multiple_choice">Multiple Choice</option>
-                <option value="true_false">True / False</option>
-              </select>
+                <SelectTrigger size="sm" className={FIELD_TRIGGER}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                  <SelectItem value="true_false">True / False</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-xs font-medium text-zinc-500 mb-1 block">Difficulty</label>
-              <select
+              <Select
                 value={q.difficulty}
-                onChange={(e) => onUpdate({ difficulty: e.target.value as Difficulty })}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 text-sm outline-none focus:border-zinc-400 bg-white capitalize"
+                onValueChange={(v) => onUpdate({ difficulty: v as Difficulty })}
               >
-                {DIFFICULTIES.map((d) => (
-                  <option key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-                ))}
-              </select>
+                <SelectTrigger size="sm" className={FIELD_TRIGGER}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIFFICULTIES.map((d) => (
+                    <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

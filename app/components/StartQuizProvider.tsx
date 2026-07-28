@@ -145,7 +145,7 @@ export function StartQuizProvider({ children }: { children: ReactNode }) {
             <AlertDialogCancel className="rounded-xl">Keep current quiz</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmReplace}
-              className="rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca]"
+              className="rounded-xl bg-brand text-white hover:bg-brand-hover"
             >
               Discard &amp; start new
             </AlertDialogAction>

@@ -59,7 +59,7 @@ export function ResetPasswordScreen() {
         >
           {/* Logo (mobile only) */}
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-brand-accent">
               <GraduationCap size={16} className="text-white" />
             </div>
             <span className="font-semibold text-foreground">Colloquiz</span>
@@ -88,7 +88,7 @@ export function ResetPasswordScreen() {
             </p>
           )}
 
-          <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors cursor-pointer shadow-lg shadow-[#4f46e5]/25 disabled:opacity-60 disabled:cursor-not-allowed">
+          <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white transition-colors cursor-pointer shadow-lg shadow-brand/25 disabled:opacity-60 disabled:cursor-not-allowed">
             <span>{loading ? "Updating…" : "Update password"}</span>
             <ArrowRight size={16} />
           </button>

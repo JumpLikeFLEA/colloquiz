@@ -20,7 +20,7 @@ export function BecomeAuthorCard() {
 
   return (
     <div className="flex flex-col items-center text-center gap-4 p-8 rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+      <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-accent">
         <PenLine className="size-6 text-white" />
       </div>
       <div>
@@ -33,7 +33,7 @@ export function BecomeAuthorCard() {
       <button
         onClick={enroll}
         disabled={loading}
-        className="px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white text-sm font-medium hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+        className="px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
       >
         {loading ? "Enabling…" : "Enable authoring"}
       </button>

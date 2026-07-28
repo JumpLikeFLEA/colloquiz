@@ -127,7 +127,7 @@ export default function CustomPage() {
           <button
             onClick={handleSave}
             disabled={!isValid || saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             {saved ? <CheckCircle2 size={15} /> : <Save size={15} />}
             {saved ? "Saved!" : saving ? "Saving…" : "Save Quiz"}
@@ -150,7 +150,7 @@ export default function CustomPage() {
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   placeholder="e.g. Algebra Fundamentals"
-                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all"
+                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -160,7 +160,7 @@ export default function CustomPage() {
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Brief description..."
                   rows={2}
-                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all resize-none"
+                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all resize-none"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -171,7 +171,7 @@ export default function CustomPage() {
                   value={subject}
                   onChange={e => setSubject(e.target.value)}
                   placeholder="e.g. Mathematics"
-                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all"
+                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
                 />
               </div>
               <button
@@ -179,7 +179,7 @@ export default function CustomPage() {
                 onClick={() => setIsPublic(p => !p)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all cursor-pointer ${
                   isPublic
-                    ? "border-[#4f46e5]/40 bg-[#eef2ff] text-[#4f46e5]"
+                    ? "border-brand/40 bg-brand-subtle text-brand-text"
                     : "border-border text-muted-foreground hover:bg-accent"
                 }`}
               >
@@ -210,7 +210,7 @@ export default function CustomPage() {
                     onKeyDown={e => e.key === "Enter" && setActiveQuestion(i)}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all cursor-pointer group ${
                       activeQuestion === i
-                        ? "bg-[#eef2ff] text-[#4f46e5]"
+                        ? "bg-brand-subtle text-brand-text"
                         : "hover:bg-accent text-foreground"
                     }`}
                   >
@@ -240,7 +240,7 @@ export default function CustomPage() {
                     onClick={() => addQuestion(qt.id)}
                     className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors text-sm text-foreground cursor-pointer"
                   >
-                    <Plus size={13} className="text-[#4f46e5]" />
+                    <Plus size={13} className="text-brand-text" />
                     <qt.icon size={13} className="text-muted-foreground" />
                     {qt.label}
                   </button>
@@ -253,7 +253,7 @@ export default function CustomPage() {
           <div className="p-6 rounded-2xl border border-border bg-card flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#eef2ff] text-[#4f46e5] text-sm font-medium">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-subtle text-brand-text text-sm font-medium">
                   {activeQuestion + 1}
                 </span>
                 <span className="text-sm text-muted-foreground">
@@ -267,7 +267,7 @@ export default function CustomPage() {
                     onClick={() => updateQuestion(activeQuestion, createQuestion(qt.id))}
                     className={`px-2.5 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
                       q.type === qt.id
-                        ? "bg-[#4f46e5] text-white"
+                        ? "bg-brand text-white"
                         : "border border-border hover:bg-accent text-foreground"
                     }`}
                   >
@@ -285,7 +285,7 @@ export default function CustomPage() {
                 onChange={e => updateQuestion(activeQuestion, { question: e.target.value })}
                 placeholder="Enter your question here..."
                 rows={3}
-                className="px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all resize-none"
+                className="px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all resize-none"
               />
             </div>
 
@@ -300,8 +300,8 @@ export default function CustomPage() {
                       onClick={() => updateQuestion(activeQuestion, { correctAnswer: i })}
                       className={`flex items-center justify-center w-6 h-6 rounded-full border-2 shrink-0 transition-all cursor-pointer ${
                         q.correctAnswer === i
-                          ? "border-[#4f46e5] bg-[#4f46e5]"
-                          : "border-muted-foreground/40 hover:border-[#4f46e5]"
+                          ? "border-brand bg-brand"
+                          : "border-muted-foreground/40 hover:border-brand"
                       }`}
                     >
                       {q.correctAnswer === i && (
@@ -314,8 +314,8 @@ export default function CustomPage() {
                       placeholder={`Option ${String.fromCharCode(65 + i)}`}
                       className={`flex-1 px-3 py-2 rounded-xl border text-sm transition-all focus:outline-none placeholder:text-muted-foreground ${
                         q.correctAnswer === i
-                          ? "border-[#4f46e5]/40 bg-[#eef2ff] text-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/20"
-                          : "border-border bg-background text-foreground focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5]"
+                          ? "border-brand/40 bg-brand-subtle text-brand-text focus:ring-2 focus:ring-brand/20"
+                          : "border-border bg-background text-foreground focus:ring-2 focus:ring-brand/30 focus:border-brand"
                       }`}
                     />
                   </div>
@@ -353,7 +353,7 @@ export default function CustomPage() {
                   value={typeof q.correctAnswer === "string" ? q.correctAnswer : ""}
                   onChange={e => updateQuestion(activeQuestion, { correctAnswer: e.target.value })}
                   placeholder="Enter the expected answer..."
-                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all"
+                  className="px-3 py-2 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
                 />
                 <p className="text-xs text-muted-foreground">Answers will be compared case-insensitively</p>
               </div>
@@ -396,7 +396,7 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
         <HelpCircle size={40} className="opacity-30" />
         <p>No questions added yet.</p>
-        <button onClick={onEdit} className="text-[#4f46e5] hover:underline text-sm cursor-pointer">
+        <button onClick={onEdit} className="text-brand-text hover:underline text-sm cursor-pointer">
           Go back to editor
         </button>
       </div>
@@ -415,7 +415,7 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
           <div
             key={i}
             className={`flex-1 h-1.5 rounded-full transition-all ${
-              i < currentQ ? "bg-[#4f46e5]" : i === currentQ ? "bg-[#4f46e5]/50" : "bg-border"
+              i < currentQ ? "bg-brand" : i === currentQ ? "bg-brand/50" : "bg-border"
             }`}
           />
         ))}
@@ -430,7 +430,7 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
           className="p-6 rounded-2xl border border-border bg-card flex flex-col gap-5"
         >
           <div className="flex items-start gap-3">
-            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#eef2ff] text-[#4f46e5] text-sm font-medium shrink-0">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-subtle text-brand-text text-sm font-medium shrink-0">
               {currentQ + 1}
             </span>
             <p className="text-foreground leading-relaxed">{q.question || "No question text"}</p>
@@ -444,8 +444,8 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
                   onClick={() => setAnswers(a => ({ ...a, [currentQ]: i }))}
                   className={`flex items-center gap-3 p-3.5 rounded-xl border text-sm text-left transition-all cursor-pointer ${
                     answers[currentQ] === i
-                      ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5]"
-                      : "border-border hover:border-[#4f46e5]/40 hover:bg-accent text-foreground"
+                      ? "border-brand bg-brand-subtle text-brand-text"
+                      : "border-border hover:border-brand/40 hover:bg-accent text-foreground"
                   }`}
                 >
                   <span className="flex items-center justify-center w-6 h-6 rounded-full border border-current text-xs font-medium">
@@ -465,8 +465,8 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
                   onClick={() => setAnswers(a => ({ ...a, [currentQ]: i }))}
                   className={`flex-1 py-3.5 rounded-xl border text-sm font-medium transition-all cursor-pointer ${
                     answers[currentQ] === i
-                      ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5]"
-                      : "border-border hover:border-[#4f46e5]/40 text-foreground"
+                      ? "border-brand bg-brand-subtle text-brand-text"
+                      : "border-border hover:border-brand/40 text-foreground"
                   }`}
                 >
                   {opt}
@@ -480,7 +480,7 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
               value={typeof answers[currentQ] === "string" ? answers[currentQ] as string : ""}
               onChange={e => setAnswers(a => ({ ...a, [currentQ]: e.target.value }))}
               placeholder="Type your answer..."
-              className="px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-all text-sm"
+              className="px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
             />
           )}
         </motion.div>
@@ -497,7 +497,7 @@ function PreviewMode({ quiz, onEdit }: { quiz: CustomQuizData; onEdit: () => voi
         <button
           onClick={() => setCurrentQ(i => Math.min(quiz.questions.length - 1, i + 1))}
           disabled={currentQ === quiz.questions.length - 1}
-          className="px-4 py-2 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="px-4 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           Next →
         </button>
