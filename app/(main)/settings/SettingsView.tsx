@@ -2,19 +2,12 @@
 
 import type { UserIdentity } from "@supabase/supabase-js";
 import type { NotificationEventKey } from "@/lib/notificationPrefs";
+import type { ThemePreference } from "@/lib/theme";
 import { AccountSection, type AccountProfile } from "./AccountSection";
+import { AppearanceSection } from "./AppearanceSection";
 import { DataPrivacySection } from "./DataPrivacySection";
 import { NotificationsSection } from "./NotificationsSection";
 import { ProvidersSection } from "./ProvidersSection";
-
-// Appearance is the last stub.
-const PLACEHOLDER_SECTIONS = [
-  {
-    id: "appearance",
-    title: "Appearance",
-    description: "Theme preference.",
-  },
-] as const;
 
 export function SettingsView({
   userId,
@@ -23,6 +16,7 @@ export function SettingsView({
   identities,
   identityError,
   notificationPrefs,
+  themePreference,
 }: {
   userId: string;
   email: string;
@@ -30,6 +24,7 @@ export function SettingsView({
   identities: UserIdentity[];
   identityError: string | null;
   notificationPrefs: Record<NotificationEventKey, boolean>;
+  themePreference: ThemePreference | null;
 }) {
   return (
     <div className="flex flex-col gap-8">
@@ -68,17 +63,15 @@ export function SettingsView({
         <NotificationsSection userId={userId} initial={notificationPrefs} />
       </section>
 
-      {PLACEHOLDER_SECTIONS.map((section) => (
-        <section key={section.id} className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-foreground">{section.title}</h2>
-            <p className="text-muted-foreground mt-1 text-sm">{section.description}</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-muted-foreground text-sm">Coming soon.</p>
-          </div>
-        </section>
-      ))}
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-foreground">Appearance</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            How the app looks. Changes apply straight away.
+          </p>
+        </div>
+        <AppearanceSection userId={userId} initialPreference={themePreference} />
+      </section>
 
       {/* Data and privacy — last, and set apart. These are rights, not
           preferences, and the destructive half of the section must never read

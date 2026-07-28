@@ -36,8 +36,8 @@ export function InviteAccept({ token }: { token: string }) {
       <div className="w-full max-w-sm flex flex-col items-center text-center gap-5 p-8 rounded-3xl border border-border bg-card">
         {status === "done" ? (
           <>
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100">
-              <Check className="size-7 text-emerald-600" />
+            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-success-subtle">
+              <Check className="size-7 text-success" />
             </div>
             <div>
               <h1 className="text-lg font-semibold text-foreground">You&rsquo;re linked!</h1>
@@ -56,8 +56,8 @@ export function InviteAccept({ token }: { token: string }) {
           </>
         ) : status === "error" ? (
           <>
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-100">
-              <AlertCircle className="size-7 text-red-500" />
+            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-destructive-subtle">
+              <AlertCircle className="size-7 text-destructive-text" />
             </div>
             <div>
               <h1 className="text-lg font-semibold text-foreground">Couldn&rsquo;t accept</h1>

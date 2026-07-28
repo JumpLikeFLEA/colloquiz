@@ -9,8 +9,12 @@ import {
   Trophy, RotateCcw, Star, Zap, Target, TrendingUp,
   AlertCircle, BookOpen, Flag, Swords,
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
-  Code, Brain, Palette, Music, Languages
+  Code, Brain, Palette, Music, Languages,
+  BarChart3, Clapperboard, Gamepad2, Microscope, Lightbulb,
+  type LucideIcon,
 } from "lucide-react";
+import subjectsData from "@/data/subjects.json";
+import { chipStyle } from "@/lib/categoricalColor";
 import type { PlayableQuestion, Quiz } from "@/types";
 import { ReportQuestionInline } from "@/app/components/ReportQuestion";
 import { ShareQuizBlock } from "./ShareQuizBlock";
@@ -26,23 +30,29 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 
-// Inline subjects for display (same data as figma-export MainMenu SUBJECTS)
-const SUBJECTS = [
-  { id: "mathematics", name: "Mathematics", icon: Calculator, color: "#6366f1", bg: "#eef2ff" },
-  { id: "physics", name: "Physics", icon: Atom, color: "#8b5cf6", bg: "#f5f3ff" },
-  { id: "chemistry", name: "Chemistry", icon: FlaskConical, color: "#ec4899", bg: "#fdf2f8" },
-  { id: "biology", name: "Biology", icon: Leaf, color: "#10b981", bg: "#ecfdf5" },
-  { id: "history", name: "History", icon: Landmark, color: "#f59e0b", bg: "#fffbeb" },
-  { id: "geography", name: "Geography", icon: Globe, color: "#3b82f6", bg: "#eff6ff" },
-  { id: "literature", name: "Literature", icon: BookOpen, color: "#ef4444", bg: "#fef2f2" },
-  { id: "computer_science", name: "Computer Science", icon: Code, color: "#06b6d4", bg: "#ecfeff" },
-  { id: "economics", name: "Economics", icon: TrendingUp, color: "#f97316", bg: "#fff7ed" },
-  { id: "psychology", name: "Psychology", icon: Brain, color: "#a855f7", bg: "#faf5ff" },
-  { id: "art", name: "Art & Design", icon: Palette, color: "#f43f5e", bg: "#fff1f2" },
-  { id: "music", name: "Music", icon: Music, color: "#14b8a6", bg: "#f0fdfa" },
-  { id: "languages", name: "Languages", icon: Languages, color: "#64748b", bg: "#f8fafc" },
-  { id: "philosophy", name: "Philosophy", icon: BookOpen, color: "#7c3aed", bg: "#f5f3ff" },
-];
+const ICON_MAP: Record<string, LucideIcon> = {
+  Calculator, Atom, FlaskConical, Leaf, Landmark, Globe, BookOpen, Code,
+  TrendingUp, Brain, Palette, Music, Languages, BarChart3, Clapperboard,
+  Trophy, Gamepad2, Microscope, Lightbulb,
+};
+
+/**
+ * Read from data/subjects.json rather than re-declared here. This used to be a
+ * hand-copied list of 14 subjects with a hue AND a hardcoded near-white tint
+ * each; the tints are gone (chipStyle derives the chip from the hue and the
+ * live --card), and copying the hues served no purpose except to drift — the
+ * catalogue has grown to 20, so quizzes in the six newer subjects were
+ * rendering with no subject chip at all.
+ *
+ * The hues themselves stay literal in the JSON: a subject's colour is its
+ * identity and does not move with the theme. Only the surface under it does.
+ */
+const SUBJECTS = subjectsData.map(s => ({
+  id: s.id,
+  name: s.name,
+  icon: ICON_MAP[s.icon] ?? BookOpen,
+  color: s.color,
+}));
 
 interface Props {
   quiz: Quiz;
@@ -114,13 +124,30 @@ function useTimer(startedAtMs: number) {
   return { seconds, formatted, stop, restart };
 }
 
+/**
+ * Six-step ordinal ramp, handled like the other ordinal ramps in the app: a
+ * fixed hue per step, with the surface derived from the live --card by
+ * chipStyle(). Not status tokens — three of those cannot carry six steps, and
+ * an "A" is not a success state in the way a correct answer is.
+ *
+ * The shades are deliberately uneven. Each is the one that clears 3:1 against
+ * BOTH its own derived chip and --card, in BOTH themes — the bar for the
+ * text-3xl medallion letter (large text) and for the medallion's border, which
+ * is a UI component. The -700 blues and reds fail the chip test in dark; the
+ * -500 greens and ambers this replaces fail it in light. Do not level them to
+ * one shade step.
+ *
+ * NOTE: the thresholds here (90/80/70/60/50, six letters) do not match
+ * getGrade() in results/[id]/page.tsx (90/80/70/60, five letters). That
+ * predates this change and is left alone.
+ */
 function getGrade(pct: number) {
-  if (pct >= 90) return { letter: "A+", label: "Excellent!", color: "#10b981", bg: "#ecfdf5" };
-  if (pct >= 80) return { letter: "A", label: "Great job!", color: "#6366f1", bg: "#eef2ff" };
-  if (pct >= 70) return { letter: "B", label: "Good work!", color: "#3b82f6", bg: "#eff6ff" };
-  if (pct >= 60) return { letter: "C", label: "Not bad!", color: "#f59e0b", bg: "#fffbeb" };
-  if (pct >= 50) return { letter: "D", label: "Keep going!", color: "#f97316", bg: "#fff7ed" };
-  return { letter: "F", label: "Keep practicing!", color: "#ef4444", bg: "#fef2f2" };
+  if (pct >= 90) return { letter: "A+", label: "Excellent!", hue: "#059669" };
+  if (pct >= 80) return { letter: "A", label: "Great job!", hue: "#6366f1" };
+  if (pct >= 70) return { letter: "B", label: "Good work!", hue: "#2563eb" };
+  if (pct >= 60) return { letter: "C", label: "Not bad!", hue: "#a16207" };
+  if (pct >= 50) return { letter: "D", label: "Keep going!", hue: "#c2410c" };
+  return { letter: "F", label: "Keep practicing!", hue: "#dc2626" };
 }
 
 export default function QuizSession({
@@ -345,11 +372,16 @@ export default function QuizSession({
 
   const isCorrect = selectedOption !== null && correctIdx !== -1 && selectedOption === correctIdx;
 
+  // A solid pill under a white label, so each step has to clear AA against
+  // white. The -500 ramp this replaces did not at any step (2.54:1 easy,
+  // 2.15:1 medium, 3.76:1 hard); these are the -700 shades of the same hues, at
+  // 5.48 / 5.02 / 6.47, and match the difficulty ramp in advanced/AdvancedForm.
+  // Fixed hues, so the pill needs no theme variant — it is its own surface.
   const difficultyColor: string = ({
-    easy: "#10b981",
-    medium: "#f59e0b",
-    hard: "#ef4444",
-  } as Record<string, string>)[difficulty] ?? "#6366f1";
+    easy: "#047857",
+    medium: "#b45309",
+    hard: "#b91c1c",
+  } as Record<string, string>)[difficulty] ?? "var(--brand)";
 
   if (phase === "results") {
     return (
@@ -382,8 +414,8 @@ export default function QuizSession({
     <div className="flex flex-col gap-0 min-h-full">
       {/* Duel banner + server-anchored countdown */}
       {duel && (
-        <div className="flex items-center gap-3 mb-6 p-3.5 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff]">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4f46e5] text-white shrink-0">
+        <div className="flex items-center gap-3 mb-6 p-3.5 rounded-2xl border border-brand/30 bg-brand-subtle">
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand text-white shrink-0">
             <Swords size={16} />
           </div>
           <div className="flex-1 min-w-0">
@@ -398,8 +430,8 @@ export default function QuizSession({
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono shrink-0 ${
                 duelRemaining <= 60
-                  ? "bg-red-100 text-red-600"
-                  : "bg-white text-foreground"
+                  ? "bg-destructive-subtle text-destructive-text"
+                  : "bg-card text-foreground"
               }`}
             >
               <Clock size={14} />
@@ -424,7 +456,7 @@ export default function QuizSession({
           {subject && (
             <div
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-              style={{ backgroundColor: subject.bg, color: subject.color }}
+              style={chipStyle(subject.color)}
             >
               <subject.icon size={13} />
               {subject.name}
@@ -448,7 +480,7 @@ export default function QuizSession({
       <div className="flex items-center gap-3 mb-8">
         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-[#4f46e5]"
+            className="h-full rounded-full bg-brand"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: "easeOut" }}
@@ -472,7 +504,7 @@ export default function QuizSession({
           {/* Question */}
           <div className="flex flex-col gap-4 p-6 rounded-2xl border border-border bg-card">
             <div className="flex items-start gap-3">
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#eef2ff] text-[#4f46e5] shrink-0 font-medium text-sm">
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-subtle text-brand-text shrink-0 font-medium text-sm">
                 {currentIndex + 1}
               </span>
               <p className="text-foreground leading-relaxed pt-1">{currentQuestion.question}</p>
@@ -484,19 +516,24 @@ export default function QuizSession({
             {currentQuestion.options.map((option, i) => {
               const letter = String.fromCharCode(65 + i);
               const isCorrectOption = currentQuestion.options[i] === currentQuestion.correct_answer;
-              let optionClass = "border-border bg-card hover:border-[#4f46e5]/50 hover:bg-[#eef2ff]/50 cursor-pointer";
+              // Answer states. The colour is the SECOND signal in every case —
+              // the letter chip swaps to a check or a cross (below), so the
+              // state survives with hue removed entirely. Contrast, light/dark:
+              // correct text 5.21 / 7.10, wrong text 4.80 / 5.22, and the
+              // letter chips 5.48 / 8.90 and 5.25 / 9.63. All clear AA.
+              let optionClass = "border-border bg-card hover:border-brand/50 hover:bg-brand-subtle/50 cursor-pointer";
               let letterClass = "bg-muted text-muted-foreground";
               let textClass = "text-foreground";
 
               if (phase === "feedback" && selectedOption !== null) {
                 if (isCorrectOption) {
-                  optionClass = "border-emerald-400 bg-emerald-50";
-                  letterClass = "bg-emerald-500 text-white";
-                  textClass = "text-emerald-800";
+                  optionClass = "border-success bg-success-subtle";
+                  letterClass = "bg-success text-success-foreground";
+                  textClass = "text-success";
                 } else if (i === selectedOption && !isCorrectOption) {
-                  optionClass = "border-red-400 bg-red-50";
-                  letterClass = "bg-red-500 text-white";
-                  textClass = "text-red-800";
+                  optionClass = "border-destructive bg-destructive-subtle";
+                  letterClass = "bg-destructive text-destructive-foreground";
+                  textClass = "text-destructive-text";
                 } else {
                   optionClass = "border-border bg-card opacity-50 cursor-default";
                   letterClass = "bg-muted text-muted-foreground";
@@ -541,23 +578,23 @@ export default function QuizSession({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className={`flex flex-col gap-3 p-4 rounded-2xl ${isCorrect ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}
+                className={`flex flex-col gap-3 p-4 rounded-2xl ${isCorrect ? "bg-success-subtle border border-success-border" : "bg-destructive-subtle border border-destructive-border"}`}
               >
                 <div className="flex items-center gap-2">
                   {isCorrect ? (
-                    <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                    <CheckCircle2 size={18} className="text-success shrink-0" />
                   ) : (
-                    <XCircle size={18} className="text-red-500 shrink-0" />
+                    <XCircle size={18} className="text-destructive-text shrink-0" />
                   )}
-                  <p className={`font-medium text-sm ${isCorrect ? "text-emerald-700" : "text-red-700"}`}>
+                  <p className={`font-medium text-sm ${isCorrect ? "text-success" : "text-destructive-text"}`}>
                     {isCorrect ? "Correct!" : `Incorrect — the answer is "${currentQuestion.correct_answer}"`}
                   </p>
                   <button
                     onClick={() => setShowExplanation(v => !v)}
                     className={`ml-auto text-xs px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
                       isCorrect
-                        ? "border-emerald-300 text-emerald-700 hover:bg-emerald-100"
-                        : "border-red-300 text-red-700 hover:bg-red-100"
+                        ? "border-success-border text-success hover:bg-success-subtle-hover"
+                        : "border-destructive-border text-destructive-text hover:bg-destructive-subtle-hover"
                     }`}
                   >
                     {showExplanation ? "Hide" : "Explain"}
@@ -569,7 +606,7 @@ export default function QuizSession({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className={`text-sm ${isCorrect ? "text-emerald-700" : "text-red-700"}`}
+                      className={`text-sm ${isCorrect ? "text-success" : "text-destructive-text"}`}
                     >
                       {currentQuestion.explanation}
                     </motion.p>
@@ -615,7 +652,7 @@ export default function QuizSession({
             >
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors cursor-pointer"
               >
                 {currentIndex < totalQuestions - 1 ? (
                   <>Next question <ChevronRight size={16} /></>
@@ -641,7 +678,7 @@ export default function QuizSession({
             <AlertDialogCancel className="rounded-xl">Keep going</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmExit}
-              className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive-hover"
             >
               Exit quiz
             </AlertDialogAction>
@@ -695,9 +732,9 @@ function ResultsScreen({
       {duel && (
         <Link
           href={`/duels/${duel.duelId}`}
-          className="flex items-center gap-3 p-4 rounded-2xl border border-[#4f46e5]/30 bg-[#eef2ff] hover:bg-[#e0e7ff] transition-colors"
+          className="flex items-center gap-3 p-4 rounded-2xl border border-brand/30 bg-brand-subtle hover:bg-brand-subtle-hover transition-colors"
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4f46e5] text-white shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand text-white shrink-0">
             <Swords size={16} />
           </div>
           <div className="flex-1 min-w-0">
@@ -714,16 +751,17 @@ function ResultsScreen({
       {/* Hero result */}
       <div
         className="relative overflow-hidden flex flex-col items-center text-center gap-4 p-8 rounded-3xl border"
-        style={{ backgroundColor: grade.bg, borderColor: grade.color + "40" }}
+        style={chipStyle(grade.hue, { border: true })}
       >
-        {/* Decorative rings */}
+        {/* Decorative rings. chipStyle bound the hue to --categorical-color on
+            the parent, so these read it back rather than repeating the value. */}
         <div
           className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-10"
-          style={{ backgroundColor: grade.color }}
+          style={{ backgroundColor: "var(--categorical-color)" }}
         />
         <div
           className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-10"
-          style={{ backgroundColor: grade.color }}
+          style={{ backgroundColor: "var(--categorical-color)" }}
         />
 
         <motion.div
@@ -731,10 +769,12 @@ function ResultsScreen({
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
           className="relative flex items-center justify-center w-28 h-28 rounded-full border-4"
-          style={{ borderColor: grade.color, backgroundColor: "white" }}
+          // --card, not white: this medallion sits on the tinted hero, and a
+          // hardcoded white disc would stay white on a dark page.
+          style={{ borderColor: "var(--categorical-color)", backgroundColor: "var(--card)" }}
         >
           <div className="flex flex-col items-center">
-            <span className="text-3xl font-bold" style={{ color: grade.color }}>{grade.letter}</span>
+            <span className="text-3xl font-bold" style={{ color: "var(--categorical-color)" }}>{grade.letter}</span>
             <span className="text-lg font-semibold text-foreground">{scorePercent}%</span>
           </div>
         </motion.div>
@@ -767,26 +807,26 @@ function ResultsScreen({
           transition={{ delay: 0.35 }}
           className="flex gap-5 flex-wrap justify-center"
         >
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
-            <CheckCircle2 size={16} className="text-emerald-500" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/70 backdrop-blur">
+            <CheckCircle2 size={16} className="text-success" />
             <span className="text-sm font-medium">{displayCorrect} correct</span>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
-            <XCircle size={16} className="text-red-400" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/70 backdrop-blur">
+            <XCircle size={16} className="text-destructive-text" />
             <span className="text-sm font-medium">{displayWrong} incorrect</span>
           </div>
           {excludedCount > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/70 backdrop-blur">
               <Flag size={16} className="text-muted-foreground" />
               <span className="text-sm font-medium">{excludedCount} reported — not scored</span>
             </div>
           )}
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/70 backdrop-blur">
             <Clock size={16} className="text-muted-foreground" />
             <span className="text-sm font-medium">{timeFormatted}</span>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 backdrop-blur">
-            <Star size={16} className="text-amber-500" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/70 backdrop-blur">
+            <Star size={16} className="text-warning" />
             <span className="text-sm font-medium">{displayXP !== null ? `+${displayXP}` : "—"} XP</span>
           </div>
         </motion.div>
@@ -800,14 +840,16 @@ function ResultsScreen({
         className="grid grid-cols-3 gap-4"
       >
         {[
-          { label: "Accuracy", value: `${scorePercent}%`, icon: Target, color: "#4f46e5" },
-          { label: "XP Earned", value: displayXP !== null ? `+${displayXP}` : "—", icon: Zap, color: "#f59e0b" },
-          { label: "Time", value: timeFormatted, icon: Clock, color: "#10b981" },
+          // Three icons on a plain card, not a categorical ramp — each maps to
+          // a token the app already has, so they follow the theme.
+          { label: "Accuracy", value: `${scorePercent}%`, icon: Target, className: "text-brand-text" },
+          { label: "XP Earned", value: displayXP !== null ? `+${displayXP}` : "—", icon: Zap, className: "text-warning" },
+          { label: "Time", value: timeFormatted, icon: Clock, className: "text-success" },
         ].map(stat => {
           const Icon = stat.icon;
           return (
             <div key={stat.label} className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-card">
-              <Icon size={20} style={{ color: stat.color }} />
+              <Icon size={20} className={stat.className} />
               <p className="font-semibold text-foreground">{stat.value}</p>
               <p className="text-xs text-muted-foreground">{stat.label}</p>
             </div>
@@ -826,25 +868,38 @@ function ResultsScreen({
           <span>Score breakdown</span>
           <span>{displayCorrect}/{total} correct</span>
         </div>
-        <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+        {/* --destructive-text rather than --destructive for the wrong segments:
+            the deep fill is only 1.97:1 against the dark page and a 12px bar
+            made of it all but disappears, while this reads at 6.89:1 there and
+            is unchanged in light. See the a11y note below on hue. */}
+        <div className="flex h-3 rounded-full overflow-hidden gap-0.5" role="list">
           {questions.map((q, i) => {
             const ans = answers[i];
             const correct = ans !== null && q.options[ans] === q.correct_answer;
+            const state = correct ? "correct" : ans === null ? "not answered" : "incorrect";
             return (
               <motion.div
                 key={i}
+                role="listitem"
+                // This bar distinguishes its states by HUE ALONE — there is no
+                // room for an icon in 12px. The label is what carries the state
+                // for a screen reader or a red-green colour-blind reader, and
+                // the Question Review list below repeats the same information
+                // with icons. Do not drop it.
+                aria-label={`Question ${i + 1}: ${state}`}
+                title={`Q${i + 1}: ${state}`}
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.05 * i + 0.5 }}
                 style={{ transformOrigin: "left" }}
-                className={`flex-1 rounded-sm ${correct ? "bg-emerald-500" : ans === null ? "bg-muted" : "bg-red-400"}`}
+                className={`flex-1 rounded-sm ${correct ? "bg-success" : ans === null ? "bg-muted" : "bg-destructive-text"}`}
               />
             );
           })}
         </div>
         <div className="flex gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />Correct</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block" />Incorrect</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-success inline-block" />Correct</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive-text inline-block" />Incorrect</span>
         </div>
       </motion.div>
 
@@ -875,8 +930,8 @@ function ResultsScreen({
                   excluded
                     ? "border-border bg-muted/40"
                     : correct
-                    ? "border-emerald-200 bg-emerald-50/50"
-                    : "border-red-200 bg-red-50/50"
+                    ? "border-success-border bg-success-subtle/50"
+                    : "border-destructive-border bg-destructive-subtle/50"
                 }`}
               >
                 <button
@@ -887,8 +942,8 @@ function ResultsScreen({
                     {excluded
                       ? <Flag size={16} className="text-muted-foreground" />
                       : correct
-                      ? <CheckCircle2 size={16} className="text-emerald-500" />
-                      : <XCircle size={16} className="text-red-400" />
+                      ? <CheckCircle2 size={16} className="text-success" />
+                      : <XCircle size={16} className="text-destructive-text" />
                     }
                   </span>
                   <div className="flex-1 min-w-0">
@@ -921,21 +976,26 @@ function ResultsScreen({
                                 key={oi}
                                 className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${
                                   isCorrectOpt
-                                    ? "bg-emerald-100 text-emerald-800"
+                                    ? "bg-success-subtle-hover text-success"
                                     : isWrongSelected
-                                    ? "bg-red-100 text-red-700 line-through opacity-70"
+                                    // opacity-70 removed: it dragged this row —
+                                    // the user's OWN wrong answer, which they
+                                    // need to read — below AA, and the
+                                    // line-through already says "rejected"
+                                    // without relying on colour or dimming.
+                                    ? "bg-destructive-subtle-hover text-destructive-text line-through"
                                     : "text-muted-foreground"
                                 }`}
                               >
                                 <span className="font-medium shrink-0">{String.fromCharCode(65 + oi)}.</span>
                                 {opt}
-                                {isCorrectOpt && <CheckCircle2 size={13} className="ml-auto shrink-0 text-emerald-600" />}
+                                {isCorrectOpt && <CheckCircle2 size={13} className="ml-auto shrink-0 text-success" />}
                               </div>
                             );
                           })}
                         </div>
                         {q.explanation && (
-                          <div className="flex gap-2 mt-1 p-3 rounded-xl bg-white/70">
+                          <div className="flex gap-2 mt-1 p-3 rounded-xl bg-card/70">
                             <AlertCircle size={14} className="text-muted-foreground shrink-0 mt-0.5" />
                             <p className="text-xs text-muted-foreground">{q.explanation}</p>
                           </div>
@@ -985,7 +1045,7 @@ function ResultsScreen({
         </button>
         <button
           onClick={onRetry}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors cursor-pointer flex-1 sm:flex-none"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors cursor-pointer flex-1 sm:flex-none"
         >
           <RotateCcw size={16} />
           Try Again

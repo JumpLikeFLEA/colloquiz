@@ -35,6 +35,7 @@ import {
 } from "@/lib/difficultyFilter";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import { pluralize } from "@/lib/format";
+import { chipStyle } from "@/lib/categoricalColor";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator,
@@ -62,7 +63,6 @@ export type SubjectCardData = {
   name: string;
   icon: string;
   color: string;
-  bg: string;
   questionCount: number;
   difficulties: Difficulty[];
 };
@@ -145,7 +145,7 @@ function SubjectCard({
     >
       <span
         className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
-        style={{ backgroundColor: subject.bg, color: subject.color }}
+        style={chipStyle(subject.color)}
       >
         <Icon size={20} />
       </span>
@@ -161,7 +161,7 @@ function SubjectCard({
       {!unavailable && (
         <span
           aria-hidden="true"
-          className="flex items-center gap-1 shrink-0 text-xs font-medium text-brand opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 group-disabled:opacity-100 group-disabled:translate-x-0 motion-reduce:transition-none motion-reduce:translate-x-0"
+          className="flex items-center gap-1 shrink-0 text-xs font-medium text-brand-text opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 group-disabled:opacity-100 group-disabled:translate-x-0 motion-reduce:transition-none motion-reduce:translate-x-0"
         >
           {loading ? "Starting…" : "Start"}
           {!loading && <ArrowRight size={14} />}
@@ -272,7 +272,7 @@ export function SubjectGrid({
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-sm transition-colors",
                     active
-                      ? "bg-brand-subtle text-brand font-medium"
+                      ? "bg-brand-subtle text-brand-text font-medium"
                       : "text-muted-foreground hover:bg-accent",
                   )}
                 >
@@ -321,7 +321,7 @@ export function SubjectGrid({
                     <Link
                       href="/"
                       scroll={false}
-                      className="inline-flex items-center rounded-xl bg-brand-subtle px-4 py-2 text-sm font-medium text-brand transition-colors hover:bg-accent"
+                      className="inline-flex items-center rounded-xl bg-brand-subtle px-4 py-2 text-sm font-medium text-brand-text transition-colors hover:bg-accent"
                     >
                       Try any difficulty
                     </Link>
@@ -360,7 +360,7 @@ export function SubjectGrid({
           subject cards. */}
       <p className="text-center text-sm text-muted-foreground">
         Need more control? Mix subjects, pick subtopics, and set quiz length in{" "}
-        <Link href="/advanced" className="text-brand font-medium hover:underline">
+        <Link href="/advanced" className="text-brand-text font-medium hover:underline">
           Deep Dive →
         </Link>
       </p>

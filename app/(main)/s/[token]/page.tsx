@@ -45,8 +45,8 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
         <div className={card}>
-          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-100">
-            <AlertCircle className="size-7 text-red-500" />
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-destructive-subtle">
+            <AlertCircle className="size-7 text-destructive-text" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">Quiz unavailable</h1>

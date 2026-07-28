@@ -112,7 +112,7 @@ export function ProvidersSection({
                 <p className="text-sm font-medium text-foreground">{provider.label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5 truncate">
                   {connected ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-600">
+                    <span className="inline-flex items-center gap-1 text-success">
                       <Check size={12} />
                       Connected{identity.identity_data?.email ? ` · ${String(identity.identity_data.email)}` : ""}
                     </span>
@@ -149,7 +149,7 @@ export function ProvidersSection({
                   type="button"
                   onClick={() => handleConnect(provider.id)}
                   disabled={working}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-brand-subtle-hover transition-colors text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
                 >
                   {working ? <Loader2 size={15} className="animate-spin" /> : <Link2 size={15} />}
                   Connect

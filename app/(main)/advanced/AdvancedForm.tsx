@@ -14,6 +14,7 @@ import type { SubjectCardData } from "@/app/components/SubjectGrid";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import { slugifyForTag } from "@/lib/utils";
 import { pluralize } from "@/lib/format";
+import { chipStyle } from "@/lib/categoricalColor";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, Landmark, Globe,
@@ -81,12 +82,18 @@ export default function AdvancedForm({
     return "Expert";
   };
 
+  // A solid pill carrying a white label, so every step has to clear AA against
+  // white — the -500/-600 ramp this replaces did not at any step (2.54:1 down to
+  // 1.98:1 for the lime). These are the -700 shades of the same five hues: the
+  // green-to-red progression is unchanged, each step is simply deep enough to
+  // hold white (4.99:1 at the weakest). Fixed hues, so no theme variant is
+  // needed — the pill is its own surface in both themes.
   const difficultyColor = (d: number) => {
-    if (d <= 2) return "#10b981";
-    if (d <= 4) return "#84cc16";
-    if (d <= 6) return "#f59e0b";
-    if (d <= 8) return "#f97316";
-    return "#ef4444";
+    if (d <= 2) return "#047857";
+    if (d <= 4) return "#4d7c0f";
+    if (d <= 6) return "#b45309";
+    if (d <= 8) return "#c2410c";
+    return "#b91c1c";
   };
 
   return (
@@ -160,7 +167,7 @@ export default function AdvancedForm({
                       >
                         <div
                           className="flex items-center justify-center w-10 h-10 rounded-xl"
-                          style={{ backgroundColor: s.bg, color: s.color }}
+                          style={chipStyle(s.color)}
                         >
                           <Icon size={20} />
                         </div>
@@ -207,7 +214,7 @@ export default function AdvancedForm({
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-accent">
                     <div
                       className="flex items-center justify-center w-7 h-7 rounded-lg"
-                      style={{ backgroundColor: subject.bg, color: subject.color }}
+                      style={chipStyle(subject.color)}
                     >
                       <Icon size={14} />
                     </div>
@@ -285,7 +292,7 @@ export default function AdvancedForm({
                       <div
                         key={i}
                         className="flex-1 rounded-full transition-all"
-                        style={{ backgroundColor: i < difficulty ? difficultyColor(difficulty) : "#e5e7eb" }}
+                        style={{ backgroundColor: i < difficulty ? difficultyColor(difficulty) : "var(--muted)" }}
                       />
                     ))}
                   </div>

@@ -50,7 +50,6 @@ export default async function Home({ searchParams }: Props) {
         name: subject.name,
         icon: subject.icon,
         color: subject.color,
-        bg: subject.bg,
         // The count has to be what a quiz at this difficulty would draw from,
         // otherwise "27 questions" under a Hard filter is simply wrong. Matches
         // sampleQuestions' filter (approved + shared, subject, difficulty).
@@ -84,14 +83,14 @@ export default async function Home({ searchParams }: Props) {
       quizId: a.quizId,
       title: a.quizTitle,
       subtitle: `from ${a.tutorName}`,
-      badge: { label: "Assigned", className: "bg-amber-50 text-amber-600 border-amber-200" },
+      badge: { label: "Assigned", className: "bg-warning-subtle text-warning border-warning-border" },
     }));
 
   const mine: MyQuizItem[] = created.map((q) => ({
     quizId: q.id,
     title: q.title,
     subtitle: `${q.questionCount} question${q.questionCount !== 1 ? "s" : ""}`,
-    badge: { label: "Yours", className: "bg-indigo-50 text-indigo-500 border-indigo-200" },
+    badge: { label: "Yours", className: "bg-brand-subtle text-brand-text border-brand-border" },
   }));
 
   const myItems: MyQuizItem[] = [...pending, ...mine].slice(0, 4);

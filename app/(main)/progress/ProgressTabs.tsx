@@ -40,7 +40,7 @@ export function ProgressTabs({ tab }: { tab: ProgressTab }) {
           className={cn(
             "inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium transition-colors",
             t.tab === shown
-              ? "bg-brand-subtle text-brand"
+              ? "bg-brand-subtle text-brand-text"
               : "text-muted-foreground hover:bg-accent",
           )}
         >

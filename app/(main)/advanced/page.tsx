@@ -14,7 +14,6 @@ export default async function AdvancedPage() {
         name: subject.name,
         icon: subject.icon,
         color: subject.color,
-        bg: subject.bg,
         questionCount: count,
         difficulties,
       };

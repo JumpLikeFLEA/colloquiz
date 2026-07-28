@@ -187,7 +187,7 @@ export default function CustomPage() {
                 {isPublic ? "Public — anyone can find it" : "Private — only you"}
               </button>
               {saveError && (
-                <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <p className="text-xs text-destructive-text bg-destructive-subtle border border-destructive-border rounded-lg px-3 py-2">
                   {saveError}
                 </p>
               )}
@@ -223,7 +223,7 @@ export default function CustomPage() {
                     </span>
                     <button
                       onClick={e => { e.stopPropagation(); removeQuestion(i); }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-500 transition-all cursor-pointer"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive-text transition-all cursor-pointer"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -334,8 +334,8 @@ export default function CustomPage() {
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all cursor-pointer ${
                         q.correctAnswer === i
                           ? i === 0
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                            : "border-red-400 bg-red-50 text-red-600"
+                            ? "border-success bg-success-subtle text-success"
+                            : "border-destructive bg-destructive-subtle text-destructive-text"
                           : "border-border hover:border-muted-foreground/40 text-foreground"
                       }`}
                     >

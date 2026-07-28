@@ -5,6 +5,7 @@ import { StartQuizProvider } from "@/app/components/StartQuizProvider";
 import { ActiveQuizBanner } from "@/app/components/ActiveQuizBanner";
 import { Toaster } from "@/app/components/ui/sonner";
 import { DuelRealtime } from "@/app/components/DuelRealtime";
+import { ThemeSync } from "@/app/components/ThemeSync";
 import { getProfile } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
 import { getLevelProgress } from "@/lib/levels";
@@ -64,6 +65,10 @@ export default async function MainLayout({
         </div>
         <Toaster />
         {data?.id && <DuelRealtime userId={data.id} />}
+        {/* Renders nothing. Adopts a theme chosen on another device, once per
+            load — the local copy still wins first paint, which is what keeps the
+            page from flashing. */}
+        <ThemeSync preference={data?.theme_preference ?? null} />
       </StartQuizProvider>
     </SidebarProvider>
   );

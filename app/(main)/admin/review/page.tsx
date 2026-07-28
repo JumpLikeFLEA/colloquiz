@@ -62,7 +62,7 @@ export default async function AdminReviewPage({ searchParams }: Props) {
         <TabLink href="/admin/review?tab=reported" active={tab === "reported"}>
           Reported
           {reportedGroups.length > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-100 text-red-700 text-xs font-medium px-1.5 min-w-5 h-5">
+            <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-destructive-subtle text-destructive-text text-xs font-medium px-1.5 min-w-5 h-5">
               {reportedGroups.length}
             </span>
           )}

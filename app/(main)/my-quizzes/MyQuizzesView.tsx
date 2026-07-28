@@ -94,7 +94,7 @@ export function MyQuizzesView({
       </div>
 
       {error && (
-        <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+        <div className="px-4 py-3 rounded-xl bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
           {error}
         </div>
       )}
@@ -123,7 +123,7 @@ export function MyQuizzesView({
             <button
               onClick={() => exitActive(active.quizId)}
               title="Exit quiz"
-              className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+              className="p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors"
             >
               <X className="size-4" />
             </button>
@@ -152,7 +152,7 @@ export function MyQuizzesView({
                 </div>
                 {a.status === "completed" ? (
                   <>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-success-subtle text-success border border-success-border">
                       Completed
                     </span>
                     {a.resultId ? (
@@ -166,7 +166,7 @@ export function MyQuizzesView({
                   </>
                 ) : (
                   <>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-warning-subtle text-warning border border-warning-border">
                       Assigned
                     </span>
                     <button
@@ -203,14 +203,14 @@ export function MyQuizzesView({
                   onClick={() => copyShareLink(s.token)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors cursor-pointer"
                 >
-                  {copiedToken === s.token ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+                  {copiedToken === s.token ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
                   {copiedToken === s.token ? "Copied" : "Copy link"}
                 </button>
                 {revokeToken === s.token ? (
                   <button
                     onClick={() => revokeShare(s.token)}
                     title="Revokes the link — the quiz stays, but the link stops working"
-                    className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-lg bg-destructive text-white text-xs font-medium hover:bg-destructive-hover transition-colors cursor-pointer"
                   >
                     Confirm
                   </button>
@@ -218,7 +218,7 @@ export function MyQuizzesView({
                   <button
                     onClick={() => setRevokeToken(s.token)}
                     title="Stop sharing"
-                    className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors cursor-pointer"
                   >
                     <X className="size-4" />
                   </button>
@@ -283,7 +283,7 @@ export function MyQuizzesView({
                     <button
                       onClick={() => deleteQuiz(q.id)}
                       title="Deletes the quiz and every recorded attempt of it"
-                      className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-destructive text-white text-xs font-medium hover:bg-destructive-hover transition-colors"
                     >
                       Confirm
                     </button>
@@ -291,7 +291,7 @@ export function MyQuizzesView({
                     <button
                       onClick={() => setConfirmDelete(q.id)}
                       title="Delete"
-                      className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors"
                     >
                       <Trash2 className="size-4" />
                     </button>
@@ -397,7 +397,7 @@ function AssignDialog({
           </div>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive-text">{error}</p>}
 
         <DialogFooter>
           <button

@@ -38,7 +38,7 @@ function ScoreSide({
   return (
     <div
       className={`flex-1 min-w-0 p-4 rounded-2xl border text-center ${
-        won ? "border-emerald-200 bg-emerald-50" : "border-border bg-card"
+        won ? "border-success-border bg-success-subtle" : "border-border bg-card"
       }`}
     >
       <p className={`text-sm font-medium truncate ${me ? "text-brand-text" : "text-foreground"}`}>
@@ -86,9 +86,9 @@ export function DuelDetail({ duel }: { duel: Duel }) {
   const outcomeBanner =
     duel.status === "resolved"
       ? duel.outcome === "win"
-        ? { text: "You won", cls: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+        ? { text: "You won", cls: "border-success-border bg-success-subtle text-success" }
         : duel.outcome === "loss"
-          ? { text: "You lost", cls: "border-red-200 bg-red-50 text-red-600" }
+          ? { text: "You lost", cls: "border-destructive-border bg-destructive-subtle text-destructive-text" }
           : { text: "Draw", cls: "border-border bg-muted text-muted-foreground" }
       : null;
 
@@ -115,8 +115,8 @@ export function DuelDetail({ duel }: { duel: Duel }) {
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl border border-red-200 bg-red-50">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="p-4 rounded-2xl border border-destructive-border bg-destructive-subtle">
+          <p className="text-sm text-destructive-text">{error}</p>
         </div>
       )}
 

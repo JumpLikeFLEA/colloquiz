@@ -15,6 +15,7 @@ import type { EnrichedResult } from "@/lib/questions";
 import { formatDuration, pluralize } from "@/lib/format";
 import { getLevelProgress } from "@/lib/levels";
 import { RADAR_MIN_SUBJECTS, type RadarPoint, type SubjectStat } from "@/lib/subjectStats";
+import { chipStyle } from "@/lib/categoricalColor";
 import { SubjectScoreBars } from "./SubjectScoreBars";
 import { QuizResultsTable } from "./QuizResultsTable";
 
@@ -27,6 +28,32 @@ const RECENT_QUIZ_ROWS = 10;
 const TICK_LINE_HEIGHT = 12;
 
 /**
+ * Recharts is passed colour as JS props, so it never sees a stylesheet and none
+ * of this can be a Tailwind class. SVG `fill`/`stroke` and `<stop stopColor>`
+ * do resolve `var()`, so the tokens go in as literal var() strings and the
+ * chart follows the theme like everything else.
+ *
+ * Axis ticks default to Recharts' own #666, which is a light-mode value; naming
+ * the token here overrides it in both themes (identical in light — --chart-tick
+ * IS #666666 — and legible at 5.54:1 on --card in dark).
+ */
+const AXIS_TICK = { fontSize: 12, fill: "var(--chart-tick)" } as const;
+
+/**
+ * The tooltip is the one part of a Recharts chart rendered as HTML, not SVG,
+ * and Recharts' default content style hardcodes a white background. Left alone
+ * it stays white on a dark page, so the surface is named explicitly rather than
+ * only the border that used to be set here.
+ */
+const TOOLTIP_CONTENT_STYLE = {
+  borderRadius: "12px",
+  border: "1px solid var(--border)",
+  backgroundColor: "var(--popover)",
+  color: "var(--popover-foreground)",
+  fontSize: "13px",
+} as const;
+
+/**
  * Multi-line polar axis label. Recharts' own tick is a single `<text>` run, which
  * the SVG viewport then clips — that is where "Motion Desi…" and the two
  * indistinguishable "History" axes came from. This renders each pre-wrapped line
@@ -35,7 +62,7 @@ const TICK_LINE_HEIGHT = 12;
 function renderSubjectTick(points: RadarPoint[]) {
   const linesBySubject = new Map(points.map(p => [p.subject, p.lines]));
 
-  return function SubjectTick({ x, y, textAnchor, payload, fill }: BaseTickContentProps) {
+  return function SubjectTick({ x, y, textAnchor, payload }: BaseTickContentProps) {
     const subject = String(payload?.value ?? "");
     const lines = linesBySubject.get(subject) ?? [subject];
     const cx = Number(x);
@@ -45,7 +72,10 @@ function renderSubjectTick(points: RadarPoint[]) {
     const firstLineOffset = -((lines.length - 1) * TICK_LINE_HEIGHT) / 2;
 
     return (
-      <text x={cx} y={cy} textAnchor={textAnchor} dominantBaseline="central" fontSize={11} fill={fill ?? "#666"}>
+      // Recharts passes its own `fill` (#666) into a custom tick, so the
+      // incoming prop is deliberately ignored rather than used as a fallback —
+      // taking it would let the library's light-mode default win in dark.
+      <text x={cx} y={cy} textAnchor={textAnchor} dominantBaseline="central" fontSize={11} fill="var(--chart-tick)">
         {lines.map((line, i) => (
           <tspan key={line} x={cx} dy={i === 0 ? firstLineOffset : TICK_LINE_HEIGHT}>
             {line}
@@ -83,7 +113,7 @@ function SubjectMasteryEmpty({ played }: { played: number }) {
       </div>
       <Link
         href="/"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-brand-subtle-hover transition-colors text-sm"
       >
         Browse subjects
         <ChevronRight size={14} />
@@ -123,15 +153,16 @@ export function DashboardView({
     // the XP that earned it sits in the card's footnote slot, so progression
     // reads as a stat here rather than as a second identity block.
     const { level } = getLevelProgress(profile.total_xp);
-    // Five-hue categorical ramp, left as literals by the brand sweep on purpose:
-    // tokenising only the indigo would leave one card flipping in dark mode and
-    // four not. See the note on CATEGORY_STYLE in AchievementsView.
+    // Five-hue categorical ramp: identity, not status, so the hues stay literal
+    // and are the same in both themes. Only the paired near-white tint is gone —
+    // chipStyle() derives each chip from its hue and the live --card. See the
+    // note on CATEGORY_STYLE in AchievementsView.
     return [
-      { label: "Total Quizzes", value: String(results.length), change: "", icon: BarChart2, color: "#4f46e5", bg: "#eef2ff" },
-      { label: "Avg. Score", value: `${avgScore}%`, change: "", icon: TrendingUp, color: "#10b981", bg: "#ecfdf5" },
-      { label: "Current Streak", value: pluralize(profile.current_streak, "day"), change: "", icon: Flame, color: "#f97316", bg: "#fff7ed" },
-      { label: "Time Spent", value: formatDuration(totalTimeSec, "compact"), change: "", icon: Clock, color: "#8b5cf6", bg: "#f5f3ff" },
-      { label: "Current Level", value: `Level ${level}`, change: `${profile.total_xp.toLocaleString()} XP total earned`, icon: Star, color: "#f59e0b", bg: "#fffbeb" },
+      { label: "Total Quizzes", value: String(results.length), change: "", icon: BarChart2, color: "#4f46e5" },
+      { label: "Avg. Score", value: `${avgScore}%`, change: "", icon: TrendingUp, color: "#10b981" },
+      { label: "Current Streak", value: pluralize(profile.current_streak, "day"), change: "", icon: Flame, color: "#f97316" },
+      { label: "Time Spent", value: formatDuration(totalTimeSec, "compact"), change: "", icon: Clock, color: "#8b5cf6" },
+      { label: "Current Level", value: `Level ${level}`, change: `${profile.total_xp.toLocaleString()} XP total earned`, icon: Star, color: "#f59e0b" },
     ];
   }, [results, profile.current_streak, profile.total_xp]);
 
@@ -192,7 +223,7 @@ export function DashboardView({
               <div className="flex items-center justify-between">
                 <div
                   className="flex items-center justify-center w-10 h-10 rounded-xl"
-                  style={{ backgroundColor: card.bg, color: card.color }}
+                  style={chipStyle(card.color)}
                 >
                   <Icon size={20} />
                 </div>
@@ -216,7 +247,7 @@ export function DashboardView({
         >
           <div
             className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
-            style={{ backgroundColor: "#fffbeb", color: "#f59e0b" }}
+            style={chipStyle("#f59e0b")}
           >
             <Medal size={20} />
           </div>
@@ -254,11 +285,11 @@ export function DashboardView({
                     <stop offset="95%" stopColor="var(--chart-series-1)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis dataKey="day" tick={AXIS_TICK} tickLine={false} axisLine={false} />
+                <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} domain={[0, 100]} />
                 <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "13px" }}
+                  contentStyle={TOOLTIP_CONTENT_STYLE}
                   formatter={(v) => [`${v}%`, "Score"]}
                 />
                 <Area type="monotone" dataKey="score" stroke="var(--chart-series-1)" strokeWidth={2} fill="url(#scoreGrad)" dot={{ fill: "var(--chart-series-1)", r: 4 }} />
@@ -288,13 +319,13 @@ export function DashboardView({
                   outerRadius="72%"
                   margin={{ top: 16, right: 32, bottom: 16, left: 32 }}
                 >
-                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarGrid stroke="var(--chart-grid)" />
                   <PolarAngleAxis dataKey="subject" tick={subjectTick} />
                   {/* Fixed 0–100. Auto-scaling made a flat 45% profile fill the whole
                       polygon, which reads as mastery the user has not earned. */}
                   <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                   <Tooltip
-                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "13px" }}
+                    contentStyle={TOOLTIP_CONTENT_STYLE}
                     formatter={(v, _n, item) => [
                       `${v}% · ${pluralize((item?.payload as RadarPoint | undefined)?.quizzes ?? 0, "quiz", "quizzes")}`,
                       "Average",

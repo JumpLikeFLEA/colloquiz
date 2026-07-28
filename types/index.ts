@@ -212,8 +212,9 @@ export interface Subject {
   id: string;
   name: string;
   icon: string; // lucide-react icon name
+  // Identity hue. The chip surface is DERIVED from it at render (see
+  // lib/categoricalColor.ts) — there is deliberately no stored background.
   color: string;
-  bg: string;
   tags: string[]; // which tags in questions.json belong to this subject
   subtopics?: string[]; // display labels for the advanced quiz wizard
 }

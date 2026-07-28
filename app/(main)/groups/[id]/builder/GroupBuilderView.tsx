@@ -280,7 +280,7 @@ export function GroupBuilderView({
       </div>
 
       {error && (
-        <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
+        <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
           {error}
         </div>
       )}
@@ -365,9 +365,9 @@ export function GroupBuilderView({
 // ── One saved question ──────────────────────────────────────
 
 const STATUS_STYLE: Record<Question["status"], string> = {
-  pending: "bg-amber-50 text-amber-600 border-amber-200",
-  approved: "bg-emerald-50 text-emerald-600 border-emerald-200",
-  rejected: "bg-red-50 text-red-600 border-red-200",
+  pending: "bg-warning-subtle text-warning border-warning-border",
+  approved: "bg-success-subtle text-success border-success-border",
+  rejected: "bg-destructive-subtle text-destructive-text border-destructive-border",
 };
 
 function QuestionCard({
@@ -449,7 +449,7 @@ function QuestionCard({
           onClick={onRemove}
           disabled={busy}
           aria-label="Remove question"
-          className="cursor-pointer p-1 rounded text-muted-foreground hover:text-red-500 transition-colors"
+          className="cursor-pointer p-1 rounded text-muted-foreground hover:text-destructive-text transition-colors"
         >
           <Trash2 className="size-4" />
         </button>
@@ -776,7 +776,7 @@ function ImportButton({
           </div>
 
           {error && (
-            <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
+            <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
               {error}
             </div>
           )}
@@ -797,7 +797,7 @@ function ImportButton({
                     }
                     className={`cursor-pointer flex items-start gap-2 px-3 py-2 rounded-lg border text-left transition-colors ${
                       on
-                        ? "bg-brand-subtle border-[#c7d2fe]"
+                        ? "bg-brand-subtle border-brand-border"
                         : "bg-background border-border hover:bg-accent"
                     }`}
                   >

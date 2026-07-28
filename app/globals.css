@@ -18,26 +18,76 @@
      both a fill that white sits on and a label legible against a dark surface. */
   --brand-text: #4f46e5;
   --brand-subtle: #eef2ff;
+  /* Hover state of a --brand-subtle SURFACE — the --brand-subtle counterpart to
+     the --brand / --brand-hover pair. Equal to --brand-border here, which is a
+     coincidence of light mode (a wash one step down and an outline one step up
+     happen to meet); the two carry different jobs and diverge in .dark. */
+  --brand-subtle-hover: #e0e7ff;
   /* Hover/active state of a brand fill. */
   --brand-hover: #4338ca;
   /* The second stop of the brand gradient (logo chips, the auth panel). */
   --brand-accent: #7c3aed;
+  /* The FIRST stop of the auth panel's three-stop gradient, deeper than --brand
+     so the panel reads as a surface rather than a flat brand fill. Only that one
+     gradient uses it. */
+  --brand-deep: #3730a3;
   /* Border of a brand-tinted block — the outline that pairs with --brand-subtle. */
   --brand-border: #e0e7ff;
   --secondary: oklch(0.95 0.0058 264.53);
   --secondary-foreground: #030213;
   --muted: #ececf0;
-  --muted-foreground: #717182;
+  /* Darkened from #717182 (L 0.555 -> 0.525). Secondary text is not only ever
+     set on white: it also sits on --muted and --accent chips, where the old
+     value read 4.06:1 and 4.01:1 — both under AA. This clears 4.5 on every
+     surface it is used on (5.42 on --card, 4.60 on --muted, 4.54 on --accent)
+     and is imperceptibly darker against white. */
+  --muted-foreground: #696879;
   --accent: #e9ebef;
   --accent-foreground: #030213;
+  /* ── Status families ──────────────────────────────────────────────────────
+     Each is a fill, the text that sits ON that fill, a wash, and the outline
+     that pairs with the wash — the same four jobs --brand already has. They are
+     STATUS, unlike the subject/tier/rarity hues in lib/categoricalColor.ts:
+     status answers "did this go well", identity answers "which one is this".
+     The amber, orange and violet in the categorical ramps (streak, gold,
+     bronze, legendary) stay literal hues there and are NOT these tokens, even
+     where the hue coincides.
+
+     Every text value below clears AA on BOTH --card and its own -subtle wash;
+     the shades they replaced mostly did not (red-500 3.76:1, emerald-600
+     3.77:1, amber-600 3.19:1 on white). */
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  /* Status pair — a completed/passing outcome. The counterpart to --destructive,
-     which is why it is here and not in the categorical ramp: the amber and orange
-     hues nearby (streak, gold, bronze, legendary) are IDENTITY, not status, and
-     belong with the subject and tier colours instead. */
-  --success: #10b981;
+  /* Identical to --destructive in light, as --brand-text is to --brand, and for
+     the same reason: in dark, --destructive is a deep red a white label sits on
+     (9.63:1) and would be 1.9:1 as text on --card. Two jobs, one colour only in
+     light. */
+  --destructive-text: #d4183d;
+  --destructive-hover: #b0142f;
+  --destructive-subtle: #fef2f2;
+  /* Deliberately NOT red-100 (#fee2e2), the shade it replaces: --destructive-text
+     reads only 4.30:1 on that, under AA, and this wash carries the user's own
+     wrong answer in the results review — text that must stay readable. #fdeaea
+     is the lightest step that clears 4.5 (4.54:1) while still separating from
+     --destructive-subtle (1.06:1). */
+  --destructive-subtle-hover: #fdeaea;
+  --destructive-border: #fecaca;
+  /* Was #10b981 (emerald-500), which nothing consumed — and could not: it is
+     2.54:1 on white, failing as text AND as a fill under a white label. This is
+     emerald-700, which does both (5.48:1 white, 5.21:1 on --success-subtle). */
+  --success: #047857;
+  --success-foreground: #ffffff;
+  --success-hover: #065f46;
   --success-subtle: #ecfdf5;
+  --success-subtle-hover: #d1fae5;
+  --success-border: #a7f3d0;
+  /* Notice/pending, not a categorical amber: the leaderboard privacy notice,
+     "Assigned" badges, awaiting-review banners. No solid fill — nothing in the
+     app is a warning-coloured button — so there is deliberately no
+     --warning-foreground until one exists. */
+  --warning: #b45309;
+  --warning-subtle: #fffbeb;
+  --warning-border: #fde68a;
   --border: rgba(0, 0, 0, 0.1);
   --input: transparent;
   --input-background: #f3f3f5;
@@ -94,12 +144,20 @@
   --brand: oklch(0.545 0.22 277);
   /* Lightened much further (L 0.72) for use as TEXT: 7.05:1 on --card, 7.79:1
      on --background, and 5.79:1 on --brand-subtle — the bg-brand-subtle /
-     text-brand pairing the app already uses. All AA, the first two AAA. */
+     text-brand-text pairing the app already uses (active Progress tab, the
+     difficulty segmented control). All AA, the first two AAA. */
   --brand-text: oklch(0.72 0.13 277);
   /* Was a near-white indigo (#eef2ff), which in dark mode painted a glaring
      white block wherever a subtle brand wash was intended. Now a low-lightness
      wash that sits just above --card. */
   --brand-subtle: oklch(0.28 0.05 277);
+  /* Lightens where the light value darkens, by the same step: light travels
+     L 0.962 -> 0.930, so this travels 0.28 -> 0.32. Reads 1.15:1 against
+     --brand-subtle (light pair 1.10:1) and holds --brand-text at 5.03:1
+     (light 5.10:1). Deliberately kept BELOW --brand-border's L 0.38 — the two
+     are equal in light mode, but here the border still has to separate from a
+     hovered chip. As a literal #e0e7ff this washed a hovered dark chip white. */
+  --brand-subtle-hover: oklch(0.32 0.05 277);
   /* Hover moves in OPPOSITE directions by theme, both meaning "more emphatic":
      on white the brand darkens (0.511 -> 0.457), on black it lightens. The step
      is capped at +0.02 because --brand is already near the ceiling where a white
@@ -108,6 +166,10 @@
   /* Same +0.024 lightening as --brand, at the source violet's own hue (293) so
      the gradient keeps its indigo -> violet travel rather than flattening. */
   --brand-accent: oklch(0.565 0.22 293);
+  /* Holds the same distance below --brand as it does in light (ΔL 0.111), so
+     the auth panel keeps its depth rather than flattening. White text sits on
+     this end of the gradient at 8.05:1. */
+  --brand-deep: oklch(0.434 0.19 277);
   /* Sits between --brand-subtle and the text on it; 1.76:1 against --card, a
      little stronger than the light pair's 1.24:1 because a low-contrast border
      disappears far faster on a dark surface than on a white one. */
@@ -141,6 +203,31 @@
      2.63:1 and effectively unreadable. Near-white matches the light-mode pairing
      (#ffffff on #d4183d) and lands at 9.63:1. */
   --destructive-foreground: oklch(0.985 0 0);
+  /* Where --destructive and --destructive-text part company. The fill above is
+     a deep red so a white label clears AA on it; as TEXT on --card that same
+     red is 1.9:1. This is the lightened counterpart — 6.24:1 on --card, 5.22:1
+     on --destructive-subtle. */
+  --destructive-text: oklch(0.70 0.16 22);
+  --destructive-hover: oklch(0.44 0.15 22);
+  /* Wash and outline for an error block, built like the --brand-subtle and
+     --brand-border pair — the wash sits just above --card (1.19:1) and the
+     outline one step above the wash (1.43:1). */
+  --destructive-subtle: oklch(0.28 0.07 22);
+  /* One step up, exactly as --brand-subtle-hover is to --brand-subtle. */
+  --destructive-subtle-hover: oklch(0.32 0.07 22);
+  --destructive-border: oklch(0.38 0.10 22);
+  /* --success is already light enough here to be read as text (8.90:1 on
+     --card), so unlike destructive it needs no separate text value — what it
+     needs is a DARK foreground, because a white label on it is 1.8:1. */
+  --success-foreground: oklch(0.205 0 0);
+  --success-subtle-hover: oklch(0.32 0.05 165);
+  --success-hover: oklch(0.80 0.15 165);
+  --success-border: oklch(0.38 0.08 165);
+  /* 9.37:1 on --card, 7.69:1 on its own wash. Amber survives dark mode far
+     better than red does — no separate fill/text split is needed. */
+  --warning: oklch(0.80 0.14 70);
+  --warning-subtle: oklch(0.28 0.05 70);
+  --warning-border: oklch(0.38 0.07 70);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -173,8 +260,10 @@
   --color-brand: var(--brand);
   --color-brand-text: var(--brand-text);
   --color-brand-subtle: var(--brand-subtle);
+  --color-brand-subtle-hover: var(--brand-subtle-hover);
   --color-brand-hover: var(--brand-hover);
   --color-brand-accent: var(--brand-accent);
+  --color-brand-deep: var(--brand-deep);
   --color-brand-border: var(--brand-border);
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
@@ -186,6 +275,18 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-text: var(--destructive-text);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-subtle-hover: var(--destructive-subtle-hover);
+  --color-destructive-border: var(--destructive-border);
+  --color-success-subtle-hover: var(--success-subtle-hover);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-hover: var(--success-hover);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-border: var(--warning-border);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);

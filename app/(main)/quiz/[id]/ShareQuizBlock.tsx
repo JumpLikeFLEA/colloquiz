@@ -114,7 +114,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
       </p>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 rounded-xl border border-red-200 bg-red-50/60 text-sm text-red-700">
+        <div className="flex items-start gap-2 p-3 rounded-xl border border-destructive-border bg-destructive-subtle/60 text-sm text-destructive-text">
           <AlertCircle size={15} className="shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -193,7 +193,7 @@ export function ShareQuizBlock({ quizId }: { quizId: string }) {
                       >
                         {sent ? (
                           <>
-                            <Check size={14} className="text-emerald-500" /> Sent
+                            <Check size={14} className="text-success" /> Sent
                           </>
                         ) : sendingId === t.id ? (
                           "Sending…"

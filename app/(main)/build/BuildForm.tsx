@@ -32,6 +32,7 @@ import type { Difficulty, QuizMode, QuizSize } from "@/types";
 import type { SubjectCardData } from "@/app/components/SubjectGrid";
 import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import { pluralize } from "@/lib/format";
+import { chipStyle } from "@/lib/categoricalColor";
 
 // ── Icon map ────────────────────────────────────────────────────────────────
 
@@ -145,9 +146,10 @@ function Step1({
             >
               <div
                 className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                style={{ background: s.bg }}
+                style={chipStyle(s.color)}
               >
-                <Icon className="size-4" style={{ color: s.color }} />
+                {/* Colour comes from the chip via currentColor. */}
+                <Icon className="size-4" />
               </div>
               <div className="min-w-0">
                 <p className="truncate font-medium text-sm">{s.name}</p>

@@ -35,7 +35,7 @@ export function Field({ label, type = "text", placeholder, icon, dark, value, on
 
   const baseInput = dark
     ? "bg-white/10 border-white/15 text-white placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
-    : "bg-white border-border text-foreground placeholder:text-muted-foreground focus:border-brand";
+    : "bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-brand";
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -98,7 +98,7 @@ export function AuthLeftPanel() {
     // correctly against either form background — so it is the one brand surface
     // that does not need to flip with the theme. Tokenising it would only add a
     // dark-mode value nobody can tell apart from this one.
-    <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-[#3730a3] via-[#4f46e5] to-[#7c3aed]">
+    <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
       {/* Dot grid */}
       <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -315,7 +315,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
               decorative gradient chip carrying a white glyph, correct in either
               theme without a token. */}
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-brand-accent">
               <GraduationCap size={16} className="text-white" />
             </div>
             <span className="font-semibold text-foreground">Colloquiz</span>
@@ -324,7 +324,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           {emailSent ? (
             <>
               {/* Decorative gradient chip, exempt for the same reason as the logo. */}
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-brand-accent">
                 <Mail size={28} className="text-white" />
               </div>
 
@@ -387,11 +387,11 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
             <>
               {/* Social sign-in */}
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-white hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                   <GoogleIcon size={18} />
                   <span className="text-sm font-medium text-foreground">Google</span>
                 </button>
-                <button type="button" onClick={() => handleOAuthLogin("discord")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-white hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => handleOAuthLogin("discord")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                   <DiscordIcon size={18} />
                   <span className="text-sm font-medium text-foreground">Discord</span>
                 </button>
@@ -485,13 +485,13 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           )}
 
           {initialNotice && !error && (
-            <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-success bg-success-subtle border border-success-border rounded-lg px-3 py-2">
               {initialNotice}
             </p>
           )}
 
           {error && (
-            <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-destructive-text bg-destructive-subtle border border-destructive-border rounded-lg px-3 py-2">
               {error}
             </p>
           )}

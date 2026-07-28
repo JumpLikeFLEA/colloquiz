@@ -83,7 +83,7 @@ export function ResetPasswordScreen() {
           </div>
 
           {error && (
-            <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-destructive-text bg-destructive-subtle border border-destructive-border rounded-lg px-3 py-2">
               {error}
             </p>
           )}

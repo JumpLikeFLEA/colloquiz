@@ -59,7 +59,7 @@ export function GroupReviewView({
       </div>
 
       {error && (
-        <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
+        <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
           {error}
         </div>
       )}
@@ -90,7 +90,7 @@ export function GroupReviewView({
                       key={opt}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
                         correct
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          ? "bg-success-subtle text-success border-success-border"
                           : "bg-background text-foreground border-border"
                       }`}
                     >

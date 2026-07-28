@@ -4,7 +4,6 @@
     "name": "Mathematics",
     "icon": "Calculator",
     "color": "#6366f1",
-    "bg": "#eef2ff",
     "tags": [],
     "subtopics": ["Algebra", "Geometry", "Calculus", "Statistics", "Number Theory", "Linear Algebra", "Trigonometry", "Discrete Math", "Logic Puzzles"]
   },
@@ -13,7 +12,6 @@
     "name": "Physics",
     "icon": "Atom",
     "color": "#8b5cf6",
-    "bg": "#f5f3ff",
     "tags": [],
     "subtopics": ["Mechanics", "Thermodynamics", "Electromagnetism", "Optics", "Quantum Physics", "Relativity", "Nuclear Physics", "Waves"]
   },
@@ -22,7 +20,6 @@
     "name": "Chemistry",
     "icon": "FlaskConical",
     "color": "#ec4899",
-    "bg": "#fdf2f8",
     "tags": [],
     "subtopics": ["Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Biochemistry", "Electrochemistry", "Thermochemistry", "Analytical Chemistry"]
   },
@@ -31,7 +28,6 @@
     "name": "Biology",
     "icon": "Leaf",
     "color": "#10b981",
-    "bg": "#ecfdf5",
     "tags": [],
     "subtopics": ["Cell Biology", "Genetics", "Ecology", "Evolution", "Anatomy", "Microbiology", "Botany", "Zoology", "Biochemistry"]
   },
@@ -40,7 +36,6 @@
     "name": "History",
     "icon": "Landmark",
     "color": "#f59e0b",
-    "bg": "#fffbeb",
     "tags": [],
     "subtopics": ["Ancient History", "Medieval History", "Modern History", "World Wars", "American History", "European History", "Asian History", "African History", "Cold War"]
   },
@@ -49,7 +44,6 @@
     "name": "Geography",
     "icon": "Globe",
     "color": "#3b82f6",
-    "bg": "#eff6ff",
     "tags": [],
     "subtopics": ["Physical Geography", "Human Geography", "Climatology", "Cartography", "Geopolitics", "Environmental Geography", "Urban Geography"]
   },
@@ -58,7 +52,6 @@
     "name": "Literature",
     "icon": "BookOpen",
     "color": "#ef4444",
-    "bg": "#fef2f2",
     "tags": [],
     "subtopics": ["Poetry", "Fiction", "Drama", "Non-Fiction", "World Literature", "Literary Theory", "American Literature", "British Literature"]
   },
@@ -67,7 +60,6 @@
     "name": "Computer Science",
     "icon": "Code",
     "color": "#06b6d4",
-    "bg": "#ecfeff",
     "tags": ["statistics", "pandas", "sql"],
     "subtopics": ["Algorithms", "Data Structures", "Networks", "Databases", "Operating Systems", "Machine Learning", "Web Development", "Cybersecurity", "Software Engineering", "Programming Languages"]
   },
@@ -76,7 +68,6 @@
     "name": "Economics",
     "icon": "TrendingUp",
     "color": "#f97316",
-    "bg": "#fff7ed",
     "tags": [],
     "subtopics": ["Microeconomics", "Macroeconomics", "International Trade", "Behavioral Economics", "Development Economics", "Financial Markets"]
   },
@@ -85,7 +76,6 @@
     "name": "Psychology",
     "icon": "Brain",
     "color": "#a855f7",
-    "bg": "#faf5ff",
     "tags": [],
     "subtopics": ["Cognitive Psychology", "Social Psychology", "Developmental Psychology", "Clinical Psychology", "Neuroscience", "Behavioral Psychology"]
   },
@@ -94,7 +84,6 @@
     "name": "Art & Design",
     "icon": "Palette",
     "color": "#f43f5e",
-    "bg": "#fff1f2",
     "tags": [],
     "subtopics": ["Art History", "Visual Design", "Color Theory", "Photography", "Sculpture", "Painting Techniques"]
   },
@@ -103,7 +92,6 @@
     "name": "Music",
     "icon": "Music",
     "color": "#14b8a6",
-    "bg": "#f0fdfa",
     "tags": [],
     "subtopics": ["Music Theory", "Music History", "Harmony", "Rhythm", "Composition", "World Music"]
   },
@@ -112,7 +100,6 @@
     "name": "Languages",
     "icon": "Languages",
     "color": "#64748b",
-    "bg": "#f8fafc",
     "tags": [],
     "subtopics": ["Grammar", "Vocabulary", "Etymology", "Linguistics", "Phonology", "Semantics", "Pragmatics"]
   },
@@ -121,7 +108,6 @@
     "name": "Philosophy",
     "icon": "BookOpen",
     "color": "#7c3aed",
-    "bg": "#f5f3ff",
     "tags": [],
     "subtopics": ["Ethics", "Metaphysics", "Logic", "Epistemology", "Political Philosophy", "Philosophy of Mind"]
   },
@@ -130,7 +116,6 @@
     "name": "Data Analysis",
     "icon": "BarChart3",
     "color": "#0ea5e9",
-    "bg": "#f0f9ff",
     "tags": [
       "descriptive statistics",
       "probability distributions",
@@ -153,7 +138,6 @@
     "name": "Motion Design & Video",
     "icon": "Clapperboard",
     "color": "#d946ef",
-    "bg": "#fdf4ff",
     "tags": ["2d animation", "after effects", "kinetic typography", "vfx & compositing", "video editing"],
     "subtopics": ["2D Animation", "After Effects", "Kinetic Typography", "VFX & Compositing", "Video Editing"]
   },
@@ -162,7 +146,6 @@
     "name": "Sports History",
     "icon": "Trophy",
     "color": "#eab308",
-    "bg": "#fefce8",
     "tags": ["chess", "tennis", "football"],
     "subtopics": ["Chess", "Tennis", "Football"]
   },
@@ -171,7 +154,6 @@
     "name": "Esports History",
     "icon": "Gamepad2",
     "color": "#6d28d9",
-    "bg": "#ede9fe",
     "tags": ["counter strike"],
     "subtopics": ["Counter Strike"]
   },
@@ -180,7 +162,6 @@
     "name": "Science History",
     "icon": "Microscope",
     "color": "#65a30d",
-    "bg": "#f7fee7",
     "tags": ["ancient world", "medieval and islamic golden age", "scientific revolution", "enlightenment", "19th century", "modern era"],
     "subtopics": ["Ancient World", "Medieval and Islamic Golden Age", "Scientific Revolution", "Enlightenment", "19th Century", "Modern Era"]
   },
@@ -189,7 +170,6 @@
     "name": "Trivium",
     "icon": "Lightbulb",
     "color": "#ca8a04",
-    "bg": "#fefce8",
     "tags": ["history and society", "natural world", "earth and space", "numbers and logic", "culture and arts", "human mind"],
     "subtopics": ["History and Society", "Natural World", "Earth and Space", "Numbers and Logic", "Culture and Arts", "Human Mind"]
   }

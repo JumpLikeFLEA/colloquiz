@@ -185,7 +185,7 @@ colloquiz/
 │   ├── globals.css                 Tailwind v4 + Figma theme tokens
 │   └── layout.tsx                  Root shell (Geist font)
 ├── data/
-│   ├── subjects.json               19 subjects × { id, name, icon, color, bg, tags, subtopics }
+│   ├── subjects.json               20 subjects × { id, name, icon, color, tags, subtopics }
 │   └── seed-exemplars.json         Gold-standard few-shot examples for the generator
 ├── docs/
 │   └── authoring-guide.md          How to write a question manually
@@ -248,12 +248,18 @@ interface Subject {
   id: string;           // slug, e.g. "data_analysis"
   name: string;         // display + value written to questions.subject, e.g. "Data Analysis"
   icon: string;         // lucide-react icon name, e.g. "BarChart3"
-  color: string;        // hex accent
-  bg: string;           // hex background tint
+  color: string;        // hex accent — the subject's identity hue, same in both themes
   tags: string[];       // canonical filterable tags for sampleQuestions()
   subtopics?: string[]; // Title-Case display labels for the Deep Dive wizard
 }
 ```
+
+There is deliberately no stored background. A `bg` field held a hand-picked
+near-white tint per subject, written straight into an inline style, where it
+could not respond to the theme. The chip surface is now derived from `color` at
+render by `chipStyle()` in `lib/categoricalColor.ts`, which washes the hue into
+the live `--card`. The same helper backs the duel tiers (`lib/glicko2.ts`) and
+the achievement category/rarity ramps.
 
 `tags` (lowercase, the filter axis, stored verbatim on each question's `tags[]`) and
 `subtopics` (Title Case, the UI label set) are intentionally separate.

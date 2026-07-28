@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { tierStyle } from "@/lib/glicko2";
+import { chipStyle } from "@/lib/categoricalColor";
 import type { Duel, MyTier } from "@/lib/duels";
 import type { DuelTarget } from "@/lib/groups";
 import { formatDuration, pluralize } from "@/lib/format";
@@ -40,9 +41,9 @@ function DuelRow({
   const label = duel.subject ?? "Mixed";
   const outcomeStyle =
     duel.outcome === "win"
-      ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+      ? "bg-success-subtle text-success border-success-border"
       : duel.outcome === "loss"
-        ? "bg-red-50 text-red-500 border-red-200"
+        ? "bg-destructive-subtle text-destructive-text border-destructive-border"
         : "bg-muted text-muted-foreground border-border";
 
   return (
@@ -266,10 +267,7 @@ export function DuelsView({
       <div className="flex items-center gap-4 p-5 rounded-2xl border border-border bg-card">
         <div
           className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
-          style={{
-            backgroundColor: tierStyle(myTier.tier).bg,
-            color: tierStyle(myTier.tier).color,
-          }}
+          style={chipStyle(tierStyle(myTier.tier).color)}
         >
           <Swords size={20} />
         </div>
@@ -294,8 +292,8 @@ export function DuelsView({
       </div>
 
       {duelError && (
-        <div className="p-4 rounded-2xl border border-red-200 bg-red-50">
-          <p className="text-sm text-red-600">{duelError}</p>
+        <div className="p-4 rounded-2xl border border-destructive-border bg-destructive-subtle">
+          <p className="text-sm text-destructive-text">{duelError}</p>
         </div>
       )}
 
@@ -492,7 +490,7 @@ export function DuelsView({
               ))}
             </div>
 
-            {sendError && <p className="text-sm text-red-600">{sendError}</p>}
+            {sendError && <p className="text-sm text-destructive-text">{sendError}</p>}
           </div>
 
           <DialogFooter>

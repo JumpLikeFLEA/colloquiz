@@ -198,7 +198,7 @@ export function AccountSection({
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={avatarBusy}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-brand-subtle-hover transition-colors text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               {avatarBusy ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
               {profile.avatar_url ? "Replace" : "Upload"}

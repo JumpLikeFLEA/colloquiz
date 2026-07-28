@@ -237,13 +237,13 @@ function ReviewCard({
 
         {!editing && (
           <div className="flex gap-2 pt-2">
-            <Button onClick={handleApprove} disabled={loading} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleApprove} disabled={loading} className="bg-success hover:bg-success-hover">
               <Check className="size-4" /> Approve
             </Button>
             <Button onClick={() => setEditing(true)} disabled={loading} variant="outline">
               <Pencil className="size-4" /> Edit
             </Button>
-            <Button onClick={handleReject} disabled={loading} variant="outline" className="ml-auto text-red-600 hover:bg-red-50 hover:text-red-700">
+            <Button onClick={handleReject} disabled={loading} variant="outline" className="ml-auto text-destructive-text hover:bg-destructive-subtle hover:text-destructive-text">
               <Ban className="size-4" /> Reject
             </Button>
           </div>
@@ -268,7 +268,7 @@ export function ReadMode({ question }: { question: Question }) {
               className={cn(
                 "rounded-md border px-3 py-2 text-sm",
                 isCorrect
-                  ? "border-green-300 bg-green-50 text-green-900"
+                  ? "border-success-border bg-success-subtle text-success"
                   : "border-border bg-muted/30"
               )}
             >
@@ -276,7 +276,7 @@ export function ReadMode({ question }: { question: Question }) {
                 {String.fromCharCode(65 + i)}
               </span>
               {opt}
-              {isCorrect && <Check className="inline size-3.5 ml-1.5 text-green-700" />}
+              {isCorrect && <Check className="inline size-3.5 ml-1.5 text-success" />}
             </div>
           );
         })}
@@ -354,7 +354,7 @@ export function EditForm({
                 <Input
                   value={opt}
                   onChange={(e) => setOption(i, e.target.value)}
-                  className={cn("flex-1", isCorrect && "border-green-300")}
+                  className={cn("flex-1", isCorrect && "border-success-border")}
                 />
               </div>
             );
@@ -396,7 +396,7 @@ export function EditForm({
         <Button
           onClick={() => onSaveAndApprove(draft)}
           disabled={loading}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-success hover:bg-success-hover"
         >
           <Check className="size-4" /> {saveAndApproveLabel}
         </Button>
@@ -412,20 +412,20 @@ export function EditForm({
 
 function CriticPanel({ report }: { report: QuestionCriticNotes }) {
   return (
-    <div className="rounded-md border border-blue-100 bg-blue-50/40 p-3 space-y-2">
-      <p className="text-xs font-medium text-blue-900 uppercase tracking-wide">
+    <div className="rounded-md border border-brand-border bg-brand-subtle/40 p-3 space-y-2">
+      <p className="text-xs font-medium text-brand-text uppercase tracking-wide">
         Critic Report
       </p>
       <div className="flex flex-wrap gap-2 text-xs">
         <CheckBadge label="Correctness" value={report.correctness_check} />
         <CheckBadge label="Ambiguity" value={report.ambiguity_check} />
-        <span className="inline-flex items-center gap-1 rounded-full border bg-white px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5">
           <span className="text-muted-foreground">Distractors</span>
           <span className="font-medium">{report.distractor_quality}/5</span>
         </span>
       </div>
       {report.notes && (
-        <p className="text-sm text-blue-950/80 leading-relaxed">{report.notes}</p>
+        <p className="text-sm text-brand-text leading-relaxed">{report.notes}</p>
       )}
     </div>
   );
@@ -435,10 +435,10 @@ function CheckBadge({ label, value }: { label: string; value: "pass" | "fail" | 
   const Icon = value === "pass" ? CircleCheck : value === "fail" ? CircleAlert : CircleHelp;
   const cls =
     value === "pass"
-      ? "text-green-700 bg-green-50 border-green-200"
+      ? "text-success bg-success-subtle border-success-border"
       : value === "fail"
-      ? "text-red-700 bg-red-50 border-red-200"
-      : "text-amber-700 bg-amber-50 border-amber-200";
+      ? "text-destructive-text bg-destructive-subtle border-destructive-border"
+      : "text-warning bg-warning-subtle border-warning-border";
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5", cls)}>
       <Icon className="size-3" />
@@ -451,9 +451,9 @@ function CheckBadge({ label, value }: { label: string; value: "pass" | "fail" | 
 export function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
   const cls =
     difficulty === "easy"
-      ? "bg-green-50 text-green-700 border-green-200"
+      ? "bg-success-subtle text-success border-success-border"
       : difficulty === "medium"
-      ? "bg-amber-50 text-amber-700 border-amber-200"
-      : "bg-red-50 text-red-700 border-red-200";
+      ? "bg-warning-subtle text-warning border-warning-border"
+      : "bg-destructive-subtle text-destructive-text border-destructive-border";
   return <Badge variant="outline" className={cls}>{difficulty}</Badge>;
 }

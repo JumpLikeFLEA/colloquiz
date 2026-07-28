@@ -236,7 +236,7 @@ export function GroupDetailView({
         {isOwner && (
           <button
             onClick={() => setConfirmDeleteGroup(true)}
-            className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+            className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors shrink-0"
             aria-label="Delete group"
           >
             <Trash2 size={15} />
@@ -245,7 +245,7 @@ export function GroupDetailView({
       </div>
 
       {error && (
-        <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
+        <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
           {error}
         </div>
       )}
@@ -295,16 +295,16 @@ export function GroupDetailView({
       {pendingCount > 0 && (
         <Link
           href={`/groups/${group.id}/review`}
-          className="flex items-center gap-3 p-4 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
+          className="flex items-center gap-3 p-4 rounded-2xl border border-warning-border bg-warning-subtle hover:bg-warning-subtle transition-colors"
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 text-amber-600 shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-warning-subtle text-warning shrink-0">
             <ClipboardList size={16} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-900">
+            <p className="text-sm font-medium text-warning">
               {pendingCount} {pendingCount === 1 ? "question" : "questions"} awaiting review
             </p>
-            <p className="text-xs text-amber-700 mt-0.5">
+            <p className="text-xs text-warning mt-0.5">
               Approved questions become playable. You can&rsquo;t review your own.
             </p>
           </div>
@@ -367,7 +367,7 @@ export function GroupDetailView({
                 <button
                   onClick={() => setConfirmDeleteQuiz(q.id)}
                   aria-label="Delete quiz"
-                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -400,7 +400,7 @@ export function GroupDetailView({
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
                   {m.role === "owner" && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text border border-[#c7d2fe] shrink-0">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text border border-brand-border shrink-0">
                       Owner
                     </span>
                   )}
@@ -425,7 +425,7 @@ export function GroupDetailView({
                 <button
                   onClick={() => setConfirmRemove({ id: m.id, name: m.name })}
                   aria-label={m.id === userId ? "Leave group" : "Remove member"}
-                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="cursor-pointer p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors"
                 >
                   {m.id === userId ? <LogOut size={15} /> : <Trash2 size={15} />}
                 </button>
@@ -554,7 +554,7 @@ export function GroupDetailView({
               ))}
             </div>
 
-            {duelError && <p className="text-sm text-red-600">{duelError}</p>}
+            {duelError && <p className="text-sm text-destructive-text">{duelError}</p>}
           </div>
 
           <DialogFooter>
@@ -630,7 +630,7 @@ export function GroupDetailView({
             </button>
             <button
               onClick={() => confirmDeleteQuiz && deleteQuiz(confirmDeleteQuiz)}
-              className="cursor-pointer px-3 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+              className="cursor-pointer px-3 py-2 rounded-lg bg-destructive text-white text-sm font-medium hover:bg-destructive-hover transition-colors"
             >
               Delete quiz
             </button>
@@ -657,7 +657,7 @@ export function GroupDetailView({
             </button>
             <button
               onClick={() => confirmRemove && removeMember(confirmRemove.id)}
-              className="cursor-pointer px-3 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+              className="cursor-pointer px-3 py-2 rounded-lg bg-destructive text-white text-sm font-medium hover:bg-destructive-hover transition-colors"
             >
               {leavingSelf ? "Leave group" : "Remove member"}
             </button>
@@ -681,7 +681,7 @@ export function GroupDetailView({
             </button>
             <button
               onClick={deleteGroup}
-              className="cursor-pointer px-3 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+              className="cursor-pointer px-3 py-2 rounded-lg bg-destructive text-white text-sm font-medium hover:bg-destructive-hover transition-colors"
             >
               Delete group
             </button>

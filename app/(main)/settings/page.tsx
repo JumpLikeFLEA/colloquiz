@@ -39,6 +39,7 @@ export default async function SettingsPage() {
       identities={identities}
       identityError={identityError?.message ?? null}
       notificationPrefs={prefsFromRows(prefRows)}
+      themePreference={profile.theme_preference}
     />
   );
 }

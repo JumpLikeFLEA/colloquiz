@@ -18,6 +18,12 @@ import { BAR_COLLAPSED_ROWS, type SubjectStat } from "@/lib/subjectStats";
  * One series, so one hue for every bar: colouring bars by their own value would
  * re-encode the length as brightness and say nothing new. The number at the tip
  * carries the value, in text colour, not the bar's.
+ *
+ * That hue is --chart-series-1, the same token the radar above it draws with —
+ * these are two views of one dataset and must not disagree. It is NOT --brand,
+ * which they share in light mode but not in dark: --brand is tuned as a fill
+ * that white text sits on (2.82:1 against this bar's --muted track in dark),
+ * while --chart-series-1 is tuned to read as a mark (4.65:1).
  */
 export function SubjectScoreBars({ subjects }: { subjects: SubjectStat[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -52,7 +58,7 @@ export function SubjectScoreBars({ subjects }: { subjects: SubjectStat[] }) {
                 </span>
                 <span className="flex-1 h-2 bg-muted rounded-sm overflow-hidden">
                   <span
-                    className="block h-full rounded-r-sm bg-brand"
+                    className="block h-full rounded-r-sm bg-chart-series-1"
                     style={{ width: `${s.avgScore}%` }}
                   />
                 </span>

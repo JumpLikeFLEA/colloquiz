@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom, type AuthUser } from "@/lib/auth";
 import { liveStreak } from "@/lib/streak";
+import type { ThemePreference } from "@/lib/theme";
 
 // Per-request memoized user + profile.
 //
@@ -35,6 +36,12 @@ export type FullProfile = {
   is_author: boolean;
   /** Hidden from every leaderboard when true (migration 015). */
   leaderboard_opt_out: boolean;
+  /**
+   * Light / dark / system, or null if never chosen (migration 025). NOT the
+   * read path for the current theme — next-themes owns that in localStorage,
+   * where its pre-paint script can reach it. This is the cross-device copy.
+   */
+  theme_preference: ThemePreference | null;
 };
 
 // Superset of the columns the layout and the various (main) pages need, fetched
@@ -46,7 +53,7 @@ export const getProfile = cache(async (): Promise<FullProfile | null> => {
   const { data } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, display_name, city, avatar_url, role, total_xp, current_streak, last_quiz_at, created_at, is_author, leaderboard_opt_out",
+      "id, full_name, display_name, city, avatar_url, role, total_xp, current_streak, last_quiz_at, created_at, is_author, leaderboard_opt_out, theme_preference",
     )
     .eq("id", user.id)
     .single();

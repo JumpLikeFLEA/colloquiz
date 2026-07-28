@@ -15,7 +15,6 @@ export default async function BuildPage() {
       name: s.name,
       icon: s.icon,
       color: s.color,
-      bg: s.bg,
       questionCount: stat.count,
       difficulties: stat.difficulties,
     };

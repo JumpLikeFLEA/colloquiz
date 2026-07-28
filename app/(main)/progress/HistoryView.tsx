@@ -198,7 +198,7 @@ function NoHistory() {
       </div>
       <Link
         href="/"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-brand-subtle-hover transition-colors text-sm"
       >
         Browse subjects
         <ChevronRight size={14} />
@@ -210,10 +210,7 @@ function NoHistory() {
 function NoMatches() {
   return (
     <div className="px-5 py-12 flex flex-col items-center gap-3 text-center">
-      <div
-        className="flex items-center justify-center w-10 h-10 rounded-xl"
-        style={{ backgroundColor: "#fff7ed", color: "#f97316" }}
-      >
+      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-warning-subtle text-warning">
         <SearchX size={20} />
       </div>
       <div>
@@ -224,7 +221,7 @@ function NoMatches() {
       </div>
       <Link
         href="/progress?tab=history"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-[#e0e7ff] transition-colors text-sm"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-subtle text-brand-text hover:bg-brand-subtle-hover transition-colors text-sm"
       >
         Clear filters
       </Link>

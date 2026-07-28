@@ -8,6 +8,7 @@ import {
 import { ACHIEVEMENTS } from "@/lib/achievements";
 import { formatDuration, pluralize } from "@/lib/format";
 import { XP_PER_LEVEL, getLevelProgress } from "@/lib/levels";
+import { chipStyle, categoricalBorderColor } from "@/lib/categoricalColor";
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Star, Award, TrendingUp, CheckCircle: CheckCircle2, RefreshCw, Flame, Zap,
@@ -17,19 +18,24 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 // The indigo here is NOT the brand token, and the brand sweep deliberately left
 // it alone: these four are one categorical ramp, and tokenising a single member
 // would make "performance" shift in dark mode while its three siblings stayed
-// put. The whole ramp moves together, with subject and tier, in its own pass.
-const CATEGORY_STYLE: Record<string, { color: string; bg: string }> = {
-  performance: { color: "#4f46e5", bg: "#eef2ff" },
-  consistency:  { color: "#f97316", bg: "#fff7ed" },
-  exploration:  { color: "#10b981", bg: "#ecfdf5" },
-  volume:       { color: "#8b5cf6", bg: "#f5f3ff" },
+// put. The ramp stays as literal hues on purpose — it is identity, not status.
+// What it no longer carries is a surface: the paired near-white tints are gone,
+// and chipStyle() derives the chip from the hue and the live --card instead.
+const CATEGORY_STYLE: Record<string, { color: string }> = {
+  performance: { color: "#4f46e5" },
+  consistency:  { color: "#f97316" },
+  exploration:  { color: "#10b981" },
+  volume:       { color: "#8b5cf6" },
 };
 
+// Same shape, same reasoning. `border` used to be a Tailwind palette class
+// (border-blue-200 and friends) — a second, light-mode-only mechanism for the
+// same idea, which is now derived from the hue like everything else.
 const RARITY_CONFIG = {
-  common:    { label: "Common",    color: "#6b7280", border: "border-gray-200" },
-  rare:      { label: "Rare",      color: "#3b82f6", border: "border-blue-200" },
-  epic:      { label: "Epic",      color: "#8b5cf6", border: "border-purple-200" },
-  legendary: { label: "Legendary", color: "#f59e0b", border: "border-amber-300" },
+  common:    { label: "Common",    color: "#6b7280" },
+  rare:      { label: "Rare",      color: "#3b82f6" },
+  epic:      { label: "Epic",      color: "#8b5cf6" },
+  legendary: { label: "Legendary", color: "#f59e0b" },
 };
 
 const CATEGORIES = ["All", "performance", "consistency", "exploration", "volume"] as const;
@@ -74,7 +80,8 @@ export function AchievementsView({
   });
 
   // Another six-hue categorical ramp — see the note on CATEGORY_STYLE for why
-  // the leading indigo is still a literal.
+  // these are still literals. No surface is involved: the icons sit directly on
+  // the card, so there is nothing here to derive.
   const STATS = [
     { label: "Achievements Unlocked", value: `${unlockedCount} / ${ACHIEVEMENTS.length}`, icon: Trophy, color: "#4f46e5" },
     { label: "Total XP Earned", value: totalXp.toLocaleString(), icon: Star, color: "#f59e0b" },
@@ -192,7 +199,7 @@ export function AchievementsView({
         {filtered.map((a, i) => {
           const Icon = ICON_MAP[a.icon] ?? Trophy;
           const rarity = RARITY_CONFIG[getRarity(a.xpReward)];
-          const catStyle = CATEGORY_STYLE[a.category] ?? { color: "#6b7280", bg: "#f3f4f6" };
+          const catStyle = CATEGORY_STYLE[a.category] ?? { color: "#6b7280" };
           const isUnlocked = !!unlockedMap[a.id];
           const unlockedDate = isUnlocked
             ? new Date(unlockedMap[a.id]).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -201,17 +208,20 @@ export function AchievementsView({
           return (
             <div
               key={a.id}
-              style={{ animationDelay: `${i * 0.04}s` }}
+              style={{
+                animationDelay: `${i * 0.04}s`,
+                // Rarity tints the outline of an unlocked card; a locked one
+                // keeps the neutral --border from the class below.
+                ...(isUnlocked && { borderColor: categoricalBorderColor(rarity.color) }),
+              }}
               className={`relative flex flex-col gap-4 p-5 rounded-2xl border ${
-                isUnlocked
-                  ? `${rarity.border} bg-card`
-                  : "border-border bg-card opacity-70"
+                isUnlocked ? "bg-card" : "border-border bg-card opacity-70"
               } transition-all hover:shadow-sm animate-in fade-in zoom-in-95 fill-mode-both duration-300 motion-reduce:animate-none`}
             >
               {/* Rarity badge */}
               <div
                 className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ color: rarity.color, backgroundColor: rarity.color + "15" }}
+                style={chipStyle(rarity.color)}
               >
                 {rarity.label}
               </div>
@@ -222,10 +232,13 @@ export function AchievementsView({
                   className={`flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 ${
                     isUnlocked ? "" : "grayscale opacity-50"
                   }`}
-                  style={{
-                    backgroundColor: isUnlocked ? catStyle.bg : "#f3f4f6",
-                    color: isUnlocked ? catStyle.color : "#9ca3af",
-                  }}
+                  // A locked achievement has no category to advertise, so it
+                  // drops out of the ramp onto the neutral muted pair.
+                  style={
+                    isUnlocked
+                      ? chipStyle(catStyle.color)
+                      : { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
+                  }
                 >
                   <Icon size={22} />
                 </div>
@@ -240,11 +253,11 @@ export function AchievementsView({
               {/* Unlocked / locked status */}
               {isUnlocked ? (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-emerald-600 text-sm">
+                  <div className="flex items-center gap-1.5 text-success text-sm">
                     <CheckCircle2 size={14} />
                     <span className="text-xs">Unlocked {unlockedDate}</span>
                   </div>
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-medium">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-subtle text-warning text-xs font-medium">
                     <Star size={11} />
                     +{a.xpReward} XP
                   </div>

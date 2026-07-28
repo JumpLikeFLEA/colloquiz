@@ -150,7 +150,7 @@ export function StudentsView({
                     <button
                       onClick={() => unlink(s.id)}
                       aria-label="Unlink student"
-                      className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -167,7 +167,7 @@ export function StudentsView({
                               <span className="flex-1 text-sm text-foreground truncate">{a.quizTitle}</span>
                               {a.status === "completed" ? (
                                 <>
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-success-subtle text-success border border-success-border">
                                     Completed
                                   </span>
                                   <Link
@@ -178,7 +178,7 @@ export function StudentsView({
                                   </Link>
                                 </>
                               ) : (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-warning-subtle text-warning border border-warning-border">
                                   Assigned
                                 </span>
                               )}

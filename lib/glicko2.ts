@@ -130,13 +130,18 @@ export function glicko2Update(
 // ── Tiers ───────────────────────────────────────────────────
 // The only rating information a user ever sees.
 
+// Identity hues, not status colours — a tier badge is a name, and gold has to
+// stay gold in both themes. The matching surface is DERIVED from the hue at
+// render by chipStyle() in lib/categoricalColor.ts; the hand-picked near-white
+// tint that used to sit beside each colour is gone, because an inline style
+// cannot follow the theme and painted a pale block on a dark page.
 export const TIERS = [
-  { id: "bronze", label: "Bronze", min: -Infinity, color: "#b45309", bg: "#fff7ed" },
-  { id: "silver", label: "Silver", min: 1300, color: "#6b7280", bg: "#f9fafb" },
-  { id: "gold", label: "Gold", min: 1450, color: "#f59e0b", bg: "#fffbeb" },
-  { id: "platinum", label: "Platinum", min: 1600, color: "#0ea5e9", bg: "#f0f9ff" },
-  { id: "diamond", label: "Diamond", min: 1750, color: "#8b5cf6", bg: "#f5f3ff" },
-  { id: "master", label: "Master", min: 1900, color: "#4f46e5", bg: "#eef2ff" },
+  { id: "bronze", label: "Bronze", min: -Infinity, color: "#b45309" },
+  { id: "silver", label: "Silver", min: 1300, color: "#6b7280" },
+  { id: "gold", label: "Gold", min: 1450, color: "#f59e0b" },
+  { id: "platinum", label: "Platinum", min: 1600, color: "#0ea5e9" },
+  { id: "diamond", label: "Diamond", min: 1750, color: "#8b5cf6" },
+  { id: "master", label: "Master", min: 1900, color: "#4f46e5" },
 ] as const;
 
 export type TierId = (typeof TIERS)[number]["id"] | "unranked";
@@ -148,7 +153,6 @@ export const UNRANKED = {
   id: "unranked" as const,
   label: "Unranked",
   color: "#6b7280",
-  bg: "#f9fafb",
 };
 
 /**
@@ -165,7 +169,7 @@ export function tierFor(rating: number, matchesPlayed: number): TierId {
   return current;
 }
 
-export function tierStyle(tier: TierId | null): { label: string; color: string; bg: string } {
+export function tierStyle(tier: TierId | null): { label: string; color: string } {
   const found = TIERS.find((t) => t.id === tier);
   return found ?? UNRANKED;
 }

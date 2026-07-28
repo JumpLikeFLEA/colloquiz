@@ -163,11 +163,11 @@ function ReportedCard({
       <CardHeader className="flex flex-row items-center gap-2 flex-wrap">
         <Badge variant="secondary">{question.subject}</Badge>
         <DifficultyBadge difficulty={question.difficulty} />
-        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+        <Badge variant="outline" className="bg-destructive-subtle text-destructive-text border-destructive-border">
           {reports.length} report{reports.length === 1 ? "" : "s"}
         </Badge>
         {!inPool && (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+          <Badge variant="outline" className="bg-warning-subtle text-warning border-warning-border">
             no longer in pool ({question.status})
           </Badge>
         )}
@@ -195,14 +195,14 @@ function ReportedCard({
         )}
 
         {/* Reports */}
-        <div className="rounded-md border border-red-100 bg-red-50/40 p-3 space-y-3">
-          <p className="text-xs font-medium text-red-900 uppercase tracking-wide">
+        <div className="rounded-md border border-destructive-border bg-destructive-subtle/40 p-3 space-y-3">
+          <p className="text-xs font-medium text-destructive-text uppercase tracking-wide">
             Reports ({reports.length})
           </p>
           {reports.map((r) => (
             <div key={r.id} className="space-y-1 text-sm">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="bg-white border-red-200 text-red-700">
+                <Badge variant="outline" className="bg-card border-destructive-border text-destructive-text">
                   {CATEGORY_LABELS[r.category]}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
@@ -221,7 +221,7 @@ function ReportedCard({
           ))}
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive-text">{error}</p>}
 
         {!editing && (
           <>
@@ -248,7 +248,7 @@ function ReportedCard({
                 onClick={() => setConfirmRemove(true)}
                 disabled={loading}
                 variant="outline"
-                className="ml-auto text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="ml-auto text-destructive-text hover:bg-destructive-subtle hover:text-destructive-text"
               >
                 <Ban className="size-4" /> Remove
               </Button>
@@ -270,7 +270,7 @@ function ReportedCard({
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemove}
-              className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+              className="rounded-xl bg-destructive text-white hover:bg-destructive-hover"
             >
               Remove
             </AlertDialogAction>

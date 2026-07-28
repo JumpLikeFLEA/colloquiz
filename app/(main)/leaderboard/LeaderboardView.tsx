@@ -20,6 +20,7 @@ const LEADERBOARD_WINDOWS: { value: LeaderboardWindow; label: string }[] = [
   { value: "all", label: "All time" },
 ];
 import { tierStyle, type TierId } from "@/lib/glicko2";
+import { chipStyle } from "@/lib/categoricalColor";
 import type { CompetitiveRow, MyTier } from "@/lib/duels";
 
 const NOTICE_KEY = "colloquiz.leaderboard.notice.dismissed";
@@ -48,18 +49,20 @@ function TierBadge({ tier }: { tier: TierId | null }) {
   return (
     <span
       className="text-xs px-2 py-0.5 rounded-full border shrink-0"
-      style={{ backgroundColor: s.bg, color: s.color, borderColor: s.color + "40" }}
+      style={chipStyle(s.color, { border: true })}
     >
       {s.label}
     </span>
   );
 }
 
-// Top three get a colour; everyone else reads as a plain numeral.
-const MEDAL: Record<number, { color: string; bg: string }> = {
-  1: { color: "#f59e0b", bg: "#fffbeb" },
-  2: { color: "#6b7280", bg: "#f9fafb" },
-  3: { color: "#b45309", bg: "#fff7ed" },
+// Top three get a colour; everyone else reads as a plain numeral. Gold/silver/
+// bronze are IDENTITY hues like the duel tiers — they are what the rank IS —
+// so they stay fixed and the chip surface derives from the live --card.
+const MEDAL: Record<number, string> = {
+  1: "#f59e0b",
+  2: "#6b7280",
+  3: "#b45309",
 };
 
 function RankBadge({ rank }: { rank: number }) {
@@ -67,11 +70,7 @@ function RankBadge({ rank }: { rank: number }) {
   return (
     <div
       className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-sm font-medium"
-      style={
-        medal
-          ? { backgroundColor: medal.bg, color: medal.color }
-          : undefined
-      }
+      style={medal ? chipStyle(medal) : undefined}
     >
       {medal ? <Medal size={16} /> : <span className="text-muted-foreground">{rank}</span>}
     </div>
@@ -212,12 +211,12 @@ export function LeaderboardView({
 
       {/* One-time privacy notice */}
       {showNotice && (
-        <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 flex items-start gap-3">
+        <div className="p-4 rounded-2xl border border-warning-border bg-warning-subtle flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-900">
+            <p className="text-sm font-medium text-warning">
               You appear here as &ldquo;{publicName}&rdquo;
             </p>
-            <p className="text-sm text-amber-700 mt-1">
+            <p className="text-sm text-warning mt-1">
               Only this public name and your XP are shown to other learners — never your
               full name, email or city. Change it on the Dashboard, or hide yourself below.
             </p>
@@ -225,7 +224,7 @@ export function LeaderboardView({
           <button
             onClick={dismissNotice}
             aria-label="Dismiss"
-            className="p-1.5 rounded-lg text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg text-warning hover:bg-warning-subtle transition-colors cursor-pointer shrink-0"
           >
             <X size={14} />
           </button>
@@ -354,10 +353,7 @@ export function LeaderboardView({
         <div className="flex items-center gap-4 p-5 rounded-2xl border border-border bg-card">
           <div
             className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
-            style={{
-              backgroundColor: tierStyle(myTier.tier).bg,
-              color: tierStyle(myTier.tier).color,
-            }}
+            style={chipStyle(tierStyle(myTier.tier).color)}
           >
             <Swords size={20} />
           </div>

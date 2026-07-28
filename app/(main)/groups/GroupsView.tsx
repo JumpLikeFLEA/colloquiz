@@ -94,7 +94,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{g.name}</p>
                   {g.role === "owner" && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text border border-[#c7d2fe] shrink-0">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-subtle text-brand-text border border-brand-border shrink-0">
                       Owner
                     </span>
                   )}
@@ -140,7 +140,7 @@ export function GroupsView({ groups }: { groups: MyGroup[] }) {
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none resize-none"
             />
             {error && (
-              <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
+              <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
                 {error}
               </div>
             )}

@@ -45,9 +45,9 @@ export function ReportQuestionInline({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive-text transition-colors cursor-pointer"
       >
-        <Flag size={13} className="text-red-400" /> Report question
+        <Flag size={13} className="text-destructive-text" /> Report question
       </button>
     );
   }
@@ -147,7 +147,7 @@ function ReportForm({
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive-text">{error}</p>}
 
       <div className="flex gap-2 justify-end">
         <button

@@ -17,15 +17,15 @@ import { formatDuration } from "@/lib/format";
 
 function difficultyColor(d: string) {
   const lower = d.toLowerCase();
-  if (lower === "easy") return "text-emerald-600 bg-emerald-50";
-  if (lower === "medium") return "text-amber-600 bg-amber-50";
-  return "text-red-600 bg-red-50";
+  if (lower === "easy") return "text-success bg-success-subtle";
+  if (lower === "medium") return "text-warning bg-warning-subtle";
+  return "text-destructive-text bg-destructive-subtle";
 }
 
 function scoreColor(s: number) {
-  if (s >= 80) return "text-emerald-600";
-  if (s >= 60) return "text-amber-600";
-  return "text-red-500";
+  if (s >= 80) return "text-success";
+  if (s >= 60) return "text-warning";
+  return "text-destructive-text";
 }
 
 export function QuizResultsTable({
@@ -71,8 +71,8 @@ export function QuizResultRow({ result: r, index }: { result: EnrichedResult; in
     >
       <div className="flex items-center gap-3">
         {passed
-          ? <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-          : <XCircle size={16} className="text-red-400 shrink-0" />
+          ? <CheckCircle2 size={16} className="text-success shrink-0" />
+          : <XCircle size={16} className="text-destructive-text shrink-0" />
         }
         <div>
           <p className="text-sm font-medium text-foreground">{r.subject}</p>
