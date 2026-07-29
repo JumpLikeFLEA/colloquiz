@@ -54,7 +54,19 @@ export default async function MainLayout({
     <SidebarProvider>
       <StartQuizProvider>
         <AppSidebar profile={profile} isAdmin={isAdmin} isAuthor={isAuthor} duelCount={duelCount} />
-        <div className="flex min-h-svh flex-1 flex-col">
+        {/* min-w-0 is load-bearing. This is a flex item, so its min-width
+            defaults to `auto`, meaning it refuses to shrink below the
+            min-content width of everything inside it — and one unbreakable
+            string anywhere on any page then makes the WHOLE SHELL wider than
+            the viewport, scrolling the sidebar and top bar off screen. A child
+            using `min-w-0 truncate` cannot save itself from this: that lets an
+            item shrink inside a definite-width parent, it does not stop the
+            parent being content-sized. Measured on Admin > Feedback, where a
+            1600-character message with no spaces gave one row a min-content
+            width of 10338px. `main` below already has overflow-x: auto, so with
+            this in place over-wide content scrolls inside the content area
+            instead of dragging the layout with it. */}
+        <div className="flex min-w-0 min-h-svh flex-1 flex-col">
           <Topbar displayName={profile.displayName} />
           <ActiveQuizBanner />
           <main className="flex-1 overflow-y-auto">

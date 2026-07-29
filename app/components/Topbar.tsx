@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { ChevronRight, GraduationCap, PanelLeftIcon } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
+import { FeedbackDialog } from "@/app/components/FeedbackDialog";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { useSidebar } from "@/app/components/ui/sidebar";
 
@@ -14,7 +15,16 @@ const routeLabels: Record<string, string> = {
   "/build": "Build Quiz",
   "/progress": "Progress",
   "/quiz": "Quiz in progress",
-  "/admin/quiz-builder": "Admin",
+  // Every /admin/* route has two segments, so it always renders a breadcrumb —
+  // and without an entry here each one fell through to the "Colloquiz" default
+  // and read "Colloquiz › Colloquiz". Labels match the sidebar's wording so the
+  // crumb names the page you actually clicked. "/admin" is the base fallback
+  // (see the segment matching below), so a future admin route gets "Admin"
+  // rather than the bug.
+  "/admin": "Admin",
+  "/admin/quiz-builder": "Quiz Builder",
+  "/admin/review": "Review Queue",
+  "/admin/feedback": "Feedback",
   "/my-quizzes": "My Quizzes",
   "/students": "Students",
   "/invite": "Invitation",
@@ -61,6 +71,10 @@ export function Topbar({ displayName: _displayName }: { displayName: string }) {
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2">
+        {/* Feedback — text, not an icon: no glyph reliably reads as "tell us
+            what you think". Lives in the top bar rather than the sidebar so it
+            survives the sidebar collapsing to an icon rail. */}
+        <FeedbackDialog />
         {/* Notification bell */}
         <NotificationBell />
       </div>

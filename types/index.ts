@@ -1,3 +1,9 @@
+// Type-only, so this file stays runtime-dependency-free. The vocabularies live
+// in lib/ because the client components need them as VALUES; re-deriving them
+// here would give the schema two sources of truth.
+import type { FeedbackCategory, FeedbackStatus } from "@/lib/feedback";
+import type { ThemePreference } from "@/lib/theme";
+
 export type QuestionType = "multiple_choice"; // code_snippet | free_text deferred to Phase 2
 
 export type Difficulty = "easy" | "medium" | "hard";
@@ -170,6 +176,25 @@ export interface QuestionReport {
 export interface ReportedQuestionGroup {
   question: Question;
   reports: QuestionReport[];
+}
+
+// A row of the feedback table (migration 026). Only an admin can ever read one
+// — there is no owner SELECT policy — so this type describes the future admin
+// triage view, not anything the author of the feedback sees. The metadata
+// fields are all nullable because they are captured, never asked for.
+export interface Feedback {
+  id: string;
+  user_id: string;
+  category: FeedbackCategory;
+  message: string;
+  status: FeedbackStatus;
+  route?: string | null;
+  user_agent?: string | null;
+  viewport_width?: number | null;
+  viewport_height?: number | null;
+  theme?: ThemePreference | null;
+  app_version?: string | null;
+  created_at: string;
 }
 
 // The notification kinds the notification center knows how to render. Written

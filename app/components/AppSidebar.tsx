@@ -11,6 +11,7 @@ import {
   GraduationCap,
   LogOut,
   Medal,
+  MessageSquare,
   PenLine,
   Settings,
   Settings2,
@@ -103,6 +104,11 @@ const adminItems: NavItem[] = [
     label: "Review Queue",
     href: "/admin/review",
     icon: ShieldCheck,
+  },
+  {
+    label: "Feedback",
+    href: "/admin/feedback",
+    icon: MessageSquare,
   },
 ];
 
