@@ -108,3 +108,56 @@ export async function POST(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/admin/courses/stages/[id]/theory/history
+ *   Body: { versionId }
+ *   → prune one entry from the version log. Gated by can_edit_course inside
+ *     the RPC (030). Does not touch the current stage blocks; safe against
+ *     the live optimistic-concurrency token.
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const user = await authUserFrom(supabase);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = (await req.json().catch(() => ({}))) as { versionId?: string };
+    if (!body.versionId) {
+      return NextResponse.json({ error: "versionId is required" }, { status: 400 });
+    }
+
+    // Belt-and-braces: verify the version belongs to the URL's stage before
+    // asking the RPC to delete it. The RPC would still refuse (can_edit_course
+    // is checked against the version's own stage/course), but this catches a
+    // client that ships a mismatched pair with a clean 404 rather than a 403.
+    const { data: version, error: vErr } = await supabase
+      .from("course_stage_theory_versions")
+      .select("stage_id")
+      .eq("id", body.versionId)
+      .maybeSingle();
+    if (vErr) throw new Error(vErr.message);
+    if (!version || version.stage_id !== id) {
+      return NextResponse.json({ error: "Version not found" }, { status: 404 });
+    }
+
+    const { data, error } = await supabase.rpc("delete_stage_theory_version", {
+      p_version_id: body.versionId,
+    });
+    if (error) throw new Error(error.message);
+
+    if (!data?.ok) {
+      const code = (data?.error as string) ?? "unknown";
+      const status = code === "forbidden" ? 403 : code === "version_not_found" ? 404 : 400;
+      return NextResponse.json({ ok: false, error: code }, { status });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

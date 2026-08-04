@@ -964,30 +964,47 @@ function VersionHistoryPanel({
 }) {
   const [versions, setVersions] = useState<Version[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The version pending deletion — its row's trash icon opens the AlertDialog.
+  // Kept local because the parent has no reason to know about pruning history.
+  const [pendingDelete, setPendingDelete] = useState<Version | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/admin/courses/stages/${stageId}/theory/history`,
-          { cache: "no-store" },
-        );
-        const data = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!res.ok) {
-          setError(data.error ?? "Could not load history.");
+  const load = useCallback(() => {
+    return fetch(`/api/admin/courses/stages/${stageId}/theory/history`, { cache: "no-store" })
+      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok) {
+          setError((d?.error as string) ?? "Could not load history.");
           return;
         }
-        setVersions(data.versions as Version[]);
-      } catch {
-        if (!cancelled) setError("Network error.");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+        setVersions(d.versions as Version[]);
+        setError(null);
+      })
+      .catch(() => setError("Network error."));
   }, [stageId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function deleteVersion(id: string) {
+    setPendingDelete(null);
+    try {
+      const res = await fetch(`/api/admin/courses/stages/${stageId}/theory/history`, {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ versionId: id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        toast.error(data.message ?? data.error ?? "Could not delete version.");
+        return;
+      }
+      toast.success("Version deleted.");
+      await load();
+    } catch {
+      toast.error("Network error.");
+    }
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
@@ -1018,17 +1035,56 @@ function VersionHistoryPanel({
                   {new Date(v.editedAt).toLocaleString()}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => onRevert(v.id)}
-                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <RotateCcw size={14} /> Restore
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onRevert(v.id)}
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <RotateCcw size={14} /> Restore
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(v)}
+                  title="Delete version"
+                  aria-label={`Delete version ${v.version}`}
+                  className="cursor-pointer p-1.5 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete version {pendingDelete?.version} from history?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The snapshot will be permanently removed from the version log. The stage&apos;s
+              current blocks are untouched, and you can still restore any other version.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDelete) void deleteVersion(pendingDelete.id);
+              }}
+              className="rounded-xl bg-destructive text-white hover:bg-destructive-hover"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
