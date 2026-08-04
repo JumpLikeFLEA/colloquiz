@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
+import { RichText } from "@/app/components/RichText";
 import {
   Select,
   SelectContent,
@@ -258,7 +259,7 @@ function ReviewCard({
 export function ReadMode({ question }: { question: Question }) {
   return (
     <>
-      <p className="font-medium leading-relaxed">{question.question}</p>
+      <p className="font-medium leading-relaxed"><RichText text={question.question} /></p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {answerOptions(question.options).map((opt, i) => {
           const isCorrect = opt === question.correct_answer;
@@ -275,7 +276,7 @@ export function ReadMode({ question }: { question: Question }) {
               <span className="font-mono text-xs text-muted-foreground mr-2">
                 {String.fromCharCode(65 + i)}
               </span>
-              {opt}
+              <RichText text={opt} />
               {isCorrect && <Check className="inline size-3.5 ml-1.5 text-success" />}
             </div>
           );
@@ -285,7 +286,7 @@ export function ReadMode({ question }: { question: Question }) {
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
           Explanation
         </p>
-        <p className="leading-relaxed">{question.explanation}</p>
+        <p className="leading-relaxed"><RichText text={question.explanation} /></p>
       </div>
     </>
   );

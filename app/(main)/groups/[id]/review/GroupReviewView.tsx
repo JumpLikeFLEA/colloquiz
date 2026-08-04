@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, X, ClipboardList } from "lucide-react";
 import { answerOptions } from "@/lib/options";
+import { RichText } from "@/app/components/RichText";
 import type { ReviewItem } from "@/lib/groups";
 
 export function GroupReviewView({
@@ -80,7 +81,7 @@ export function GroupReviewView({
                 <span className="text-xs text-muted-foreground">by {authorName}</span>
               </div>
 
-              <p className="text-sm font-medium text-foreground">{question.question}</p>
+              <p className="text-sm font-medium text-foreground"><RichText text={question.question} /></p>
 
               <div className="flex flex-col gap-1.5 mt-3">
                 {answerOptions(question.options).map((opt) => {
@@ -95,14 +96,14 @@ export function GroupReviewView({
                       }`}
                     >
                       {correct && <Check className="size-3.5 shrink-0" />}
-                      <span className="min-w-0">{opt}</span>
+                      <span className="min-w-0"><RichText text={opt} /></span>
                     </div>
                   );
                 })}
               </div>
 
               {question.explanation && (
-                <p className="text-xs text-muted-foreground mt-3">{question.explanation}</p>
+                <p className="text-xs text-muted-foreground mt-3"><RichText text={question.explanation} /></p>
               )}
 
               <div className="flex items-center gap-2 mt-4">

@@ -9,6 +9,7 @@ import {
   BookOpen,
   ChevronDown,
   GraduationCap,
+  Library,
   LogOut,
   Medal,
   MessageSquare,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { COURSES_ENABLED } from "@/lib/featureFlags";
 import {
   Sidebar,
   SidebarContent,
@@ -60,6 +62,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "My learning",
     items: [
+      { label: "Courses", description: "Structured, stage by stage", href: "/courses", icon: Library },
       { label: "My Quizzes", href: "/my-quizzes", icon: GraduationCap },
       { label: "Groups", href: "/groups", icon: Users },
       { label: "Progress", href: "/progress", icon: TrendingUp },
@@ -324,7 +327,10 @@ export function AppSidebar({
               {section.label}
             </p>
             <nav className="flex flex-col gap-1">
-              {section.items.map(renderNavLink)}
+              {section.items
+                // Courses is dormant until released — see lib/featureFlags.ts.
+                .filter((item) => COURSES_ENABLED || item.href !== "/courses")
+                .map(renderNavLink)}
             </nav>
           </div>
         ))}

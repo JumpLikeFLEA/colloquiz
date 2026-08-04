@@ -108,12 +108,18 @@ export async function getPendingQuestions(
     .from("questions")
     .select("*", { count: "exact" })
     .eq("status", "pending")
-    // The admin queue moderates the PUBLIC pool only. Group questions are
-    // also 'pending' while they await their own group's peer review, and must
-    // not appear here — they reach this queue only once a group promotes one,
-    // which flips visibility to 'shared'. Private questions are created
-    // 'approved' (buildQuestionRows), so this filter hides no existing row.
-    .eq("visibility", "shared")
+    // The admin queue moderates the public pool ('shared') AND course questions
+    // ('course') that failed the importer's machine verification — the course
+    // importer routes an unverified item to status='pending' with visibility
+    // 'course' (never 'shared', so it cannot leak into quick play) and writes the
+    // reason into critic_notes for a human to adjudicate here. Approving one only
+    // flips status, leaving visibility='course', so it becomes visible to enrolled
+    // learners without entering the public bank. Group questions are also
+    // 'pending' while they await their own group's peer review but are
+    // visibility='group', so they stay excluded until a group promotes one to
+    // 'shared'. Private questions are created 'approved' (buildQuestionRows), so
+    // this filter hides no existing row.
+    .in("visibility", ["shared", "course"])
     .order("created_at", { ascending: false })
     .range(from, to);
   if (error) throw new Error(error.message);

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { QuizMode } from "@/types";
 import { pluralize } from "@/lib/format";
 import { chipStyle } from "@/lib/categoricalColor";
+import { RichText } from "@/app/components/RichText";
 
 /**
  * A five-step ordinal scale, so it is neither a status pair nor a token — three
@@ -185,7 +186,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
                         {isExcluded ? "⚑" : isWrong ? "✗" : "✓"}
                       </span>
                       <span className="text-sm text-foreground flex-1 line-clamp-1">
-                        {q.question}
+                        <RichText text={q.question} />
                         {isExcluded && (
                           <span className="ml-2 text-xs text-muted-foreground">Reported — not scored</span>
                         )}
@@ -193,11 +194,11 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
                       <span className="text-xs text-muted-foreground/50 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
                     <div className="px-4 pb-4 pt-1 border-t border-border bg-muted/50">
-                      <p className="text-sm text-foreground mb-3 leading-relaxed">{q.question}</p>
+                      <p className="text-sm text-foreground mb-3 leading-relaxed"><RichText text={q.question} /></p>
                       <p className="text-sm text-success font-medium mb-2">
-                        ✓ {q.correct_answer}
+                        ✓ <RichText text={q.correct_answer} />
                       </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{q.explanation}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed"><RichText text={q.explanation} /></p>
                     </div>
                   </details>
                 );

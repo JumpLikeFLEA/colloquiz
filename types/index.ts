@@ -12,7 +12,7 @@ export type QuestionSource = "manual" | "ai_generated";
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
-export type Visibility = "shared" | "private" | "group";
+export type Visibility = "shared" | "private" | "group" | "course";
 
 export interface QuestionCriticNotes {
   correctness_check: "pass" | "fail" | "unsure";
@@ -48,8 +48,19 @@ export interface Question {
  * A question as served to the player: options shuffled, and the empty padding
  * slots of the stored 4-tuple dropped (see lib/options.ts). A true/false
  * question therefore arrives with exactly two options.
+ *
+ * The `*Html` fields are KaTeX-rendered HTML built SERVER-side (renderToHtml,
+ * lib/richText) and index-aligned with `options`. They exist so the client
+ * `QuizSession` can show math without importing katex — the raw strings above
+ * stay the source of truth for shuffling and `correct_answer` equality; the
+ * HTML is render-only and must never become a compared value.
  */
-export type PlayableQuestion = Omit<Question, "options"> & { options: string[] };
+export type PlayableQuestion = Omit<Question, "options"> & {
+  options: string[];
+  questionHtml: string;
+  optionsHtml: string[];
+  explanationHtml: string;
+};
 
 export interface Quiz {
   id: string;
@@ -247,4 +258,65 @@ export interface Subject {
 export type SchemaVersion = {
   version: number;
   updated_at: string;
+};
+
+// ── Course stage play ───────────────────────────────────────
+// Payloads the practice/check API routes return to their client players. Options
+// are shuffled AND KaTeX-rendered server-side (same reasoning as PlayableQuestion):
+// `html` is render-only, `raw` stays the value compared for correctness. The
+// client never sees a shuffle seed — the server orders once and returns raw+html
+// index-aligned.
+
+/** One answer option, shuffled and pre-rendered server-side. */
+export type ServedOption = {
+  raw: string;
+  html: string;
+};
+
+/**
+ * A practice item. Ships `correctAnswer` + `explanationHtml` for immediate local
+ * feedback exactly like the quiz engine (draw_practice_item returns them by
+ * design); the seen-record is still written by the server-truth
+ * record_practice_answer POST, never from client correctness.
+ */
+export type CoursePracticeItem = {
+  id: string;
+  questionHtml: string;
+  options: ServedOption[];
+  correctAnswer: string;
+  explanationHtml: string;
+  difficulty: Difficulty;
+};
+
+/**
+ * A knowledge-check item. Deliberately carries NO correct answer — the check is
+ * graded server-side by submit_stage_check. `isReview` marks a spaced-repetition
+ * item drawn from an earlier completed stage (labelled, and scored separately).
+ */
+export type CourseCheckItem = {
+  id: string;
+  questionHtml: string;
+  options: ServedOption[];
+  difficulty: Difficulty;
+  isReview: boolean;
+};
+
+/** Per-item grading from submit_stage_check. */
+export type CourseCheckResultItem = {
+  questionId: string;
+  isReview: boolean;
+  correct: boolean;
+  correctAnswer: string;
+  given: string | null;
+};
+
+/** The full graded result of a knowledge check. Score is over NEW items only. */
+export type CourseCheckResult = {
+  score: number;
+  passed: boolean;
+  newCorrect: number;
+  newTotal: number;
+  reviewCorrect: number;
+  reviewTotal: number;
+  results: CourseCheckResultItem[];
 };

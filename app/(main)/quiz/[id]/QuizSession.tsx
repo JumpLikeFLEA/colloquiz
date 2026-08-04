@@ -16,6 +16,7 @@ import {
 import subjectsData from "@/data/subjects.json";
 import { chipStyle } from "@/lib/categoricalColor";
 import type { PlayableQuestion, Quiz } from "@/types";
+import { MathHtml } from "@/app/components/MathHtml";
 import { ReportQuestionInline } from "@/app/components/ReportQuestion";
 import { ShareQuizBlock } from "./ShareQuizBlock";
 import { pluralize } from "@/lib/format";
@@ -507,7 +508,7 @@ export default function QuizSession({
               <span className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-subtle text-brand-text shrink-0 font-medium text-sm">
                 {currentIndex + 1}
               </span>
-              <p className="text-foreground leading-relaxed pt-1">{currentQuestion.question}</p>
+              <p className="text-foreground leading-relaxed pt-1"><MathHtml html={currentQuestion.questionHtml} /></p>
             </div>
           </div>
 
@@ -557,7 +558,7 @@ export default function QuizSession({
                       <XCircle size={16} />
                     ) : letter}
                   </span>
-                  <span className={`text-sm leading-snug transition-colors ${textClass}`}>{option}</span>
+                  <MathHtml className={`text-sm leading-snug transition-colors ${textClass}`} html={currentQuestion.optionsHtml[i]} />
                 </motion.button>
               );
             })}
@@ -608,7 +609,7 @@ export default function QuizSession({
                       exit={{ opacity: 0, height: 0 }}
                       className={`text-sm ${isCorrect ? "text-success" : "text-destructive-text"}`}
                     >
-                      {currentQuestion.explanation}
+                      <MathHtml html={currentQuestion.explanationHtml} />
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -950,7 +951,7 @@ function ResultsScreen({
                     <span className="text-xs text-muted-foreground">
                       Q{i + 1}{excluded && " · Reported — not scored"}
                     </span>
-                    <p className="text-sm text-foreground leading-snug line-clamp-2">{q.question}</p>
+                    <p className="text-sm text-foreground leading-snug line-clamp-2"><MathHtml html={q.questionHtml} /></p>
                   </div>
                   <ChevronRight
                     size={15}
@@ -988,7 +989,7 @@ function ResultsScreen({
                                 }`}
                               >
                                 <span className="font-medium shrink-0">{String.fromCharCode(65 + oi)}.</span>
-                                {opt}
+                                <MathHtml html={q.optionsHtml[oi]} />
                                 {isCorrectOpt && <CheckCircle2 size={13} className="ml-auto shrink-0 text-success" />}
                               </div>
                             );
@@ -997,7 +998,7 @@ function ResultsScreen({
                         {q.explanation && (
                           <div className="flex gap-2 mt-1 p-3 rounded-xl bg-card/70">
                             <AlertCircle size={14} className="text-muted-foreground shrink-0 mt-0.5" />
-                            <p className="text-xs text-muted-foreground">{q.explanation}</p>
+                            <p className="text-xs text-muted-foreground"><MathHtml html={q.explanationHtml} /></p>
                           </div>
                         )}
                         <div className="mt-1">

@@ -1,0 +1,8 @@
+# Python dependencies for scripts/verify_math.py (course-importer answer verification).
+# Install with:  python -m pip install -r scripts/requirements.txt
+#
+# sympy provides the symbolic engine (Layer 1 answer checks, Layer 3 option
+# equivalence). lark is required by SymPy's ANTLR-free LaTeX parser, which
+# verify_math.py uses via parse_latex(..., backend="lark") to read MCQ options.
+sympy>=1.14
+lark>=1.2

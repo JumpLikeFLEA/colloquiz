@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
 import { startOrResumeSession } from "@/lib/quizSession";
 import { answerOptions } from "@/lib/options";
+import { renderToHtml } from "@/lib/richText";
 import QuizSession from "./QuizSession";
 import type { PlayableQuestion, Question, Quiz } from "@/types";
 
@@ -37,10 +38,20 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
 
   // Drop the empty padding slots of the stored 4-tuple before shuffling, so a
   // true/false question offers two answers rather than two blank cards.
-  const shuffledQuestions: PlayableQuestion[] = questions.map((q) => ({
-    ...q,
-    options: shuffleOptions(answerOptions(q.options), `${id}:${q.id}`),
-  }));
+  // Shuffle once, server-side, then pre-render KaTeX HTML index-aligned with the
+  // shuffled options. Rendering here keeps katex out of the client bundle; the
+  // raw `options`/`correct_answer` stay the compared values (RichText is
+  // render-only).
+  const shuffledQuestions: PlayableQuestion[] = questions.map((q) => {
+    const options = shuffleOptions(answerOptions(q.options), `${id}:${q.id}`);
+    return {
+      ...q,
+      options,
+      questionHtml: renderToHtml(q.question),
+      optionsHtml: options.map(renderToHtml),
+      explanationHtml: renderToHtml(q.explanation),
+    };
+  });
 
   // Ensure this quiz is the user's active session and hydrate resume progress.
   // Creates a session on a direct URL hit. If a DIFFERENT quiz is already

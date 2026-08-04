@@ -5,7 +5,7 @@
     "icon": "Calculator",
     "color": "#6366f1",
     "tags": [],
-    "subtopics": ["Algebra", "Geometry", "Calculus", "Statistics", "Number Theory", "Linear Algebra", "Trigonometry", "Discrete Math", "Logic Puzzles"]
+    "subtopics": ["Algebra", "Geometry", "Calculus", "Statistics", "Number Theory", "Linear Algebra", "Trigonometry", "Discrete Math", "Logic Puzzles", "Limits", "Continuity", "Derivatives", "Differentiation Rules", "Chain Rule", "Applications of Derivatives", "Integrals", "Fundamental Theorem of Calculus"]
   },
   {
     "id": "physics",

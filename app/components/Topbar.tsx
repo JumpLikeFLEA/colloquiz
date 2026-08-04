@@ -32,6 +32,9 @@ const routeLabels: Record<string, string> = {
   // /groups/[id]/review, /groups/[id]/builder and /groups/join/[token] —
   // the same base-level convention /my-quizzes/builder already relies on.
   "/groups": "Groups",
+  // Keyed on the first segment (see the base match below), so this covers
+  // /courses, /courses/[slug] and /courses/[slug]/[stage] alike.
+  "/courses": "Courses",
 };
 
 export function Topbar({ displayName: _displayName }: { displayName: string }) {

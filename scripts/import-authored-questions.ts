@@ -22,6 +22,13 @@
  * "(ID/Ref/Code #..)" and answer-key labels "(Landmark/Distractor/… #..)". This is
  * idempotent and no-ops on clean batches.
  *
+ * LaTeX-escaping guards (mirrors scripts/import-course.ts, since the instruction
+ * now permits \(…\) math in this path too): a raw-byte backslash lint runs BEFORE
+ * JSON.parse (a single-backslash \frac is a legal JSON escape that parses silently
+ * to a control char), the zod schema rejects C0 control characters via
+ * authoredString, and every \(…\) / \[…\] segment is KaTeX-compiled with
+ * throwOnError:true. All three no-op on the existing Unicode batches.
+ *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/import-authored-questions.ts <path-to.json> [--source manual|ai_generated] [--status pending|approved] [--sync]
  *
@@ -38,9 +45,13 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import katex from "katex";
 import { slugifyForTag } from "../lib/utils";
 import { hashQuestion } from "../lib/generator/dedup";
 import { DifficultySchema } from "../lib/generator/schema";
+import { lintLatexBackslashes } from "../lib/courseLint";
+import { authoredString } from "../lib/courseContent";
+import { segmentMath, KATEX_BASE } from "../lib/richText";
 import type { Subject } from "../types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -86,16 +97,21 @@ const AuthoredQuestionSchema = z
     subject: z.string().min(1),
     subtopic: z.string().min(1),
     difficulty: DifficultySchema,
-    question: z.string().min(10),
+    // authoredString rejects C0 control chars — the belt-and-braces second layer
+    // behind the raw-byte backslash lint (§4 check 2): by the time zod runs,
+    // JSON.parse has already turned a single-backslash "\ne"/"\to"/"\theta" into a
+    // control char + letter, so rejecting C0 catches those even if the raw-byte
+    // lint were somehow bypassed. Applied to every rendered string.
+    question: authoredString(10),
     // Either 4 options (multiple choice) or exactly 2 (true/false). True/false is
     // stored padded to a 4-tuple on assembly; here we validate the authored shape.
     options: z
-      .array(z.string().min(1))
+      .array(authoredString(1))
       .refine((a) => a.length === 2 || a.length === 4, {
         message: "options must have exactly 2 (True/False) or 4 items",
       }),
-    correct_answer: z.string().min(1),
-    explanation: z.string().min(10),
+    correct_answer: authoredString(1),
+    explanation: authoredString(10),
   })
   .refine((q) => q.options.includes(q.correct_answer), {
     message: "correct_answer must match one of the options verbatim",
@@ -135,8 +151,51 @@ function normalizeRow(row: unknown): unknown {
   };
 }
 
-// ── Load, strip scaffolding, then structurally validate ─────
-const raw = JSON.parse(readFileSync(filePath, "utf-8"));
+// ── KaTeX compile check (import-time enforcement, §4 check 3) ───────────────
+// Every \(…\) / \[…\] segment must render with throwOnError:true, strict:true, so
+// a typo'd command or unbalanced brace fails the batch instead of degrading to red
+// source at serve time. Shares KATEX_BASE with the renderer so content that trips
+// `trust`/`maxSize` is rejected here too. A no-op on Unicode-only batches (no math
+// segments), so existing authored files pass untouched.
+function compileErrors(text: string, where: string): string[] {
+  const errs: string[] = [];
+  for (const seg of segmentMath(text)) {
+    if (seg.type === "text") continue;
+    try {
+      katex.renderToString(seg.value, {
+        ...KATEX_BASE,
+        throwOnError: true,
+        strict: true,
+        displayMode: seg.type === "block",
+      });
+    } catch (e) {
+      errs.push(`${where}: KaTeX rejected ${seg.type} math "${seg.value}" — ${(e as Error).message}`);
+    }
+  }
+  return errs;
+}
+
+// ── Load: raw-byte backslash lint (BEFORE parse), strip scaffolding, validate ─
+// The lint runs on the raw file text first: a single-backslash LaTeX command
+// (\frac, \ne, \to) is a LEGAL JSON escape that JSON.parse silently mangles into a
+// control char + letter, so it must be caught before parsing destroys the evidence.
+// Now that docs/instruction_external_LLM.txt permits \(…\), the quiz path inherits
+// the identical hazard the course importer guards against.
+const rawText = readFileSync(filePath, "utf-8");
+const lintIssues = lintLatexBackslashes(rawText);
+if (lintIssues.length > 0) {
+  console.error(`Backslash lint failed in ${filePath}:`);
+  for (const issue of lintIssues) console.error(`  ${issue.message}`);
+  process.exit(1);
+}
+
+let raw: unknown;
+try {
+  raw = JSON.parse(rawText);
+} catch (e) {
+  console.error(`${filePath}: invalid JSON — ${(e as Error).message}`);
+  process.exit(1);
+}
 const normalized = Array.isArray(raw) ? raw.map(normalizeRow) : raw;
 const parsed = AuthoredArraySchema.safeParse(normalized);
 if (!parsed.success) {
@@ -195,6 +254,21 @@ authored.forEach((q, i) => {
 if (shapeErrors.length > 0) {
   console.error("Option-shape validation failed:");
   shapeErrors.forEach((e) => console.error(`  ${e}`));
+  process.exit(1);
+}
+
+// ── KaTeX compile check over every rendered string ──────────
+const katexErrors: string[] = [];
+authored.forEach((q, i) => {
+  katexErrors.push(...compileErrors(q.question, `[${i}] question`));
+  q.options.forEach((o, j) => katexErrors.push(...compileErrors(o, `[${i}] option[${j}]`)));
+  katexErrors.push(...compileErrors(q.correct_answer, `[${i}] correct_answer`));
+  katexErrors.push(...compileErrors(q.explanation, `[${i}] explanation`));
+});
+
+if (katexErrors.length > 0) {
+  console.error("KaTeX compile check failed:");
+  katexErrors.forEach((e) => console.error(`  ${e}`));
   process.exit(1);
 }
 
