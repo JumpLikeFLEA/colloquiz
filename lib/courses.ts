@@ -376,3 +376,114 @@ export async function getStageTheory(
   const blocks = data?.blocks;
   return Array.isArray(blocks) ? (blocks as TheoryBlock[]) : [];
 }
+
+// ── Authoring (admin/editor) ─────────────────────────────────
+//
+// The authoring surface (app/(main)/admin/courses/**) lives OFF the enrolled-only
+// learner RLS path: content is edited via SECURITY DEFINER RPCs so an editor need
+// not enroll. These helpers give the admin pages a single call for "which courses
+// may I edit?" and "give me the whole stage in one shot for the walkthrough".
+//
+// Not gated on COURSES_ENABLED (that flag guards the LEARNER routes): editing
+// works while the feature is dormant so content can be prepared before launch.
+
+export type EditableCourse = CourseCard & { canEditReason: "admin" | "editor" };
+
+/**
+ * The courses the caller may edit.
+ *   • Admin → every course (published or draft), each tagged canEditReason:'admin'.
+ *   • Non-admin → only the courses they have a course_editors row for (via the
+ *     "course_editors: self read" policy), each tagged canEditReason:'editor'.
+ *
+ * Empty list = the caller has no authoring rights anywhere; the page should
+ * render Forbidden. Two calls (courses + stage counts) mirror getPublishedCourses.
+ */
+export async function getEditableCourses(
+  supabase: SupabaseClient,
+  isAdmin: boolean,
+): Promise<EditableCourse[]> {
+  let courseIds: string[] | null = null;
+  let reason: "admin" | "editor" = "admin";
+
+  if (!isAdmin) {
+    reason = "editor";
+    const { data: grants, error: grantsErr } = await supabase
+      .from("course_editors")
+      .select("course_id");
+    if (grantsErr) throw new Error(grantsErr.message);
+    courseIds = (grants ?? []).map((g) => g.course_id as string);
+    if (courseIds.length === 0) return [];
+  }
+
+  const query = supabase
+    .from("courses")
+    .select("id, slug, title, subtitle, description, icon, color, access")
+    .order("created_at", { ascending: true });
+
+  const { data: courses, error } = courseIds ? await query.in("id", courseIds) : await query;
+  if (error) throw new Error(error.message);
+
+  const rows = courses ?? [];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((c) => c.id as string);
+  const { data: stages } = await supabase
+    .from("course_stages")
+    .select("course_id")
+    .in("course_id", ids)
+    .is("archived_at", null);
+  const count = new Map<string, number>();
+  for (const s of stages ?? []) count.set(s.course_id, (count.get(s.course_id) ?? 0) + 1);
+
+  return rows.map((c) => ({ ...toCard(c, count.get(c.id as string) ?? 0), canEditReason: reason }));
+}
+
+// Read-only view of an exercise variant group for the walkthrough's Exercises
+// section. Editing is out of scope in v1 — this is review-in-context only.
+export type AuthoringVariant = {
+  id: string;
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+  difficulty: string;
+  variant_ordinal: number;
+  status: string;
+  visibility: string;
+};
+
+export type AuthoringGroup = {
+  variant_group: string;
+  siblings: AuthoringVariant[];
+};
+
+export type StageAuthoring = {
+  stageId: string;
+  blocks: TheoryBlock[];
+  /** ISO timestamp; null when no theory row exists yet (fresh stage). The
+   * client sends it back with save_stage_theory as the concurrency token. */
+  updatedAt: string | null;
+  groups: AuthoringGroup[];
+};
+
+/**
+ * One-shot read of everything the StageEditor needs: theory blocks + concurrency
+ * token + read-only exercises. Runs get_stage_authoring (SECURITY DEFINER,
+ * 029), which internally guards can_edit_course and bypasses the enrolled-only
+ * theory RLS. Returns null when the caller lacks edit rights or the stage does
+ * not exist (a stranger cannot distinguish the two).
+ */
+export async function getStageAuthoring(
+  supabase: SupabaseClient,
+  stageId: string,
+): Promise<StageAuthoring | null> {
+  const { data, error } = await supabase.rpc("get_stage_authoring", { p_stage_id: stageId });
+  if (error) throw new Error(error.message);
+  if (!data?.ok) return null;
+  return {
+    stageId: data.stage_id as string,
+    blocks: Array.isArray(data.blocks) ? (data.blocks as TheoryBlock[]) : [],
+    updatedAt: (data.updated_at as string | null) ?? null,
+    groups: Array.isArray(data.groups) ? (data.groups as AuthoringGroup[]) : [],
+  };
+}

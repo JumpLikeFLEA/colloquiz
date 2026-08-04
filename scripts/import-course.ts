@@ -73,6 +73,7 @@ import { DifficultySchema } from "../lib/generator/schema";
 import { TheoryBlocksSchema, authoredString } from "../lib/courseContent";
 import { lintLatexBackslashes } from "../lib/courseLint";
 import { segmentMath, KATEX_BASE } from "../lib/richText";
+import { validateTheoryBlocks } from "../lib/theoryValidate";
 import { runVerifyChecks, type VerifyCheck, type VerifyResult } from "../lib/verifyMath";
 // Types only — importing the value graph of ../lib/courseVerify pulls in
 // ../lib/generator/llm, which throws at module load without ANTHROPIC_API_KEY.
@@ -94,6 +95,11 @@ const courseDir = process.argv.slice(2).find((a) => !a.startsWith("--"));
 const sync = process.argv.includes("--sync");
 const dryRun = process.argv.includes("--dry-run");
 const skipVerify = process.argv.includes("--skip-verify");
+// --adopt: overwrite theory rows that were edited in-app (updated_by IS NOT NULL).
+// Without it, such rows are SKIPPED with a warning — the JSON in the repo should
+// not silently clobber a fix made by an author in the browser. Adopt is the
+// deliberate "the file is right, reclaim it" toggle.
+const adopt = process.argv.includes("--adopt");
 const source = (getArg("source") ?? "ai_generated") as "manual" | "ai_generated";
 const status = (getArg("status") ?? "approved") as "approved" | "pending";
 
@@ -104,7 +110,7 @@ function die(msg: string): never {
 
 if (!courseDir) {
   die(
-    "Usage: import-course.ts <course-dir> [--sync] [--dry-run] [--skip-verify] " +
+    "Usage: import-course.ts <course-dir> [--sync] [--dry-run] [--skip-verify] [--adopt] " +
       "[--source manual|ai_generated] [--status approved|pending]",
   );
 }
@@ -238,20 +244,10 @@ function compileErrors(text: string, where: string): string[] {
   return errs;
 }
 
-function theoryBlockStrings(block: z.infer<typeof TheoryBlocksSchema>[number]): string[] {
-  switch (block.type) {
-    case "prose":
-    case "formula":
-    case "callout":
-      return [block.body];
-    case "example":
-      return [block.statement, ...block.steps];
-    case "list":
-      return block.items;
-    case "definition":
-      return [block.term, block.body];
-  }
-}
+// Theory validation is shared with the in-app authoring route via
+// lib/theoryValidate.ts, so a block that imports must save and vice versa.
+// Questions/options/explanations stay on the local compileErrors path (they
+// have their own zod schema in this file; they are not theory blocks).
 
 // ── Deterministic question id from the stable authored key ──
 // authored_key = "<slug>/<stageKey>/<group>/v<ordinal>". Hashing it means the id
@@ -305,9 +301,13 @@ for (const { file, stage } of stageDefs) {
     );
   }
 
-  for (const block of stage.theory) {
-    for (const [i, str] of theoryBlockStrings(block).entries()) {
-      errors.push(...compileErrors(str, `${file}: theory ${block.type}[${i}]`));
+  // Shared validation: zod (already ran via StageFileSchema, harmless to re-run)
+  // + KaTeX compile of every authored string. Same routine the in-app editor
+  // save uses, so imported and app-saved content cannot diverge.
+  const theoryResult = validateTheoryBlocks(stage.theory);
+  if (!theoryResult.ok) {
+    for (const err of theoryResult.errors) {
+      errors.push(`${file}: theory block[${err.blockIndex}].${err.field}: ${err.message}`);
     }
   }
 
@@ -579,15 +579,57 @@ async function run() {
   );
 
   // 3. Theory (blocks replaced wholesale, keyed on stage_id).
-  const theoryRows = stageDefs.map(({ stage }) => ({
-    stage_id: stageIdByKey.get(stage.key)!,
-    blocks: stage.theory,
-    updated_at: new Date().toISOString(),
-  }));
-  const { error: theoryErr } = await supabase
+  //
+  // Protect app-edited stages: course_stage_theory.updated_by is NULL for rows
+  // this script wrote and non-null once an in-app save touched them (029). Skip
+  // those unless --adopt was passed, and print a warning naming each skipped
+  // stage so the operator knows the JSON drifted from the DB and can act on it.
+  const stageIds = stageDefs.map(({ stage }) => stageIdByKey.get(stage.key)!);
+  const { data: existingTheory, error: existingErr } = await supabase
     .from("course_stage_theory")
-    .upsert(theoryRows, { onConflict: "stage_id" });
-  if (theoryErr) die(`theory upsert failed: ${theoryErr.message}`);
+    .select("stage_id, updated_by")
+    .in("stage_id", stageIds);
+  if (existingErr) die(`theory pre-read failed: ${existingErr.message}`);
+
+  const editedStageIds = new Set(
+    (existingTheory ?? [])
+      .filter((r) => r.updated_by != null)
+      .map((r) => r.stage_id as string),
+  );
+
+  const theoryRows: { stage_id: string; blocks: unknown; updated_at: string; updated_by: null }[] = [];
+  const skippedStageKeys: string[] = [];
+  for (const { stage } of stageDefs) {
+    const stageId = stageIdByKey.get(stage.key)!;
+    if (editedStageIds.has(stageId) && !adopt) {
+      skippedStageKeys.push(stage.key);
+      continue;
+    }
+    theoryRows.push({
+      stage_id: stageId,
+      blocks: stage.theory,
+      updated_at: new Date().toISOString(),
+      // Clear the marker on adopt too: the JSON is authoritative again.
+      updated_by: null,
+    });
+  }
+
+  if (skippedStageKeys.length > 0) {
+    console.warn(
+      `Skipped theory for ${skippedStageKeys.length} stage(s) edited in-app ` +
+        `(use --adopt to overwrite):`,
+    );
+    for (const k of skippedStageKeys) {
+      console.warn(`  ${k}: theory was edited in-app; skipping (use --adopt to overwrite)`);
+    }
+  }
+
+  if (theoryRows.length > 0) {
+    const { error: theoryErr } = await supabase
+      .from("course_stage_theory")
+      .upsert(theoryRows, { onConflict: "stage_id" });
+    if (theoryErr) die(`theory upsert failed: ${theoryErr.message}`);
+  }
 
   // 4. Questions (keyed on the deterministic id → stable across re-import).
   // Columns are listed explicitly so the internal `stageKey` never reaches the DB.

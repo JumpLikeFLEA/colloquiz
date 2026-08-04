@@ -6,6 +6,7 @@ import { ActiveQuizBanner } from "@/app/components/ActiveQuizBanner";
 import { Toaster } from "@/app/components/ui/sonner";
 import { DuelRealtime } from "@/app/components/DuelRealtime";
 import { ThemeSync } from "@/app/components/ThemeSync";
+import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
 import { getLevelProgress } from "@/lib/levels";
@@ -26,6 +27,7 @@ export default async function MainLayout({
   };
   let isAdmin = false;
   let isAuthor = false;
+  let isCourseEditor = false;
 
   if (data) {
     const xp = data.total_xp ?? 0;
@@ -40,6 +42,17 @@ export default async function MainLayout({
     };
     isAdmin = data.role === "admin";
     isAuthor = !!data.is_author || data.role === "admin";
+
+    // "Has at least one course_editors row." Non-admin editors need the admin
+    // Courses nav entry to reach their editable courses; the RLS "self read"
+    // policy (029) makes this a scoped count with no admin escalation.
+    if (!isAdmin) {
+      const supabase = await createClient();
+      const { count } = await supabase
+        .from("course_editors")
+        .select("course_id", { head: true, count: "exact" });
+      isCourseEditor = (count ?? 0) > 0;
+    }
   }
 
   // Duels awaiting this user's move, for the sidebar badge. getMyDuels also runs
@@ -53,7 +66,13 @@ export default async function MainLayout({
   return (
     <SidebarProvider>
       <StartQuizProvider>
-        <AppSidebar profile={profile} isAdmin={isAdmin} isAuthor={isAuthor} duelCount={duelCount} />
+        <AppSidebar
+          profile={profile}
+          isAdmin={isAdmin}
+          isAuthor={isAuthor}
+          isCourseEditor={isCourseEditor}
+          duelCount={duelCount}
+        />
         {/* min-w-0 is load-bearing. This is a flex item, so its min-width
             defaults to `auto`, meaning it refuses to shrink below the
             min-content width of everything inside it — and one unbreakable

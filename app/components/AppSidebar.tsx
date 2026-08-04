@@ -13,6 +13,7 @@ import {
   LogOut,
   Medal,
   MessageSquare,
+  Pencil,
   PenLine,
   Settings,
   Settings2,
@@ -109,9 +110,25 @@ const adminItems: NavItem[] = [
     icon: ShieldCheck,
   },
   {
+    label: "Courses",
+    href: "/admin/courses",
+    icon: Pencil,
+  },
+  {
     label: "Feedback",
     href: "/admin/feedback",
     icon: MessageSquare,
+  },
+];
+
+// Editors (non-admin course_editors) get a lone entry into the authoring surface.
+// Same href as the admin item — the page decides what to show — but a separate
+// section so a non-admin never sees a nav labelled "Admin".
+const editorItems: NavItem[] = [
+  {
+    label: "Courses",
+    href: "/admin/courses",
+    icon: Pencil,
   },
 ];
 
@@ -245,11 +262,14 @@ export function AppSidebar({
   profile,
   isAdmin,
   isAuthor,
+  isCourseEditor = false,
   duelCount = 0,
 }: {
   profile: UserProfile;
   isAdmin: boolean;
   isAuthor: boolean;
+  /** True when the caller has at least one course_editors row (and isn't an admin). */
+  isCourseEditor?: boolean;
   /** Duels awaiting this user's move — shown as a badge on the Duels entry. */
   duelCount?: number;
 }) {
@@ -387,6 +407,20 @@ export function AppSidebar({
             </p>
             <nav className="flex flex-col gap-1">
               {adminItems.map(renderNavLink)}
+            </nav>
+          </div>
+        )}
+
+        {/* Editor — only for non-admin users who hold at least one
+            course_editors grant. Admins get the same link via the Admin
+            section above; showing both would double the entry. */}
+        {!isAdmin && isCourseEditor && (
+          <div className="mt-4">
+            <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+              Editing
+            </p>
+            <nav className="flex flex-col gap-1">
+              {editorItems.map(renderNavLink)}
             </nav>
           </div>
         )}
