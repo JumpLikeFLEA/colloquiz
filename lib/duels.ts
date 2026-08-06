@@ -58,6 +58,7 @@ export type CompetitiveRow = {
   rank: number;
   user_id: string;
   display_name: string;
+  avatar_url: string | null;
   tier: TierId;
   matches_played: number;
   is_me: boolean;

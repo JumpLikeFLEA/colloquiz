@@ -23,6 +23,7 @@ export type LeaderboardRow = {
   rank: number;
   user_id: string;
   display_name: string;
+  avatar_url: string | null;
   xp: number;
   tier: string | null;
   is_me: boolean;
@@ -32,6 +33,7 @@ export type MyRank = {
   rank: number;
   user_id: string;
   display_name: string;
+  avatar_url: string | null;
   xp: number;
   tier: string | null;
   total_ranked: number;

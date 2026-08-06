@@ -203,6 +203,7 @@ export async function getMyDuelTargets(
 export type GroupMemberView = {
   id: string;
   name: string;
+  avatarUrl: string | null;
   role: GroupRole;
   joinedAt: string;
 };
@@ -255,7 +256,7 @@ export async function getGroup(
   const [{ data: profiles }, { data: quizzes }, { data: pendingRows }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, display_name, full_name")
+      .select("id, display_name, full_name, avatar_url")
       .in("id", memberRows.map((m) => m.user_id)),
     supabase
       .from("quizzes")
@@ -275,6 +276,9 @@ export async function getGroup(
 
   const name = new Map(
     (profiles ?? []).map((p) => [p.id, (p.full_name || p.display_name || "Member") as string]),
+  );
+  const avatar = new Map(
+    (profiles ?? []).map((p) => [p.id, (p.avatar_url ?? null) as string | null]),
   );
 
   const quizRows = (quizzes ?? []) as Quiz[];
@@ -300,6 +304,7 @@ export async function getGroup(
     members: memberRows.map((m) => ({
       id: m.user_id as string,
       name: name.get(m.user_id) ?? "Member",
+      avatarUrl: avatar.get(m.user_id) ?? null,
       role: m.role as GroupRole,
       joinedAt: m.created_at as string,
     })),

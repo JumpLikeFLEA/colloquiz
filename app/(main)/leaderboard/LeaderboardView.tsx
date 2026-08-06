@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Crown, EyeOff, Eye, Medal, Swords, X } from "lucide-react";
@@ -77,14 +78,30 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-function Row({ row }: { row: LeaderboardRow }) {
-  const initials = row.display_name
+function initialsOf(name: string): string {
+  return name
     .split(" ")
     .map((w) => w[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+}
 
+// Roster avatar: uploaded picture when present, initials chip otherwise. Same
+// pattern as the sidebar (AppSidebar), so a fresh upload flows here as soon as
+// the leaderboard's server render runs — the URL carries a per-upload uuid, so
+// no CDN cache-busting is needed.
+function RosterAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  return (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0 select-none overflow-hidden">
+      {avatarUrl
+        ? <Image src={avatarUrl} alt="" width={36} height={36} className="w-full h-full object-cover" />
+        : initialsOf(name)}
+    </div>
+  );
+}
+
+function Row({ row }: { row: LeaderboardRow }) {
   return (
     <div
       className={`flex items-center gap-3 px-4 py-3 ${
@@ -92,9 +109,7 @@ function Row({ row }: { row: LeaderboardRow }) {
       }`}
     >
       <RankBadge rank={row.rank} />
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
-        {initials}
-      </div>
+      <RosterAvatar name={row.display_name} avatarUrl={row.avatar_url} />
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm font-medium leading-none truncate ${
@@ -330,6 +345,7 @@ export function LeaderboardView({
               rank: myRank.rank,
               user_id: myRank.user_id,
               display_name: myRank.display_name,
+              avatar_url: myRank.avatar_url,
               xp: myRank.xp,
               tier: myRank.tier,
               is_me: true,
@@ -410,14 +426,7 @@ export function LeaderboardView({
                   }`}
                 >
                   <RankBadge rank={c.rank} />
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0 select-none">
-                    {c.display_name
-                      .split(" ")
-                      .map((w) => w[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </div>
+                  <RosterAvatar name={c.display_name} avatarUrl={c.avatar_url} />
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm font-medium leading-none truncate ${

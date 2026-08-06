@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -37,6 +38,28 @@ import { useStartQuiz } from "@/app/components/StartQuizProvider";
 import type { GroupDetail } from "@/lib/groups";
 import type { LeaderboardRow } from "@/lib/leaderboard";
 import { pluralize } from "@/lib/format";
+
+function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+// Roster avatar — same shape as the sidebar's, so an uploaded picture appears
+// here as soon as the server render runs. The URL carries a per-upload uuid
+// (lib/avatar.ts), so no CDN cache-busting is needed.
+function RosterAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  return (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0 overflow-hidden">
+      {avatarUrl
+        ? <Image src={avatarUrl} alt="" width={36} height={36} className="w-full h-full object-cover" />
+        : initialsOf(name)}
+    </div>
+  );
+}
 
 export function GroupDetailView({
   detail,
@@ -388,14 +411,7 @@ export function GroupDetailView({
               key={m.id}
               className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-card"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
-                {m.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
+              <RosterAvatar name={m.name} avatarUrl={m.avatarUrl} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
@@ -459,14 +475,7 @@ export function GroupDetailView({
                 }`}
               >
                 <span className="w-6 text-sm text-muted-foreground shrink-0">{s.rank}</span>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
-                  {s.display_name
-                    .split(" ")
-                    .map((w) => w[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)}
-                </div>
+                <RosterAvatar name={s.display_name} avatarUrl={s.avatar_url} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-foreground truncate">
