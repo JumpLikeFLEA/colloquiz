@@ -1,23 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  BookMarked,
   ChevronDown,
   ChevronUp,
   ClipboardCheck,
+  GripVertical,
   History,
+  Info,
+  Lightbulb,
+  List,
   Plus,
   RotateCcw,
   Save,
+  Sigma,
+  Text,
   Trash2,
   Undo2,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +58,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { cn } from "@/lib/utils";
+import { CALLOUT_TONE } from "@/lib/calloutTone";
 import type { TheoryBlock } from "@/lib/courseContent";
 import { THEORY_BLOCK_TYPES } from "@/lib/courseContent";
 import type { AuthoringGroup } from "@/lib/courses";
@@ -58,6 +81,24 @@ type Version = {
 
 type EditorSection = "theory" | "exercises";
 
+// useSyncExternalStore inputs for "am I on the client?" — module scope so the
+// function identities are stable across renders (React uses referential
+// equality on subscribe to know when to re-subscribe).
+const subscribeNoop = () => () => {};
+const getSnapshotTrue = () => true;
+const getSnapshotFalse = () => false;
+
+// ── Client-only ephemeral id ────────────────────────────────
+// Every in-memory block carries a `_id` so React keys (and, next step, dnd-kit)
+// have a stable per-block identity that survives reorder. `_id` is client-only:
+// it is minted here, never comes from the server, and MUST be stripped at every
+// serialize boundary (dirty compare, preview POST, PUT save, post-save
+// snapshot) because the server zod schema is strictObject and would 400 on it.
+type EditableBlock = TheoryBlock & { _id: string };
+const withId = (b: TheoryBlock): EditableBlock => ({ ...b, _id: crypto.randomUUID() });
+const toWire = (bs: EditableBlock[]): TheoryBlock[] =>
+  bs.map(({ _id: _drop, ...rest }) => rest as TheoryBlock);
+
 // ── Empty templates for the "add block" picker ──────────────
 // Discriminated by block.type so TypeScript keeps the union honest. Kept in one
 // place so the block palette can iterate the discriminators exhaustively.
@@ -78,13 +119,25 @@ function emptyBlock(type: TheoryBlock["type"]): TheoryBlock {
   }
 }
 
-const BLOCK_LABELS: Record<TheoryBlock["type"], string> = {
-  prose: "Prose",
-  formula: "Formula",
-  callout: "Callout",
-  list: "List",
-  definition: "Definition",
-  example: "Example",
+// Per-block-type metadata for the editor's block-card header: label, icon and
+// which of the three base accents the pill wears. Callout's accent is a
+// runtime override (see BlockCard) driven by block.tone, so its entry here is
+// just its "resting" accent.
+type AccentKey = "brand" | "success" | "neutral";
+
+const BLOCK_META: Record<TheoryBlock["type"], { label: string; Icon: LucideIcon; accent: AccentKey }> = {
+  prose:      { label: "Prose",      Icon: Text,       accent: "brand"   },
+  definition: { label: "Definition", Icon: BookMarked, accent: "brand"   },
+  formula:    { label: "Formula",    Icon: Sigma,      accent: "success" },
+  example:    { label: "Example",    Icon: Lightbulb,  accent: "success" },
+  list:       { label: "List",       Icon: List,       accent: "neutral" },
+  callout:    { label: "Callout",    Icon: Info,       accent: "brand"   },
+};
+
+const ACCENT_CLASSES: Record<AccentKey, string> = {
+  brand:   "bg-brand-subtle text-brand-text border-brand-border",
+  success: "bg-success-subtle text-success border-success-border",
+  neutral: "bg-muted text-muted-foreground border-border",
 };
 
 export function StageEditor({
@@ -113,7 +166,27 @@ export function StageEditor({
 }) {
   const router = useRouter();
   const [section, setSection] = useState<EditorSection>("theory");
-  const [blocks, setBlocks] = useState<TheoryBlock[]>(initialBlocks);
+  // @dnd-kit mints monotonic ids (aria-describedby="DndDescribedBy-N") from a
+  // module-level counter shared by DndContext and every useSortable call. In
+  // SSR + hydration, the order in which those counters tick differs between
+  // server and client, so the ids drift by one and React logs a hydration
+  // mismatch. Gating DnD on this flag means the server (and the first client
+  // render, which must match it) never touches those hooks — the DnD tree
+  // mounts only in a subsequent client render, where SSR isn't involved.
+  // useSyncExternalStore is the sanctioned "is this the client?" primitive:
+  // getServerSnapshot returns false on the server, getSnapshot returns true on
+  // the client, and subscribe is a no-op since the value never changes after
+  // hydration.
+  const dndReady = useSyncExternalStore(
+    subscribeNoop,
+    getSnapshotTrue,
+    getSnapshotFalse,
+  );
+  // Mint one id per initial block ONCE, then use the SAME id'd array as both
+  // the initial state and the initial savedSnapshot source, so the boot-time
+  // dirty compare (which stringifies toWire(blocks)) is byte-identical to the
+  // stored snapshot — otherwise the editor would boot permanently dirty.
+  const [blocks, setBlocks] = useState<EditableBlock[]>(() => initialBlocks.map(withId));
   const [baseUpdatedAt, setBaseUpdatedAt] = useState<string | null>(initialUpdatedAt);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -134,7 +207,7 @@ export function StageEditor({
   const [savedSnapshot, setSavedSnapshot] = useState<string>(() =>
     JSON.stringify(initialBlocks),
   );
-  const dirty = JSON.stringify(blocks) !== savedSnapshot;
+  const dirty = JSON.stringify(toWire(blocks)) !== savedSnapshot;
 
   // Unsaved-changes guard: matches the confirm() the Groups builder uses. The
   // beforeunload event only fires on real page unloads, not soft navigations —
@@ -159,7 +232,7 @@ export function StageEditor({
           const res = await fetch("/api/admin/courses/theory/preview", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ blocks }),
+            body: JSON.stringify({ blocks: toWire(blocks) }),
             signal: ctrl.signal,
           });
           const data = (await res.json().catch(() => null)) as PreviewResponse | null;
@@ -202,7 +275,12 @@ export function StageEditor({
   const hasErrors = preview !== null && !preview.ok;
 
   const setBlockAt = useCallback((i: number, next: TheoryBlock) => {
-    setBlocks((prev) => prev.map((b, j) => (j === i ? next : b)));
+    // BlockCard/BlockFields see block as TheoryBlock (no _id in the type), so
+    // their `{ ...block, field: v }` spreads carry _id at runtime but drop it
+    // from the type. Re-attach the existing block's _id here so the state
+    // stays EditableBlock[] and the id is preserved even if a future onChange
+    // caller builds a block without spreading. Runtime is a no-op today.
+    setBlocks((prev) => prev.map((b, j) => (j === i ? { ...next, _id: b._id } : b)));
   }, []);
 
   const removeBlockAt = useCallback((i: number) => {
@@ -220,8 +298,42 @@ export function StageEditor({
     });
   }, []);
 
-  const addBlock = useCallback((type: TheoryBlock["type"]) => {
-    setBlocks((prev) => [...prev, emptyBlock(type)]);
+  // Pointer sensor only — no KeyboardSensor (chevrons cover keyboard reorder).
+  // activationConstraint.distance means a click on the handle (mousedown +
+  // mouseup with no movement) is NOT interpreted as a drag, so accidental
+  // taps do not fire onDragEnd.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+
+  const handleDragEnd = useCallback(
+    (e: DragEndEvent) => {
+      const { active, over } = e;
+      if (!over || active.id === over.id) return;
+      setBlocks((prev) => {
+        const from = prev.findIndex((b) => b._id === active.id);
+        const to = prev.findIndex((b) => b._id === over.id);
+        if (from === -1 || to === -1 || from === to) return prev;
+        const copy = prev.slice();
+        const [x] = copy.splice(from, 1);
+        copy.splice(to, 0, x);
+        return copy;
+      });
+    },
+    [],
+  );
+
+  // Index-aware insert: the inline "+" zones live between blocks and pass their
+  // own index (0 = before first block, N = after last block, i+1 = after
+  // block i). Clamping keeps the call safe if the array shrank between hover
+  // and click (e.g. a concurrent delete).
+  const addBlockAt = useCallback((index: number, type: TheoryBlock["type"]) => {
+    setBlocks((prev) => {
+      const copy = prev.slice();
+      const clamped = Math.max(0, Math.min(index, copy.length));
+      copy.splice(clamped, 0, withId(emptyBlock(type)));
+      return copy;
+    });
   }, []);
 
   async function save() {
@@ -231,14 +343,14 @@ export function StageEditor({
       const res = await fetch(`/api/admin/courses/stages/${stage.id}/theory`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ blocks, baseUpdatedAt }),
+        body: JSON.stringify({ blocks: toWire(blocks), baseUpdatedAt }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
         setSaveError(data.message ?? data.error ?? "Save failed.");
         return;
       }
-      setSavedSnapshot(JSON.stringify(blocks));
+      setSavedSnapshot(JSON.stringify(toWire(blocks)));
       setBaseUpdatedAt(data.updatedAt as string);
       toast.success("Saved.");
       // Server surfaces (per-stage "Edited" pill on the parent page) update
@@ -252,7 +364,7 @@ export function StageEditor({
   }
 
   function discard() {
-    setBlocks(JSON.parse(savedSnapshot) as TheoryBlock[]);
+    setBlocks((JSON.parse(savedSnapshot) as TheoryBlock[]).map(withId));
     setSaveError(null);
     setShowDiscardConfirm(false);
   }
@@ -327,28 +439,53 @@ export function StageEditor({
       {section === "theory" ? (
         <div className="space-y-6">
           {blocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground rounded-2xl border border-dashed border-border">
-              <p className="text-sm">No blocks yet — add one below.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {blocks.map((b, i) => (
-                <BlockCard
-                  key={i}
-                  index={i}
-                  total={blocks.length}
-                  block={b}
-                  rendered={renderedByBlock.get(i) ?? new Map()}
-                  errors={errorsByBlock.get(i) ?? []}
-                  onChange={(next) => setBlockAt(i, next)}
-                  onRemove={() => removeBlockAt(i)}
-                  onMove={(dir) => moveBlock(i, dir)}
-                />
-              ))}
-            </div>
-          )}
-
-          <AddBlockPicker onAdd={addBlock} />
+            <EmptyStagePicker onInsert={addBlockAt} />
+          ) : (() => {
+            // InsertZones are siblings of BlockCards in the flex-col, NOT
+            // inside sortable nodes — SortableContext.items stays blocks-only
+            // so zones can't be drop targets and don't confuse dnd.
+            const list = (
+              <div className="flex flex-col gap-1">
+                <InsertZone index={0} onInsert={addBlockAt} />
+                {blocks.map((b, i) => (
+                  <Fragment key={b._id}>
+                    <BlockCard
+                      index={i}
+                      total={blocks.length}
+                      block={b}
+                      sortable={dndReady}
+                      rendered={renderedByBlock.get(i) ?? new Map()}
+                      errors={errorsByBlock.get(i) ?? []}
+                      onChange={(next) => setBlockAt(i, next)}
+                      onRemove={() => removeBlockAt(i)}
+                      onMove={(dir) => moveBlock(i, dir)}
+                    />
+                    <InsertZone
+                      index={i + 1}
+                      onInsert={addBlockAt}
+                      openUp={i === blocks.length - 1}
+                    />
+                  </Fragment>
+                ))}
+              </div>
+            );
+            return dndReady ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={blocks.map((b) => b._id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {list}
+                </SortableContext>
+              </DndContext>
+            ) : (
+              list
+            );
+          })()}
 
           <div className="sticky bottom-4 z-10">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
@@ -536,25 +673,194 @@ function SectionTab({
   );
 }
 
-// ── Add block picker ────────────────────────────────────────
-function AddBlockPicker({ onAdd }: { onAdd: (type: TheoryBlock["type"]) => void }) {
+// ── Inline insert affordance ────────────────────────────────
+// A thin, near-invisible zone in every gap between blocks (and before/after
+// the list). Hover/focus reveals a horizontal rule with a "+" button; clicking
+// opens a small popover listing the six block types. Selecting a type inserts
+// AT this zone's index and closes the popover.
+//
+// The popover is a plain absolutely-positioned div (no new dependency);
+// dismissal covers select, Escape, and outside-click via a mousedown listener
+// that's attached only while `open` and cleaned up on close/unmount.
+function InsertZone({
+  index,
+  onInsert,
+  openUp = false,
+}: {
+  index: number;
+  onInsert: (index: number, type: TheoryBlock["type"]) => void;
+  // Set on the trailing zone (index === blocks.length) so its popover opens
+  // upward instead of downward — a downward menu on the last gap grows the
+  // <main> scroller past the visible bottom, toggling the vertical scrollbar
+  // and jittering layout. Purely a class swap; no space measurement.
+  openUp?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent) {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <div className="rounded-2xl border border-dashed border-border p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">
-        Add block
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {THEORY_BLOCK_TYPES.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => onAdd(t)}
-            className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-sm text-foreground hover:bg-accent transition-colors"
-          >
-            <Plus size={13} /> {BLOCK_LABELS[t]}
-          </button>
-        ))}
-      </div>
+    <div
+      ref={rootRef}
+      className="group relative h-4 flex items-center justify-center"
+    >
+      {/* Resting: a very faint line, revealed a bit on hover of the zone */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-border opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+      />
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Insert block here"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cn(
+          "relative z-10 cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded-full border border-border bg-card text-muted-foreground transition-opacity",
+          "opacity-35 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100",
+          "hover:text-brand hover:border-brand",
+          open && "opacity-100 text-brand border-brand",
+        )}
+      >
+        <Plus size={12} />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className={cn(
+            "absolute left-1/2 z-20 -translate-x-1/2 min-w-44 rounded-lg border border-border bg-card p-1 shadow-md",
+            openUp ? "bottom-full mb-1" : "top-full mt-1",
+          )}
+        >
+          {THEORY_BLOCK_TYPES.map((t) => {
+            const meta = BLOCK_META[t];
+            return (
+              <button
+                key={t}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onInsert(index, t);
+                  setOpen(false);
+                }}
+                className="cursor-pointer w-full inline-flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-accent"
+              >
+                <meta.Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Empty-stage affordance: a dashed panel with an always-visible "+" that opens
+// the same type menu. A resting-invisible InsertZone on an empty page would be
+// a dead surface; this makes the "add your first block" action obvious.
+function EmptyStagePicker({
+  onInsert,
+}: {
+  onInsert: (index: number, type: TheoryBlock["type"]) => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground rounded-2xl border border-dashed border-border">
+      <p className="text-sm">No blocks yet — add one to get started.</p>
+      <InsertZoneMenu index={0} onInsert={onInsert} alwaysVisible />
+    </div>
+  );
+}
+
+// The "+" + menu extracted so EmptyStagePicker can render it always-visible
+// (no hover reveal, no relative-positioned line) without duplicating the menu
+// markup. InsertZone above uses its own inline version for the compact gap
+// affordance; this one is the standalone control.
+function InsertZoneMenu({
+  index,
+  onInsert,
+  alwaysVisible,
+}: {
+  index: number;
+  onInsert: (index: number, type: TheoryBlock["type"]) => void;
+  alwaysVisible?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent) {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Insert block"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cn(
+          "cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-sm text-foreground hover:bg-accent transition-colors",
+          !alwaysVisible && "opacity-0 group-hover:opacity-100",
+        )}
+      >
+        <Plus size={13} /> Add block
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 min-w-44 rounded-lg border border-border bg-card p-1 shadow-md"
+        >
+          {THEORY_BLOCK_TYPES.map((t) => {
+            const meta = BLOCK_META[t];
+            return (
+              <button
+                key={t}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onInsert(index, t);
+                  setOpen(false);
+                }}
+                className="cursor-pointer w-full inline-flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-accent"
+              >
+                <meta.Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -562,7 +868,47 @@ function AddBlockPicker({ onAdd }: { onAdd: (type: TheoryBlock["type"]) => void 
 // ── Block card ──────────────────────────────────────────────
 // Wraps every block with the shared chrome: type label, move/delete, and the
 // per-block error banner. The type-specific fields render inside.
-function BlockCard({
+function BlockCard(props: {
+  index: number;
+  total: number;
+  block: EditableBlock;
+  sortable: boolean;
+  rendered: Map<string, string>;
+  errors: PreviewError[];
+  onChange: (next: TheoryBlock) => void;
+  onRemove: () => void;
+  onMove: (dir: -1 | 1) => void;
+}) {
+  // Two rendering paths, chosen at the component boundary so the Rules of
+  // Hooks are honored: pre-mount (server + first client render) we take the
+  // Static path which calls no dnd hooks at all — no DndContext exists yet,
+  // so no aria-describedby ids are minted and hydration matches. Post-mount
+  // we take the Sortable path which calls useSortable exactly once.
+  return props.sortable ? <SortableBlockCard {...props} /> : <StaticBlockCard {...props} />;
+}
+
+function SortableBlockCard(props: React.ComponentProps<typeof BlockCard>) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: props.block._id });
+  return (
+    <BlockCardBody
+      {...props}
+      innerRef={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      isDragging={isDragging}
+      handleProps={{ ...attributes, ...listeners }}
+    />
+  );
+}
+
+function StaticBlockCard(props: React.ComponentProps<typeof BlockCard>) {
+  return <BlockCardBody {...props} />;
+}
+
+// Shared body — same DOM in both paths so the SSR HTML matches the first
+// client render byte-for-byte. Only the grip handle carries drag listeners
+// (post-mount), so textareas and buttons stay fully interactive.
+function BlockCardBody({
   index,
   total,
   block,
@@ -571,15 +917,15 @@ function BlockCard({
   onChange,
   onRemove,
   onMove,
-}: {
-  index: number;
-  total: number;
-  block: TheoryBlock;
-  rendered: Map<string, string>;
-  errors: PreviewError[];
-  onChange: (next: TheoryBlock) => void;
-  onRemove: () => void;
-  onMove: (dir: -1 | 1) => void;
+  innerRef,
+  style,
+  isDragging,
+  handleProps,
+}: React.ComponentProps<typeof BlockCard> & {
+  innerRef?: (el: HTMLElement | null) => void;
+  style?: React.CSSProperties;
+  isDragging?: boolean;
+  handleProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
 }) {
   const errByField = new Map<string, string[]>();
   for (const e of errors) {
@@ -588,12 +934,46 @@ function BlockCard({
     errByField.set(e.field, list);
   }
 
+  const meta = BLOCK_META[block.type];
+  // Callout's accent tracks its tone, not its type: a "warning" callout wears
+  // the amber wash while a "note" callout keeps the resting brand accent. The
+  // warning classes are literal here rather than a fourth AccentKey because
+  // no other block type opts in to it.
+  const accentClass =
+    block.type === "callout"
+      ? block.tone === "warning"
+        ? "bg-warning-subtle text-warning border-warning-border"
+        : ACCENT_CLASSES.brand
+      : ACCENT_CLASSES[meta.accent];
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div
+      ref={innerRef}
+      style={style}
+      className={cn(
+        "rounded-2xl border border-border bg-card p-4",
+        isDragging && "opacity-60 z-10",
+      )}
+    >
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {BLOCK_LABELS[block.type]}
+          <button
+            type="button"
+            {...handleProps}
+            title="Drag to reorder"
+            aria-label="Drag to reorder"
+            className="cursor-grab active:cursor-grabbing text-muted-foreground touch-none p-1 -m-1 rounded hover:text-foreground"
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
+              accentClass,
+            )}
+          >
+            <meta.Icon className="w-3.5 h-3.5" />
+            {meta.label}
           </span>
           <span className="text-xs text-muted-foreground">#{index + 1}</span>
         </div>
@@ -712,6 +1092,7 @@ function BlockFields({
             rendered={rendered}
             errByField={errByField}
             onChange={(v) => onChange({ ...block, body: v })}
+            previewClassName={CALLOUT_TONE[block.tone].className}
           />
         </div>
       );
@@ -803,6 +1184,7 @@ function AuthoredField({
   rendered,
   errByField,
   onChange,
+  previewClassName,
 }: {
   label: string;
   field: string;
@@ -810,6 +1192,12 @@ function AuthoredField({
   rendered: Map<string, string>;
   errByField: Map<string, string[]>;
   onChange: (v: string) => void;
+  // Optional colour tail (bg + border colour + text) for the preview strip.
+  // Geometry (px, py, radius, text size, border width, overflow) stays fixed
+  // so every field's preview keeps a consistent shape; only the tone changes.
+  // Ignored when errs.length > 0 — validation errors still show the destructive
+  // box regardless of caller-provided tone.
+  previewClassName?: string;
 }) {
   const html = rendered.get(field);
   const errs = errByField.get(field) ?? [];
@@ -830,7 +1218,9 @@ function AuthoredField({
           ))}
         </div>
       ) : html !== undefined ? (
-        <div className="px-3 py-2 rounded-lg bg-muted/40 border border-border text-sm text-foreground overflow-x-auto">
+        <div
+          className={`px-3 py-2 rounded-lg text-sm overflow-x-auto border ${previewClassName ?? "bg-muted/40 border-border text-foreground"}`}
+        >
           <span dangerouslySetInnerHTML={{ __html: html }} />
         </div>
       ) : null}

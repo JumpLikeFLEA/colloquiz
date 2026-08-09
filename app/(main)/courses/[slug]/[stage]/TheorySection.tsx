@@ -1,5 +1,5 @@
-import { Info, TriangleAlert } from "lucide-react";
 import { RichText } from "@/app/components/RichText";
+import { CALLOUT_TONE } from "@/lib/calloutTone";
 import type { TheoryBlock } from "@/lib/courseContent";
 
 /**
@@ -60,13 +60,9 @@ function Block({ block }: { block: TheoryBlock }) {
       );
 
     case "callout": {
-      const isWarning = block.tone === "warning";
-      const Icon = isWarning ? TriangleAlert : Info;
-      const tone = isWarning
-        ? "bg-warning-subtle border-warning-border text-warning"
-        : "bg-brand-subtle border-brand-border text-brand-text";
+      const { Icon, className: toneClass } = CALLOUT_TONE[block.tone];
       return (
-        <div className={`flex gap-3 rounded-2xl border p-4 ${tone}`}>
+        <div className={`flex gap-3 rounded-2xl border p-4 ${toneClass}`}>
           <Icon size={18} className="shrink-0 mt-0.5" />
           <p className="text-sm leading-relaxed">
             <RichText text={block.body} />
