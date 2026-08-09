@@ -61,7 +61,7 @@
     "icon": "Code",
     "color": "#06b6d4",
     "tags": ["algorithms", "data structures", "computational complexity", "theory of computation", "discrete mathematics", "programming languages", "operating systems", "databases", "computer networks", "artificial intelligence"],
-    "subtopics": ["Algorithms", "Data Structures", "Networks", "Databases", "Operating Systems", "Machine Learning", "Web Development", "Cybersecurity", "Software Engineering", "Programming Languages"]
+    "subtopics": ["Algorithms", "Data Structures", "Networks", "Databases", "Operating Systems", "Machine Learning", "Web Development", "Cybersecurity", "Software Engineering", "Programming Languages", "Docker"]
   },
   {
     "id": "economics",
