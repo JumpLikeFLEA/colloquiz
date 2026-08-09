@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -62,14 +62,40 @@ import { CALLOUT_TONE } from "@/lib/calloutTone";
 import type { TheoryBlock } from "@/lib/courseContent";
 import { THEORY_BLOCK_TYPES } from "@/lib/courseContent";
 import type { AuthoringGroup } from "@/lib/courses";
+import { loadKatex, renderRichTextNodes } from "@/app/components/clientMath";
 
-// ── Types the preview endpoint returns ──────────────────────
-type PreviewField = { field: string; html: string };
-type PreviewBlock = { blockIndex: number; type: string; fields: PreviewField[] };
-type PreviewError = { blockIndex: number; field: string; message: string };
-type PreviewOk = { ok: true; rendered: PreviewBlock[] };
-type PreviewFail = { ok: false; errors: PreviewError[] };
-type PreviewResponse = PreviewOk | PreviewFail;
+// Katex module type — the same shape loadKatex resolves to. Used only for the
+// local katex-loaded state; the render call goes through renderRichTextNodes.
+type LoadedKatex = Awaited<ReturnType<typeof loadKatex>>;
+
+/**
+ * The set of authored strings a block exposes to the editor, addressed by the
+ * same field labels the server-side theoryBlockFields uses. Kept in sync by
+ * construction with the block union — a new block type needs a case here or
+ * the compiler will refuse (exhaustive switch). Mirroring the server's field
+ * enumeration keeps the client-rendered previews addressable by the same
+ * (blockIndex, field) pairs an AuthoredField already reads.
+ */
+function blockAuthoredFields(block: EditableBlock): { field: string; value: string }[] {
+  switch (block.type) {
+    case "prose":
+    case "formula":
+    case "callout":
+      return [{ field: "body", value: block.body }];
+    case "example":
+      return [
+        { field: "statement", value: block.statement },
+        ...block.steps.map((it, i) => ({ field: `steps[${i}]`, value: it.value })),
+      ];
+    case "list":
+      return block.items.map((it, i) => ({ field: `items[${i}]`, value: it.value }));
+    case "definition":
+      return [
+        { field: "term", value: block.term },
+        { field: "body", value: block.body },
+      ];
+  }
+}
 
 type Version = {
   id: string;
@@ -88,16 +114,67 @@ const subscribeNoop = () => () => {};
 const getSnapshotTrue = () => true;
 const getSnapshotFalse = () => false;
 
-// ── Client-only ephemeral id ────────────────────────────────
-// Every in-memory block carries a `_id` so React keys (and, next step, dnd-kit)
-// have a stable per-block identity that survives reorder. `_id` is client-only:
-// it is minted here, never comes from the server, and MUST be stripped at every
-// serialize boundary (dirty compare, preview POST, PUT save, post-save
-// snapshot) because the server zod schema is strictObject and would 400 on it.
-type EditableBlock = TheoryBlock & { _id: string };
-const withId = (b: TheoryBlock): EditableBlock => ({ ...b, _id: crypto.randomUUID() });
+// ── Client-only ephemeral ids ───────────────────────────────
+// Every in-memory block carries a `_id` so React keys (and dnd-kit) have a
+// stable per-block identity that survives reorder. Array-of-string fields
+// (example.steps, list.items) get the same treatment via ItemWithId, so a
+// deleted middle item can't shift another item's key onto stale focus state.
+// All `_id`s are client-only: minted here, never come from the server, and
+// MUST be stripped at every serialize boundary (dirty compare, PUT save,
+// post-save snapshot) because the server zod schema is strictObject and would
+// 400 on any leaked `_id` / `{value}` object.
+type ItemWithId = { _id: string; value: string };
+type EditableBlock =
+  | ({ _id: string } & Extract<TheoryBlock, { type: "prose" }>)
+  | ({ _id: string } & Extract<TheoryBlock, { type: "formula" }>)
+  | ({ _id: string } & Extract<TheoryBlock, { type: "callout" }>)
+  | ({ _id: string } & Extract<TheoryBlock, { type: "definition" }>)
+  | { _id: string; type: "example"; statement: string; steps: ItemWithId[] }
+  | { _id: string; type: "list"; ordered: boolean; items: ItemWithId[] };
+
+const mintItem = (value: string): ItemWithId => ({ _id: crypto.randomUUID(), value });
+
+// withId is the SINGLE funnel that ids the whole tree — block _id plus item
+// _ids for example.steps and list.items. Every mount path (initialBlocks.map,
+// addBlockAt, discard's JSON.parse.map) goes through here, so nothing enters
+// state with bare string items.
+const withId = (b: TheoryBlock): EditableBlock => {
+  const _id = crypto.randomUUID();
+  switch (b.type) {
+    case "example":
+      return { _id, type: "example", statement: b.statement, steps: b.steps.map(mintItem) };
+    case "list":
+      return { _id, type: "list", ordered: b.ordered, items: b.items.map(mintItem) };
+    case "prose":
+    case "formula":
+    case "callout":
+    case "definition":
+      return { ...b, _id };
+  }
+};
+
+// toWire is the inverse: strip block _id AND flatten item arrays back to bare
+// string[] so the payload is exact TheoryBlock shape. Property order matches
+// the server-produced JSON per variant (type first, then variant fields), so
+// JSON.stringify(toWire(withId(x))) is byte-identical to the server's own
+// JSON.stringify(x) — the boot-dirty invariant rides on this.
 const toWire = (bs: EditableBlock[]): TheoryBlock[] =>
-  bs.map(({ _id: _drop, ...rest }) => rest as TheoryBlock);
+  bs.map((b): TheoryBlock => {
+    switch (b.type) {
+      case "example":
+        return { type: "example", statement: b.statement, steps: b.steps.map((it) => it.value) };
+      case "list":
+        return { type: "list", ordered: b.ordered, items: b.items.map((it) => it.value) };
+      case "prose":
+        return { type: "prose", body: b.body };
+      case "formula":
+        return { type: "formula", body: b.body };
+      case "callout":
+        return { type: "callout", tone: b.tone, body: b.body };
+      case "definition":
+        return { type: "definition", term: b.term, body: b.body };
+    }
+  });
 
 // ── Empty templates for the "add block" picker ──────────────
 // Discriminated by block.type so TypeScript keeps the union honest. Kept in one
@@ -190,7 +267,11 @@ export function StageEditor({
   const [baseUpdatedAt, setBaseUpdatedAt] = useState<string | null>(initialUpdatedAt);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<PreviewResponse | null>(null);
+  // Loaded katex module. Dynamic-imported once on editor mount (see effect
+  // below); every field's preview shares this one module. Null while the
+  // ~80 KB katex chunk is in flight — during that brief window AuthoredField
+  // shows raw source rather than a blank preview.
+  const [katex, setKatex] = useState<LoadedKatex | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   // Confirmation dialog state. A pending href means "user tried to leave with
   // unsaved changes; the AlertDialog is open"; confirming pushes to that href.
@@ -204,8 +285,13 @@ export function StageEditor({
   // "edit, then edit back" from spuriously blocking navigation. The snapshot
   // is kept in useState (not useRef) because React forbids reading a ref's
   // .current during render — see react-hooks/refs.
+  // Route the initial snapshot through the SAME withId→toWire round trip the
+  // dirty compare uses, so byte-equality is structural (not "key-order luck").
+  // Any future field reorder in EditableBlock or toWire updates both sides in
+  // lockstep; without this, adding a field to withId that toWire didn't strip
+  // would silently boot every existing course dirty.
   const [savedSnapshot, setSavedSnapshot] = useState<string>(() =>
-    JSON.stringify(initialBlocks),
+    JSON.stringify(toWire(initialBlocks.map(withId))),
   );
   const dirty = JSON.stringify(toWire(blocks)) !== savedSnapshot;
 
@@ -222,64 +308,47 @@ export function StageEditor({
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  // Debounced preview: fetch after 300ms of no changes. Cancelled by the next
-  // edit via the AbortController, so a burst of typing never queues N requests.
+  // Load katex once per editor mount. The dynamic import inside loadKatex is
+  // cached at module scope, so revisiting this route (or opening a second
+  // editor in the same session) resolves synchronously and setKatex fires
+  // immediately. No debounce, no fetch, no AbortController: the render is now
+  // local and synchronous.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const ctrl = new AbortController();
-      void (async () => {
-        try {
-          const res = await fetch("/api/admin/courses/theory/preview", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ blocks: toWire(blocks) }),
-            signal: ctrl.signal,
-          });
-          const data = (await res.json().catch(() => null)) as PreviewResponse | null;
-          if (data) setPreview(data);
-        } catch {
-          // aborted or network error — leave the previous preview visible
-        }
-      })();
-      return () => ctrl.abort();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [blocks]);
+    let alive = true;
+    void loadKatex().then((mod) => {
+      if (alive) setKatex(mod);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  // Per-(blockIndex, field) helpers so the block editors can look up their own
-  // rendered HTML and error without walking the response every render.
+  // Per-(blockIndex, field) rendered nodes, computed locally from blocks +
+  // katex. Field enumeration mirrors the server's theoryBlockFields via
+  // blockAuthoredFields so every field that had a server-rendered preview
+  // still gets one, addressed by the same (blockIndex, field) key.
+  //
+  // While katex is null (chunk in flight) each value is the raw string wrapped
+  // as a plain text node — the preview strip shows the LaTeX source rather
+  // than blanking. Once katex sets, this memo re-runs and every field flips
+  // to rendered form. renderRichTextNodes is synchronous with katex in hand.
   const renderedByBlock = useMemo(() => {
-    const map = new Map<number, Map<string, string>>();
-    if (preview?.ok) {
-      for (const b of preview.rendered) {
-        const inner = new Map<string, string>();
-        for (const f of b.fields) inner.set(f.field, f.html);
-        map.set(b.blockIndex, inner);
+    const map = new Map<number, Map<string, ReactNode>>();
+    blocks.forEach((block, blockIndex) => {
+      const inner = new Map<string, ReactNode>();
+      for (const { field, value } of blockAuthoredFields(block)) {
+        inner.set(field, katex ? renderRichTextNodes(value, katex) : value);
       }
-    }
+      map.set(blockIndex, inner);
+    });
     return map;
-  }, [preview]);
+  }, [blocks, katex]);
 
-  const errorsByBlock = useMemo(() => {
-    const map = new Map<number, PreviewError[]>();
-    if (preview && !preview.ok) {
-      for (const err of preview.errors) {
-        const list = map.get(err.blockIndex) ?? [];
-        list.push(err);
-        map.set(err.blockIndex, list);
-      }
-    }
-    return map;
-  }, [preview]);
-
-  const hasErrors = preview !== null && !preview.ok;
-
-  const setBlockAt = useCallback((i: number, next: TheoryBlock) => {
-    // BlockCard/BlockFields see block as TheoryBlock (no _id in the type), so
-    // their `{ ...block, field: v }` spreads carry _id at runtime but drop it
-    // from the type. Re-attach the existing block's _id here so the state
-    // stays EditableBlock[] and the id is preserved even if a future onChange
-    // caller builds a block without spreading. Runtime is a no-op today.
+  const setBlockAt = useCallback((i: number, next: EditableBlock) => {
+    // Callers spread `{ ...block, field: v }` which preserves `_id` at runtime
+    // and (now that block is typed as EditableBlock end-to-end) at the type
+    // level too. Re-attach here defensively in case a future caller builds a
+    // block without spreading.
     setBlocks((prev) => prev.map((b, j) => (j === i ? { ...next, _id: b._id } : b)));
   }, []);
 
@@ -455,7 +524,6 @@ export function StageEditor({
                       block={b}
                       sortable={dndReady}
                       rendered={renderedByBlock.get(i) ?? new Map()}
-                      errors={errorsByBlock.get(i) ?? []}
                       onChange={(next) => setBlockAt(i, next)}
                       onRemove={() => removeBlockAt(i)}
                       onMove={(dir) => moveBlock(i, dir)}
@@ -491,11 +559,7 @@ export function StageEditor({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
               <div className="text-sm text-muted-foreground">
                 {dirty ? (
-                  hasErrors ? (
-                    <span className="text-destructive-text">Fix errors before saving.</span>
-                  ) : (
-                    <span>Unsaved changes.</span>
-                  )
+                  <span>Unsaved changes.</span>
                 ) : (
                   <span>All changes saved.</span>
                 )}
@@ -522,7 +586,7 @@ export function StageEditor({
                 <button
                   type="button"
                   onClick={() => void save()}
-                  disabled={!dirty || saving || hasErrors}
+                  disabled={!dirty || saving}
                   className="cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
                 >
                   <Save size={15} /> {saving ? "Saving…" : "Save"}
@@ -873,9 +937,8 @@ function BlockCard(props: {
   total: number;
   block: EditableBlock;
   sortable: boolean;
-  rendered: Map<string, string>;
-  errors: PreviewError[];
-  onChange: (next: TheoryBlock) => void;
+  rendered: Map<string, ReactNode>;
+  onChange: (next: EditableBlock) => void;
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
 }) {
@@ -913,7 +976,6 @@ function BlockCardBody({
   total,
   block,
   rendered,
-  errors,
   onChange,
   onRemove,
   onMove,
@@ -927,13 +989,6 @@ function BlockCardBody({
   isDragging?: boolean;
   handleProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
 }) {
-  const errByField = new Map<string, string[]>();
-  for (const e of errors) {
-    const list = errByField.get(e.field) ?? [];
-    list.push(e.message);
-    errByField.set(e.field, list);
-  }
-
   const meta = BLOCK_META[block.type];
   // Callout's accent tracks its tone, not its type: a "warning" callout wears
   // the amber wash while a "note" callout keeps the resting brand accent. The
@@ -995,12 +1050,7 @@ function BlockCardBody({
       </div>
 
       <div className="pt-3">
-        <BlockFields
-          block={block}
-          rendered={rendered}
-          errByField={errByField}
-          onChange={onChange}
-        />
+        <BlockFields block={block} rendered={rendered} onChange={onChange} />
       </div>
     </div>
   );
@@ -1043,25 +1093,36 @@ function IconBtn({
 function BlockFields({
   block,
   rendered,
-  errByField,
   onChange,
 }: {
-  block: TheoryBlock;
-  rendered: Map<string, string>;
-  errByField: Map<string, string[]>;
-  onChange: (next: TheoryBlock) => void;
+  block: EditableBlock;
+  rendered: Map<string, ReactNode>;
+  onChange: (next: EditableBlock) => void;
 }) {
   switch (block.type) {
     case "prose":
-    case "formula":
       return (
         <AuthoredField
-          label={block.type === "formula" ? "Body (LaTeX; wrap in \\[…\\])" : "Body"}
+          label="Body"
           field="body"
           value={block.body}
           rendered={rendered}
-          errByField={errByField}
           onChange={(v) => onChange({ ...block, body: v })}
+        />
+      );
+
+    case "formula":
+      // Formula opts out of swap-to-edit: raw LaTeX source and rendered math
+      // look nothing alike, and authors iterate on the source, so keep both
+      // visible at all times (textarea + preview strip).
+      return (
+        <AuthoredField
+          label="Body (LaTeX; wrap in \\[…\\])"
+          field="body"
+          value={block.body}
+          rendered={rendered}
+          onChange={(v) => onChange({ ...block, body: v })}
+          swapMode={false}
         />
       );
 
@@ -1090,7 +1151,6 @@ function BlockFields({
             field="body"
             value={block.body}
             rendered={rendered}
-            errByField={errByField}
             onChange={(v) => onChange({ ...block, body: v })}
             previewClassName={CALLOUT_TONE[block.tone].className}
           />
@@ -1105,7 +1165,6 @@ function BlockFields({
             field="term"
             value={block.term}
             rendered={rendered}
-            errByField={errByField}
             onChange={(v) => onChange({ ...block, term: v })}
           />
           <AuthoredField
@@ -1113,7 +1172,6 @@ function BlockFields({
             field="body"
             value={block.body}
             rendered={rendered}
-            errByField={errByField}
             onChange={(v) => onChange({ ...block, body: v })}
           />
         </div>
@@ -1136,7 +1194,6 @@ function BlockFields({
             fieldPrefix="items"
             values={block.items}
             rendered={rendered}
-            errByField={errByField}
             onChange={(items) => onChange({ ...block, items })}
             addLabel="Add item"
             minLength={1}
@@ -1152,7 +1209,6 @@ function BlockFields({
             field="statement"
             value={block.statement}
             rendered={rendered}
-            errByField={errByField}
             onChange={(v) => onChange({ ...block, statement: v })}
           />
           <ArrayField
@@ -1160,7 +1216,6 @@ function BlockFields({
             fieldPrefix="steps"
             values={block.steps}
             rendered={rendered}
-            errByField={errByField}
             onChange={(steps) => onChange({ ...block, steps })}
             addLabel="Add step"
             minLength={1}
@@ -1177,90 +1232,176 @@ function BlockFields({
 }
 
 // ── Single authored-string field with rendered preview ──────
+// Two rendering modes:
+//   swapMode = true  (default; prose/callout/definition/list-item/example)
+//     At rest: a clickable rendered view — the ReactNode from renderedByBlock
+//     shown in a box the same shape as the textarea. Clicking (or tabbing +
+//     Enter/Space) swaps to a textarea for editing; blur (or Escape / Enter)
+//     swaps back. One box, not two — the rest state IS the preview.
+//   swapMode = false (formula only)
+//     Textarea AND preview always visible. Raw LaTeX and rendered math don't
+//     resemble each other and authors iterate on the source, so hiding the
+//     source behind a click would fight the workflow.
+// Live-error boxes were removed with the server-preview fetch: errors now
+// surface only at SAVE time via the sticky footer's saveError.
 function AuthoredField({
   label,
   field,
   value,
   rendered,
-  errByField,
   onChange,
   previewClassName,
+  swapMode = true,
 }: {
   label: string;
   field: string;
   value: string;
-  rendered: Map<string, string>;
-  errByField: Map<string, string[]>;
+  rendered: Map<string, ReactNode>;
   onChange: (v: string) => void;
   // Optional colour tail (bg + border colour + text) for the preview strip.
   // Geometry (px, py, radius, text size, border width, overflow) stays fixed
   // so every field's preview keeps a consistent shape; only the tone changes.
-  // Ignored when errs.length > 0 — validation errors still show the destructive
-  // box regardless of caller-provided tone.
   previewClassName?: string;
+  swapMode?: boolean;
 }) {
-  const html = rendered.get(field);
-  const errs = errByField.get(field) ?? [];
+  const node = rendered.get(field);
+  const [editing, setEditing] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus the textarea in the SAME tick it mounts (useLayoutEffect, not
+  // useEffect) so there's no paint of an unfocused control. Cursor at end so
+  // the click-to-edit continues where the value already reads.
+  useLayoutEffect(() => {
+    if (editing && taRef.current) {
+      const el = taRef.current;
+      el.focus();
+      const len = el.value.length;
+      el.setSelectionRange(len, len);
+    }
+  }, [editing]);
+
+  // Formula: unchanged legacy layout — textarea above, preview strip below.
+  if (!swapMode) {
+    return (
+      <div className="space-y-1.5">
+        <label className="block text-xs font-medium text-muted-foreground">{label}</label>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={Math.min(6, Math.max(2, value.split("\n").length))}
+          className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+          spellCheck={false}
+        />
+        {node !== undefined ? (
+          <div
+            className={`px-3 py-2 rounded-lg text-sm overflow-x-auto border ${previewClassName ?? "bg-muted/40 border-border text-foreground"}`}
+          >
+            <span>{node}</span>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Swap mode. Rest and editing share the SAME box geometry (px-3 py-2,
+  // rounded-lg, border, text-sm, min-h-[3.5rem] ≈ a 2-row textarea's height)
+  // so the swap never resizes the block.
+  const boxShape = "w-full px-3 py-2 rounded-lg border text-sm min-h-[3.5rem]";
+  const restTone = previewClassName ?? "bg-background border-border text-foreground";
+
   return (
     <div className="space-y-1.5">
       <label className="block text-xs font-medium text-muted-foreground">{label}</label>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={Math.min(6, Math.max(2, value.split("\n").length))}
-        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-        spellCheck={false}
-      />
-      {errs.length > 0 ? (
-        <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-xs text-destructive-text space-y-0.5">
-          {errs.map((m, i) => (
-            <p key={i}>{m}</p>
-          ))}
-        </div>
-      ) : html !== undefined ? (
+      {editing ? (
+        <textarea
+          ref={taRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => setEditing(false)}
+          onKeyDown={(e) => {
+            // Single-line authored strings — Enter must not insert a newline
+            // (server rejects C0). Enter and Escape both blur, which triggers
+            // the swap back to the rendered view.
+            if (e.key === "Escape" || e.key === "Enter") {
+              e.preventDefault();
+              taRef.current?.blur();
+            }
+          }}
+          // rows={1} so the textarea's intrinsic height isn't larger than the
+          // shared min-h from boxShape — otherwise Chrome's default rows={2}
+          // makes the textarea a few px taller than the rest-view and swap
+          // nudges the block. boxShape's min-h-[3.5rem] governs actual height.
+          rows={1}
+          className={`${boxShape} block resize-none bg-background border-border font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring`}
+          spellCheck={false}
+        />
+      ) : (
         <div
-          className={`px-3 py-2 rounded-lg text-sm overflow-x-auto border ${previewClassName ?? "bg-muted/40 border-border text-foreground"}`}
+          role="button"
+          tabIndex={0}
+          onClick={() => setEditing(true)}
+          onFocus={() => setEditing(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setEditing(true);
+            }
+          }}
+          className={`${boxShape} ${restTone} cursor-text overflow-x-auto hover:border-ring focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring transition-colors`}
         >
-          <span dangerouslySetInnerHTML={{ __html: html }} />
+          {value.trim() === "" ? (
+            <span className="text-muted-foreground/60 italic">
+              Empty — click to edit
+            </span>
+          ) : node !== undefined ? (
+            <span>{node}</span>
+          ) : (
+            <span>{value}</span>
+          )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
 
 // ── Array-of-strings field (list.items, example.steps) ──────
+// Items carry a client-only `_id` so React keys are stable across edits and
+// mid-array deletes — a deleted middle item can't shift another item's key
+// onto stale focus state. The EDIT path preserves the item's existing `_id`
+// (never re-mints it, or every keystroke would look like a fresh item to
+// React and destroy stable-key semantics). The wire flatten happens in
+// toWire; ids never reach the server.
 function ArrayField({
   label,
   fieldPrefix,
   values,
   rendered,
-  errByField,
   onChange,
   addLabel,
   minLength,
 }: {
   label: string;
   fieldPrefix: "items" | "steps";
-  values: string[];
-  rendered: Map<string, string>;
-  errByField: Map<string, string[]>;
-  onChange: (next: string[]) => void;
+  values: ItemWithId[];
+  rendered: Map<string, ReactNode>;
+  onChange: (next: ItemWithId[]) => void;
   addLabel: string;
   minLength: number;
 }) {
   return (
     <div className="space-y-2">
       <label className="block text-xs font-medium text-muted-foreground">{label}</label>
-      {values.map((v, i) => (
-        <div key={i} className="flex items-start gap-2">
+      {values.map((item, i) => (
+        <div key={item._id} className="flex items-start gap-2">
           <div className="flex-1">
             <AuthoredField
               label={`${fieldPrefix}[${i}]`}
               field={`${fieldPrefix}[${i}]`}
-              value={v}
+              value={item.value}
               rendered={rendered}
-              errByField={errByField}
-              onChange={(nv) => onChange(values.map((x, j) => (j === i ? nv : x)))}
+              onChange={(nv) =>
+                onChange(values.map((x, j) => (j === i ? { ...x, value: nv } : x)))
+              }
             />
           </div>
           <button
@@ -1277,7 +1418,7 @@ function ArrayField({
       ))}
       <button
         type="button"
-        onClick={() => onChange([...values, ""])}
+        onClick={() => onChange([...values, mintItem("")])}
         className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs text-foreground hover:bg-accent transition-colors"
       >
         <Plus size={13} /> {addLabel}
