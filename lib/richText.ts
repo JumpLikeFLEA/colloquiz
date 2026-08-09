@@ -1,5 +1,6 @@
 import katex from "katex";
 import { segmentMath, KATEX_BASE, type Segment } from "./richTextSegment";
+import { splitParagraphs, renderLinesToHtml } from "./renderLineBreaks";
 
 /**
  * Math-aware rich text.
@@ -73,9 +74,44 @@ function escapeHtml(s: string): string {
  * `app/components/MathHtml.tsx`). Author text is escaped, never trusted as HTML;
  * only KaTeX output is injected verbatim.
  */
+// Segment → HTML string, with author text escaped and \n → <br>. Shared by
+// both the bare (single-paragraph) and multi-paragraph branches so escape
+// ordering and the "text is never HTML" invariant live in ONE place.
+function segmentsToHtml(segments: RenderedSegment[]): string {
+  return segments
+    .map((seg) =>
+      seg.type === "text"
+        ? // Escape FIRST, then run the \n→<br> transform on the escaped
+          // string — the helper inserts only <br> tags and never re-escapes,
+          // so ordering keeps the "author text is never trusted as HTML"
+          // invariant intact.
+          renderLinesToHtml(escapeHtml(seg.value))
+        : seg.html,
+    )
+    .join("");
+}
+
 export function renderToHtml(text: string): string {
-  return renderSegments(text)
-    .map((seg) => (seg.type === "text" ? escapeHtml(seg.value) : seg.html))
+  // Approach A + B: paragraph boundary lives OUTSIDE segmentation. Split first.
+  //   - <= 1 paragraph → BARE branch: emit segments with NO <p> wrapper, so
+  //     single-line callers (definition, quiz, every existing consumer) get
+  //     byte-identical DOM to pre-change. A lone \n inside still becomes <br>.
+  //   - >= 2 paragraphs → per-paragraph <p>, except a paragraph containing
+  //     any block (\[…\]) segment renders WITHOUT a <p> wrapper because
+  //     KaTeX block output cannot nest in <p>. See lib/renderLineBreaks.tsx.
+  const paras = splitParagraphs(text);
+  if (paras.length <= 1) {
+    // "" and any single-paragraph input take this branch. renderSegments("")
+    // is a no-op ([]) so an empty text produces an empty string.
+    return segmentsToHtml(renderSegments(paras[0] ?? ""));
+  }
+  return paras
+    .map((paragraph) => {
+      const segments = renderSegments(paragraph);
+      const hasBlockMath = segments.some((s) => s.type === "block");
+      const inner = segmentsToHtml(segments);
+      return hasBlockMath ? inner : `<p>${inner}</p>`;
+    })
     .join("");
 }
 

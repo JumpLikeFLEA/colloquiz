@@ -1108,6 +1108,7 @@ function BlockFields({
           value={block.body}
           rendered={rendered}
           onChange={(v) => onChange({ ...block, body: v })}
+          multiline
         />
       );
 
@@ -1153,6 +1154,7 @@ function BlockFields({
             rendered={rendered}
             onChange={(v) => onChange({ ...block, body: v })}
             previewClassName={CALLOUT_TONE[block.tone].className}
+            multiline
           />
         </div>
       );
@@ -1210,6 +1212,7 @@ function BlockFields({
             value={block.statement}
             rendered={rendered}
             onChange={(v) => onChange({ ...block, statement: v })}
+            multiline
           />
           <ArrayField
             label="Steps"
@@ -1252,6 +1255,7 @@ function AuthoredField({
   onChange,
   previewClassName,
   swapMode = true,
+  multiline = false,
 }: {
   label: string;
   field: string;
@@ -1263,6 +1267,11 @@ function AuthoredField({
   // so every field's preview keeps a consistent shape; only the tone changes.
   previewClassName?: string;
   swapMode?: boolean;
+  // When true (prose/callout body, example statement) Enter inserts a newline
+  // and the textarea grows with content. When false (default; single-line
+  // fields like term, list items, example steps) Enter commits (blurs) and
+  // the textarea stays rows={1} + resize-none.
+  multiline?: boolean;
 }) {
   const node = rendered.get(field);
   const [editing, setEditing] = useState(false);
@@ -1319,20 +1328,24 @@ function AuthoredField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={() => setEditing(false)}
           onKeyDown={(e) => {
-            // Single-line authored strings — Enter must not insert a newline
-            // (server rejects C0). Enter and Escape both blur, which triggers
-            // the swap back to the rendered view.
-            if (e.key === "Escape" || e.key === "Enter") {
+            // Escape always blurs (swap back). Enter blurs only for single-
+            // line fields; in multiline mode Enter falls through to the
+            // textarea default (inserts \n).
+            if (e.key === "Escape") {
+              e.preventDefault();
+              taRef.current?.blur();
+            } else if (!multiline && e.key === "Enter") {
               e.preventDefault();
               taRef.current?.blur();
             }
           }}
-          // rows={1} so the textarea's intrinsic height isn't larger than the
-          // shared min-h from boxShape — otherwise Chrome's default rows={2}
-          // makes the textarea a few px taller than the rest-view and swap
-          // nudges the block. boxShape's min-h-[3.5rem] governs actual height.
-          rows={1}
-          className={`${boxShape} block resize-none bg-background border-border font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring`}
+          // Single-line: rows={1} so the textarea's intrinsic height isn't
+          // larger than the shared min-h from boxShape — otherwise Chrome's
+          // default rows={2} makes the textarea a few px taller than the
+          // rest-view and swap nudges the block. Multiline: grow with content
+          // (2..6 rows), and drop resize-none so the user can drag taller.
+          rows={multiline ? Math.min(6, Math.max(2, value.split("\n").length)) : 1}
+          className={`${boxShape} block ${multiline ? "" : "resize-none"} bg-background border-border font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring`}
           spellCheck={false}
         />
       ) : (

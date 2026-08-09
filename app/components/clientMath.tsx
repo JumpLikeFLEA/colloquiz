@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { segmentMath, KATEX_BASE } from "@/lib/richTextSegment";
+import { splitParagraphs, renderLinesToNodes } from "@/lib/renderLineBreaks";
 
 /**
  * Client-side live KaTeX renderer.
@@ -55,16 +56,45 @@ export function loadKatex(): Promise<KatexModule> {
  * render many fields without re-entering the promise machinery.
  */
 export function renderRichTextNodes(text: string, katex: KatexModule): ReactNode[] {
-  return segmentMath(text).map((seg, i) => {
+  // Approach A + B: paragraph boundary OUTSIDE segmentation; must be
+  // structurally identical to renderToHtml (server) and RichText.tsx
+  // (learner).
+  //   - <= 1 paragraph → BARE branch: emit segments directly with NO <p>
+  //     wrapper (byte-identical DOM to pre-change for single-line callers).
+  //   - >= 2 paragraphs → per-paragraph <p>, except a paragraph with any
+  //     block (\[…\]) segment renders WITHOUT a <p> wrapper.
+  const paragraphs = splitParagraphs(text);
+  const renderSeg = (
+    seg: ReturnType<typeof segmentMath>[number],
+    key: string,
+    lineKeyPrefix: string,
+  ): ReactNode => {
     if (seg.type === "text") {
-      return <span key={i}>{seg.value}</span>;
+      return <span key={key}>{renderLinesToNodes(seg.value, lineKeyPrefix)}</span>;
     }
     const html = katex.renderToString(seg.value, {
       ...KATEX_BASE,
       throwOnError: false,
       displayMode: seg.type === "block",
     });
-    return <span key={i} dangerouslySetInnerHTML={{ __html: html }} />;
+    return <span key={key} dangerouslySetInnerHTML={{ __html: html }} />;
+  };
+
+  if (paragraphs.length <= 1) {
+    const segments = segmentMath(paragraphs[0] ?? "");
+    return segments.map((seg, si) => renderSeg(seg, String(si), `s${si}`));
+  }
+  return paragraphs.map((paragraph, pi) => {
+    const segments = segmentMath(paragraph);
+    const hasBlockMath = segments.some((s) => s.type === "block");
+    const inner = segments.map((seg, si) =>
+      renderSeg(seg, String(si), `p${pi}-s${si}`),
+    );
+    return hasBlockMath ? (
+      <Fragment key={pi}>{inner}</Fragment>
+    ) : (
+      <p key={pi}>{inner}</p>
+    );
   });
 }
 

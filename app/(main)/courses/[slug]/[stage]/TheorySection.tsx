@@ -34,10 +34,12 @@ export function TheorySection({ blocks }: { blocks: TheoryBlock[] }) {
 function Block({ block }: { block: TheoryBlock }) {
   switch (block.type) {
     case "prose":
+      // <div>, not <p>: RichText now emits one <p> per paragraph, and <p>
+      // cannot nest <p>. Classes unchanged.
       return (
-        <p className="text-foreground leading-relaxed">
+        <div className="text-foreground leading-relaxed">
           <RichText text={block.body} />
-        </p>
+        </div>
       );
 
     case "formula":
@@ -64,9 +66,10 @@ function Block({ block }: { block: TheoryBlock }) {
       return (
         <div className={`flex gap-3 rounded-2xl border p-4 ${toneClass}`}>
           <Icon size={18} className="shrink-0 mt-0.5" />
-          <p className="text-sm leading-relaxed">
+          {/* <div>, not <p>: RichText emits its own <p>s per paragraph. */}
+          <div className="text-sm leading-relaxed">
             <RichText text={block.body} />
-          </p>
+          </div>
         </div>
       );
     }
@@ -96,9 +99,10 @@ function Block({ block }: { block: TheoryBlock }) {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
             Example
           </p>
-          <p className="text-foreground leading-relaxed">
+          {/* <div>, not <p>: RichText emits its own <p>s per paragraph. */}
+          <div className="text-foreground leading-relaxed">
             <RichText text={block.statement} />
-          </p>
+          </div>
           <ol className="list-decimal pl-6 space-y-1.5 text-sm text-muted-foreground leading-relaxed mt-3 marker:text-muted-foreground">
             {block.steps.map((step, i) => (
               <li key={i}>
