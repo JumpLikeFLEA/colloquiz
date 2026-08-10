@@ -632,32 +632,70 @@ async function run() {
   }
 
   // 4. Questions (keyed on the deterministic id → stable across re-import).
-  // Columns are listed explicitly so the internal `stageKey` never reaches the DB.
-  const dbQuestionRows = questionRows.map((r) => ({
-    id: r.id,
-    type: r.type,
-    subject: r.subject,
-    tags: r.tags,
-    difficulty: r.difficulty,
-    question: r.question,
-    options: r.options,
-    correct_answer: r.correct_answer,
-    explanation: r.explanation,
-    source: r.source,
-    status: r.status,
-    visibility: r.visibility,
-    // Written on every upsert (null when approved) so a fixed item clears its stale note.
-    critic_notes: r.critic_notes,
-    content_hash: r.content_hash,
-    variant_group: r.variant_group,
-    variant_ordinal: r.variant_ordinal,
-    authored_key: r.authored_key,
-    course_stage_id: stageIdByKey.get(r.stageKey)!,
-  }));
-  const { error: qErr } = await supabase
+  //
+  // Protect app-edited questions: questions.updated_by is NULL for rows this
+  // script wrote and non-null once an in-app save touched them (032). Skip
+  // those unless --adopt was passed, and warn per row so the operator knows
+  // the JSON drifted from the DB. Same protect-marker shape as theory above.
+  const authoredIdsAll = questionRows.map((r) => r.id);
+  const { data: existingQuestions, error: existingQErr } = await supabase
     .from("questions")
-    .upsert(dbQuestionRows, { onConflict: "id" });
-  if (qErr) die(`question upsert failed: ${qErr.message}`);
+    .select("id, updated_by")
+    .in("id", authoredIdsAll);
+  if (existingQErr) die(`question pre-read failed: ${existingQErr.message}`);
+
+  const editedQuestionIds = new Set(
+    (existingQuestions ?? [])
+      .filter((r) => r.updated_by != null)
+      .map((r) => r.id as string),
+  );
+
+  // Columns are listed explicitly so the internal `stageKey` never reaches the DB.
+  const dbQuestionRows = questionRows
+    .filter((r) => !(editedQuestionIds.has(r.id) && !adopt))
+    .map((r) => ({
+      id: r.id,
+      type: r.type,
+      subject: r.subject,
+      tags: r.tags,
+      difficulty: r.difficulty,
+      question: r.question,
+      options: r.options,
+      correct_answer: r.correct_answer,
+      explanation: r.explanation,
+      source: r.source,
+      status: r.status,
+      visibility: r.visibility,
+      // Written on every upsert (null when approved) so a fixed item clears its stale note.
+      critic_notes: r.critic_notes,
+      content_hash: r.content_hash,
+      variant_group: r.variant_group,
+      variant_ordinal: r.variant_ordinal,
+      authored_key: r.authored_key,
+      course_stage_id: stageIdByKey.get(r.stageKey)!,
+      // Clear the marker on adopt too: the JSON is authoritative again.
+      updated_by: null,
+    }));
+
+  const skippedQuestionKeys = questionRows
+    .filter((r) => editedQuestionIds.has(r.id) && !adopt)
+    .map((r) => r.authored_key);
+  if (skippedQuestionKeys.length > 0) {
+    console.warn(
+      `Skipped ${skippedQuestionKeys.length} question(s) edited in-app ` +
+        `(use --adopt to overwrite):`,
+    );
+    for (const k of skippedQuestionKeys) {
+      console.warn(`  ${k}: question was edited in-app; skipping (use --adopt to overwrite)`);
+    }
+  }
+
+  if (dbQuestionRows.length > 0) {
+    const { error: qErr } = await supabase
+      .from("questions")
+      .upsert(dbQuestionRows, { onConflict: "id" });
+    if (qErr) die(`question upsert failed: ${qErr.message}`);
+  }
 
   // 5. Reconcile removals (only under --sync; never a DELETE).
   let archivedStages = 0;
@@ -686,7 +724,10 @@ async function run() {
       .from("questions")
       .select("id,visibility,status")
       .like("authored_key", `${course.slug}/%`);
-    const authoredIds = new Set(dbQuestionRows.map((r) => r.id));
+    // Retire-set derives from the FULL authored roster (questionRows), not
+    // dbQuestionRows — a skipped-because-edited row is still authored, so it
+    // must not be soft-rejected by --sync.
+    const authoredIds = new Set(questionRows.map((r) => r.id));
     for (const q of existingQs ?? []) {
       if (
         !authoredIds.has(q.id as string) &&

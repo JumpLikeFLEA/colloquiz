@@ -78,6 +78,8 @@ export default async function AdminStageEditorPage({
       initialBlocks={authoring.blocks}
       initialUpdatedAt={authoring.updatedAt}
       groups={authoring.groups}
+      groupOrder={authoring.groupOrder}
+      exercisesUpdatedAt={authoring.exercisesUpdatedAt}
     />
   );
 }

@@ -438,8 +438,10 @@ export async function getEditableCourses(
   return rows.map((c) => ({ ...toCard(c, count.get(c.id as string) ?? 0), canEditReason: reason }));
 }
 
-// Read-only view of an exercise variant group for the walkthrough's Exercises
-// section. Editing is out of scope in v1 — this is review-in-context only.
+// A variant row in the authoring payload. authored_key/updated_by drive the
+// "hand-authored" and "edited in-app" badges the editor shows. Editable-in-UI
+// fields are question/options/correct_answer/explanation/difficulty and the
+// per-variant variant_ordinal; status/visibility/authored_key are read-only.
 export type AuthoringVariant = {
   id: string;
   question: string;
@@ -450,6 +452,8 @@ export type AuthoringVariant = {
   variant_ordinal: number;
   status: string;
   visibility: string;
+  authored_key: string | null;
+  updated_by: string | null;
 };
 
 export type AuthoringGroup = {
@@ -464,6 +468,12 @@ export type StageAuthoring = {
    * client sends it back with save_stage_theory as the concurrency token. */
   updatedAt: string | null;
   groups: AuthoringGroup[];
+  /** Explicit ordering of variant_group labels (migration 032). Empty array
+   * for a stage whose exercises row does not exist yet (importer-only). */
+  groupOrder: string[];
+  /** Concurrency token for the whole-stage exercise save; null when the
+   * course_stage_exercises row does not exist yet. */
+  exercisesUpdatedAt: string | null;
 };
 
 /**
@@ -485,5 +495,7 @@ export async function getStageAuthoring(
     blocks: Array.isArray(data.blocks) ? (data.blocks as TheoryBlock[]) : [],
     updatedAt: (data.updated_at as string | null) ?? null,
     groups: Array.isArray(data.groups) ? (data.groups as AuthoringGroup[]) : [],
+    groupOrder: Array.isArray(data.group_order) ? (data.group_order as string[]) : [],
+    exercisesUpdatedAt: (data.exercises_updated_at as string | null) ?? null,
   };
 }

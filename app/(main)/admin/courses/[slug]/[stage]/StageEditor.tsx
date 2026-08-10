@@ -225,6 +225,8 @@ export function StageEditor({
   initialBlocks,
   initialUpdatedAt,
   groups,
+  groupOrder,
+  exercisesUpdatedAt,
 }: {
   course: { slug: string; title: string };
   stage: {
@@ -240,6 +242,8 @@ export function StageEditor({
   initialBlocks: TheoryBlock[];
   initialUpdatedAt: string | null;
   groups: AuthoringGroup[];
+  groupOrder: string[];
+  exercisesUpdatedAt: string | null;
 }) {
   const router = useRouter();
   const [section, setSection] = useState<EditorSection>("theory");
@@ -279,6 +283,9 @@ export function StageEditor({
   const [pendingLeaveHref, setPendingLeaveHref] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [pendingRevertId, setPendingRevertId] = useState<string | null>(null);
+  // Exercises editor lives in its own subtree with its own state; it reports
+  // dirtiness up so the unsaved-changes guard covers BOTH sections.
+  const [exercisesDirty, setExercisesDirty] = useState(false);
 
   // Dirty = local blocks differ from the last-known-saved snapshot. Using a
   // JSON compare (rather than a boolean flag flipped in every setter) keeps
@@ -293,11 +300,13 @@ export function StageEditor({
   const [savedSnapshot, setSavedSnapshot] = useState<string>(() =>
     JSON.stringify(toWire(initialBlocks.map(withId))),
   );
-  const dirty = JSON.stringify(toWire(blocks)) !== savedSnapshot;
+  const theoryDirty = JSON.stringify(toWire(blocks)) !== savedSnapshot;
+  const dirty = theoryDirty || exercisesDirty;
 
   // Unsaved-changes guard: matches the confirm() the Groups builder uses. The
   // beforeunload event only fires on real page unloads, not soft navigations —
-  // that is intentional; the Link back-arrow warning is handled in-app.
+  // that is intentional; the Link back-arrow warning is handled in-app. Covers
+  // both theory and exercises editors (either dirty → warn).
   useEffect(() => {
     if (!dirty) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -558,7 +567,7 @@ export function StageEditor({
           <div className="sticky bottom-4 z-10">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
               <div className="text-sm text-muted-foreground">
-                {dirty ? (
+                {theoryDirty ? (
                   <span>Unsaved changes.</span>
                 ) : (
                   <span>All changes saved.</span>
@@ -578,7 +587,7 @@ export function StageEditor({
                 <button
                   type="button"
                   onClick={() => setShowDiscardConfirm(true)}
-                  disabled={!dirty || saving}
+                  disabled={!theoryDirty || saving}
                   className="cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                 >
                   <Undo2 size={15} /> Discard
@@ -586,7 +595,7 @@ export function StageEditor({
                 <button
                   type="button"
                   onClick={() => void save()}
-                  disabled={!dirty || saving}
+                  disabled={!theoryDirty || saving}
                   className="cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
                 >
                   <Save size={15} /> {saving ? "Saving…" : "Save"}
@@ -600,7 +609,14 @@ export function StageEditor({
           )}
         </div>
       ) : (
-        <ExercisesView groups={groups} />
+        <ExercisesEditor
+          stageId={stage.id}
+          initialGroups={groups}
+          initialGroupOrder={groupOrder}
+          initialUpdatedAt={exercisesUpdatedAt}
+          katex={katex}
+          onDirtyChange={setExercisesDirty}
+        />
       )}
 
       <div className="flex items-center justify-between gap-3 pt-6 border-t border-border">
@@ -1440,60 +1456,908 @@ function ArrayField({
   );
 }
 
-// ── Exercises (read-only) ───────────────────────────────────
-function ExercisesView({ groups }: { groups: AuthoringGroup[] }) {
-  if (groups.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 text-muted-foreground rounded-2xl border border-dashed border-border">
-        <p className="text-sm">This stage has no exercises yet.</p>
-      </div>
+// ── Exercises editor ────────────────────────────────────────
+// Editable whole-stage save: one CAS token, one Save button, per-variant edits
+// of question/options/correct_answer/explanation/difficulty and per-stage group
+// reorder + add/rename/delete. Mirrors the theory editor's chrome: sticky save
+// bar, discard confirm, save-confirm dialog listing pending deletes.
+//
+// A separate _client editable copy_ carries local ids (_id / _new) so React
+// keys survive reorder; toWire() strips them before POST, exactly the shape
+// pattern the theory blocks use. Group order is derived from the array's index
+// order at save time, ignoring the initial groupOrder-vs-alphabetical divergence.
+type EditableSibling = {
+  _id: string;                          // client-only, stable across edits
+  _new?: boolean;                       // true → INSERT branch on save
+  _pendingDelete?: boolean;             // true → include id in deleted_ids
+  id: string | null;                    // null for _new rows
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+  difficulty: string;
+  variant_ordinal: number;
+  status: string;
+  visibility: string;
+  authored_key: string | null;
+  updated_by: string | null;
+};
+
+type EditableGroup = {
+  _id: string;
+  variant_group: string;                // label
+  siblings: EditableSibling[];
+};
+
+function hydrateGroups(
+  groups: AuthoringGroup[],
+  order: string[],
+): EditableGroup[] {
+  // Order groups by the explicit groupOrder (declared groups first, in
+  // declared order); labels missing from the array fall to the end in the
+  // order the server returned them (which is already stable — array_position
+  // NULLS LAST + label ASC in the RPC).
+  const byLabel = new Map(groups.map((g) => [g.variant_group, g]));
+  const declared = order.map((label) => byLabel.get(label)).filter((g): g is AuthoringGroup => !!g);
+  const rest = groups.filter((g) => !order.includes(g.variant_group));
+  const ordered = [...declared, ...rest];
+  return ordered.map((g) => ({
+    _id: crypto.randomUUID(),
+    variant_group: g.variant_group,
+    siblings: g.siblings.map((v) => ({
+      _id: crypto.randomUUID(),
+      id: v.id,
+      question: v.question,
+      options: [...v.options],
+      correct_answer: v.correct_answer,
+      explanation: v.explanation,
+      difficulty: v.difficulty,
+      variant_ordinal: v.variant_ordinal,
+      status: v.status,
+      visibility: v.visibility,
+      authored_key: v.authored_key,
+      updated_by: v.updated_by,
+    })),
+  }));
+}
+
+// Serialise to the RPC payload. Renumbers variant_ordinal per group by array
+// index (1..N) so a reorder inside a group is committed without the client
+// having to track ordinals. Excludes rows flagged _pendingDelete; collects
+// their (non-null) ids into deleted_ids.
+function toExercisePayload(
+  editable: EditableGroup[],
+): {
+  groups: {
+    variant_group: string;
+    siblings: (
+      | { id: string; variant_ordinal: number; question: string; options: string[]; correct_answer: string; explanation: string; difficulty: string }
+      | { _new: true; variant_ordinal: number; question: string; options: string[]; correct_answer: string; explanation: string; difficulty: string }
+    )[];
+  }[];
+  group_order: string[];
+  deleted_ids: string[];
+} {
+  const deleted_ids: string[] = [];
+  const groups = editable.map((g) => {
+    const kept = g.siblings.filter((s) => {
+      if (s._pendingDelete && s.id) deleted_ids.push(s.id);
+      return !s._pendingDelete;
+    });
+    return {
+      variant_group: g.variant_group,
+      siblings: kept.map((s, i) => {
+        const base = {
+          variant_ordinal: i + 1,
+          question: s.question,
+          options: [...s.options],
+          correct_answer: s.correct_answer,
+          explanation: s.explanation,
+          difficulty: s.difficulty,
+        };
+        return s._new || !s.id ? { _new: true as const, ...base } : { id: s.id, ...base };
+      }),
+    };
+  });
+  return { groups, group_order: editable.map((g) => g.variant_group), deleted_ids };
+}
+
+// Byte-comparable snapshot: same serialisation the save uses (minus deleted_ids,
+// since the "flag then Save" model considers a pending delete an unsaved change).
+function snapshot(editable: EditableGroup[]): string {
+  return JSON.stringify(toExercisePayload(editable));
+}
+
+function ExercisesEditor({
+  stageId,
+  initialGroups,
+  initialGroupOrder,
+  initialUpdatedAt,
+  katex,
+  onDirtyChange,
+}: {
+  stageId: string;
+  initialGroups: AuthoringGroup[];
+  initialGroupOrder: string[];
+  initialUpdatedAt: string | null;
+  katex: LoadedKatex | null;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
+  const router = useRouter();
+  const [groups, setGroups] = useState<EditableGroup[]>(() =>
+    hydrateGroups(initialGroups, initialGroupOrder),
+  );
+  const [baseUpdatedAt, setBaseUpdatedAt] = useState<string | null>(initialUpdatedAt);
+  const [savedSnapshot, setSavedSnapshot] = useState<string>(() =>
+    snapshot(hydrateGroups(initialGroups, initialGroupOrder)),
+  );
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  // Expanded state keyed by group _id. Unsaved edits pin their group open.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  // Track fields that are being edited (client-side toggle to swap raw ↔ preview).
+  // Keyed as "<siblingId>:<field>". Same shape idea as theory's swap-to-edit.
+
+  const dirty = snapshot(groups) !== savedSnapshot;
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
+
+  // Compute the list of pending deletes (for the save-confirm dialog).
+  const pendingDeletes = useMemo(() => {
+    const out: { group: string; id: string; question: string }[] = [];
+    for (const g of groups) {
+      for (const s of g.siblings) {
+        if (s._pendingDelete && s.id) {
+          out.push({ group: g.variant_group, id: s.id, question: s.question });
+        }
+      }
+    }
+    return out;
+  }, [groups]);
+
+  // Auto-expand any group with unsaved edits (dirty siblings, pending deletes,
+  // or new siblings). Cheap: run against the current groups on every render.
+  const dirtyGroupIds = useMemo(() => {
+    const savedByGroup = new Map<string, string>();
+    try {
+      const parsed = JSON.parse(savedSnapshot) as ReturnType<typeof toExercisePayload>;
+      for (const g of parsed.groups) savedByGroup.set(g.variant_group, JSON.stringify(g));
+    } catch {}
+    const dirtySet = new Set<string>();
+    const currentPayload = toExercisePayload(groups);
+    for (let i = 0; i < groups.length; i++) {
+      const cur = JSON.stringify(currentPayload.groups[i] ?? {});
+      const label = groups[i].variant_group;
+      const saved = savedByGroup.get(label);
+      if (saved !== cur) dirtySet.add(groups[i]._id);
+      if (groups[i].siblings.some((s) => s._pendingDelete || s._new)) {
+        dirtySet.add(groups[i]._id);
+      }
+    }
+    return dirtySet;
+  }, [groups, savedSnapshot]);
+
+  const effectiveExpanded = useMemo(() => {
+    const s = new Set(expandedIds);
+    for (const id of dirtyGroupIds) s.add(id);
+    return s;
+  }, [expandedIds, dirtyGroupIds]);
+
+  function toggleExpanded(gid: string) {
+    setExpandedIds((prev) => {
+      const s = new Set(prev);
+      if (s.has(gid)) s.delete(gid);
+      else s.add(gid);
+      return s;
+    });
+  }
+  function expandAll() {
+    setExpandedIds(new Set(groups.map((g) => g._id)));
+  }
+  function collapseAll() {
+    setExpandedIds(new Set());
+  }
+
+  function updateGroup(gi: number, patch: Partial<EditableGroup>) {
+    setGroups((prev) => prev.map((g, j) => (j === gi ? { ...g, ...patch } : g)));
+  }
+  function updateSibling(gi: number, si: number, patch: Partial<EditableSibling>) {
+    setGroups((prev) =>
+      prev.map((g, j) =>
+        j !== gi ? g : { ...g, siblings: g.siblings.map((s, k) => (k === si ? { ...s, ...patch } : s)) },
+      ),
     );
   }
+  function addSibling(gi: number) {
+    setGroups((prev) =>
+      prev.map((g, j) => {
+        if (j !== gi) return g;
+        const next: EditableSibling = {
+          _id: crypto.randomUUID(),
+          _new: true,
+          id: null,
+          question: "New question.",
+          options: ["Option A", "Option B", "Option C", "Option D"],
+          correct_answer: "Option A",
+          explanation: "",
+          difficulty: "medium",
+          variant_ordinal: g.siblings.length + 1,
+          status: "approved",
+          visibility: "course",
+          authored_key: null,
+          updated_by: null,
+        };
+        return { ...g, siblings: [...g.siblings, next] };
+      }),
+    );
+  }
+  function removeSibling(gi: number, si: number) {
+    setGroups((prev) =>
+      prev.map((g, j) => {
+        if (j !== gi) return g;
+        const target = g.siblings[si];
+        if (!target) return g;
+        // _new siblings vanish immediately (no server row to delete);
+        // existing siblings get flagged for the save-confirm dialog.
+        if (target._new) {
+          return { ...g, siblings: g.siblings.filter((_, k) => k !== si) };
+        }
+        return {
+          ...g,
+          siblings: g.siblings.map((s, k) => (k === si ? { ...s, _pendingDelete: !s._pendingDelete } : s)),
+        };
+      }),
+    );
+  }
+  function moveSibling(gi: number, si: number, dir: -1 | 1) {
+    setGroups((prev) =>
+      prev.map((g, j) => {
+        if (j !== gi) return g;
+        const k = si + dir;
+        if (k < 0 || k >= g.siblings.length) return g;
+        const arr = g.siblings.slice();
+        const [x] = arr.splice(si, 1);
+        arr.splice(k, 0, x);
+        return { ...g, siblings: arr };
+      }),
+    );
+  }
+  function moveGroup(gi: number, dir: -1 | 1) {
+    setGroups((prev) => {
+      const j = gi + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const arr = prev.slice();
+      const [x] = arr.splice(gi, 1);
+      arr.splice(j, 0, x);
+      return arr;
+    });
+  }
+  function addGroup() {
+    const label = `new-group-${Date.now().toString(36).slice(-4)}`;
+    setGroups((prev) => [
+      ...prev,
+      {
+        _id: crypto.randomUUID(),
+        variant_group: label,
+        siblings: [
+          {
+            _id: crypto.randomUUID(),
+            _new: true,
+            id: null,
+            question: "New question.",
+            options: ["Option A", "Option B", "Option C", "Option D"],
+            correct_answer: "Option A",
+            explanation: "",
+            difficulty: "medium",
+            variant_ordinal: 1,
+            status: "approved",
+            visibility: "course",
+            authored_key: null,
+            updated_by: null,
+          },
+        ],
+      },
+    ]);
+  }
+  function removeGroupIfEmpty(gi: number) {
+    // Only removable if every sibling in the group is _new (no server rows to
+    // preserve). Existing groups must be emptied variant-by-variant so the
+    // deleted_ids list is accurate and the trigger-block trap is honoured.
+    setGroups((prev) => {
+      const g = prev[gi];
+      if (!g) return prev;
+      const allNew = g.siblings.every((s) => s._new);
+      return allNew ? prev.filter((_, j) => j !== gi) : prev;
+    });
+  }
+
+  async function performSave() {
+    setShowSaveConfirm(false);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const payload = toExercisePayload(groups);
+      const res = await fetch(`/api/admin/courses/stages/${stageId}/exercises`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...payload, baseUpdatedAt }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        if (Array.isArray(data.errors)) {
+          const first = data.errors[0];
+          setSaveError(
+            `Validation failed on group ${first.groupIndex + 1}, variant ${first.siblingIndex + 1}, ${first.field}: ${first.message}`,
+          );
+        } else if (data.error === "deletion_blocked" && Array.isArray(data.blocked_ids)) {
+          setSaveError(
+            `Cannot delete variant${data.blocked_ids.length === 1 ? "" : "s"} referenced by a saved quiz: ${data.blocked_ids.join(", ")}. Unflag them and try again.`,
+          );
+        } else {
+          setSaveError(data.message ?? data.error ?? "Save failed.");
+        }
+        return;
+      }
+      toast.success("Exercises saved.");
+      // The server minted new ids and updated_by; the cheapest way to sync
+      // without a second RPC is a full refresh — the server component
+      // re-renders with fresh authored data and this component remounts.
+      setBaseUpdatedAt(data.updatedAt as string);
+      setSavedSnapshot(snapshot(groups)); // temporary, until router.refresh remounts us
+      router.refresh();
+    } catch {
+      setSaveError("Network error.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function discard() {
+    setGroups(hydrateGroups(initialGroups, initialGroupOrder));
+    setSaveError(null);
+    setShowDiscardConfirm(false);
+  }
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Exercises are read-only in the editor for now. To change wording, use the admin questions
-        moderation surface or re-run the importer.
-      </p>
-      {groups.map((g, gi) => (
-        <div key={g.variant_group} className="rounded-2xl border border-border bg-card p-4 space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Variant group {gi + 1} · {g.siblings.length} variant{g.siblings.length === 1 ? "" : "s"}
-          </p>
-          {g.siblings.map((v) => (
-            <div key={v.id} className="rounded-xl border border-border bg-background p-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Variant {v.variant_ordinal}</span>
-                <span>·</span>
-                <span>{v.difficulty}</span>
-                <span>·</span>
-                <span>{v.status}</span>
-              </div>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{v.question}</p>
-              <ol className="list-[lower-alpha] pl-5 space-y-1 text-sm marker:text-muted-foreground">
-                {v.options.map((opt, i) => (
-                  <li
-                    key={i}
-                    className={
-                      opt === v.correct_answer
-                        ? "text-success font-medium"
-                        : "text-muted-foreground"
-                    }
-                  >
-                    {opt}
-                  </li>
-                ))}
-              </ol>
-              {v.explanation && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium">Explanation: </span>
-                  {v.explanation}
-                </p>
-              )}
-            </div>
+      {/* Top strip: expand-all + add-group */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            onClick={expandAll}
+            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-accent transition-colors"
+          >
+            Expand all
+          </button>
+          <button
+            type="button"
+            onClick={collapseAll}
+            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-accent transition-colors"
+          >
+            Collapse all
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={addGroup}
+          className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-sm text-foreground hover:bg-accent transition-colors"
+        >
+          <Plus size={13} /> Add group
+        </button>
+      </div>
+
+      {groups.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground rounded-2xl border border-dashed border-border">
+          <p className="text-sm">This stage has no exercises yet.</p>
+          <button
+            type="button"
+            onClick={addGroup}
+            className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-sm text-foreground hover:bg-accent transition-colors"
+          >
+            <Plus size={13} /> Add group
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((g, gi) => (
+            <GroupCard
+              key={g._id}
+              group={g}
+              index={gi}
+              total={groups.length}
+              expanded={effectiveExpanded.has(g._id)}
+              katex={katex}
+              onToggle={() => toggleExpanded(g._id)}
+              onRenameGroup={(label) => updateGroup(gi, { variant_group: label })}
+              onMoveGroup={(dir) => moveGroup(gi, dir)}
+              onRemoveGroup={() => removeGroupIfEmpty(gi)}
+              onAddSibling={() => addSibling(gi)}
+              onUpdateSibling={(si, patch) => updateSibling(gi, si, patch)}
+              onRemoveSibling={(si) => removeSibling(gi, si)}
+              onMoveSibling={(si, dir) => moveSibling(gi, si, dir)}
+            />
           ))}
         </div>
-      ))}
+      )}
+
+      {/* Sticky save bar — parallel to the theory bar, but with its own CAS */}
+      <div className="sticky bottom-4 z-10">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+          <div className="text-sm text-muted-foreground">
+            {dirty ? (
+              <span>
+                Unsaved changes
+                {pendingDeletes.length > 0 && (
+                  <span className="ml-1 text-destructive-text">
+                    · {pendingDeletes.length} pending delete{pendingDeletes.length === 1 ? "" : "s"}
+                  </span>
+                )}
+                .
+              </span>
+            ) : (
+              <span>All changes saved.</span>
+            )}
+            {saveError && (
+              <span className="ml-2 text-destructive-text">· {saveError}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDiscardConfirm(true)}
+              disabled={!dirty || saving}
+              className="cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+            >
+              <Undo2 size={15} /> Discard
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSaveConfirm(true)}
+              disabled={!dirty || saving}
+              className="cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
+            >
+              <Save size={15} /> {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard your unsaved exercise changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The exercises return to the last saved version. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Keep editing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={discard}
+              className="rounded-xl bg-destructive text-white hover:bg-destructive-hover"
+            >
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save exercises now?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  Learners currently answering a stage check will see the updated wording on
+                  their next question. A variant deleted while a check is open will fail to
+                  load mid-attempt — consider editing during quiet hours.
+                </p>
+                {pendingDeletes.length > 0 && (
+                  <div className="rounded-lg border border-destructive-border bg-destructive-subtle p-3">
+                    <p className="text-destructive-text font-medium mb-1">
+                      Deleting {pendingDeletes.length} variant{pendingDeletes.length === 1 ? "" : "s"}:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-0.5">
+                      {pendingDeletes.map((d) => (
+                        <li key={d.id} className="text-destructive-text/90">
+                          {d.group}: {d.question.slice(0, 80)}
+                          {d.question.length > 80 ? "…" : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void performSave()}
+              className="rounded-xl bg-brand text-white hover:bg-brand-hover"
+            >
+              Save
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function GroupCard({
+  group,
+  index,
+  total,
+  expanded,
+  katex,
+  onToggle,
+  onRenameGroup,
+  onMoveGroup,
+  onRemoveGroup,
+  onAddSibling,
+  onUpdateSibling,
+  onRemoveSibling,
+  onMoveSibling,
+}: {
+  group: EditableGroup;
+  index: number;
+  total: number;
+  expanded: boolean;
+  katex: LoadedKatex | null;
+  onToggle: () => void;
+  onRenameGroup: (label: string) => void;
+  onMoveGroup: (dir: -1 | 1) => void;
+  onRemoveGroup: () => void;
+  onAddSibling: () => void;
+  onUpdateSibling: (si: number, patch: Partial<EditableSibling>) => void;
+  onRemoveSibling: (si: number) => void;
+  onMoveSibling: (si: number, dir: -1 | 1) => void;
+}) {
+  const activeSiblings = group.siblings.filter((s) => !s._pendingDelete).length;
+  const allNew = group.siblings.every((s) => s._new);
+  return (
+    <div className="rounded-2xl border border-border bg-card">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="cursor-pointer flex-1 flex items-center gap-2 text-left"
+          aria-expanded={expanded}
+        >
+          {expanded ? (
+            <ChevronUp size={16} className="text-muted-foreground" />
+          ) : (
+            <ChevronDown size={16} className="text-muted-foreground" />
+          )}
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Group {index + 1}
+          </span>
+          <span className="text-sm font-medium text-foreground truncate">
+            {group.variant_group}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            · {activeSiblings} variant{activeSiblings === 1 ? "" : "s"}
+          </span>
+        </button>
+        <div className="flex items-center gap-1">
+          <IconBtn onClick={() => onMoveGroup(-1)} disabled={index === 0} title="Move group up" Icon={ChevronUp} />
+          <IconBtn onClick={() => onMoveGroup(1)} disabled={index === total - 1} title="Move group down" Icon={ChevronDown} />
+          <IconBtn
+            onClick={onRemoveGroup}
+            disabled={!allNew}
+            title={allNew ? "Delete empty group" : "Remove all variants first (delete then Save)"}
+            Icon={Trash2}
+            tone="destructive"
+          />
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Group label
+            </label>
+            <input
+              type="text"
+              value={group.variant_group}
+              onChange={(e) => onRenameGroup(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              spellCheck={false}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Rename is display-only. Authored keys stay stable, so learner history is preserved.
+            </p>
+          </div>
+
+          {group.siblings.map((s, si) => (
+            <VariantCard
+              key={s._id}
+              sibling={s}
+              index={si}
+              total={group.siblings.length}
+              katex={katex}
+              onUpdate={(patch) => onUpdateSibling(si, patch)}
+              onRemove={() => onRemoveSibling(si)}
+              onMove={(dir) => onMoveSibling(si, dir)}
+            />
+          ))}
+
+          <button
+            type="button"
+            onClick={onAddSibling}
+            className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs text-foreground hover:bg-accent transition-colors"
+          >
+            <Plus size={13} /> Add variant
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VariantCard({
+  sibling,
+  index,
+  total,
+  katex,
+  onUpdate,
+  onRemove,
+  onMove,
+}: {
+  sibling: EditableSibling;
+  index: number;
+  total: number;
+  katex: LoadedKatex | null;
+  onUpdate: (patch: Partial<EditableSibling>) => void;
+  onRemove: () => void;
+  onMove: (dir: -1 | 1) => void;
+}) {
+  const isHand = sibling.authored_key?.includes("/hand-") ?? false;
+  const isEdited = sibling.updated_by !== null;
+  const pending = !!sibling._pendingDelete;
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-background p-3 space-y-3 transition-opacity",
+        pending && "opacity-50",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Variant {index + 1}</span>
+          {sibling._new ? (
+            <span className="inline-flex items-center gap-1 rounded-md border border-brand-border bg-brand-subtle px-1.5 py-0.5 text-brand-text">
+              New
+            </span>
+          ) : isHand ? (
+            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5">
+              Hand-authored
+            </span>
+          ) : null}
+          {!sibling._new && isEdited && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5">
+              Edited in-app
+            </span>
+          )}
+          {pending && (
+            <span className="text-destructive-text font-medium">
+              Pending delete
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <IconBtn onClick={() => onMove(-1)} disabled={index === 0 || pending} title="Move variant up" Icon={ChevronUp} />
+          <IconBtn onClick={() => onMove(1)} disabled={index === total - 1 || pending} title="Move variant down" Icon={ChevronDown} />
+          <IconBtn
+            onClick={onRemove}
+            title={pending ? "Undo delete" : sibling._new ? "Remove new variant" : "Delete variant"}
+            Icon={pending ? RotateCcw : Trash2}
+            tone={pending ? undefined : "destructive"}
+          />
+        </div>
+      </div>
+
+      {/* Difficulty */}
+      <div>
+        <label className="block text-xs font-medium text-muted-foreground mb-1">Difficulty</label>
+        <Select
+          value={sibling.difficulty}
+          onValueChange={(v) => onUpdate({ difficulty: v })}
+        >
+          <SelectTrigger className="w-40 rounded-lg border-border bg-card text-foreground">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="easy">Easy</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="hard">Hard</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Question stem */}
+      <RichEditableField
+        label="Question"
+        value={sibling.question}
+        katex={katex}
+        onChange={(v) => onUpdate({ question: v })}
+        multiline
+      />
+
+      {/* Options with correct-answer radio */}
+      <OptionsField
+        siblingId={sibling._id}
+        options={sibling.options}
+        correct={sibling.correct_answer}
+        katex={katex}
+        onChange={(options, correct) =>
+          onUpdate({ options, correct_answer: correct })
+        }
+      />
+
+      {/* Explanation */}
+      <RichEditableField
+        label="Explanation"
+        value={sibling.explanation}
+        katex={katex}
+        onChange={(v) => onUpdate({ explanation: v })}
+        multiline
+      />
+    </div>
+  );
+}
+
+// Single field with a client-rendered preview. Toggle "Show preview" to
+// re-render the raw string with katex; matches the swap-to-edit shape from
+// theory (rest = rendered, edit = textarea), simplified for a single field.
+function RichEditableField({
+  label,
+  value,
+  katex,
+  onChange,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  katex: LoadedKatex | null;
+  onChange: (v: string) => void;
+  multiline?: boolean;
+}) {
+  const [showPreview, setShowPreview] = useState(false);
+  const rendered = useMemo(
+    () => (katex && showPreview ? renderRichTextNodes(value, katex) : null),
+    [value, katex, showPreview],
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-medium text-muted-foreground">{label}</label>
+        <button
+          type="button"
+          onClick={() => setShowPreview((v) => !v)}
+          className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+        >
+          {showPreview ? "Hide preview" : "Show preview"}
+        </button>
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={multiline ? Math.min(6, Math.max(2, value.split("\n").length)) : 1}
+        className={`w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${multiline ? "" : "resize-none"}`}
+        spellCheck={false}
+      />
+      {showPreview && (
+        <div className="px-3 py-2 rounded-lg border border-border bg-muted/40 text-sm text-foreground overflow-x-auto">
+          {rendered ?? <span className="text-muted-foreground/60 italic">Loading preview…</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OptionsField({
+  siblingId,
+  options,
+  correct,
+  katex,
+  onChange,
+}: {
+  siblingId: string;
+  options: string[];
+  correct: string;
+  katex: LoadedKatex | null;
+  onChange: (options: string[], correct: string) => void;
+}) {
+  const [showPreview, setShowPreview] = useState(false);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-medium text-muted-foreground">
+          Options (mark the correct one)
+        </label>
+        <button
+          type="button"
+          onClick={() => setShowPreview((v) => !v)}
+          className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+        >
+          {showPreview ? "Hide preview" : "Show preview"}
+        </button>
+      </div>
+      <div className="space-y-2">
+        {options.map((opt, i) => {
+          const isCorrect = opt === correct;
+          return (
+            <div key={i} className="flex items-start gap-2">
+              <label className="inline-flex items-center gap-1 pt-2">
+                <input
+                  type="radio"
+                  name={`correct-${siblingId}`}
+                  checked={isCorrect}
+                  onChange={() => onChange(options, opt)}
+                  className="cursor-pointer"
+                />
+                <span className="text-xs text-muted-foreground w-6">{String.fromCharCode(97 + i)}.</span>
+              </label>
+              <div className="flex-1 space-y-1">
+                <textarea
+                  value={opt}
+                  onChange={(e) => {
+                    const next = options.slice();
+                    const oldValue = next[i];
+                    next[i] = e.target.value;
+                    // If this row was the correct answer, keep it correct by updating
+                    // the correct string to match (options+correct are tied by value).
+                    const nextCorrect = correct === oldValue ? e.target.value : correct;
+                    onChange(next, nextCorrect);
+                  }}
+                  rows={1}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono resize-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  spellCheck={false}
+                />
+                {showPreview && katex && (
+                  <div className="px-3 py-1.5 rounded-lg border border-border bg-muted/40 text-sm text-foreground overflow-x-auto">
+                    {renderRichTextNodes(opt, katex)}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (options.length <= 2) return;
+                  const next = options.filter((_, k) => k !== i);
+                  const nextCorrect = correct === opt ? next[0] : correct;
+                  onChange(next, nextCorrect);
+                }}
+                disabled={options.length <= 2}
+                title="Remove option"
+                aria-label="Remove option"
+                className="mt-1.5 cursor-pointer disabled:cursor-not-allowed p-1.5 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive-subtle disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {options.length < 8 && (
+        <button
+          type="button"
+          onClick={() => onChange([...options, `Option ${String.fromCharCode(65 + options.length)}`], correct)}
+          className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs text-foreground hover:bg-accent transition-colors"
+        >
+          <Plus size={13} /> Add option
+        </button>
+      )}
     </div>
   );
 }
