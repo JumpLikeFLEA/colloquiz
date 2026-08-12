@@ -56,3 +56,6 @@ next-env.d.ts
 .design-sync/tw-input.css
 
 instruction_external_LLM.txt
+
+# perf benchmark output (scripts/bench.ts)
+/.perf/

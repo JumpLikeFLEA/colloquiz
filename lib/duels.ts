@@ -65,13 +65,30 @@ export type CompetitiveRow = {
 };
 
 /**
- * Settles anything overdue before reading. There is no pg_cron in this project,
- * so the sweep rides along with the duel list — the one query every duel screen
- * makes anyway.
+ * Settles anything overdue: resolves active duels past their deadline and lapses
+ * week-old pending challenges. Idempotent.
+ *
+ * Deliberately NOT bundled into getMyDuels: this is a write-path RPC (it takes
+ * row locks on `duels` and fires notifications), and getMyDuels used to run it
+ * before every read — including the app-wide sidebar badge in (main)/layout.tsx,
+ * so the sweep executed on *every* authenticated navigation and serialized under
+ * production concurrency. The periodic settling is now driven by pg_cron
+ * (migration 033); this call remains for the /duels inbox, where an active
+ * viewer gets their overdue duels settled immediately rather than waiting for
+ * the next cron tick. Callers that only read (the badge, the duel detail page)
+ * must NOT call this.
+ */
+export async function sweepDuels(client?: SupabaseClient): Promise<void> {
+  const supabase = client ?? (await createClient());
+  await supabase.rpc("expire_duels");
+}
+
+/**
+ * Reads the caller's duels. Pure read — does not settle overdue duels (see
+ * sweepDuels). Safe to call on hot paths like the sidebar badge.
  */
 export async function getMyDuels(client?: SupabaseClient): Promise<Duel[]> {
   const supabase = client ?? (await createClient());
-  await supabase.rpc("expire_duels");
   const { data, error } = await supabase.rpc("get_my_duels");
   if (error) throw new Error(error.message);
   return (data ?? []) as Duel[];

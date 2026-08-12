@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/queries";
-import { getMyDuels, getMyTier } from "@/lib/duels";
+import { getMyDuels, getMyTier, sweepDuels } from "@/lib/duels";
 import { getMyDuelTargets } from "@/lib/groups";
 import { getSubjects, getSubjectStats } from "@/lib/questions";
 import { DuelsView } from "./DuelsView";
@@ -12,8 +12,11 @@ export default async function DuelsPage() {
 
   const supabase = await createClient();
 
-  // getMyDuels runs the lazy expire sweep, so overdue duels settle on load.
-  // Degrade to empty/unranked rather than throwing, mirroring the leaderboard.
+  // Settle overdue duels immediately for someone actively looking at their
+  // inbox; periodic settling for everyone else is handled by pg_cron (migration
+  // 033), so this no longer rides along on every navigation. Degrade to
+  // empty/unranked rather than throwing, mirroring the leaderboard.
+  await sweepDuels(supabase).catch(() => {});
   const [duels, myTier, targets] = await Promise.all([
     getMyDuels(supabase).catch(() => []),
     getMyTier().catch(() => ({

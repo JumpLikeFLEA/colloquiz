@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
 import { getLevelProgress } from "@/lib/levels";
+import { COURSES_ENABLED } from "@/lib/featureFlags";
 
 export default async function MainLayout({
   children,
@@ -28,6 +29,7 @@ export default async function MainLayout({
   let isAdmin = false;
   let isAuthor = false;
   let isCourseEditor = false;
+  let duelCount = 0;
 
   if (data) {
     const xp = data.total_xp ?? 0;
@@ -43,25 +45,30 @@ export default async function MainLayout({
     isAdmin = data.role === "admin";
     isAuthor = !!data.is_author || data.role === "admin";
 
-    // "Has at least one course_editors row." Non-admin editors need the admin
-    // Courses nav entry to reach their editable courses; the RLS "self read"
-    // policy (029) makes this a scoped count with no admin escalation.
-    if (!isAdmin) {
-      const supabase = await createClient();
-      const { count } = await supabase
-        .from("course_editors")
-        .select("course_id", { head: true, count: "exact" });
-      isCourseEditor = (count ?? 0) > 0;
-    }
-  }
-
-  // Duels awaiting this user's move, for the sidebar badge. getMyDuels also runs
-  // the lazy expire sweep; degrade to 0 so a duel hiccup never breaks the shell.
-  const duelCount = data
-    ? await getMyDuels()
+    // The two remaining shell queries run concurrently and share one client, so
+    // the layout no longer blocks navigation on a chain of serial round trips.
+    const supabase = await createClient();
+    const [courseEditorCount, actionableDuels] = await Promise.all([
+      // "Has at least one course_editors row." Non-admin editors need the admin
+      // Courses nav entry to reach their editable courses (RLS "self read", 029).
+      // Skipped entirely while COURSES_ENABLED is false: AppSidebar filters the
+      // Courses nav out then, so the result is unused — no reason to pay the hop.
+      !isAdmin && COURSES_ENABLED
+        ? supabase
+            .from("course_editors")
+            .select("course_id", { head: true, count: "exact" })
+            .then(({ count }) => count ?? 0)
+        : Promise.resolve(0),
+      // Duels awaiting this user's move, for the sidebar badge. Pure read now
+      // (the expire sweep moved to pg_cron / the /duels inbox); degrade to 0 so
+      // a duel hiccup never breaks the shell.
+      getMyDuels(supabase)
         .then((duels) => duels.filter(isActionableDuel).length)
-        .catch(() => 0)
-    : 0;
+        .catch(() => 0),
+    ]);
+    isCourseEditor = courseEditorCount > 0;
+    duelCount = actionableDuels;
+  }
 
   return (
     <SidebarProvider>

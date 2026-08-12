@@ -344,6 +344,84 @@ There is no `lint` script or ESLint config; the production build runs the TypeSc
 
 ---
 
+## Benchmarking
+
+`scripts/bench.ts` is an on-demand latency harness — the project has no RUM,
+Vercel Analytics or OTel, so this is how "is it slower, and where?" gets
+answered. It measures the app in two layers: per-route TTFB via HTTP fetch, and
+direct hot-RPC timing via `@supabase/supabase-js`. Full rationale in
+[`docs/adr/0001-performance-benchmark.md`](docs/adr/0001-performance-benchmark.md).
+
+### One-time setup
+
+Add a throwaway benchmark account to whichever Supabase project you plan to
+target (sign up through `/signup` like any other user), then set in `.env.local`:
+
+```bash
+BENCH_EMAIL=bench@example.com
+BENCH_PASSWORD=…
+BENCH_PROD_URL=https://your-app.vercel.app   # only needed for --target=prod
+```
+
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` are reused as-is.
+
+### Run
+
+```bash
+# Local: needs `next dev` (or `next build && next start`) running on :3000.
+npm run bench -- --target=local
+# Or the equivalent tsx form used by the other scripts:
+npx tsx --env-file=.env.local scripts/bench.ts --target=local
+
+# Production (read-only by construction):
+npm run bench -- --target=prod
+
+# Narrow down a single route or bump the sample size:
+npm run bench -- --target=local --route=/duels --iters=50
+
+# Include the one write RPC (expire_duels). Refused unless the target is
+# localhost/127.0.0.1 — no flag combination writes to prod.
+npm run bench -- --target=local --include-writes
+
+# Tune the report's problem budgets (defaults: route p50 400ms, RPC p50 150ms,
+# variance p95/p50 2×). --threshold is the regression cutoff, default +15%.
+npm run bench -- --target=prod --route-budget=350 --rpc-budget=120
+```
+
+### Reading the output
+
+The script prints one table per layer — route TTFB, route total, then direct
+RPC timing — with p50/p95/min/max/ok%. If a prior run of the same target exists
+at `.perf/<target>-latest.json`, a **Δ p50 vs baseline** column appears; any
+p50 that regressed beyond +15% is tagged with `⚠` and summarised at the bottom.
+Every run also writes a timestamped JSON blob to `.perf/`, which is git-ignored.
+
+If Layer A shows a route regression but the RPCs on that page did not move, the
+work moved elsewhere on the page (proxy, RSC, cache, network). If a RPC in
+Layer B moved, the plan document and ADR list the call sites that back it.
+
+### The Markdown report
+
+Every run also writes a human-readable report to `.perf/<target>-report.md`
+(built by [`lib/perfReport.ts`](lib/perfReport.ts)). It contains a summary, a
+**Problems** section, the two data tables, and a fenced **Paste-ready problem
+digest**. A row is flagged as a problem when any of these hold:
+
+- route TTFB p50 over the route budget (default 400ms), or RPC p50 over the RPC
+  budget (default 150ms);
+- `okRate < 100%` (a request failed);
+- `p95 / p50` over the variance ratio (default 2×) — an unstable tail;
+- p50 regressed beyond the `--threshold` (default +15%) vs the baseline.
+
+Because it flags on absolute budgets as well as regressions, a first run with no
+baseline still surfaces problems. The report is **evidence-only** — it states
+the flagged metric, its numbers, and the correlated backing-RPC timings, but
+does not guess a cause or point at a file. The **paste-ready digest** block is
+meant to be copied whole into a fixing prompt as context. Budgets are tunable
+via `--route-budget`, `--rpc-budget`, `--variance-ratio`.
+
+---
+
 ## Roadmap
 
 ### Built
