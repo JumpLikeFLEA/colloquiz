@@ -21,9 +21,6 @@ import { QuizResultsTable } from "./QuizResultsTable";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-/** Rows the Stats tab shows before sending the user to History. */
-const RECENT_QUIZ_ROWS = 10;
-
 /** Baseline-to-baseline spacing for a wrapped axis label, in SVG units. */
 const TICK_LINE_HEIGHT = 12;
 
@@ -127,7 +124,12 @@ type DashboardViewProps = {
     total_xp: number;
     current_streak: number;
   };
-  results: EnrichedResult[];
+  /** All-time aggregates for the stat cards (migration 034). avgScore is 0..100. */
+  totals: { quizzes: number; avgScore: number; totalTimeSeconds: number };
+  /** Rows from the last ~week, bucketed by weekday client-side (viewer's tz). */
+  weekResults: { taken_at: string; score: number }[];
+  /** The latest 10 results for the Recent Quizzes table. */
+  recent: EnrichedResult[];
   /** 7-day standing, or null when the user has no eligible XP this week. */
   myRank: { rank: number; xp: number; total_ranked: number } | null;
   /** Most-played subjects, capped and labelled for the radar (see lib/subjectStats). */
@@ -138,17 +140,14 @@ type DashboardViewProps = {
 
 export function DashboardView({
   profile,
-  results,
+  totals,
+  weekResults,
+  recent,
   myRank,
   radarSubjects,
   scoreBySubject,
 }: DashboardViewProps) {
   const statCards = useMemo(() => {
-    const totalTimeSec = results.reduce((a, r) => a + (r.time_taken ?? 0), 0);
-    const avgScore =
-      results.length === 0
-        ? 0
-        : Math.round((results.reduce((a, r) => a + r.score, 0) / results.length) * 100);
     // Level and total XP share one card: the level is the headline number and
     // the XP that earned it sits in the card's footnote slot, so progression
     // reads as a stat here rather than as a second identity block.
@@ -158,13 +157,13 @@ export function DashboardView({
     // chipStyle() derives each chip from its hue and the live --card. See the
     // note on CATEGORY_STYLE in AchievementsView.
     return [
-      { label: "Total Quizzes", value: String(results.length), change: "", icon: BarChart2, color: "#4f46e5" },
-      { label: "Avg. Score", value: `${avgScore}%`, change: "", icon: TrendingUp, color: "#10b981" },
+      { label: "Total Quizzes", value: String(totals.quizzes), change: "", icon: BarChart2, color: "#4f46e5" },
+      { label: "Avg. Score", value: `${totals.avgScore}%`, change: "", icon: TrendingUp, color: "#10b981" },
       { label: "Current Streak", value: pluralize(profile.current_streak, "day"), change: "", icon: Flame, color: "#f97316" },
-      { label: "Time Spent", value: formatDuration(totalTimeSec, "compact"), change: "", icon: Clock, color: "#8b5cf6" },
+      { label: "Time Spent", value: formatDuration(totals.totalTimeSeconds, "compact"), change: "", icon: Clock, color: "#8b5cf6" },
       { label: "Current Level", value: `Level ${level}`, change: `${profile.total_xp.toLocaleString()} XP total earned`, icon: Star, color: "#f59e0b" },
     ];
-  }, [results, profile.current_streak, profile.total_xp]);
+  }, [totals, profile.current_streak, profile.total_xp]);
 
   const weeklyData = useMemo(() => {
     const dayScores: Record<string, number[]> = {};
@@ -174,7 +173,7 @@ export function DashboardView({
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(now.getDate() - 7);
 
-    for (const r of results) {
+    for (const r of weekResults) {
       const date = new Date(r.taken_at);
       if (date >= sevenDaysAgo) {
         const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
@@ -192,19 +191,9 @@ export function DashboardView({
           : 0,
       quizzes: dayScores[day].length,
     }));
-  }, [results]);
+  }, [weekResults]);
 
   const subjectTick = useMemo(() => renderSubjectTick(radarSubjects), [radarSubjects]);
-
-  // Stats shows only the latest RECENT_QUIZ_ROWS; the full list lives on the
-  // History tab, which "View all" links to.
-  const recentQuizzes = useMemo(
-    () =>
-      [...results]
-        .sort((a, b) => new Date(b.taken_at).getTime() - new Date(a.taken_at).getTime())
-        .slice(0, RECENT_QUIZ_ROWS),
-    [results],
-  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -362,7 +351,7 @@ export function DashboardView({
         </div>
 
         <QuizResultsTable
-          results={recentQuizzes}
+          results={recent}
           empty={
             <div className="px-5 py-8 text-center text-sm text-muted-foreground">
               No quizzes yet — start one from Home to see history here.

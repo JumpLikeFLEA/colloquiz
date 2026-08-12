@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUser, getProfile } from "@/lib/supabase/queries";
-import { getEnrichedResults } from "@/lib/questions";
+import { getProgressStats } from "@/lib/progressStats";
 import { getMyRank } from "@/lib/leaderboard";
-import { aggregateBySubject, byAvgScoreDesc, toRadarPoints } from "@/lib/subjectStats";
+import { byAvgScoreDesc, toRadarPoints } from "@/lib/subjectStats";
 import { getHistorySubjects, getQuizHistory, parseHistoryFilters } from "@/lib/history";
 import { hasActiveFilters } from "@/lib/historyFilters";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -74,10 +74,12 @@ async function StatsTab() {
   const user = await getUser();
   if (!user) return null;
 
-  const supabase = await createClient();
-  const [profile, results, myRank] = await Promise.all([
+  const [stats, profile, myRank] = await Promise.all([
+    // All-time aggregates computed in SQL (migration 034) — the whole history is
+    // never transferred to the app. Returns bounded slices: totals, per-subject
+    // groups, the latest 10, and the last week's rows for the weekday chart.
+    getProgressStats(),
     getProfile(),
-    getEnrichedResults(supabase, user.id),
     // The rolling 7-day board is the one worth surfacing here: an all-time rank
     // barely moves, so it reads as static and nobody clicks it. Degrades to null
     // rather than throwing so a leaderboard hiccup can't take the tab down.
@@ -88,18 +90,17 @@ async function StatsTab() {
     throw new Error("Could not load profile");
   }
 
-  // One aggregate, two charts. Grouped here on the server from the results this
-  // page already loaded — the radar and the bar chart are different slices of the
-  // same numbers, so neither costs a query and they cannot disagree.
-  const bySubject = aggregateBySubject(results);
-
+  // One aggregate, two charts. The radar and the bar chart are different slices
+  // of the same per-subject numbers, so they cannot disagree.
   return (
     <DashboardView
       profile={profile}
-      results={results}
+      totals={stats.totals}
+      weekResults={stats.weekResults}
+      recent={stats.recent}
       myRank={myRank}
-      radarSubjects={toRadarPoints(bySubject)}
-      scoreBySubject={byAvgScoreDesc(bySubject)}
+      radarSubjects={toRadarPoints(stats.bySubject)}
+      scoreBySubject={byAvgScoreDesc(stats.bySubject)}
     />
   );
 }
@@ -138,36 +139,32 @@ async function AchievementsTab() {
   // Profile comes from the cached getProfile() (deduped with the layout's call),
   // not a second raw profiles select. Its current_streak is ALREADY lapsed via
   // liveStreak, so it is passed straight through — do not re-wrap it.
-  const [profile, unlocksRes, resultsRes] = await Promise.all([
+  //
+  // The quiz-count / avg-score / total-time trio reuses get_progress_stats()'s
+  // `totals` (migration 034) instead of scanning every result row here — the
+  // same aggregate the Stats tab uses, computed once in SQL.
+  const [profile, stats, unlocksRes] = await Promise.all([
     getProfile(),
+    getProgressStats(),
     supabase
       .from("user_achievements")
       .select("achievement_id, unlocked_at")
       .eq("user_id", user.id),
-    supabase
-      .from("results")
-      .select("score, time_taken")
-      .eq("user_id", user.id),
   ]);
 
   const unlocks = unlocksRes.data ?? [];
-  const results = resultsRes.data ?? [];
 
   const unlockedMap: Record<string, string> = Object.fromEntries(
     unlocks.map((u) => [u.achievement_id, u.unlocked_at]),
   );
-  const avgScore = results.length
-    ? Math.round((results.reduce((s, r) => s + r.score, 0) / results.length) * 100)
-    : 0;
-  const totalTimeSeconds = results.reduce((s, r) => s + (r.time_taken ?? 0), 0);
 
   return (
     <AchievementsView
       totalXp={profile?.total_xp ?? 0}
       currentStreak={profile?.current_streak ?? 0}
-      quizCount={results.length}
-      avgScore={avgScore}
-      totalTimeSeconds={totalTimeSeconds}
+      quizCount={stats.totals.quizzes}
+      avgScore={stats.totals.avgScore}
+      totalTimeSeconds={stats.totals.totalTimeSeconds}
       unlockedMap={unlockedMap}
     />
   );

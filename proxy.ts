@@ -72,6 +72,27 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Legacy paths merged into the Progress route. Canonicalize them HERE rather
+  // than with a redirecting page under (main): a redirect() from a Server
+  // Component cannot stream, so it pays the full authenticated shell render + its
+  // DB round trips before it can emit the 307 (measured ~415ms in prod vs ~210ms
+  // for real streamed pages). Doing it in the proxy returns an instant redirect
+  // with no rendering and no queries. Placed after the unauth->login bounce, so a
+  // stale bookmark hit while signed out still lands on /login with `next`
+  // preserved before it is canonicalized.
+  const legacyRedirects: Record<string, string> = {
+    '/dashboard': '/progress?tab=stats',
+    '/achievements': '/progress?tab=achievements',
+  }
+  const legacyTarget = legacyRedirects[pathname]
+  if (user && legacyTarget) {
+    const url = request.nextUrl.clone()
+    const [targetPath, targetQuery] = legacyTarget.split('?')
+    url.pathname = targetPath
+    url.search = targetQuery ? `?${targetQuery}` : ''
+    return NextResponse.redirect(url)
+  }
+
   return supabaseResponse
 }
 
