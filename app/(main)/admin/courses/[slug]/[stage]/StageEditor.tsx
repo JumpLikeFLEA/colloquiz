@@ -134,6 +134,26 @@ type EditableBlock =
 
 const mintItem = (value: string): ItemWithId => ({ _id: crypto.randomUUID(), value });
 
+// Grow a textarea to fit its content (soft-wraps included — rows-by-\n cannot
+// see wrapping) plus one blank line of breathing room. Runs in a layout effect
+// so the height is correct in the same frame the field mounts/updates, never a
+// visible shrink-then-grow. `enabled` gates it to multiline fields (single-line
+// fields deliberately stay rows={1} + resize-none); when a field is behind
+// swap-to-edit, pass `editing` so it only measures while mounted as a textarea.
+function useAutosizeTextarea(
+  ref: React.RefObject<HTMLTextAreaElement | null>,
+  value: string,
+  enabled: boolean,
+) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!enabled || !el) return;
+    el.style.height = "auto"; // reset so scrollHeight can shrink as well as grow
+    const line = parseFloat(getComputedStyle(el).lineHeight) || 20;
+    el.style.height = `${el.scrollHeight + line}px`; // +1 line = the empty line below
+  }, [ref, value, enabled]);
+}
+
 // withId is the SINGLE funnel that ids the whole tree — block _id plus item
 // _ids for example.steps and list.items. Every mount path (initialBlocks.map,
 // addBlockAt, discard's JSON.parse.map) goes through here, so nothing enters
@@ -1292,6 +1312,7 @@ function AuthoredField({
   const node = rendered.get(field);
   const [editing, setEditing] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const formulaRef = useRef<HTMLTextAreaElement>(null);
 
   // Focus the textarea in the SAME tick it mounts (useLayoutEffect, not
   // useEffect) so there's no paint of an unfocused control. Cursor at end so
@@ -1305,15 +1326,23 @@ function AuthoredField({
     }
   }, [editing]);
 
+  // Swap-mode multiline: grow the textarea to fit its content (+1 blank line)
+  // whenever it's mounted-as-textarea, so click-to-edit never shrinks/clips a
+  // wrapped paragraph. Single-line fields (multiline=false) opt out and stay
+  // rows={1}. Formula (always-mounted) autosizes on its own ref below.
+  useAutosizeTextarea(taRef, value, editing && multiline);
+  useAutosizeTextarea(formulaRef, value, !swapMode);
+
   // Formula: unchanged legacy layout — textarea above, preview strip below.
   if (!swapMode) {
     return (
       <div className="space-y-1.5">
         <label className="block text-xs font-medium text-muted-foreground">{label}</label>
         <textarea
+          ref={formulaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          rows={Math.min(6, Math.max(2, value.split("\n").length))}
+          rows={2}
           className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           spellCheck={false}
         />
@@ -1358,9 +1387,11 @@ function AuthoredField({
           // Single-line: rows={1} so the textarea's intrinsic height isn't
           // larger than the shared min-h from boxShape — otherwise Chrome's
           // default rows={2} makes the textarea a few px taller than the
-          // rest-view and swap nudges the block. Multiline: grow with content
-          // (2..6 rows), and drop resize-none so the user can drag taller.
-          rows={multiline ? Math.min(6, Math.max(2, value.split("\n").length)) : 1}
+          // rest-view and swap nudges the block. Multiline: rows={2} is just a
+          // pre-paint floor; useAutosizeTextarea owns the real height (grows to
+          // fit content + one blank line), and resize-none is dropped so the
+          // user can still drag taller.
+          rows={multiline ? 2 : 1}
           className={`${boxShape} block ${multiline ? "" : "resize-none"} bg-background border-border font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring`}
           spellCheck={false}
         />
@@ -2232,10 +2263,15 @@ function RichEditableField({
   multiline?: boolean;
 }) {
   const [showPreview, setShowPreview] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement>(null);
   const rendered = useMemo(
     () => (katex && showPreview ? renderRichTextNodes(value, katex) : null),
     [value, katex, showPreview],
   );
+
+  // Multiline fields grow to fit their content (+1 blank line); single-line
+  // fields stay rows={1}. rows below is just a pre-paint floor.
+  useAutosizeTextarea(taRef, value, multiline);
 
   return (
     <div className="space-y-1.5">
@@ -2250,9 +2286,10 @@ function RichEditableField({
         </button>
       </div>
       <textarea
+        ref={taRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        rows={multiline ? Math.min(6, Math.max(2, value.split("\n").length)) : 1}
+        rows={multiline ? 2 : 1}
         className={`w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${multiline ? "" : "resize-none"}`}
         spellCheck={false}
       />

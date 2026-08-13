@@ -11,7 +11,6 @@ import { getProfile, getUser } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
 import { getActiveSessionSummary, type ActiveSessionSummary } from "@/lib/quizSession";
 import { getLevelProgress } from "@/lib/levels";
-import { COURSES_ENABLED } from "@/lib/featureFlags";
 
 export default async function MainLayout({
   children,
@@ -89,13 +88,15 @@ export default async function MainLayout({
     unreadCount = unread;
     activeSession = session;
 
-    // "Has at least one course_editors row." Non-admin editors need the admin
-    // Courses nav entry to reach their editable courses (RLS "self read", 029).
-    // Skipped entirely while COURSES_ENABLED is false: AppSidebar filters the
-    // Courses nav out then, so the result is unused — no reason to pay the hop.
-    // Kept out of the concurrent batch above because it needs isAdmin from the
-    // profile row, so it stays behind that await rather than racing it.
-    if (!isAdmin && COURSES_ENABLED) {
+    // "Has at least one course_editors row." Non-admin editors need the
+    // /admin/courses nav entry to reach their editable courses (RLS "self read",
+    // 029). NOT gated on COURSES_ENABLED: the editor entry links to /admin/courses
+    // (which AppSidebar does not flag-filter — only the learner /courses nav is),
+    // and the whole authoring surface works while the feature is dormant so
+    // content can be prepared before launch. Kept out of the concurrent batch
+    // above because it needs isAdmin from the profile row, so it stays behind
+    // that await rather than racing it.
+    if (!isAdmin) {
       const { count } = await supabase
         .from("course_editors")
         .select("course_id", { head: true, count: "exact" });
