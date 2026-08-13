@@ -7,7 +7,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { DuelRealtime } from "@/app/components/DuelRealtime";
 import { ThemeSync } from "@/app/components/ThemeSync";
 import { createClient } from "@/lib/supabase/server";
-import { getProfile } from "@/lib/supabase/queries";
+import { getProfile, getUser } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
 import { getActiveSessionSummary, type ActiveSessionSummary } from "@/lib/quizSession";
 import { getLevelProgress } from "@/lib/levels";
@@ -18,7 +18,39 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const data = await getProfile();
+  // The shell only needs the profile row (sidebar name / level / avatar). Start
+  // that fetch and the id-only secondary reads CONCURRENTLY: the secondary reads
+  // need just the user id — resolved locally from the JWT via getUser(), no round
+  // trip — not the profile, so the shell now blocks on one round trip instead of
+  // two serial ones. That earlier flush is what lets the static shell and the
+  // page's Suspense skeleton paint without waiting on the grid's data.
+  const supabase = await createClient();
+  const user = await getUser();
+  const profilePromise = getProfile();
+  const secondaryPromise: Promise<
+    [number, number, ActiveSessionSummary | null]
+  > = user
+    ? Promise.all([
+        // Duels awaiting this user's move, for the sidebar badge. Pure read (the
+        // expire sweep moved to pg_cron); degrade to 0 so a hiccup never breaks
+        // the shell.
+        getMyDuels(supabase)
+          .then((duels) => duels.filter(isActionableDuel).length)
+          .catch(() => 0),
+        // Unread notification count for the bell dot. HEAD + count is the whole
+        // payload — no rows cross the wire.
+        supabase
+          .from("notifications")
+          .select("id", { head: true, count: "exact" })
+          .eq("user_id", user.id)
+          .is("read_at", null)
+          .then(({ count }) => count ?? 0, () => 0),
+        // Active-session summary for the resume banner (null when none).
+        getActiveSessionSummary(supabase, user.id).catch(() => null),
+      ])
+    : Promise.resolve([0, 0, null]);
+
+  const data = await profilePromise;
 
   let profile: UserProfile = {
     displayName: "Student",
@@ -31,11 +63,10 @@ export default async function MainLayout({
   let isAuthor = false;
   let isCourseEditor = false;
   let duelCount = 0;
-  // Seeded server-side so the notification dot and the resume banner are correct
-  // on first paint — this replaces two ~1s client fetches that used to fire from
-  // NotificationBell / ActiveQuizBanner mount effects, on the cold post-hydration
-  // critical path. The equivalent reads now ride the shell's warm, parallel,
-  // same-region query batch below.
+  // Seeded server-side (from secondaryPromise above) so the notification dot and
+  // the resume banner are correct on first paint — this replaces two ~1s client
+  // fetches that used to fire from NotificationBell / ActiveQuizBanner mount
+  // effects, on the cold post-hydration critical path.
   let unreadCount = 0;
   let activeSession: ActiveSessionSummary | null = null;
 
@@ -53,42 +84,23 @@ export default async function MainLayout({
     isAdmin = data.role === "admin";
     isAuthor = !!data.is_author || data.role === "admin";
 
-    // The two remaining shell queries run concurrently and share one client, so
-    // the layout no longer blocks navigation on a chain of serial round trips.
-    const supabase = await createClient();
-    const [courseEditorCount, actionableDuels, unread, session] = await Promise.all([
-      // "Has at least one course_editors row." Non-admin editors need the admin
-      // Courses nav entry to reach their editable courses (RLS "self read", 029).
-      // Skipped entirely while COURSES_ENABLED is false: AppSidebar filters the
-      // Courses nav out then, so the result is unused — no reason to pay the hop.
-      !isAdmin && COURSES_ENABLED
-        ? supabase
-            .from("course_editors")
-            .select("course_id", { head: true, count: "exact" })
-            .then(({ count }) => count ?? 0)
-        : Promise.resolve(0),
-      // Duels awaiting this user's move, for the sidebar badge. Pure read now
-      // (the expire sweep moved to pg_cron / the /duels inbox); degrade to 0 so
-      // a duel hiccup never breaks the shell.
-      getMyDuels(supabase)
-        .then((duels) => duels.filter(isActionableDuel).length)
-        .catch(() => 0),
-      // Unread notification count for the bell dot. HEAD + count is the whole
-      // payload — no rows cross the wire. Degrade to 0 so a hiccup never breaks
-      // the shell, exactly like the duel read above.
-      supabase
-        .from("notifications")
-        .select("id", { head: true, count: "exact" })
-        .eq("user_id", data.id)
-        .is("read_at", null)
-        .then(({ count }) => count ?? 0, () => 0),
-      // Active-session summary for the resume banner (null when none).
-      getActiveSessionSummary(supabase, data.id).catch(() => null),
-    ]);
-    isCourseEditor = courseEditorCount > 0;
+    const [actionableDuels, unread, session] = await secondaryPromise;
     duelCount = actionableDuels;
     unreadCount = unread;
     activeSession = session;
+
+    // "Has at least one course_editors row." Non-admin editors need the admin
+    // Courses nav entry to reach their editable courses (RLS "self read", 029).
+    // Skipped entirely while COURSES_ENABLED is false: AppSidebar filters the
+    // Courses nav out then, so the result is unused — no reason to pay the hop.
+    // Kept out of the concurrent batch above because it needs isAdmin from the
+    // profile row, so it stays behind that await rather than racing it.
+    if (!isAdmin && COURSES_ENABLED) {
+      const { count } = await supabase
+        .from("course_editors")
+        .select("course_id", { head: true, count: "exact" });
+      isCourseEditor = (count ?? 0) > 0;
+    }
   }
 
   return (

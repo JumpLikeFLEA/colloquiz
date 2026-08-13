@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   getSubjects,
   getSubjectStats,
@@ -7,6 +8,7 @@ import { getMyAssignments, getMyCreatedQuizzes } from "@/lib/author";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/queries";
 import { SubjectGrid, type SubjectCardData } from "@/app/components/SubjectGrid";
+import { SubjectGridSkeleton } from "@/app/components/SubjectGridSkeleton";
 import { parseDifficultyFilter } from "@/lib/difficultyFilter";
 import { MyQuizzesRow, type MyQuizItem } from "@/app/components/MyQuizzesRow";
 
@@ -14,7 +16,20 @@ interface Props {
   searchParams: Promise<{ difficulty?: string }>;
 }
 
-export default async function Home({ searchParams }: Props) {
+// Deliberately NOT async and does NOT await searchParams: awaiting anything here
+// would make the whole page block the static shell, which is exactly the ~2s
+// stall we're removing. The searchParams promise is passed down and resolved
+// inside the Suspense boundary, so the shell + skeleton flush immediately and the
+// data-heavy grid streams in when its queries resolve.
+export default function Home({ searchParams }: Props) {
+  return (
+    <Suspense fallback={<SubjectGridSkeleton />}>
+      <SubjectGridSection searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function SubjectGridSection({ searchParams }: Props) {
   const { difficulty: difficultyParam } = await searchParams;
   const difficulty = parseDifficultyFilter(difficultyParam);
 

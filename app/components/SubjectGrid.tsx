@@ -365,7 +365,7 @@ export function SubjectGrid({
           subject cards. */}
       <p className="text-center text-sm text-muted-foreground">
         Need more control? Mix subjects, pick subtopics, and set quiz length in{" "}
-        <Link href="/advanced" className="text-brand-text font-medium hover:underline">
+        <Link href="/advanced" prefetch={false} className="text-brand-text font-medium hover:underline">
           Deep Dive →
         </Link>
       </p>
