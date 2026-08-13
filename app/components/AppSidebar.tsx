@@ -290,6 +290,12 @@ export function AppSidebar({
       <Link
         key={href}
         href={href}
+        // The sidebar is always in-viewport, so default prefetch fans out a full
+        // RSC render of every nav destination the instant the shell hydrates —
+        // competing with real data for origin capacity on first load. Fall back
+        // to hover/touch prefetch: intent-driven, so nav stays fast without the
+        // load-time storm.
+        prefetch={false}
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
           active

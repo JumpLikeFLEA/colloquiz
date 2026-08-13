@@ -268,6 +268,11 @@ export function SubjectGrid({
                   key={value}
                   href={difficultyHref(value)}
                   scroll={false}
+                  // These target the SAME page with only a ?difficulty= change;
+                  // default viewport prefetch fires a full server re-render of
+                  // the whole subject grid for every variant (×4) the moment the
+                  // page hydrates — pure origin load for a near-instant nav.
+                  prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-sm transition-colors",

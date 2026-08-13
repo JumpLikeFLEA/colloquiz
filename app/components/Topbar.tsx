@@ -37,7 +37,13 @@ const routeLabels: Record<string, string> = {
   "/courses": "Courses",
 };
 
-export function Topbar({ displayName: _displayName }: { displayName: string }) {
+export function Topbar({
+  displayName: _displayName,
+  initialUnread = 0,
+}: {
+  displayName: string;
+  initialUnread?: number;
+}) {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
   const segments = pathname.split("/").filter(Boolean);
@@ -79,7 +85,7 @@ export function Topbar({ displayName: _displayName }: { displayName: string }) {
             survives the sidebar collapsing to an icon rail. */}
         <FeedbackDialog />
         {/* Notification bell */}
-        <NotificationBell />
+        <NotificationBell initialUnread={initialUnread} />
       </div>
     </header>
   );

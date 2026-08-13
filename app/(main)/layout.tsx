@@ -9,6 +9,7 @@ import { ThemeSync } from "@/app/components/ThemeSync";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
+import { getActiveSessionSummary, type ActiveSessionSummary } from "@/lib/quizSession";
 import { getLevelProgress } from "@/lib/levels";
 import { COURSES_ENABLED } from "@/lib/featureFlags";
 
@@ -30,6 +31,13 @@ export default async function MainLayout({
   let isAuthor = false;
   let isCourseEditor = false;
   let duelCount = 0;
+  // Seeded server-side so the notification dot and the resume banner are correct
+  // on first paint — this replaces two ~1s client fetches that used to fire from
+  // NotificationBell / ActiveQuizBanner mount effects, on the cold post-hydration
+  // critical path. The equivalent reads now ride the shell's warm, parallel,
+  // same-region query batch below.
+  let unreadCount = 0;
+  let activeSession: ActiveSessionSummary | null = null;
 
   if (data) {
     const xp = data.total_xp ?? 0;
@@ -48,7 +56,7 @@ export default async function MainLayout({
     // The two remaining shell queries run concurrently and share one client, so
     // the layout no longer blocks navigation on a chain of serial round trips.
     const supabase = await createClient();
-    const [courseEditorCount, actionableDuels] = await Promise.all([
+    const [courseEditorCount, actionableDuels, unread, session] = await Promise.all([
       // "Has at least one course_editors row." Non-admin editors need the admin
       // Courses nav entry to reach their editable courses (RLS "self read", 029).
       // Skipped entirely while COURSES_ENABLED is false: AppSidebar filters the
@@ -65,9 +73,22 @@ export default async function MainLayout({
       getMyDuels(supabase)
         .then((duels) => duels.filter(isActionableDuel).length)
         .catch(() => 0),
+      // Unread notification count for the bell dot. HEAD + count is the whole
+      // payload — no rows cross the wire. Degrade to 0 so a hiccup never breaks
+      // the shell, exactly like the duel read above.
+      supabase
+        .from("notifications")
+        .select("id", { head: true, count: "exact" })
+        .eq("user_id", data.id)
+        .is("read_at", null)
+        .then(({ count }) => count ?? 0, () => 0),
+      // Active-session summary for the resume banner (null when none).
+      getActiveSessionSummary(supabase, data.id).catch(() => null),
     ]);
     isCourseEditor = courseEditorCount > 0;
     duelCount = actionableDuels;
+    unreadCount = unread;
+    activeSession = session;
   }
 
   return (
@@ -93,8 +114,8 @@ export default async function MainLayout({
             this in place over-wide content scrolls inside the content area
             instead of dragging the layout with it. */}
         <div className="flex min-w-0 min-h-svh flex-1 flex-col">
-          <Topbar displayName={profile.displayName} />
-          <ActiveQuizBanner />
+          <Topbar displayName={profile.displayName} initialUnread={unreadCount} />
+          <ActiveQuizBanner initialSummary={activeSession} />
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-6xl mx-auto px-5 py-8">
               {children}

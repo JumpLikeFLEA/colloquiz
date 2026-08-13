@@ -218,28 +218,16 @@ function render(n: AppNotification): Rendered {
   }
 }
 
-export function NotificationBell() {
+export function NotificationBell({ initialUnread = 0 }: { initialUnread?: number }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
-  const [unread, setUnread] = useState(0);
+  // Seeded from the server render (layout), so the dot is right on first paint
+  // without a mount fetch. Refreshed by the realtime nudge and on popover open.
+  const [unread, setUnread] = useState(initialUnread);
   // Ids that were unread when the popover opened — kept marked while it stays
   // open even though the PATCH has already cleared read_at server-side.
   const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-
-  // Unread count on mount; refreshed whenever the popover is opened.
-  useEffect(() => {
-    let active = true;
-    fetch("/api/notifications")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (active && d) setUnread(d.unread ?? 0);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
 
   // Realtime nudge from DuelRealtime: a notification just arrived. Light the dot
   // immediately; the full list is refetched when the popover next opens.
