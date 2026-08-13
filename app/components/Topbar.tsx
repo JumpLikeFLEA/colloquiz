@@ -1,7 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronRight, GraduationCap, PanelLeftIcon } from "lucide-react";
+import { Bell, ChevronRight, GraduationCap, PanelLeftIcon } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
 import { FeedbackDialog } from "@/app/components/FeedbackDialog";
@@ -38,11 +39,9 @@ const routeLabels: Record<string, string> = {
 };
 
 export function Topbar({
-  displayName: _displayName,
-  initialUnread = 0,
+  unreadPromise,
 }: {
-  displayName: string;
-  initialUnread?: number;
+  unreadPromise: Promise<number>;
 }) {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
@@ -84,8 +83,21 @@ export function Topbar({
             what you think". Lives in the top bar rather than the sidebar so it
             survives the sidebar collapsing to an icon rail. */}
         <FeedbackDialog />
-        {/* Notification bell */}
-        <NotificationBell initialUnread={initialUnread} />
+        {/* Notification bell — unread count streams in; the fallback is the
+            same bell with no dot, so it never flashes for the common case. */}
+        <Suspense
+          fallback={
+            <button
+              className="relative p-2 rounded-xl hover:bg-accent transition-colors cursor-pointer"
+              aria-label="Notifications"
+              disabled
+            >
+              <Bell size={17} className="text-muted-foreground" />
+            </button>
+          }
+        >
+          <NotificationBell unreadPromise={unreadPromise} />
+        </Suspense>
       </div>
     </header>
   );

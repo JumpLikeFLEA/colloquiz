@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Play, Clock } from "lucide-react";
@@ -11,15 +11,15 @@ type Summary = { quizId: string; title: string; currentIndex: number } | null;
 // App Router shared layouts don't re-run on client navigation, so this
 // self-refreshes on each pathname change. Hidden while actually taking a quiz.
 export function ActiveQuizBanner({
-  initialSummary = null,
+  sessionPromise,
 }: {
-  initialSummary?: Summary;
+  sessionPromise: Promise<Summary>;
 }) {
   const pathname = usePathname();
   // Seeded from the server render (layout) so the banner is correct on first
   // paint without a mount fetch. The layout only re-runs on a full load, so on
   // client navigation (shared layout, no re-run) this still self-refreshes.
-  const [summary, setSummary] = useState<Summary>(initialSummary);
+  const [summary, setSummary] = useState<Summary>(use(sessionPromise));
 
   const onQuizScreen = pathname.startsWith("/quiz/");
 

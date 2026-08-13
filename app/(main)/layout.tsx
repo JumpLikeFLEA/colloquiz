@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { SidebarProvider } from "@/app/components/ui/sidebar";
-import { AppSidebar, type UserProfile } from "@/app/components/AppSidebar";
+import { AppSidebar, type SidebarData } from "@/app/components/AppSidebar";
 import { Topbar } from "@/app/components/Topbar";
 import { StartQuizProvider } from "@/app/components/StartQuizProvider";
 import { ActiveQuizBanner } from "@/app/components/ActiveQuizBanner";
@@ -9,7 +10,7 @@ import { ThemeSync } from "@/app/components/ThemeSync";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getUser } from "@/lib/supabase/queries";
 import { getMyDuels, isActionableDuel } from "@/lib/duels";
-import { getActiveSessionSummary, type ActiveSessionSummary } from "@/lib/quizSession";
+import { getActiveSessionSummary } from "@/lib/quizSession";
 import { getLevelProgress } from "@/lib/levels";
 
 export default async function MainLayout({
@@ -17,103 +18,107 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // The shell only needs the profile row (sidebar name / level / avatar). Start
-  // that fetch and the id-only secondary reads CONCURRENTLY: the secondary reads
-  // need just the user id — resolved locally from the JWT via getUser(), no round
-  // trip — not the profile, so the shell now blocks on one round trip instead of
-  // two serial ones. That earlier flush is what lets the static shell and the
-  // page's Suspense skeleton paint without waiting on the grid's data.
+  // Only local, non-network awaits here: cookie read + JWT verify. Every
+  // Supabase round trip below is handed down as an unresolved promise and
+  // read with use() inside a Suspense boundary further down the tree, so the
+  // shell — <head> asset links, sidebar frame, page skeleton — can flush at
+  // ~TTFB instead of waiting on any of this data. See the streaming plan for
+  // the full rationale (Next streaming guide, streaming.md#L247,299).
   const supabase = await createClient();
   const user = await getUser();
+
   const profilePromise = getProfile();
-  const secondaryPromise: Promise<
-    [number, number, ActiveSessionSummary | null]
-  > = user
-    ? Promise.all([
-        // Duels awaiting this user's move, for the sidebar badge. Pure read (the
-        // expire sweep moved to pg_cron); degrade to 0 so a hiccup never breaks
-        // the shell.
-        getMyDuels(supabase)
-          .then((duels) => duels.filter(isActionableDuel).length)
-          .catch(() => 0),
-        // Unread notification count for the bell dot. HEAD + count is the whole
-        // payload — no rows cross the wire.
+
+  const duelCountPromise = user
+    ? // Duels awaiting this user's move, for the sidebar badge. Pure read (the
+      // expire sweep moved to pg_cron); degrade to 0 so a hiccup never breaks
+      // the shell.
+      getMyDuels(supabase)
+        .then((duels) => duels.filter(isActionableDuel).length)
+        .catch(() => 0)
+    : Promise.resolve(0);
+
+  const unreadPromise: Promise<number> = user
+    ? // Unread notification count for the bell dot. HEAD + count is the whole
+      // payload — no rows cross the wire.
+      Promise.resolve(
         supabase
           .from("notifications")
           .select("id", { head: true, count: "exact" })
           .eq("user_id", user.id)
           .is("read_at", null)
           .then(({ count }) => count ?? 0, () => 0),
-        // Active-session summary for the resume banner (null when none).
-        getActiveSessionSummary(supabase, user.id).catch(() => null),
-      ])
-    : Promise.resolve([0, 0, null]);
+      )
+    : Promise.resolve(0);
 
-  const data = await profilePromise;
+  const sessionPromise = user
+    ? getActiveSessionSummary(supabase, user.id).catch(() => null)
+    : Promise.resolve(null);
 
-  let profile: UserProfile = {
-    displayName: "Student",
-    xp: 0,
-    level: 1,
-    xpToNext: getLevelProgress(0).xpToNext,
-    progress: 0,
-  };
-  let isAdmin = false;
-  let isAuthor = false;
-  let isCourseEditor = false;
-  let duelCount = 0;
-  // Seeded server-side (from secondaryPromise above) so the notification dot and
-  // the resume banner are correct on first paint — this replaces two ~1s client
-  // fetches that used to fire from NotificationBell / ActiveQuizBanner mount
-  // effects, on the cold post-hydration critical path.
-  let unreadCount = 0;
-  let activeSession: ActiveSessionSummary | null = null;
+  // "Has at least one course_editors row." Non-admin editors need the
+  // /admin/courses nav entry to reach their editable courses (RLS "self read",
+  // 029). NOT gated on COURSES_ENABLED: the editor entry links to /admin/courses
+  // (which AppSidebar does not flag-filter — only the learner /courses nav is),
+  // and the whole authoring surface works while the feature is dormant so
+  // content can be prepared before launch. Chained off profilePromise (needs
+  // isAdmin from the profile row) rather than awaited — still concurrent with
+  // duelCountPromise/unreadPromise/sessionPromise, unlike the old serial
+  // trailing query.
+  const courseEditorPromise = profilePromise.then(async (profile) => {
+    if (!profile || profile.role === "admin") return false;
+    const { count } = await supabase
+      .from("course_editors")
+      .select("course_id", { head: true, count: "exact" });
+    return (count ?? 0) > 0;
+  });
 
-  if (data) {
+  // The sidebar's three streamed slots (footer card, duels badge, role
+  // sections) all read this one promise, so they resolve together instead of
+  // each racing its own round trip.
+  const sidebarPromise: Promise<SidebarData> = Promise.all([
+    profilePromise,
+    duelCountPromise,
+    courseEditorPromise,
+  ]).then(([data, duelCount, isCourseEditor]) => {
+    if (!data) {
+      return {
+        profile: {
+          displayName: "Student",
+          xp: 0,
+          level: 1,
+          xpToNext: getLevelProgress(0).xpToNext,
+          progress: 0,
+        },
+        isAdmin: false,
+        isAuthor: false,
+        isCourseEditor,
+        duelCount,
+      };
+    }
     const xp = data.total_xp ?? 0;
     const { level, xpToNext, progress } = getLevelProgress(xp);
-    profile = {
-      displayName: data.display_name ?? "Student",
-      xp,
-      level,
-      xpToNext,
-      progress,
-      avatarUrl: data.avatar_url,
+    return {
+      profile: {
+        displayName: data.display_name ?? "Student",
+        xp,
+        level,
+        xpToNext,
+        progress,
+        avatarUrl: data.avatar_url,
+      },
+      isAdmin: data.role === "admin",
+      isAuthor: !!data.is_author || data.role === "admin",
+      isCourseEditor,
+      duelCount,
     };
-    isAdmin = data.role === "admin";
-    isAuthor = !!data.is_author || data.role === "admin";
+  });
 
-    const [actionableDuels, unread, session] = await secondaryPromise;
-    duelCount = actionableDuels;
-    unreadCount = unread;
-    activeSession = session;
-
-    // "Has at least one course_editors row." Non-admin editors need the
-    // /admin/courses nav entry to reach their editable courses (RLS "self read",
-    // 029). NOT gated on COURSES_ENABLED: the editor entry links to /admin/courses
-    // (which AppSidebar does not flag-filter — only the learner /courses nav is),
-    // and the whole authoring surface works while the feature is dormant so
-    // content can be prepared before launch. Kept out of the concurrent batch
-    // above because it needs isAdmin from the profile row, so it stays behind
-    // that await rather than racing it.
-    if (!isAdmin) {
-      const { count } = await supabase
-        .from("course_editors")
-        .select("course_id", { head: true, count: "exact" });
-      isCourseEditor = (count ?? 0) > 0;
-    }
-  }
+  const themePromise = profilePromise.then((p) => p?.theme_preference ?? null);
 
   return (
     <SidebarProvider>
       <StartQuizProvider>
-        <AppSidebar
-          profile={profile}
-          isAdmin={isAdmin}
-          isAuthor={isAuthor}
-          isCourseEditor={isCourseEditor}
-          duelCount={duelCount}
-        />
+        <AppSidebar sidebarPromise={sidebarPromise} />
         {/* min-w-0 is load-bearing. This is a flex item, so its min-width
             defaults to `auto`, meaning it refuses to shrink below the
             min-content width of everything inside it — and one unbreakable
@@ -127,8 +132,11 @@ export default async function MainLayout({
             this in place over-wide content scrolls inside the content area
             instead of dragging the layout with it. */}
         <div className="flex min-w-0 min-h-svh flex-1 flex-col">
-          <Topbar displayName={profile.displayName} initialUnread={unreadCount} />
-          <ActiveQuizBanner initialSummary={activeSession} />
+          <Topbar unreadPromise={unreadPromise} />
+          {/* Absent in the common case anyway, so an empty fallback is correct. */}
+          <Suspense fallback={null}>
+            <ActiveQuizBanner sessionPromise={sessionPromise} />
+          </Suspense>
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-6xl mx-auto px-5 py-8">
               {children}
@@ -136,11 +144,13 @@ export default async function MainLayout({
           </main>
         </div>
         <Toaster />
-        {data?.id && <DuelRealtime userId={data.id} />}
+        {user?.id && <DuelRealtime userId={user.id} />}
         {/* Renders nothing. Adopts a theme chosen on another device, once per
             load — the local copy still wins first paint, which is what keeps the
             page from flashing. */}
-        <ThemeSync preference={data?.theme_preference ?? null} />
+        <Suspense fallback={null}>
+          <ThemeSync themePromise={themePromise} />
+        </Suspense>
       </StartQuizProvider>
     </SidebarProvider>
   );

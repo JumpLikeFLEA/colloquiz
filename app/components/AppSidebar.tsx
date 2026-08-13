@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { Suspense, use, useRef } from "react";
 import {
   BookOpen,
   ChevronDown,
@@ -144,6 +144,38 @@ export type UserProfile = {
   avatarUrl?: string | null;
 };
 
+// Everything AppSidebar's streamed slots need, resolved as one promise
+// (app/(main)/layout.tsx) so the footer card, duels badge and role sections
+// each read the same snapshot instead of racing separate round trips.
+export type SidebarData = {
+  profile: UserProfile;
+  isAdmin: boolean;
+  isAuthor: boolean;
+  /** True when the caller has at least one course_editors row (and isn't an admin). */
+  isCourseEditor: boolean;
+  /** Duels awaiting this user's move — shown as a badge on the Duels entry. */
+  duelCount: number;
+};
+
+// Dimension-matched fallback for UserXPCard so the footer never shifts once
+// the real card streams in: same 36px avatar circle, two text lines and the
+// progress-bar track, built from classes already used below.
+function UserXPCardSkeleton() {
+  return (
+    <div
+      className="flex items-center gap-3 w-full p-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+      aria-hidden="true"
+    >
+      <div className="w-9 h-9 rounded-full bg-muted animate-pulse shrink-0" />
+      <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+        <div className="h-3.5 w-16 rounded bg-muted animate-pulse" />
+        <div className="mt-1.5 h-[3px] w-full rounded-full bg-muted animate-pulse" />
+        <div className="h-3 w-28 rounded bg-muted animate-pulse mt-1" />
+      </div>
+    </div>
+  );
+}
+
 function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: () => void }) {
   const initials = profile.displayName
     .split(" ")
@@ -259,19 +291,9 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
 }
 
 export function AppSidebar({
-  profile,
-  isAdmin,
-  isAuthor,
-  isCourseEditor = false,
-  duelCount = 0,
+  sidebarPromise,
 }: {
-  profile: UserProfile;
-  isAdmin: boolean;
-  isAuthor: boolean;
-  /** True when the caller has at least one course_editors row (and isn't an admin). */
-  isCourseEditor?: boolean;
-  /** Duels awaiting this user's move — shown as a badge on the Duels entry. */
-  duelCount?: number;
+  sidebarPromise: Promise<SidebarData>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -285,7 +307,6 @@ export function AppSidebar({
 
   const renderNavLink = ({ label, description, href, icon: Icon }: NavItem) => {
     const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-    const badge = href === "/duels" && duelCount > 0 ? duelCount : null;
     return (
       <Link
         key={href}
@@ -319,13 +340,16 @@ export function AppSidebar({
             <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
           )}
         </div>
-        {badge !== null && (
-          <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-brand text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
-            {badge}
-          </span>
-        )}
-        {active && !badge && (
-          <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
+        {href === "/duels" ? (
+          // Needs duelCount, which streams in — empty fallback so most users
+          // (no badge) see nothing flash and nothing shift.
+          <Suspense fallback={null}>
+            <DuelsIndicator sidebarPromise={sidebarPromise} active={active} />
+          </Suspense>
+        ) : (
+          active && (
+            <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
+          )
         )}
       </Link>
     );
@@ -361,81 +385,143 @@ export function AppSidebar({
           </div>
         ))}
 
-        {/* Author */}
-        {SHOW_AUTHOR_NAV && isAuthor && (
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
-              Author
-            </p>
-            <nav className="flex flex-col gap-1">
-              {authorItems.map(({ label, description, href, icon: Icon }) => {
-                const active = pathname === href || pathname.startsWith(href + "/");
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                      active
-                        ? "bg-brand-subtle text-brand-text"
-                        : "text-foreground hover:bg-accent",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
-                        active
-                          ? "bg-brand text-white"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      <Icon size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                      <p className="text-sm font-medium leading-none truncate">{label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
-                    </div>
-                    {active && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        )}
-
-        {/* Admin */}
-        {isAdmin && (
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
-              Admin
-            </p>
-            <nav className="flex flex-col gap-1">
-              {adminItems.map(renderNavLink)}
-            </nav>
-          </div>
-        )}
-
-        {/* Editor — only for non-admin users who hold at least one
-            course_editors grant. Admins get the same link via the Admin
-            section above; showing both would double the entry. */}
-        {!isAdmin && isCourseEditor && (
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
-              Editing
-            </p>
-            <nav className="flex flex-col gap-1">
-              {editorItems.map(renderNavLink)}
-            </nav>
-          </div>
-        )}
-
+        {/* Author / Admin / Editor sections all need role flags from the
+            streamed profile — empty fallback so the common case (no role
+            section) shows nothing while the rare case pops in once resolved. */}
+        <Suspense fallback={null}>
+          <RoleSections
+            sidebarPromise={sidebarPromise}
+            pathname={pathname}
+            renderNavLink={renderNavLink}
+          />
+        </Suspense>
       </SidebarContent>
 
       <SidebarFooter className="px-3 py-4 border-t border-sidebar-border group-data-[collapsible=icon]:px-2">
-        <UserXPCard profile={profile} onSignOut={handleSignOut} />
+        <Suspense fallback={<UserXPCardSkeleton />}>
+          <SidebarFooterContent sidebarPromise={sidebarPromise} onSignOut={handleSignOut} />
+        </Suspense>
       </SidebarFooter>
     </Sidebar>
   );
+}
+
+function DuelsIndicator({
+  sidebarPromise,
+  active,
+}: {
+  sidebarPromise: Promise<SidebarData>;
+  active: boolean;
+}) {
+  const { duelCount } = use(sidebarPromise);
+  const badge = duelCount > 0 ? duelCount : null;
+  return (
+    <>
+      {badge !== null && (
+        <span className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-brand text-white text-[11px] font-medium leading-none group-data-[collapsible=icon]:hidden">
+          {badge}
+        </span>
+      )}
+      {active && !badge && (
+        <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
+      )}
+    </>
+  );
+}
+
+function RoleSections({
+  sidebarPromise,
+  pathname,
+  renderNavLink,
+}: {
+  sidebarPromise: Promise<SidebarData>;
+  pathname: string;
+  renderNavLink: (item: NavItem) => React.ReactNode;
+}) {
+  const { isAdmin, isAuthor, isCourseEditor } = use(sidebarPromise);
+
+  return (
+    <>
+      {/* Author */}
+      {SHOW_AUTHOR_NAV && isAuthor && (
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+            Author
+          </p>
+          <nav className="flex flex-col gap-1">
+            {authorItems.map(({ label, description, href, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                    active
+                      ? "bg-brand-subtle text-brand-text"
+                      : "text-foreground hover:bg-accent",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-lg transition-all shrink-0",
+                      active
+                        ? "bg-brand text-white"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <Icon size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                    <p className="text-sm font-medium leading-none truncate">{label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
+                  </div>
+                  {active && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 group-data-[collapsible=icon]:hidden" />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
+
+      {/* Admin */}
+      {isAdmin && (
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+            Admin
+          </p>
+          <nav className="flex flex-col gap-1">
+            {adminItems.map(renderNavLink)}
+          </nav>
+        </div>
+      )}
+
+      {/* Editor — only for non-admin users who hold at least one
+          course_editors grant. Admins get the same link via the Admin
+          section above; showing both would double the entry. */}
+      {!isAdmin && isCourseEditor && (
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+            Editing
+          </p>
+          <nav className="flex flex-col gap-1">
+            {editorItems.map(renderNavLink)}
+          </nav>
+        </div>
+      )}
+    </>
+  );
+}
+
+function SidebarFooterContent({
+  sidebarPromise,
+  onSignOut,
+}: {
+  sidebarPromise: Promise<SidebarData>;
+  onSignOut: () => void;
+}) {
+  const { profile } = use(sidebarPromise);
+  return <UserXPCard profile={profile} onSignOut={onSignOut} />;
 }

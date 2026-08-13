@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  use,
   useCallback,
   useEffect,
   useState,
@@ -218,12 +219,12 @@ function render(n: AppNotification): Rendered {
   }
 }
 
-export function NotificationBell({ initialUnread = 0 }: { initialUnread?: number }) {
+export function NotificationBell({ unreadPromise }: { unreadPromise: Promise<number> }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   // Seeded from the server render (layout), so the dot is right on first paint
   // without a mount fetch. Refreshed by the realtime nudge and on popover open.
-  const [unread, setUnread] = useState(initialUnread);
+  const [unread, setUnread] = useState(use(unreadPromise));
   // Ids that were unread when the popover opened — kept marked while it stays
   // open even though the PATCH has already cleared read_at server-side.
   const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());

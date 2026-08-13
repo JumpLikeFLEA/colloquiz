@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { use, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import type { ThemePreference } from "@/lib/theme";
 
@@ -28,7 +28,8 @@ import type { ThemePreference } from "@/lib/theme";
  * server-rendered `preference` — which is still the old value until the router
  * refreshes. The guard is what makes the local choice win while the page is open.
  */
-export function ThemeSync({ preference }: { preference: ThemePreference | null }) {
+export function ThemeSync({ themePromise }: { themePromise: Promise<ThemePreference | null> }) {
+  const preference = use(themePromise);
   const { theme, setTheme } = useTheme();
   const done = useRef(false);
 
