@@ -9,9 +9,15 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+// Used only on a handful of admin/quiz components (StageEditor, review
+// queues, QuizSession, chart.tsx), all under the same root layout as
+// everything else — no narrower layout to scope the font to instead.
+// preload:false stops Next force-fetching this file on every route; it still
+// loads normally (@font-face) the moment a font-mono element actually renders.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

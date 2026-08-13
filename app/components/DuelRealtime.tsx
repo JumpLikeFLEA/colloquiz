@@ -101,6 +101,12 @@ export function DuelRealtime({ userId }: { userId: string }) {
       }
     };
 
+    // A "Cookie __cf_bm has been rejected for invalid domain" warning on this
+    // websocket is expected and not actionable from here: __cf_bm is
+    // Cloudflare bot-management's own cookie on Supabase's realtime domain,
+    // rejected by the browser on a wss:// handshake due to cookie-domain
+    // scoping between Cloudflare and Supabase's infra. Nothing in this file
+    // (or anywhere in this codebase) sets or can suppress it.
     (async () => {
       // The realtime socket must carry the user's JWT, or the RLS policy on
       // notifications withholds every row (Supabase evaluates the SELECT policy
