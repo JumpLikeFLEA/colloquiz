@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardCheck,
+  Eye,
   GripVertical,
   History,
   Info,
@@ -445,7 +446,17 @@ export function StageEditor({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setSaveError(data.message ?? data.error ?? "Save failed.");
+        if (Array.isArray(data.errors) && data.errors.length > 0) {
+          const first = data.errors[0];
+          const blockType = blocks[first.blockIndex]?.type ?? "?";
+          const rest = data.errors.length - 1;
+          setSaveError(
+            `Validation failed on block ${first.blockIndex + 1} (${blockType}), ${first.field}: ${first.message}` +
+              (rest > 0 ? ` (and ${rest} more issue${rest === 1 ? "" : "s"})` : ""),
+          );
+        } else {
+          setSaveError(data.message ?? data.error ?? "Save failed.");
+        }
         return;
       }
       setSavedSnapshot(JSON.stringify(toWire(blocks)));
@@ -459,6 +470,16 @@ export function StageEditor({
     } finally {
       setSaving(false);
     }
+  }
+
+  // Preview reflects the CURRENT in-memory draft (not the saved snapshot), so
+  // it works before saving. sessionStorage, not the URL, carries the payload —
+  // block content has no size limit worth respecting in a query string. The
+  // preview route (app/(main)/admin/courses/[slug]/[stage]/preview) reads the
+  // same key on mount.
+  function openPreview() {
+    sessionStorage.setItem(`course-preview:${stage.id}`, JSON.stringify(toWire(blocks)));
+    window.open(`/admin/courses/${course.slug}/${stage.key}/preview`, "_blank");
   }
 
   function discard() {
@@ -597,6 +618,13 @@ export function StageEditor({
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={openPreview}
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Eye size={15} /> Preview
+                </button>
                 <button
                   type="button"
                   onClick={() => setHistoryOpen((v) => !v)}
