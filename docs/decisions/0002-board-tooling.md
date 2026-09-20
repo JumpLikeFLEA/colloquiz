@@ -156,6 +156,39 @@ needs to represent a state — like "everything is done" — that doesn't occur
 by moving one or two cards. Reach for a live-board test only for the states
 that occur that way.
 
+## Closing an issue does not move its board card — CLAUDE.md's step 6 is wrong about this
+
+`CLAUDE.md`'s step 6 says: "the push closes the issue and the board moves it
+to Done." That is not true for this board as configured, and it was
+disproved by the first real case: pushing OPS-001's commit (`Closes #45`)
+closed issue #45, but its project item stayed at `Verify` — it had to be
+moved to `Done` by hand with `board-move.mjs OPS-001 "Done"` afterward.
+
+The cause: GitHub Projects v2 ships a built-in, disabled-by-default
+"Item closed -> set Status" workflow (confirmed via `gh api graphql` against
+`ProjectV2Workflow` — `workflows(first: 20)` on the project lists it as
+`{name: "Item closed", enabled: false}`, alongside four other seeded
+workflows, all disabled except "Auto-add sub-issues to project"). Whether
+that default is disabled from project creation or was disabled as a side
+effect of `updateProjectV2Field` invalidating whatever option it targeted
+was not established either way — it does not need to be, because **there is
+no fix available through `gh` or the GraphQL API regardless of cause**: the
+public schema for `ProjectV2Workflow` is read-only (`id`, `name`, `enabled`,
+`number`, `createdAt`, `updatedAt`, `project`) plus exactly one mutation,
+`deleteProjectV2Workflow`. There is no mutation to enable a workflow or set
+its target field/option. Enabling "Item closed -> Status: Done" and pointing
+it at the current `Done` option is a browser-only action, same category as
+the Status-field view-grouping limitation already noted in step 1.
+
+Until that's done by hand in the browser (Project #2 -> Workflows -> "Item
+closed" -> enable -> set target Status: Done), **the actual mechanism is
+`board-move.mjs <KEY> "Done"` after pushing**, not an automatic move on
+close. `CLAUDE.md`'s step 6 wording should be corrected to say this
+explicitly rather than assume the automation exists, or the workflow should
+be enabled in the browser to make the original wording true again — this is
+a call for whoever owns the workflow doc to make, not something this card
+decides unilaterally.
+
 ## What would make us revisit this
 
 - If `gh` ever adds a `field-edit`/option-rename subcommand, the raw
