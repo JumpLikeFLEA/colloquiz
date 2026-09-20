@@ -388,3 +388,15 @@ Appended to in the same commit as the change it records. Referenced from
   • Export rate limit: migration 038 mirrors feedback_rate_limit (026) — a log table
     counted by a BEFORE INSERT trigger raising PT429; the route logs-and-counts BEFORE
     the reads. Same "cap lives in the DB, holds even for a direct PostgREST caller" rule
+- `figma-export/` retired (2026-09-20, docs/decisions/0001-retire-figma-export.md): the
+  folder deleted, the port finished and the app moved past it. The running app is now
+  the reference. The replacement constraint: new UI composes from components already in
+  `app/components/` and classes already used elsewhere in the app — the NotificationBell
+  / Groups / Leaderboard / Duels precedent, already most of the app — and colours come
+  from tokens in `app/globals.css`, never new hex literals. `figma-export/` was untracked
+  and `.gitignore`'d, so nothing in `git log` removes it; the tree is archived at tag
+  `archive/figma-export` (`git show archive/figma-export --stat`) before deletion.
+  `app/components/figma/**` (incl. `ImageWithFallback`) is LIVE RUNTIME CODE, not part of
+  the export, and survived this pass deliberately — the name is a leftover, the code is
+  not. A "per Figma" or "matches Figma" comment found with no folder to check against
+  should land here, not be treated as broken
