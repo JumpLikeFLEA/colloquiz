@@ -19,9 +19,11 @@ pipeline.
 | Validation | zod                                                                        |
 | Hosting    | Vercel (`vercel.json` pins region `dub1`)                                   |
 
-The visual source of truth lives at `figma-export/` (the original Vite + React + Tailwind
-export). The Next.js app is a faithful port; design fidelity is enforced by `CLAUDE.md`.
-The one intentional deviation is the body font (Geist via `next/font`).
+The running app is the visual source of truth (the original `figma-export/` Vite + React +
+Tailwind bundle was retired 2026-09-20; see `docs/ui-decisions.md`). New UI composes from
+components and Tailwind classes already used elsewhere in the app, and colours come from
+tokens in `app/globals.css`, never new hex literals. The one intentional deviation from the
+original port is the body font (Geist via `next/font`).
 
 ---
 
@@ -189,7 +191,6 @@ colloquiz/
 │   └── seed-exemplars.json         Gold-standard few-shot examples for the generator
 ├── docs/
 │   └── authoring-guide.md          How to write a question manually
-├── figma-export/                   Vite Figma export — visual source of truth (read-only)
 ├── lib/
 │   ├── generator/                  AI generation: index, llm, prompts, critic, dedup,
 │   │                                  exemplars, schema, types
@@ -307,11 +308,10 @@ Selected fields from the `Question` type; see `types/index.ts` and
 ## Conventions
 
 ### Design fidelity (`CLAUDE.md`)
-> `figma-export/` is the visual source of truth. Never change, simplify, or substitute Tailwind
-> classes, spacing, colors, or DOM structure. Only Next.js-specific changes are allowed
-> (`next/link`, `next/image`, app router, `'use client'`). Surfaces with no Figma source (auth
-> logic, notification center, reset-password) are composed only from classes already used
-> elsewhere. See `CLAUDE.md` for the full list of intentional deviations.
+> The running app is the visual source of truth. New UI composes from components and Tailwind
+> classes already used elsewhere in the app; colours come from tokens (`app/globals.css`),
+> never new hex literals. A deliberate visual change to an existing surface is recorded in
+> `docs/ui-decisions.md` in the same commit. See `CLAUDE.md` for the full list of decisions.
 
 ### Next.js 16 caveats (`AGENTS.md`)
 This is **not** the Next.js most people remember — APIs, conventions, and file structure differ
