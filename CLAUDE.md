@@ -64,6 +64,12 @@ refactor.
   "permission denied for table profiles" — a grant error, checked BEFORE RLS,
   not a policy failure. Columns written only by a SECURITY DEFINER RPC get no
   GRANT (see 036, 037).
+- **The root layout carries nothing surface-specific.** A visitor landing on
+  the English surface must not download the Colloquiz shell: `AppSidebar`,
+  `NotificationBell`, `DuelRealtime` and its realtime subscription all belong
+  to the Colloquiz route group's layout, never above it. Recharts and KaTeX
+  must not appear in an English route's bundle. This is a hard requirement
+  with a First Load JS budget attached — see `docs/handoff.md`.
 - **Entitlement is decided in one place.** Whether a lesson is free or paid is
   resolved by a single SQL function that both RLS and the UI call. If the UI
   decides independently, the two will disagree, and the direction they
@@ -110,8 +116,11 @@ refactor.
     from `docs/release/legal/*.md` through `lib/legalDoc.tsx`, a deliberately
     small Markdown-SUBSET renderer that must not become a general engine.
   - `app/(english)/` — the English mini-courses surface: landing, catalogue,
-    course, lesson player. Reached by hostname rewrite in `proxy.ts`, not by
-    a path prefix. **Planned (M2), not yet present.**
+    course, lesson player. The PRIMARY surface on colloquiz.app; owns `/`.
+    Its layout carries nothing from the Colloquiz shell — see the performance
+    boundary in `docs/handoff.md`, which is enforced with a First Load JS
+    budget per route. **Planned (M2), not yet present; route namespacing is
+    an open decision that blocks it.**
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
   - `app/components/` — shared components. `ui/**` (vendored shadcn/Radix) and
@@ -159,7 +168,8 @@ refactor.
     not only `type:decision` issues (see "Working on a board issue" step 5).
   - `release/legal/*.md` — reviewed legal copy; the single source of truth
     for the legal pages.
-- Root: `proxy.ts` (route gating, `publicRoutes`, hostname rewrite),
+- Root: `proxy.ts` (route gating, `publicRoutes` — the English landing and
+  free lessons join this list),
   `next.config.ts` (headers, report-only CSP, remote image host),
   `eslint.config.mjs` (flat config), `DEVELOPMENT-MAP.md` (layered task map
   over the board; refreshed when a card reaches Done — see "Working on a

@@ -19,14 +19,49 @@ free, no payment. This surface is established; its conventions are in
 
 **English mini-courses** — a catalogue of short English courses for a
 Russian-speaking audience at A2–B1–B2, built with a partner who authors the
-content and promotes it through her social media. Its own landing page, its
-own domain, free content readable without registration, paid content behind a
-merchant-of-record checkout.
+content and promotes it through her social media. Its own landing page, free
+content readable without registration, paid content behind a merchant-of-record
+checkout.
 
-One Next.js app, one Supabase project, one account per person. The English
-surface is reached by hostname rewrite in `proxy.ts`, not a path prefix.
-Colloquiz remains available but becomes the secondary surface on the English
-domain.
+**One domain: colloquiz.app, already owned.** There is no second hostname and
+no hostname rewrite — an earlier plan assumed one and is superseded. The
+English platform is the PRIMARY surface on that domain. Colloquiz is secondary,
+reached through a toggle, and is not what a first-time visitor sees.
+
+One Next.js app, one Supabase project, one account per person.
+
+`/` is the English landing. Colloquiz moves wholesale under a path prefix so
+the English surface owns the clean URLs — see SHELL-001 and "Open questions"
+for the segment name, which is the only part still unsettled.
+
+## Performance boundary
+
+**A visitor arriving on the English surface must not download Colloquiz.**
+This is a hard requirement, not an optimisation to revisit — the audience
+arrives from a phone, from a social video, on whatever connection they have,
+and the first lesson has to start before they lose interest.
+
+What it means concretely:
+
+- The root layout stays minimal. Anything belonging to the signed-in Colloquiz
+  shell — `AppSidebar`, `NotificationBell`, `DuelRealtime` and its realtime
+  subscription, the duel action-needed badge — lives in the Colloquiz route
+  group's layout, never above it. `DuelRealtime` is already scoped this way;
+  do not lift it.
+- Heavy Colloquiz dependencies must not appear in an English route's bundle:
+  Recharts (Progress charts), KaTeX (course maths), and any Framer Motion the
+  English surface doesn't itself use. KaTeX in particular is for Colloquiz
+  Calculus, not for English.
+- The landing and the free lesson render WITHOUT an authenticated Supabase
+  session, so an anonymous visitor pays for no auth round trip and no
+  `@supabase/ssr` client JS on the critical path.
+- **This is enforced as an acceptance criterion, with a number.** Every M2
+  card that adds an English route states the First Load JS budget for that
+  route and shows the `next build` output proving it. A budget with no
+  printed figure behind it is not evidence.
+- One Tailwind build serves both surfaces, so the stylesheet is shared and
+  that is accepted — CSS is small next to JS. Do not split the build to chase
+  it.
 
 ## Audience and language
 
@@ -132,12 +167,21 @@ requires changing the interface, the abstraction was wrong.
 
 ## Open questions
 
-- Domain for the English surface (not yet purchased; Colloquiz is
-  colloquiz.app, bought at Porkbun).
+- ~~Route namespacing~~ **DECIDED 2026-09-20.** `/` belongs to the English
+  surface; Colloquiz moves under a path prefix. The segment itself is not yet
+  named — `/app` is recommended (`/quiz` collides with the existing
+  `/quiz/[id]`; `/colloquiz` reads oddly on a Colloquiz-branded domain) and is
+  confirmed at plan time on SHELL-001. The move happens in M0, before any
+  English route exists, because it gets more expensive with every route added.
+- Branding: **for now the English platform is simply Colloquiz.** Whether it
+  eventually carries a sub-brand or its own name on the same domain is
+  deliberately deferred — it is a naming decision, not a blocker, and nothing
+  in the build should assume a rename is coming.
+- How Colloquiz is reached from the English surface — a toggle, a footer link,
+  a nav entry — and whether a signed-in Colloquiz user lands on `/` or on
+  their Colloquiz home.
 - The partner's role beyond content and promotion — revenue split, capital,
   whether this stays one codebase under one owner. Named as valid, not yet
   answered.
 - Polar vs Paddle (M3 `type:decision`).
-- Whether Colloquiz collapses into a tab, a link, or a separate nav entry on
-  the English domain.
 - Pricing model: per-course purchase, bundle, or subscription.
