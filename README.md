@@ -184,7 +184,7 @@ colloquiz/
 │   ├── components/                 AppSidebar, Topbar, NotificationBell, SubjectGrid,
 │   │                                  StartQuizProvider, ActiveQuizBanner, ReportQuestion,
 │   │                                  BecomeAuthorCard, figma/, ui/ (shadcn primitives)
-│   ├── globals.css                 Tailwind v4 + Figma theme tokens
+│   ├── globals.css                 Tailwind v4 design tokens
 │   └── layout.tsx                  Root shell (Geist font)
 ├── data/
 │   ├── subjects.json               20 subjects × { id, name, icon, color, tags, subtopics }
