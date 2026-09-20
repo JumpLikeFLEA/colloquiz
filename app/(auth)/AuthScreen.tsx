@@ -186,7 +186,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
   // Where to land after auth. Kept relative + single-slash to prevent open redirects.
   const dest = redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
     ? redirectTo
-    : "/";
+    : "/app";
   const [mode, setMode] = useState<"login" | "register" | "forgot">(initialMode);
   const [form, setForm] = useState<AuthFormState>({ email: "", password: "", name: "", confirmPassword: "", city: "" });
   const [error, setError] = useState<string | null>(initialError ?? null);

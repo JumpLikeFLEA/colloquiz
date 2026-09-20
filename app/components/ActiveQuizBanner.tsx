@@ -21,7 +21,7 @@ export function ActiveQuizBanner({
   // client navigation (shared layout, no re-run) this still self-refreshes.
   const [summary, setSummary] = useState<Summary>(use(sessionPromise));
 
-  const onQuizScreen = pathname.startsWith("/quiz/");
+  const onQuizScreen = pathname.startsWith("/app/quiz/");
 
   // Skip the fetch for the initial pathname — the server already supplied its
   // summary. Fetch only on subsequent pathname changes (client navigation).
@@ -58,7 +58,7 @@ export function ActiveQuizBanner({
         <span className="text-muted-foreground"> — {summary.title}</span>
       </p>
       <Link
-        href={`/quiz/${summary.quizId}`}
+        href={`/app/quiz/${summary.quizId}`}
         className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors"
       >
         <Play size={14} />

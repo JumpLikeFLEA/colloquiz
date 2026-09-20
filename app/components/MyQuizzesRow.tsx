@@ -21,7 +21,7 @@ export function MyQuizzesRow({ items }: { items: MyQuizItem[] }) {
           <h2 className="text-foreground font-medium">My Quizzes</h2>
           <p className="text-xs text-muted-foreground">Assigned to you and quizzes you created</p>
         </div>
-        <Link href="/my-quizzes" className="text-sm text-brand-text hover:underline shrink-0">
+        <Link href="/app/my-quizzes" className="text-sm text-brand-text hover:underline shrink-0">
           See all
         </Link>
       </div>

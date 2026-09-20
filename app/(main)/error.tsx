@@ -53,7 +53,7 @@ export default function MainError({
             Try again
           </button>
           <Link
-            href="/"
+            href="/app"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-foreground hover:bg-accent transition-colors text-sm font-medium"
           >
             Back to home

@@ -100,7 +100,7 @@ export function feedbackHref(f: FeedbackFilters): string {
   if (f.category !== "all") params.set("category", f.category);
   if (f.page > 1) params.set("page", String(f.page));
   const qs = params.toString();
-  return qs ? `/admin/feedback?${qs}` : "/admin/feedback";
+  return qs ? `/app/admin/feedback?${qs}` : "/app/admin/feedback";
 }
 
 /**
@@ -110,4 +110,4 @@ export function feedbackHref(f: FeedbackFilters): string {
  * empty New queue would offer a "clear filters" link back to the same empty
  * page. The only useful escape is the unfiltered archive.
  */
-export const SHOW_EVERYTHING_HREF = "/admin/feedback?status=all";
+export const SHOW_EVERYTHING_HREF = "/app/admin/feedback?status=all";

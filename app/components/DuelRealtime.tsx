@@ -22,7 +22,7 @@ import type { AppNotification } from "@/types";
 /** Short toast copy + deep link for the duel notification types. */
 function duelToast(n: AppNotification): { text: string; href?: string } | null {
   const p = n.payload as Record<string, unknown>;
-  const href = p.duel_id ? `/duels/${String(p.duel_id)}` : undefined;
+  const href = p.duel_id ? `/app/duels/${String(p.duel_id)}` : undefined;
   switch (n.type) {
     case "duel_challenge":
       return {
@@ -54,7 +54,7 @@ function duelToast(n: AppNotification): { text: string; href?: string } | null {
         text: `${String(p.from ?? "Someone")} shared a quiz with you${
           p.subject && p.subject !== "a quiz" ? ` on ${String(p.subject)}` : ""
         }.`,
-        href: p.token ? `/s/${String(p.token)}` : undefined,
+        href: p.token ? `/app/s/${String(p.token)}` : undefined,
       };
     default:
       return null; // non-duel notifications: bump the bell, but don't toast
@@ -96,7 +96,7 @@ export function DuelRealtime({ userId }: { userId: string }) {
       // completed it, leaving a phantom "unfinished quiz". The last player to
       // submit gets their own duel_resolved here while still on the results
       // screen, so this guard is what keeps their session closed.
-      if (!pathnameRef.current.startsWith("/quiz/")) {
+      if (!pathnameRef.current.startsWith("/app/quiz/")) {
         router.refresh();
       }
     };

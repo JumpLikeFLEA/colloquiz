@@ -13,8 +13,8 @@ function run(over: Partial<RunDoc> = {}): RunDoc {
     origin: "https://colloquiz.app",
     iters: 20,
     includeWrites: false,
-    routes: [row("/"), row("/leaderboard")],
-    routesTotal: [row("/"), row("/leaderboard")],
+    routes: [row("/app"), row("/app/leaderboard")],
+    routesTotal: [row("/app"), row("/app/leaderboard")],
     rpcs: [row("get_subject_stats"), row("get_leaderboard")],
     ...over,
   };
@@ -34,14 +34,14 @@ describe("buildPerfReport", () => {
   });
 
   it("flags a route p50 over budget with a budget reason", () => {
-    const doc = run({ routes: [row("/", { p50: 640, p95: 700 }), row("/leaderboard")] });
+    const doc = run({ routes: [row("/app", { p50: 640, p95: 700 }), row("/app/leaderboard")] });
     const { problems, markdown } = buildPerfReport(doc, undefined, DEFAULT_BUDGETS);
-    const p = problems.find((x) => x.name === "/");
+    const p = problems.find((x) => x.name === "/app");
     expect(p).toBeDefined();
     expect(p!.kind).toBe("route");
     expect(p!.reasons.some((r) => r.includes("over 400ms budget"))).toBe(true);
-    expect(markdown).toContain("### route /");
-    // Backing RPC evidence line is present for "/".
+    expect(markdown).toContain("### route /app");
+    // Backing RPC evidence line is present for "/app".
     expect(markdown).toContain("Backing RPCs: get_subject_stats");
   });
 

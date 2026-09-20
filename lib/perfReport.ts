@@ -76,15 +76,18 @@ export type Problem = {
 // [], simply shows no "backing RPCs" line rather than claiming false precision.
 // Derived from the data-access layer (lib/questions.ts, lib/leaderboard.ts,
 // lib/duels.ts, lib/history.ts); update alongside those call sites.
+// Keyed on the /app-prefixed paths (SHELL-001) — scripts/bench.ts benches
+// those routes, and a key mismatch here just silently drops the "backing
+// RPCs" annotation (see the comment above) rather than erroring.
 const ROUTE_BACKING_RPCS: Record<string, string[]> = {
-  "/": ["get_subject_stats"],
-  "/leaderboard": ["get_leaderboard", "get_leaderboard_subjects", "get_my_rank"],
-  "/duels": ["get_my_duels", "get_my_tier"],
-  "/dashboard": ["get_quiz_history", "get_quiz_history_subjects", "get_my_rank"],
-  "/progress": ["get_quiz_history", "get_quiz_history_subjects", "get_my_rank"],
-  "/settings": [],
-  "/groups": [],
-  "/achievements": [],
+  "/app": ["get_subject_stats"],
+  "/app/leaderboard": ["get_leaderboard", "get_leaderboard_subjects", "get_my_rank"],
+  "/app/duels": ["get_my_duels", "get_my_tier"],
+  "/app/dashboard": ["get_quiz_history", "get_quiz_history_subjects", "get_my_rank"],
+  "/app/progress": ["get_quiz_history", "get_quiz_history_subjects", "get_my_rank"],
+  "/app/settings": [],
+  "/app/groups": [],
+  "/app/achievements": [],
 };
 
 function round1(v: number): string {

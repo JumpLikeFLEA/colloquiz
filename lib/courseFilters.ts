@@ -26,6 +26,6 @@ export function parseCourseSection(raw: string | undefined): CourseSection {
  * identical href (same rule as historyHref).
  */
 export function stageHref(slug: string, stageKey: string, section: CourseSection = "theory"): string {
-  const base = `/courses/${slug}/${stageKey}`;
+  const base = `/app/courses/${slug}/${stageKey}`;
   return section === "theory" ? base : `${base}?section=${section}`;
 }

@@ -68,7 +68,7 @@ export type SubjectCardData = {
 };
 
 function difficultyHref(value: DifficultyFilter): string {
-  return value === "any" ? "/" : `/?difficulty=${value}`;
+  return value === "any" ? "/app" : `/app?difficulty=${value}`;
 }
 
 // Quick Play always asks for a full 10-question quiz, so a subject holding
@@ -324,7 +324,7 @@ export function SubjectGrid({
                   {canRelaxDifficulty && (
                     // Keeps the typed search — only the difficulty is relaxed.
                     <Link
-                      href="/"
+                      href="/app"
                       scroll={false}
                       className="inline-flex items-center rounded-xl bg-brand-subtle px-4 py-2 text-sm font-medium text-brand-text transition-colors hover:bg-accent"
                     >
@@ -365,7 +365,7 @@ export function SubjectGrid({
           subject cards. */}
       <p className="text-center text-sm text-muted-foreground">
         Need more control? Mix subjects, pick subtopics, and set quiz length in{" "}
-        <Link href="/advanced" prefetch={false} className="text-brand-text font-medium hover:underline">
+        <Link href="/app/advanced" prefetch={false} className="text-brand-text font-medium hover:underline">
           Deep Dive →
         </Link>
       </p>

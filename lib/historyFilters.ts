@@ -81,14 +81,14 @@ export function hasActiveFilters(f: HistoryFilters): boolean {
 }
 
 /**
- * Canonical /progress?tab=history URL for a set of filters. Defaults are left
- * out of the query string so the plain tab link and a manually-cleared filter
- * produce the same URL.
+ * Canonical /app/progress?tab=history URL for a set of filters. Defaults are
+ * left out of the query string so the plain tab link and a manually-cleared
+ * filter produce the same URL.
  */
 export function historyHref(f: HistoryFilters): string {
   const params = new URLSearchParams({ tab: "history" });
   if (f.subject !== "all") params.set("subject", f.subject);
   if (f.difficulty !== "any") params.set("difficulty", f.difficulty);
   if (f.page > 1) params.set("page", String(f.page));
-  return `/progress?${params}`;
+  return `/app/progress?${params}`;
 }

@@ -87,7 +87,7 @@ export function StartQuizProvider({ children }: { children: ReactNode }) {
         setError("Could not start quiz. Please try again.");
         return;
       }
-      router.push(`/quiz/${quizId}`);
+      router.push(`/app/quiz/${quizId}`);
     },
     [router],
   );

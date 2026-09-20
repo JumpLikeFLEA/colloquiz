@@ -35,7 +35,7 @@ export function ResetPasswordScreen() {
         return;
       }
 
-      router.push("/");
+      router.push("/app");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

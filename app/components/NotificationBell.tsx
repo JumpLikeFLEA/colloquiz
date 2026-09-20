@@ -81,7 +81,7 @@ function render(n: AppNotification): Rendered {
             {p.quiz_title ? <b>&ldquo;{String(p.quiz_title)}&rdquo;</b> : "a quiz"}.
           </>
         ),
-        href: p.quiz_id ? `/quiz/${String(p.quiz_id)}` : undefined,
+        href: p.quiz_id ? `/app/quiz/${String(p.quiz_id)}` : undefined,
       };
     case "assignment_completed":
       return {
@@ -98,7 +98,7 @@ function render(n: AppNotification): Rendered {
           </>
         ),
         href: p.assignment_id
-          ? `/students/review/${String(p.assignment_id)}`
+          ? `/app/students/review/${String(p.assignment_id)}`
           : undefined,
       };
     case "achievement_unlocked":
@@ -110,7 +110,7 @@ function render(n: AppNotification): Rendered {
             <b>{achievementTitle(String(p.achievement_id))}</b>.
           </>
         ),
-        href: "/progress?tab=achievements",
+        href: "/app/progress?tab=achievements",
       };
     case "question_reviewed":
       return {
@@ -123,7 +123,7 @@ function render(n: AppNotification): Rendered {
         // Group peer review reuses this same trigger (013), so a group
         // question's verdict lands here too — deep-link to its group when the
         // payload carries one.
-        href: p.group_id ? `/groups/${String(p.group_id)}/review` : "/my-quizzes",
+        href: p.group_id ? `/app/groups/${String(p.group_id)}/review` : "/app/my-quizzes",
       };
     case "group_member_joined":
       return {
@@ -134,7 +134,7 @@ function render(n: AppNotification): Rendered {
             {p.group_name ? <b>{String(p.group_name)}</b> : "your group"}.
           </>
         ),
-        href: p.group_id ? `/groups/${String(p.group_id)}` : "/groups",
+        href: p.group_id ? `/app/groups/${String(p.group_id)}` : "/app/groups",
       };
     case "group_question_pending":
       return {
@@ -145,7 +145,7 @@ function render(n: AppNotification): Rendered {
             {p.group_name ? <b>{String(p.group_name)}</b> : "your group"} for review.
           </>
         ),
-        href: p.group_id ? `/groups/${String(p.group_id)}/review` : "/groups",
+        href: p.group_id ? `/app/groups/${String(p.group_id)}/review` : "/app/groups",
       };
     // Duel notifications (017). The payloads deliberately carry only the
     // outcome — never a rating number, which is hidden by design.
@@ -158,7 +158,7 @@ function render(n: AppNotification): Rendered {
             {p.subject ? <> on <b>{String(p.subject)}</b></> : null}.
           </>
         ),
-        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+        href: p.duel_id ? `/app/duels/${String(p.duel_id)}` : "/app/leaderboard?tab=competitive",
       };
     case "duel_accepted":
       return {
@@ -169,7 +169,7 @@ function render(n: AppNotification): Rendered {
             your turn to play.
           </>
         ),
-        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+        href: p.duel_id ? `/app/duels/${String(p.duel_id)}` : "/app/leaderboard?tab=competitive",
       };
     case "duel_declined":
       return {
@@ -179,7 +179,7 @@ function render(n: AppNotification): Rendered {
             <b>{String(p.by ?? "Your opponent")}</b> declined your duel.
           </>
         ),
-        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+        href: p.duel_id ? `/app/duels/${String(p.duel_id)}` : "/app/leaderboard?tab=competitive",
       };
     case "duel_resolved":
       return {
@@ -192,7 +192,7 @@ function render(n: AppNotification): Rendered {
           ) : (
             <>Your duel ended in a <b>draw</b>.</>
           ),
-        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+        href: p.duel_id ? `/app/duels/${String(p.duel_id)}` : "/app/leaderboard?tab=competitive",
       };
     case "duel_expired":
       return {
@@ -202,7 +202,7 @@ function render(n: AppNotification): Rendered {
             Your duel challenge <b>expired</b> unanswered.
           </>
         ),
-        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+        href: p.duel_id ? `/app/duels/${String(p.duel_id)}` : "/app/leaderboard?tab=competitive",
       };
     case "duel_cancelled":
       return {
@@ -212,7 +212,7 @@ function render(n: AppNotification): Rendered {
             <b>{String(p.by ?? "Your opponent")}</b> withdrew their duel challenge.
           </>
         ),
-        href: p.duel_id ? `/duels/${String(p.duel_id)}` : "/leaderboard?tab=competitive",
+        href: p.duel_id ? `/app/duels/${String(p.duel_id)}` : "/app/leaderboard?tab=competitive",
       };
     default:
       return { icon: Bell, message: <>You have a new notification.</> };

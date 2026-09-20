@@ -92,9 +92,13 @@ export async function proxy(request: NextRequest) {
   // with no rendering and no queries. Placed after the unauth->login bounce, so a
   // stale bookmark hit while signed out still lands on /login with `next`
   // preserved before it is canonicalized.
+  // Keyed on the /app-prefixed paths (SHELL-001): next.config.ts redirects()
+  // runs before this proxy, so a bare /dashboard or /achievements bookmark is
+  // already rewritten to /app/dashboard or /app/achievements by the time this
+  // code sees it.
   const legacyRedirects: Record<string, string> = {
-    '/dashboard': '/progress?tab=stats',
-    '/achievements': '/progress?tab=achievements',
+    '/app/dashboard': '/app/progress?tab=stats',
+    '/app/achievements': '/app/progress?tab=achievements',
   }
   const legacyTarget = legacyRedirects[pathname]
   if (user && legacyTarget) {

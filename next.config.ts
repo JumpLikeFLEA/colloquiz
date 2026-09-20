@@ -80,6 +80,44 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // SHELL-001: Colloquiz moved wholesale under /app so the English surface
+  // (planned M2) can own the clean top-level URLs. Every route that used to
+  // live directly under (main) gets a 308 here — enumerated from the route
+  // tree (see `find app/(main)/app -name page.tsx`), not from memory.
+  // `redirects` run BEFORE proxy.ts (Next.js redirecting guide), so this list
+  // is what a stale bookmark or an old share link actually hits first; the
+  // proxy's own legacy `/dashboard` → `/progress` shortcut had to be
+  // re-keyed onto the new `/app/...` paths for the same reason.
+  async redirects() {
+    const movedSegments = [
+      "achievements",
+      "admin",
+      "advanced",
+      "build",
+      "courses",
+      "custom",
+      "dashboard",
+      "duels",
+      "groups",
+      "invite",
+      "leaderboard",
+      "my-quizzes",
+      "progress",
+      "quiz",
+      "results",
+      "s",
+      "settings",
+      "students",
+    ];
+    return [
+      { source: "/", destination: "/app", permanent: true },
+      ...movedSegments.map((segment) => ({
+        source: `/${segment}/:path*`,
+        destination: `/app/${segment}/:path*`,
+        permanent: true,
+      })),
+    ];
+  },
 };
 
 // withSentryConfig injects the client/server config and (when SENTRY_AUTH_TOKEN

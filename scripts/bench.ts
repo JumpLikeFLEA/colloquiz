@@ -283,15 +283,17 @@ async function measureRpc(
 }
 
 // ── Routes (Layer A) ─────────────────────────────────────────
+// SHELL-001 moved Colloquiz under /app; these are kept /app-prefixed so this
+// still benches the real pages instead of the 308 redirect from the old path.
 const DEFAULT_ROUTES = [
-  "/",
-  "/dashboard",
-  "/progress",
-  "/leaderboard",
-  "/duels",
-  "/groups",
-  "/achievements",
-  "/settings",
+  "/app",
+  "/app/dashboard",
+  "/app/progress",
+  "/app/leaderboard",
+  "/app/duels",
+  "/app/groups",
+  "/app/achievements",
+  "/app/settings",
 ];
 
 // ── Output rendering ─────────────────────────────────────────

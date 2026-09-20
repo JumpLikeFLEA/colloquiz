@@ -56,24 +56,24 @@ const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "Play",
     items: [
-      { label: "Quick Play", href: "/", icon: BookOpen },
-      { label: "Deep Dive", description: "Mix subjects, set length", href: "/advanced", icon: Settings2 },
+      { label: "Quick Play", href: "/app", icon: BookOpen },
+      { label: "Deep Dive", description: "Mix subjects, set length", href: "/app/advanced", icon: Settings2 },
     ],
   },
   {
     label: "My learning",
     items: [
-      { label: "Courses", description: "Structured, stage by stage", href: "/courses", icon: Library },
-      { label: "My Quizzes", href: "/my-quizzes", icon: GraduationCap },
-      { label: "Groups", href: "/groups", icon: Users },
-      { label: "Progress", href: "/progress", icon: TrendingUp },
+      { label: "Courses", description: "Structured, stage by stage", href: "/app/courses", icon: Library },
+      { label: "My Quizzes", href: "/app/my-quizzes", icon: GraduationCap },
+      { label: "Groups", href: "/app/groups", icon: Users },
+      { label: "Progress", href: "/app/progress", icon: TrendingUp },
     ],
   },
   {
     label: "Compete",
     items: [
-      { label: "Duels", description: "1v1 challenges", href: "/duels", icon: Swords },
-      { label: "Leaderboard", href: "/leaderboard", icon: Medal },
+      { label: "Duels", description: "1v1 challenges", href: "/app/duels", icon: Swords },
+      { label: "Leaderboard", href: "/app/leaderboard", icon: Medal },
     ],
   },
 ];
@@ -87,13 +87,13 @@ const authorItems = [
   {
     label: "Quiz Builder",
     description: "Create a private quiz",
-    href: "/my-quizzes/builder",
+    href: "/app/my-quizzes/builder",
     icon: PenLine,
   },
   {
     label: "Students",
     description: "Invite & assign",
-    href: "/students",
+    href: "/app/students",
     icon: Users,
   },
 ];
@@ -101,22 +101,22 @@ const authorItems = [
 const adminItems: NavItem[] = [
   {
     label: "Quiz Builder",
-    href: "/admin/quiz-builder",
+    href: "/app/admin/quiz-builder",
     icon: Shield,
   },
   {
     label: "Review Queue",
-    href: "/admin/review",
+    href: "/app/admin/review",
     icon: ShieldCheck,
   },
   {
     label: "Courses",
-    href: "/admin/courses",
+    href: "/app/admin/courses",
     icon: Pencil,
   },
   {
     label: "Feedback",
-    href: "/admin/feedback",
+    href: "/app/admin/feedback",
     icon: MessageSquare,
   },
 ];
@@ -127,7 +127,7 @@ const adminItems: NavItem[] = [
 const editorItems: NavItem[] = [
   {
     label: "Courses",
-    href: "/admin/courses",
+    href: "/app/admin/courses",
     icon: Pencil,
   },
 ];
@@ -271,7 +271,7 @@ function UserXPCard({ profile, onSignOut }: { profile: UserProfile; onSignOut: (
         }}
       >
         <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer">
+          <Link href="/app/settings" className="cursor-pointer">
             <Settings size={16} />
             Settings
           </Link>
@@ -306,7 +306,11 @@ export function AppSidebar({
   }
 
   const renderNavLink = ({ label, description, href, icon: Icon }: NavItem) => {
-    const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    // "/app" is itself the ancestor of every other nav href, so it needs the
+    // same exact-match special case "/" used to get before SHELL-001 moved
+    // the whole surface under "/app" — otherwise Quick Play would light up
+    // on every page.
+    const active = href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(href + "/");
     return (
       <Link
         key={href}
@@ -340,7 +344,7 @@ export function AppSidebar({
             <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
           )}
         </div>
-        {href === "/duels" ? (
+        {href === "/app/duels" ? (
           // Needs duelCount, which streams in — empty fallback so most users
           // (no badge) see nothing flash and nothing shift.
           <Suspense fallback={null}>
@@ -379,7 +383,7 @@ export function AppSidebar({
             <nav className="flex flex-col gap-1">
               {section.items
                 // Courses is dormant until released — see lib/featureFlags.ts.
-                .filter((item) => COURSES_ENABLED || item.href !== "/courses")
+                .filter((item) => COURSES_ENABLED || item.href !== "/app/courses")
                 .map(renderNavLink)}
             </nav>
           </div>

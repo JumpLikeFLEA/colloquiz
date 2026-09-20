@@ -9,33 +9,36 @@ import { FeedbackDialog } from "@/app/components/FeedbackDialog";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { useSidebar } from "@/app/components/ui/sidebar";
 
+// Keyed on the /app-prefixed paths (SHELL-001: Colloquiz moved under /app, so
+// every pathname this component ever sees starts with that segment — Topbar
+// is mounted only inside the (main) layout).
 const routeLabels: Record<string, string> = {
-  "/": "Quick Play",
-  "/advanced": "Deep Dive",
-  "/custom": "Create Quiz",
-  "/build": "Build Quiz",
-  "/progress": "Progress",
-  "/quiz": "Quiz in progress",
-  // Every /admin/* route has two segments, so it always renders a breadcrumb —
-  // and without an entry here each one fell through to the "Colloquiz" default
-  // and read "Colloquiz › Colloquiz". Labels match the sidebar's wording so the
-  // crumb names the page you actually clicked. "/admin" is the base fallback
-  // (see the segment matching below), so a future admin route gets "Admin"
-  // rather than the bug.
-  "/admin": "Admin",
-  "/admin/quiz-builder": "Quiz Builder",
-  "/admin/review": "Review Queue",
-  "/admin/feedback": "Feedback",
-  "/my-quizzes": "My Quizzes",
-  "/students": "Students",
-  "/invite": "Invitation",
+  "/app": "Quick Play",
+  "/app/advanced": "Deep Dive",
+  "/app/custom": "Create Quiz",
+  "/app/build": "Build Quiz",
+  "/app/progress": "Progress",
+  "/app/quiz": "Quiz in progress",
+  // Every /admin/* route has two segments below /app, so it always renders a
+  // breadcrumb — and without an entry here each one fell through to the
+  // "Colloquiz" default and read "Colloquiz › Colloquiz". Labels match the
+  // sidebar's wording so the crumb names the page you actually clicked.
+  // "/app/admin" is the base fallback (see the segment matching below), so a
+  // future admin route gets "Admin" rather than the bug.
+  "/app/admin": "Admin",
+  "/app/admin/quiz-builder": "Quiz Builder",
+  "/app/admin/review": "Review Queue",
+  "/app/admin/feedback": "Feedback",
+  "/app/my-quizzes": "My Quizzes",
+  "/app/students": "Students",
+  "/app/invite": "Invitation",
   // Matched by first path segment below, so this also covers /groups/[id],
   // /groups/[id]/review, /groups/[id]/builder and /groups/join/[token] —
   // the same base-level convention /my-quizzes/builder already relies on.
-  "/groups": "Groups",
+  "/app/groups": "Groups",
   // Keyed on the first segment (see the base match below), so this covers
   // /courses, /courses/[slug] and /courses/[slug]/[stage] alike.
-  "/courses": "Courses",
+  "/app/courses": "Courses",
 };
 
 export function Topbar({
@@ -46,13 +49,16 @@ export function Topbar({
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
   const segments = pathname.split("/").filter(Boolean);
-  const base = "/" + (segments[0] ?? "");
+  // segments[0] is always "app" (SHELL-001) — the route base one level in.
+  const base = "/app/" + (segments[1] ?? "");
   const label = routeLabels[pathname] ?? routeLabels[base] ?? "Colloquiz";
-  // Top-level pages (depth 0-1, e.g. "/", "/advanced", "/groups") would render a
-  // one-level crumb pointing at the page you're already on — pure noise. Show the
-  // breadcrumb only for genuinely nested screens ("/groups/[id]", "/duels/[id]").
-  // Derived from segment count, so new top-level routes get this automatically.
-  const showBreadcrumb = segments.length > 1;
+  // Top-level pages (depth 0-1 below /app, e.g. "/app", "/app/advanced",
+  // "/app/groups") would render a one-level crumb pointing at the page you're
+  // already on — pure noise. Show the breadcrumb only for genuinely nested
+  // screens ("/app/groups/[id]", "/app/duels/[id]"). Derived from segment
+  // count (offset by the /app prefix), so new top-level routes get this
+  // automatically.
+  const showBreadcrumb = segments.length > 2;
 
   return (
     <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-card shrink-0">
