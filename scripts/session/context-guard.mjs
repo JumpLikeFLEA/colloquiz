@@ -5,12 +5,21 @@
  * for how full the current context window is (confirmed against
  * https://code.claude.com/docs/en/hooks.md and the settings schema before
  * writing this file — see docs/decisions/0003-context-guard.md), so usage
- * is estimated from the session's own transcript file (`transcript_path`
- * on hook stdin): chars/4 over the JSONL, summed only from the last
- * `isCompactSummary: true` entry onward so a completed auto-compaction
- * doesn't permanently pin the estimate above the hard limit for the rest
- * of the session. The boundary shape was read off a real compacted
- * transcript, not guessed — see the ADR.
+ * is read from the session's own transcript file (`transcript_path` on hook
+ * stdin), which carries the API's own token counts: each assistant entry has
+ * a `message.usage` block, and `input_tokens + cache_creation_input_tokens +
+ * cache_read_input_tokens` is exactly the prompt the request was billed for,
+ * i.e. how full the window was at that moment. Cached tokens count — they
+ * occupy the window. The last entry's `output_tokens` is added because that
+ * message is in the window too by the time this hook fires.
+ *
+ * This replaces a chars/4 estimate over the raw JSONL (OPS-004). That
+ * estimate was measured wrong in a way no constant could fix: across four
+ * real transcripts the true chars-per-token ran 6.53 to 9.57 — the guard
+ * over-counted by 1.63-2.39x and would have denied tool calls at 31% of the
+ * real window. Reading the number instead of estimating it also removes the
+ * `isCompactSummary` boundary scan the estimate needed, since usage drops on
+ * its own after a compaction. See docs/decisions/0003-context-guard.md.
  *
  * Two zones:
  *   - SOFT (>= SOFT_LIMIT_FRACTION): allow the call, but surface a message
@@ -45,18 +54,14 @@ import { readFileSync } from 'node:fs';
 // measurement the hook can make for itself.
 export const CONTEXT_WINDOW_TOKENS = 1_000_000;
 
-// Token estimate = chars / CHARS_PER_TOKEN. A heuristic that errs both
-// ways: under-counts a code-dense transcript (real code runs closer to
-// ~3 chars/token), over-counts prose-heavy stretches.
-export const CHARS_PER_TOKEN = 4;
-
 // Set by the user (2026-09-20) against a 1M window: hand off at 40% used,
 // lock down to the handoff allowlist at 45%. Deliberately far lower
 // fractions than the original 0.7/0.9, because 40% of 1M is ~400k tokens —
 // a much larger absolute budget than 70% of 200k was, and the handoff wants
 // room to finish and commit the current step, not a last-gasp margin.
-// Still unvalidated against a real /context reading; see
-// docs/decisions/0003-context-guard.md.
+// The fractions are policy, not measurement. What they are applied TO is
+// now measured (OPS-004); CONTEXT_WINDOW_TOKENS is the constant still
+// resting on a statement. See docs/decisions/0003-context-guard.md.
 export const SOFT_LIMIT_FRACTION = 0.4;
 export const HARD_LIMIT_FRACTION = 0.45;
 
@@ -122,35 +127,76 @@ export function decide({ toolName, toolInput, usageFraction }) {
 }
 
 /**
- * Estimates how full the context window is from the session's own
- * transcript file. Sums raw JSONL line lengths (not re-serialized JSON —
- * the literal on-disk bytes) from the last `isCompactSummary: true` entry
- * onward, or from the start if the session hasn't compacted.
+ * Reads how full the context window is from the token counts the transcript
+ * already carries. Walks backward to the most recent usable `message.usage`
+ * and stops there — no summing, no heuristic, nothing to calibrate.
+ *
+ * Returns 0 when the transcript carries no usage at all: the first tool call
+ * of a session, or a transcript format this reader does not recognise. That
+ * is the same fail-open choice main() makes on a throw — a guard that has
+ * lost its input must not deny every call for the rest of the session. The
+ * cost is that a format change disables the guard silently; the stderr line
+ * is the only signal, and nothing displays it (see the ADR).
  */
-export function estimateUsageFraction(
+export function readUsageFraction(
   transcriptPath,
-  { contextWindowTokens = CONTEXT_WINDOW_TOKENS, charsPerToken = CHARS_PER_TOKEN } = {},
+  { contextWindowTokens = CONTEXT_WINDOW_TOKENS } = {},
 ) {
   const content = readFileSync(transcriptPath, 'utf8');
-  const lines = content.split('\n').filter((line) => line.trim().length > 0);
+  const lines = content.split('\n');
 
-  let boundary = 0;
   for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (line.trim().length === 0) continue;
+
+    // Cheap reject before the parse. This file is re-read on every single
+    // tool call and real transcripts run to megabytes, so parsing every
+    // line to find one field is worth avoiding. A false positive here (the
+    // string appearing inside message content) costs one parse and falls
+    // through the checks below.
+    if (!line.includes('"usage"')) continue;
+
     let entry;
     try {
-      entry = JSON.parse(lines[i]);
+      entry = JSON.parse(line);
     } catch {
-      continue; // malformed/partial trailing line — not a boundary candidate
+      continue; // malformed or partially-written trailing line
     }
-    if (entry && entry.isCompactSummary === true) {
-      boundary = i;
-      break;
-    }
+    if (!entry || typeof entry !== 'object') continue;
+
+    // A subagent's usage describes ITS OWN window, not this session's.
+    // Reading one would under-count the parent and push the trip point
+    // late, which is the failure direction that matters.
+    if (entry.isSidechain === true) continue;
+
+    const usage = entry.message && entry.message.usage;
+    if (!usage || typeof usage !== 'object') continue;
+
+    const tokens = occupiedTokens(usage);
+    if (tokens > 0) return tokens / contextWindowTokens;
   }
 
-  const relevant = lines.slice(boundary);
-  const chars = relevant.reduce((sum, line) => sum + line.length, 0);
-  return chars / charsPerToken / contextWindowTokens;
+  process.stderr.write(
+    `context-guard: no message.usage found in ${transcriptPath} — guard is not gating\n`,
+  );
+  return 0;
+}
+
+/**
+ * Every token occupying the window at the moment this entry was written:
+ * the whole input side of the request (cached tokens included — a cache hit
+ * is cheaper, not absent), plus the output that request produced, which is
+ * in the window by the time a PreToolUse hook fires on the tool call that
+ * output asked for.
+ */
+function occupiedTokens(usage) {
+  const n = (key) => (typeof usage[key] === 'number' ? usage[key] : 0);
+  return (
+    n('input_tokens') +
+    n('cache_creation_input_tokens') +
+    n('cache_read_input_tokens') +
+    n('output_tokens')
+  );
 }
 
 function readStdin() {
@@ -173,7 +219,7 @@ function main() {
 
   const forced = process.env.CONTEXT_GUARD_FORCE_FRACTION;
   const usageFraction =
-    forced !== undefined ? Number(forced) : estimateUsageFraction(input.transcript_path);
+    forced !== undefined ? Number(forced) : readUsageFraction(input.transcript_path);
 
   if (Number.isNaN(usageFraction)) {
     throw new Error(`context-guard: usage fraction is NaN (forced="${forced}")`);

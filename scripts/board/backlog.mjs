@@ -86,6 +86,40 @@ export const CARDS = [
     ],
   },
   {
+    key: 'OPS-004',
+    title: 'Context guard reads real token usage instead of estimating it',
+    milestone: 'M0',
+    epic: 'OPS',
+    type: 'task',
+    rank: 25,
+    dependsOn: ['OPS-002'],
+    goal:
+      'Replace the context guard\'s chars/CHARS_PER_TOKEN estimate with the token ' +
+      'counts the transcript already carries, so the trip point stops depending on ' +
+      'a constant that measurement showed cannot have a correct value. Calibration ' +
+      'across four real transcripts put the true ratio between 6.53 and 9.57 against ' +
+      'the assumed 4: the guard over-counts by 1.63-2.39x and would fire its hard ' +
+      'limit at as little as 31% of the real window. See ' +
+      'docs/decisions/0003-context-guard.md.',
+    acceptance: [
+      '`estimateUsageFraction()` is replaced by a reader returning the last non-sidechain `message.usage` in the transcript as `(input_tokens + cache_creation_input_tokens + cache_read_input_tokens) / CONTEXT_WINDOW_TOKENS`. `CHARS_PER_TOKEN` and the `isCompactSummary` boundary scan are deleted, not kept as a fallback — 0003 already recorded that two independent estimates of the same thing is how they quietly disagree.',
+      'A transcript with no usage entry (the first tool call of a session, or a format change) returns 0 and allows, consistent with the fail-open choice in main(). Show that case.',
+      'The sidechain exclusion is verified against a real transcript that HAS sidechain entries, not asserted. The calibration sample was 0.0% sidechain in all four transcripts, so a test passing over zero sidechain rows is not evidence.',
+      'Unit tests cover last-usage-wins, sidechain skipped, no-usage-found, and a malformed trailing line. The existing 14 decide() tests still pass unchanged.',
+      'Dry-fire through the stdin contract against a REAL transcript path, not /dev/null: show the usage fraction the guard reports and the raw usage numbers it came from.',
+      '`scripts/session/calibrate-context-guard.mjs` lands as the calibration tool 0003 asks for, rewritten to validate CONTEXT_WINDOW_TOKENS against compaction boundaries — the window is the only unvalidated constant once CHARS_PER_TOKEN is gone.',
+      '0003 gains a second dated revision recording the measurement, the sample it rests on (four transcripts, one project, one density profile), and the successor calibration item.',
+    ],
+    notes:
+      'Measurement behind this card, from the 2026-09-20 probe run: implied ' +
+      'CHARS_PER_TOKEN of 6.53 / 6.82 / 7.77 / 9.57 across four transcripts of one ' +
+      'project, drifting upward within every session as the fixed system-prompt and ' +
+      'tool-schema overhead amortises. The between-session spread has no established ' +
+      'cause and does not need one: the replacement removes the constant rather than ' +
+      'tuning it. Confirming the guard against a live `/context` reading still wants ' +
+      'doing once, but it is a check on the window constant now, not on the estimate.',
+  },
+  {
     key: 'OPS-003',
     title: 'Vitest scoped to lib/, wired into the pre-commit gate',
     milestone: 'M0',
