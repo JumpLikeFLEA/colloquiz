@@ -62,14 +62,14 @@ export const SOFT_LIMIT_MESSAGE =
 
 export const HARD_LIMIT_DENY_REASON =
   'CONTEXT HARD LIMIT: only git status|diff|log|add|commit|restore|stash and ' +
-  'gh issue view|comment|list are allowed. Revert the current step if unfinished ' +
+  'gh issue view|comment are allowed. Revert the current step if unfinished ' +
   'and post the session handoff.';
 
 // Each allowlisted command, matched against a single &&/;/|-separated
 // segment of the Bash or PowerShell command string, trimmed.
 const ALLOWED_COMMAND_PATTERNS = [
   /^git\s+(status|diff|log|add|commit|restore|stash)(\s|$)/,
-  /^gh\s+issue\s+(view|comment|list)(\s|$)/,
+  /^gh\s+issue\s+(view|comment)(\s|$)/,
 ];
 
 // && / ; / | all split a command into segments that must each independently

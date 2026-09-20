@@ -93,6 +93,15 @@ describe('decide', () => {
     expect(result.permissionDecision).toBe('deny');
   });
 
+  it('denies `gh issue list` at the hard limit (acceptance names only view|comment)', () => {
+    const result = decide({
+      toolName: 'Bash',
+      toolInput: { command: 'gh issue list --label board' },
+      usageFraction: HARD,
+    });
+    expect(result.permissionDecision).toBe('deny');
+  });
+
   it('denies an unlisted Bash command outright', () => {
     const result = decide({
       toolName: 'Bash',
