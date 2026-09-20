@@ -40,19 +40,25 @@
 import { readFileSync } from 'node:fs';
 
 // Assumed context window. Not read from anywhere live — there is no API
-// for it — so this is a constant guess, not a measurement.
-export const CONTEXT_WINDOW_TOKENS = 200_000;
+// for it — so this is a constant, set to match the window the sessions this
+// hook guards actually run with (1M, stated by the user 2026-09-20), not a
+// measurement the hook can make for itself.
+export const CONTEXT_WINDOW_TOKENS = 1_000_000;
 
 // Token estimate = chars / CHARS_PER_TOKEN. A heuristic that errs both
 // ways: under-counts a code-dense transcript (real code runs closer to
 // ~3 chars/token), over-counts prose-heavy stretches.
 export const CHARS_PER_TOKEN = 4;
 
-// Initial estimates only, validated by nothing but the Step 5 dry-fire.
-// Acceptance asks what they were "tuned against" — the honest answer is
-// nothing yet; see docs/decisions/0003-context-guard.md.
-export const SOFT_LIMIT_FRACTION = 0.7;
-export const HARD_LIMIT_FRACTION = 0.9;
+// Set by the user (2026-09-20) against a 1M window: hand off at 40% used,
+// lock down to the handoff allowlist at 45%. Deliberately far lower
+// fractions than the original 0.7/0.9, because 40% of 1M is ~400k tokens —
+// a much larger absolute budget than 70% of 200k was, and the handoff wants
+// room to finish and commit the current step, not a last-gasp margin.
+// Still unvalidated against a real /context reading; see
+// docs/decisions/0003-context-guard.md.
+export const SOFT_LIMIT_FRACTION = 0.4;
+export const HARD_LIMIT_FRACTION = 0.45;
 
 // Kept under 200 chars: this repeats on every tool call while in the soft
 // zone (no dedup, no state file — see the ADR on what that costs).

@@ -28,7 +28,8 @@ schema — rather than assumed from training data, per AGENTS.md:
 
 `estimateUsageFraction()` reads the transcript JSONL, sums raw line lengths
 (the literal on-disk bytes, not re-serialized JSON), divides by
-`CHARS_PER_TOKEN = 4` and by `CONTEXT_WINDOW_TOKENS = 200_000`, both declared
+`CHARS_PER_TOKEN = 4` and by `CONTEXT_WINDOW_TOKENS` (originally `200_000`;
+corrected to `1_000_000` — see the 2026-09-20 revision below), both declared
 as constants at the top of the file with a comment on what they are (a guess
 and a heuristic, not a measurement — there is no live API for either).
 
@@ -149,3 +150,29 @@ shell would.
   a documented env var), replace `estimateUsageFraction()` outright rather
   than keeping the transcript heuristic as a fallback — two independent
   estimates of the same thing is a way for them to quietly disagree.
+
+## Revision 2026-09-20 — 1M window, 40% soft / 45% hard
+
+`CONTEXT_WINDOW_TOKENS` was `200_000` and the fractions were `0.7` / `0.9`.
+Both were wrong for the sessions this hook actually guards: the window is
+**1M tokens**, stated by the user, not 200k — so the guard was dividing by a
+denominator five times too small and would have tripped its hard limit at
+roughly 180k tokens of transcript, about 18% of the real window. The
+fractions are now `0.4` / `0.45`, also set by the user.
+
+Consequences worth stating rather than leaving to be re-derived:
+
+- The soft/hard band narrowed from 20 percentage points to 5. Against a 1M
+  window that is still ~50k tokens of room between "start handing off" and
+  "locked to the handoff allowlist" — wider in absolute terms than the old
+  20-point band over 200k (40k), so the handoff has *more* room to finish
+  and commit the current step, not less.
+- The absolute trip points moved from ~140k/~180k estimated tokens to
+  ~400k/~450k.
+- `CHARS_PER_TOKEN = 4` is unchanged and still uncalibrated. The window fix
+  removes a known-wrong constant; it does not make the estimate measured.
+  The calibration item under "What would make us revisit this" still stands,
+  and is now the only unvalidated number in the estimate.
+
+The fraction constants are the user's stated policy, not a derived
+recommendation; changing them is their call, not a tuning exercise.
