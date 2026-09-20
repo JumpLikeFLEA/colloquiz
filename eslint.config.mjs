@@ -33,9 +33,6 @@ const eslintConfig = defineConfig([
     // Vendored from the Figma export. ImageWithFallback's whole job is manual
     // <img> error handling, so no-img-element does not apply to it.
     'app/components/figma/**',
-    // Gitignored but present on disk; ESLint 9 does not read .gitignore.
-    // figma-export is a whole second React app (Vite + React 18 + MUI).
-    'figma-export/**',
     'exemplar-archive/**',
     'authored/**',
     'ds-bundle/**',
