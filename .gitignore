@@ -57,3 +57,6 @@ instruction_external_LLM.txt
 
 # perf benchmark output (scripts/bench.ts)
 /.perf/
+
+# Claude Code personal overrides (.claude/settings.json is committed; this is not)
+/.claude/settings.local.json
