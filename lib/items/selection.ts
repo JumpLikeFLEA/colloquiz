@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
   type ItemScoreResult,
@@ -116,42 +117,6 @@ const SelectionResponseSchema = z.strictObject({
 /** What a learner submits for a `selection` item. */
 export type SelectionResponse = z.infer<typeof SelectionResponseSchema>;
 
-export type SelectionResponseErrorCode =
-  /** Not the response shape at all — a client serialization bug. */
-  | "malformed"
-  /** Names an option id the item does not have. */
-  | "unknown_option"
-  /** The same option id appears twice — a checkbox cannot be ticked twice. */
-  | "duplicate_selection"
-  /** More than one selection on a single-answer item — a radio group cannot. */
-  | "too_many_selections";
-
-/**
- * Thrown by `score` for a response that no learner could have produced.
- *
- * `ItemTypeModule.score` returns `ItemScoreResult` with no error channel, and
- * widening that shared contract would touch every type module — see
- * docs/decisions/0008. So a broken response throws instead of scoring zero:
- * acceptance requires that "a client bug and a wrong answer must not look
- * identical", and a thrown typed error is distinguishable from a real (possibly
- * zero) score by construction.
- *
- * Note what does NOT throw: a null/undefined response, and an empty
- * `selectedOptionIds`, both mean "unattempted" and score 0 — a learner really
- * can submit nothing.
- */
-export class SelectionResponseError extends Error {
-  readonly code: SelectionResponseErrorCode;
-  readonly itemId: string;
-
-  constructor(code: SelectionResponseErrorCode, itemId: string, message: string) {
-    super(message);
-    this.name = "SelectionResponseError";
-    this.code = code;
-    this.itemId = itemId;
-  }
-}
-
 /** Renders a zod issue path as a field string: `payload.options[0].text`.
  * `emptyLabel` names the whole value when the issue has no path — which reads
  * differently for an item ("(item)") and a response ("(response)"). */
@@ -197,15 +162,22 @@ function parse(input: unknown): ParseResult<SelectionItem> {
 /**
  * Validates a response against the item and returns the selected ids.
  * Unattempted (null/undefined) reads as no selections rather than an error.
+ *
+ * Note what does NOT throw: a null/undefined response, and an empty
+ * `selectedOptionIds`, both mean "unattempted" and score 0 — a learner really
+ * can submit nothing. Everything else that fails here throws a shared
+ * `ItemResponseError` (docs/decisions/0012) — the response is malformed or
+ * impossible, not merely wrong.
  */
 function readSelection(item: SelectionItem, response: unknown): string[] {
   if (response === null || response === undefined) return [];
 
   const parsed = SelectionResponseSchema.safeParse(response);
   if (!parsed.success) {
-    throw new SelectionResponseError(
+    throw new ItemResponseError(
       "malformed",
       item.id,
+      "selection",
       `response is not a selection response: ${parsed.error.issues.map((i) => `${formatPath(i.path, "", "(response)")}: ${i.message}`).join("; ")}`,
     );
   }
@@ -213,9 +185,10 @@ function readSelection(item: SelectionItem, response: unknown): string[] {
   const selected = parsed.data.selectedOptionIds;
 
   if (new Set(selected).size !== selected.length) {
-    throw new SelectionResponseError(
-      "duplicate_selection",
+    throw new ItemResponseError(
+      "duplicate_id",
       item.id,
+      "selection",
       `response selects the same option more than once: ${selected.join(", ")}`,
     );
   }
@@ -223,17 +196,19 @@ function readSelection(item: SelectionItem, response: unknown): string[] {
   const known = new Set(item.payload.options.map((option) => option.id));
   const unknown = selected.filter((id) => !known.has(id));
   if (unknown.length > 0) {
-    throw new SelectionResponseError(
-      "unknown_option",
+    throw new ItemResponseError(
+      "unknown_id",
       item.id,
+      "selection",
       `response names option(s) not on this item: ${unknown.join(", ")}`,
     );
   }
 
   if (!item.payload.multi && selected.length > 1) {
-    throw new SelectionResponseError(
+    throw new ItemResponseError(
       "too_many_selections",
       item.id,
+      "selection",
       `item is single-answer (multi: false) but the response selects ${selected.length} options`,
     );
   }
@@ -244,7 +219,7 @@ function readSelection(item: SelectionItem, response: unknown): string[] {
 function score(item: SelectionItem, response: unknown): ItemScoreResult {
   const { correctOptionIds, explanationRef } = item.payload;
 
-  // Not a SelectionResponseError: the RESPONSE is fine, the ITEM is broken, and
+  // Not an ItemResponseError: the RESPONSE is fine, the ITEM is broken, and
   // `parse` rejects this shape. Only a hand-built item that skipped `parse` can
   // reach here, and scoring it would divide by zero and put NaN in a lesson total.
   if (correctOptionIds.length === 0) {

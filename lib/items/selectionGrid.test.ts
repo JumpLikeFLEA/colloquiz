@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { selectionGridModule, SelectionGridResponseError } from "./selectionGrid";
+import { ItemResponseError } from "./errors";
+import { selectionGridModule } from "./selectionGrid";
 import type { SelectionGridItem } from "./types";
 
 /**
@@ -112,20 +113,21 @@ describe("selection_grid — N statements, one choice each", () => {
 });
 
 describe("selection_grid — a client bug must not look like a wrong answer", () => {
-  function scoreError(item: SelectionGridItem, response: unknown): SelectionGridResponseError {
+  function scoreError(item: SelectionGridItem, response: unknown): ItemResponseError {
     try {
       selectionGridModule.score(item, response);
     } catch (error) {
-      if (error instanceof SelectionGridResponseError) return error;
+      if (error instanceof ItemResponseError) return error;
       throw error;
     }
-    throw new Error("expected score() to throw a SelectionGridResponseError, but it returned a score");
+    throw new Error("expected score() to throw an ItemResponseError, but it returned a score");
   }
 
   it("throws on a row id the item does not have", () => {
     const error = scoreError(tenRowGrid(), [answer("zz", true)]);
-    expect(error.code).toBe("unknown_row");
+    expect(error.code).toBe("unknown_id");
     expect(error.itemId).toBe("item-1");
+    expect(error.itemType).toBe("selection_grid");
     expect(error.message).toContain("zz");
   });
 
@@ -137,13 +139,13 @@ describe("selection_grid — a client bug must not look like a wrong answer", ()
   });
 
   it("throws on the same row answered twice — an ambiguous response, not a de-dupe", () => {
-    expect(scoreError(tenRowGrid(), [answer("r1", true), answer("r1", false)]).code).toBe("duplicate_row");
+    expect(scoreError(tenRowGrid(), [answer("r1", true), answer("r1", false)]).code).toBe("duplicate_id");
   });
 
   it("a thrown error is distinguishable from a real zero score", () => {
     const zero = selectionGridModule.score(tenRowGrid(), [answer("r1", false)]);
     expect(zero.earned).toBe(0); // a genuine wrong answer scores, it does not throw
-    expect(scoreError(tenRowGrid(), [answer("nope", true)]).code).toBe("unknown_row");
+    expect(scoreError(tenRowGrid(), [answer("nope", true)]).code).toBe("unknown_id");
   });
 });
 

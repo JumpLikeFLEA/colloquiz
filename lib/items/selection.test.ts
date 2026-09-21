@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { selectionModule, SelectionResponseError } from "./selection";
+import { ItemResponseError } from "./errors";
+import { selectionModule } from "./selection";
 import type { SelectionItem } from "./types";
 
 /**
@@ -57,14 +58,14 @@ const trueFalse = () =>
 const earnedFor = (item: SelectionItem, ...selectedOptionIds: string[]) =>
   selectionModule.score(item, { selectedOptionIds }).earned;
 
-function scoreError(item: SelectionItem, response: unknown): SelectionResponseError {
+function scoreError(item: SelectionItem, response: unknown): ItemResponseError {
   try {
     selectionModule.score(item, response);
   } catch (error) {
-    if (error instanceof SelectionResponseError) return error;
+    if (error instanceof ItemResponseError) return error;
     throw error;
   }
-  throw new Error("expected score() to throw a SelectionResponseError, but it returned a score");
+  throw new Error("expected score() to throw an ItemResponseError, but it returned a score");
 }
 
 describe("selection — one type, three surface forms", () => {
@@ -168,9 +169,10 @@ describe("selection — the no-penalty rule and its one limit", () => {
 describe("selection — a client bug must not look like a wrong answer", () => {
   it("throws on an option id the item does not have", () => {
     const error = scoreError(multiMcq(), { selectedOptionIds: ["a", "zz"] });
-    expect(error).toBeInstanceOf(SelectionResponseError);
-    expect(error.code).toBe("unknown_option");
+    expect(error).toBeInstanceOf(ItemResponseError);
+    expect(error.code).toBe("unknown_id");
     expect(error.itemId).toBe("item-1");
+    expect(error.itemType).toBe("selection");
     expect(error.message).toContain("zz");
   });
 
@@ -184,7 +186,7 @@ describe("selection — a client bug must not look like a wrong answer", () => {
 
   it("throws on a duplicated selection — it would silently change the denominator", () => {
     // ["a","a"] would otherwise score 1/2 instead of 1/4: a wrong grade, not just odd input.
-    expect(scoreError(multiMcq(), { selectedOptionIds: ["a", "a"] }).code).toBe("duplicate_selection");
+    expect(scoreError(multiMcq(), { selectedOptionIds: ["a", "a"] }).code).toBe("duplicate_id");
   });
 
   it("throws when a single-answer item receives more than one selection", () => {
@@ -195,7 +197,7 @@ describe("selection — a client bug must not look like a wrong answer", () => {
   it("a thrown error is distinguishable from a real zero score", () => {
     const zero = selectionModule.score(multiMcq(), { selectedOptionIds: ["e"] });
     expect(zero.earned).toBe(0); // a genuine wrong answer scores, it does not throw
-    expect(scoreError(multiMcq(), { selectedOptionIds: ["nope"] }).code).toBe("unknown_option");
+    expect(scoreError(multiMcq(), { selectedOptionIds: ["nope"] }).code).toBe("unknown_id");
   });
 });
 

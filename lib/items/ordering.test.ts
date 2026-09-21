@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { orderingModule, OrderingResponseError } from "./ordering";
+import { ItemResponseError } from "./errors";
+import { orderingModule } from "./ordering";
 import type { OrderingItem } from "./types";
 
 /**
@@ -84,20 +85,21 @@ describe("ordering — permutation of N elements", () => {
 });
 
 describe("ordering — a client bug must not look like a wrong answer", () => {
-  function scoreError(item: OrderingItem, response: unknown): OrderingResponseError {
+  function scoreError(item: OrderingItem, response: unknown): ItemResponseError {
     try {
       orderingModule.score(item, response);
     } catch (error) {
-      if (error instanceof OrderingResponseError) return error;
+      if (error instanceof ItemResponseError) return error;
       throw error;
     }
-    throw new Error("expected score() to throw an OrderingResponseError, but it returned a score");
+    throw new Error("expected score() to throw an ItemResponseError, but it returned a score");
   }
 
   it("throws on a response with a duplicated element — a permutation cannot repeat a slot", () => {
     const error = scoreError(fiveWordOrder(), order("a", "a", "c", "d", "e"));
-    expect(error.code).toBe("duplicate_element");
+    expect(error.code).toBe("duplicate_id");
     expect(error.itemId).toBe("item-1");
+    expect(error.itemType).toBe("ordering");
     expect(error.message).toContain("a");
   });
 
@@ -109,7 +111,7 @@ describe("ordering — a client bug must not look like a wrong answer", () => {
 
   it("throws on a response with an element not in the item", () => {
     const error = scoreError(fiveWordOrder(), order("a", "b", "c", "d", "zz"));
-    expect(error.code).toBe("unknown_element");
+    expect(error.code).toBe("unknown_id");
     expect(error.message).toContain("zz");
   });
 
@@ -123,7 +125,7 @@ describe("ordering — a client bug must not look like a wrong answer", () => {
   it("a thrown error is distinguishable from a real zero score", () => {
     const zero = orderingModule.score(fiveWordOrder(), order("e", "d", "c", "b", "a"));
     expect(zero.earned).toBe(1); // fully reversed still scores (the middle lands correctly), it does not throw
-    expect(scoreError(fiveWordOrder(), order("a", "b", "c", "d", "nope")).code).toBe("unknown_element");
+    expect(scoreError(fiveWordOrder(), order("a", "b", "c", "d", "nope")).code).toBe("unknown_id");
   });
 });
 

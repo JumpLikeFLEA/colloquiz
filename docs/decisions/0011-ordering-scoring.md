@@ -122,7 +122,11 @@ convention as the other two types.
   which is the exact threshold `docs/decisions/0008-selection-scoring.md`
   recorded: "if three of them need it, that is the evidence that
   `ItemScoreResult` should have grown an error channel." The contract's
-  second pass is filed as ITEM-011.
+  second pass is filed as ITEM-011, decided in
+  `docs/decisions/0012-item-response-errors.md` (option 1: shared
+  `ItemResponseError` class, throw channel unchanged) and carried out by
+  ITEM-012, which migrated `selection`, `selection_grid` and `ordering` onto
+  it.
 - If content ever wants partial credit for "close but not exact" placement
   (the distance-metric option rejected above), that is a genuine content
   need this decision does not serve, and revisiting it means re-opening

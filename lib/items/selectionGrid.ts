@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
   type ItemScoreResult,
@@ -65,32 +66,6 @@ const SelectionGridResponseSchema = z.array(
  * ANSWERED row. A row with no entry is unanswered, not absent. */
 export type SelectionGridResponse = z.infer<typeof SelectionGridResponseSchema>;
 
-export type SelectionGridResponseErrorCode =
-  /** Not the response shape at all — a client serialization bug. */
-  | "malformed"
-  /** Names a row id the item does not have. */
-  | "unknown_row"
-  /** The same row id appears twice — one entry per row, unambiguously. */
-  | "duplicate_row";
-
-/**
- * Thrown by `score` for a response that no learner could have produced. Same
- * pattern as `SelectionResponseError` (docs/decisions/0008 §3) — a thrown
- * typed error is distinguishable from a real (possibly zero) score, where a
- * sentinel number could not be.
- */
-export class SelectionGridResponseError extends Error {
-  readonly code: SelectionGridResponseErrorCode;
-  readonly itemId: string;
-
-  constructor(code: SelectionGridResponseErrorCode, itemId: string, message: string) {
-    super(message);
-    this.name = "SelectionGridResponseError";
-    this.code = code;
-    this.itemId = itemId;
-  }
-}
-
 /** Renders a zod issue path as a field string: `payload.rows[0].statement`. */
 function formatPath(path: ReadonlyArray<PropertyKey>, prefix: string, emptyLabel = "(item)"): string {
   const rendered = path.reduce<string>(
@@ -141,18 +116,20 @@ function readResponse(item: SelectionGridItem, response: unknown): Map<string, b
 
   const parsed = SelectionGridResponseSchema.safeParse(response);
   if (!parsed.success) {
-    throw new SelectionGridResponseError(
+    throw new ItemResponseError(
       "malformed",
       item.id,
+      "selection_grid",
       `response is not a selection_grid response: ${parsed.error.issues.map((i) => `${formatPath(i.path, "", "(response)")}: ${i.message}`).join("; ")}`,
     );
   }
 
   const rowIds = parsed.data.map((entry) => entry.rowId);
   if (new Set(rowIds).size !== rowIds.length) {
-    throw new SelectionGridResponseError(
-      "duplicate_row",
+    throw new ItemResponseError(
+      "duplicate_id",
       item.id,
+      "selection_grid",
       `response answers the same row more than once: ${rowIds.join(", ")}`,
     );
   }
@@ -160,9 +137,10 @@ function readResponse(item: SelectionGridItem, response: unknown): Map<string, b
   const known = new Set(item.payload.rows.map((row) => row.id));
   const unknown = rowIds.filter((id) => !known.has(id));
   if (unknown.length > 0) {
-    throw new SelectionGridResponseError(
-      "unknown_row",
+    throw new ItemResponseError(
+      "unknown_id",
       item.id,
+      "selection_grid",
       `response answers row(s) not on this item: ${unknown.join(", ")}`,
     );
   }
@@ -173,7 +151,7 @@ function readResponse(item: SelectionGridItem, response: unknown): Map<string, b
 function score(item: SelectionGridItem, response: unknown): ItemScoreResult {
   const { rows } = item.payload;
 
-  // Not a SelectionGridResponseError: the RESPONSE is fine, the ITEM is broken,
+  // Not an ItemResponseError: the RESPONSE is fine, the ITEM is broken,
   // and `parse` rejects this shape. Only a hand-built item that skipped `parse`
   // can reach here, and scoring it would report possible: 0 — the exact 0/0
   // shape this card's acceptance calls out.

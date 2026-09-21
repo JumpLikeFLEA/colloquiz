@@ -174,6 +174,12 @@ and `exerciseValidate` apply; `selection` adds no second convention.
   that `ItemScoreResult` should have grown an error channel in ITEM-001 after
   all, and the contract gets a second pass before five modules have each
   invented their own error class.
+  **Met.** `ordering` was the third (docs/decisions/0011-ordering-scoring.md),
+  which filed the contract's second pass as ITEM-011; that card decided
+  `docs/decisions/0012-item-response-errors.md` — option 1, a shared
+  `ItemResponseError` class, throw channel kept as-is. The pattern this note
+  worried about repeating a fourth and fifth time is now the one shared class
+  `selection`/`selection_grid`/`ordering` all throw (ITEM-012).
 - If authoring ever produces a multi item where over-selection is the honest
   answer (an item whose correct set genuinely is "all of them"), the
   every-option-correct parse rejection is what blocks it, and the pair of that

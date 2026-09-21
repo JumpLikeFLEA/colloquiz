@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
   type ItemScoreResult,
@@ -60,34 +61,6 @@ const OrderingResponseSchema = z.strictObject({
 /** What a learner submits for an `ordering` item. */
 export type OrderingResponse = z.infer<typeof OrderingResponseSchema>;
 
-export type OrderingResponseErrorCode =
-  /** Not the response shape at all — a client serialization bug. */
-  | "malformed"
-  /** The same element id appears twice — a permutation cannot repeat a slot. */
-  | "duplicate_element"
-  /** Names an element id the item does not have. */
-  | "unknown_element"
-  /** Omits an element id the item has — an incomplete permutation. */
-  | "missing_element";
-
-/**
- * Thrown by `score` for a response that is not a permutation of the item's
- * elements. Same pattern as `SelectionResponseError` / `SelectionGridResponseError`
- * (docs/decisions/0008 §3, 0010 §3): a thrown typed error is distinguishable
- * from a real (possibly zero) score, where a sentinel number could not be.
- */
-export class OrderingResponseError extends Error {
-  readonly code: OrderingResponseErrorCode;
-  readonly itemId: string;
-
-  constructor(code: OrderingResponseErrorCode, itemId: string, message: string) {
-    super(message);
-    this.name = "OrderingResponseError";
-    this.code = code;
-    this.itemId = itemId;
-  }
-}
-
 /** Renders a zod issue path as a field string: `payload.elements[0].text`. */
 function formatPath(path: ReadonlyArray<PropertyKey>, prefix: string, emptyLabel = "(item)"): string {
   const rendered = path.reduce<string>(
@@ -143,9 +116,10 @@ function readOrder(item: OrderingItem, response: unknown): string[] | null {
 
   const parsed = OrderingResponseSchema.safeParse(response);
   if (!parsed.success) {
-    throw new OrderingResponseError(
+    throw new ItemResponseError(
       "malformed",
       item.id,
+      "ordering",
       `response is not an ordering response: ${parsed.error.issues.map((i) => `${formatPath(i.path, "", "(response)")}: ${i.message}`).join("; ")}`,
     );
   }
@@ -153,9 +127,10 @@ function readOrder(item: OrderingItem, response: unknown): string[] | null {
   const order = parsed.data.order;
 
   if (new Set(order).size !== order.length) {
-    throw new OrderingResponseError(
-      "duplicate_element",
+    throw new ItemResponseError(
+      "duplicate_id",
       item.id,
+      "ordering",
       `response places the same element more than once: ${order.join(", ")}`,
     );
   }
@@ -163,18 +138,20 @@ function readOrder(item: OrderingItem, response: unknown): string[] | null {
   const known = new Set(item.payload.elements.map((element) => element.id));
   const unknown = order.filter((id) => !known.has(id));
   if (unknown.length > 0) {
-    throw new OrderingResponseError(
-      "unknown_element",
+    throw new ItemResponseError(
+      "unknown_id",
       item.id,
+      "ordering",
       `response places element(s) not on this item: ${unknown.join(", ")}`,
     );
   }
 
   const missing = [...known].filter((id) => !order.includes(id));
   if (missing.length > 0) {
-    throw new OrderingResponseError(
+    throw new ItemResponseError(
       "missing_element",
       item.id,
+      "ordering",
       `response omits element(s) from this item: ${missing.join(", ")}`,
     );
   }
@@ -185,7 +162,7 @@ function readOrder(item: OrderingItem, response: unknown): string[] | null {
 function score(item: OrderingItem, response: unknown): ItemScoreResult {
   const { elements, explanationRef } = item.payload;
 
-  // Not an OrderingResponseError: the RESPONSE is fine, the ITEM is broken,
+  // Not an ItemResponseError: the RESPONSE is fine, the ITEM is broken,
   // and `parse` rejects this shape. Only a hand-built item that skipped
   // `parse` can reach here.
   if (elements.length < 2) {
