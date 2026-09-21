@@ -189,6 +189,18 @@ be enabled in the browser to make the original wording true again — this is
 a call for whoever owns the workflow doc to make, not something this card
 decides unilaterally.
 
+## Revision 2026-09-21 — workflow enabled in the browser
+
+The "Item closed -> Status" workflow described above was enabled by hand in
+the browser (Project #2 -> Workflows -> "Item closed"), targeting the
+project's current `Done` option. The section above is left as written — it
+records why the manual `board-move.mjs <KEY> "Done"` step existed and why no
+`gh`/GraphQL fix was available, and that history doesn't change. Going
+forward, closing a card's issue (e.g. via a pushed `Closes #n` commit) should
+move its board item to `Done` automatically; the manual `board-move.mjs
+<KEY> "Done"` step is no longer expected to be necessary, though it remains
+the fallback if the workflow is ever found not to have fired.
+
 ## What would make us revisit this
 
 - If `gh` ever adds a `field-edit`/option-rename subcommand, the raw
