@@ -71,27 +71,45 @@ function cardTitle(card) {
   return `${card.key} — ${card.title}`;
 }
 
+// Collapses the punctuation variance that GitHub / a hand-edit introduces
+// without changing an acceptance line's WORDS: any dash form (ASCII "--",
+// en dash U+2013, em dash U+2014, ...) becomes a single "-", any smart quote
+// becomes its straight equivalent, and leading/trailing whitespace is
+// trimmed. A genuinely reworded line still normalises to a different
+// string, so it still renders unticked — see OPS-005 (docs/decisions/0015).
+function normalizeAcceptanceLine(text) {
+  return text
+    .replace(/[‐-―−]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    .trim();
+}
+
 // Acceptance lines already checked off by hand in the live issue, so
 // re-rendering the body (e.g. a later bootstrap run adding an unrelated
-// card) doesn't silently un-tick completed work. Matched by exact text,
-// since that's the only stable identity an acceptance line has.
+// card) doesn't silently un-tick completed work. Matched by normalized
+// text (see normalizeAcceptanceLine) — the only stable identity an
+// acceptance line has, once dash/quote/whitespace variance is discounted.
 function checkedAcceptanceLines(existingBody) {
   if (!existingBody) return new Set();
   const checked = new Set();
   for (const line of existingBody.split('\n')) {
     const m = /^- \[[xX]\] (.*)$/.exec(line);
-    if (m) checked.add(m[1]);
+    if (m) checked.add(normalizeAcceptanceLine(m[1]));
   }
   return checked;
 }
 
 // `deps` is an array of { key, ref } where ref is a real issue number once
 // known, or a placeholder string in --dry-run before any issue exists.
-// `checked` is a Set of acceptance line text already ticked in the live
-// issue (empty for a card with no existing issue yet).
+// `checked` is a Set of NORMALIZED acceptance line text already ticked in
+// the live issue (empty for a card with no existing issue yet).
 function cardBody(card, deps, checked) {
   let body = `${card.goal}\n\n## Acceptance\n\n`;
-  body += card.acceptance.map((a) => `- [${checked.has(a) ? 'x' : ' '}] ${a}`).join('\n');
+  body += card.acceptance
+    .map((a) => `- [${checked.has(normalizeAcceptanceLine(a)) ? 'x' : ' '}] ${a}`)
+    .join('\n');
   if (card.notes) {
     body += `\n\n## Notes\n\n${card.notes}`;
   }
@@ -375,4 +393,8 @@ function main() {
   }
 }
 
-main();
+if (process.argv[1] && process.argv[1].endsWith('bootstrap-board.mjs')) {
+  main();
+}
+
+export { checkedAcceptanceLines, normalizeAcceptanceLine };
