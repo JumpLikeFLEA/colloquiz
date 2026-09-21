@@ -3,6 +3,7 @@ import type { MatchingPayload } from "./matching";
 import type { OrderingPayload } from "./ordering";
 import type { SelectionPayload } from "./selection";
 import type { SelectionGridPayload } from "./selectionGrid";
+import type { SlotsPayload } from "./slots";
 
 /**
  * The item-type contract — see docs/decisions/0006-item-type-contract.md for
@@ -45,7 +46,7 @@ export type SelectionItem = ItemOf<"selection", SelectionPayload>;
 export type SelectionGridItem = ItemOf<"selection_grid", SelectionGridPayload>;
 export type OrderingItem = ItemOf<"ordering", OrderingPayload>;
 export type MatchingItem = ItemOf<"matching", MatchingPayload>;
-export type SlotsItem = ItemOf<"slots">;
+export type SlotsItem = ItemOf<"slots", SlotsPayload>;
 
 export type Item =
   | SelectionItem
