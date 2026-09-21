@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SelectionPayload } from "./selection";
 
 /**
  * The item-type contract — see docs/decisions/0006-item-type-contract.md for
@@ -7,11 +8,17 @@ import { z } from "zod";
  * change to admit a new type (the free_text sketch in __sketches__ is the
  * proof).
  *
- * Per-type payload shapes are deliberately NOT decided here — `payload:
- * unknown` on each item interface is a placeholder each type's own card
- * (ITEM-003..007) narrows. Committing to field shapes this card has no
- * grounds to guess would be exactly the kind of unverified assumption
- * CLAUDE.md asks us not to make.
+ * Per-type payload shapes are NOT decided here — `payload: unknown` on each
+ * item interface is a placeholder each type's own card (ITEM-003..007)
+ * narrows, as `selection` now has (ITEM-003). Committing to field shapes a
+ * card has no grounds to guess would be exactly the kind of unverified
+ * assumption CLAUDE.md asks us not to make.
+ *
+ * A narrowed type imports its payload back from its own module. That import is
+ * type-only and erases at compile time, so `types.ts` ↔ `selection.ts` is a
+ * cycle in the type graph only, never at runtime: `selection.ts` imports
+ * `ItemEnvelopeSchema` (a value) from here, and nothing flows back the other
+ * way once the types are stripped.
  */
 
 export const ITEM_TYPE_NAMES = [
@@ -24,14 +31,14 @@ export const ITEM_TYPE_NAMES = [
 
 export type ItemTypeName = (typeof ITEM_TYPE_NAMES)[number];
 
-interface ItemOf<TType extends string> {
+interface ItemOf<TType extends string, TPayload = unknown> {
   id: string;
   type: TType;
-  /** Narrowed by the owning type's own card; see file header. */
-  payload: unknown;
+  /** `unknown` until the owning type's own card narrows it; see file header. */
+  payload: TPayload;
 }
 
-export type SelectionItem = ItemOf<"selection">;
+export type SelectionItem = ItemOf<"selection", SelectionPayload>;
 export type SelectionGridItem = ItemOf<"selection_grid">;
 export type OrderingItem = ItemOf<"ordering">;
 export type MatchingItem = ItemOf<"matching">;
