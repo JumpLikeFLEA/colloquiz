@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * PreToolUse hook that fires the session-handoff mechanics described in
  * CLAUDE.md ("Session handoff"). Claude Code exposes no field or env var
@@ -189,7 +188,7 @@ export function readUsageFraction(
  * in the window by the time a PreToolUse hook fires on the tool call that
  * output asked for.
  */
-function occupiedTokens(usage) {
+export function occupiedTokens(usage) {
   const n = (key) => (typeof usage[key] === 'number' ? usage[key] : 0);
   return (
     n('input_tokens') +

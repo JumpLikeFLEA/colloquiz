@@ -176,3 +176,153 @@ Consequences worth stating rather than leaving to be re-derived:
 
 The fraction constants are the user's stated policy, not a derived
 recommendation; changing them is their call, not a tuning exercise.
+
+## Revision 2026-09-21 — OPS-004: read the token count instead of estimating it
+
+`estimateUsageFraction()` (chars/4, reset at the last `isCompactSummary`
+boundary) is replaced by `readUsageFraction()`: walk the transcript backward
+and return the most recent `message.usage`'s
+`(input_tokens + cache_creation_input_tokens + cache_read_input_tokens +
+output_tokens) / CONTEXT_WINDOW_TOKENS`. `CHARS_PER_TOKEN` and the
+compaction-boundary scan are deleted outright, not kept as a fallback — two
+independent estimates of the same quantity is exactly the way they quietly
+disagree, the same reasoning the "what would make us revisit this" section
+above already gave for retiring the heuristic once a real number was
+available.
+
+### The measurement that motivated this
+
+The probe run behind this card ran on 2026-09-20, from a chat session, not a
+repo command — the raw output no longer exists as a reproducible artifact and
+is committed verbatim at `docs/decisions/0003-probe-run-2026-09-20.md`. That
+file, not this paragraph, is the source; treat any number below as a pointer
+into it rather than as independently established here.
+
+Across four real transcripts (all from one project, `Dota2-analysis-tool`,
+so this is one density profile, not a cross-project spread), the implied
+`CHARS_PER_TOKEN` at each transcript's deepest point ran **6.53 to 9.57** —
+the old `CHARS_PER_TOKEN = 4` over-counted real occupancy by 1.63×–2.39×,
+which is why the guard's soft/hard band, tuned against the assumed
+`CHARS_PER_TOKEN = 4`, would trip as early as 31.4% real occupancy in one
+transcript. See the evidence file for the per-session breakdown, the
+duplicate-block correction (5 printed blocks were 4 distinct sessions), and
+the derived median (7.295, not the probe's own unfixed 6.82).
+
+**Occupancy definition — two sources, reconciled by picking one:** the probe
+computed real occupancy as `input_tokens + cache_creation_input_tokens +
+cache_read_input_tokens`, excluding `output_tokens`. The `occupiedTokens()`
+function actually shipped in `readUsageFraction()` — unchanged by this
+revision, already committed before this card started — adds
+`output_tokens`, reasoning that the assistant's own last message is in the
+window by the time the *next* tool call's PreToolUse hook fires. The two
+were never reconciled into one number in the probe's own output; this
+revision does not re-run the probe under the shipped definition, since the
+underlying transcripts' peak points already moved by the time of writing.
+What matters going forward is that there is now exactly one definition in
+code — `occupiedTokens()`, exported from `context-guard.mjs` — and
+`calibrate-context-guard.mjs` imports and calls that same function rather
+than restating its arithmetic, so the guard's runtime number and the
+calibration tool's number cannot drift apart the way `estimateUsageFraction`
+and the probe's own chars/4 arithmetic once could have.
+
+### Sidechain layout: the acceptance line's premise didn't hold
+
+The card's acceptance line asks for the sidechain skip in `readUsageFraction`
+to be "verified against a real transcript that HAS sidechain entries, not
+asserted" — motivated by the probe finding 0.0% sidechain across all four
+samples. Checking this directly (2026-09-21, all 11 local main-session
+transcripts across 5 projects, one project's `subagents/agent-*.jsonl`
+inspected directly) found:
+
+- **No main-session transcript, in any project on this machine, ever
+  contains an inline `isSidechain:true` line.** A subagent's own messages are
+  written to a wholly separate file
+  (`<session>/subagents/agent-<id>.jsonl`), which is internally 100%
+  `isSidechain:true` — never mixed with `:false` lines the way the
+  acceptance line's wording implies a single transcript might be.
+- **`transcript_path` during a subagent's own tool call is still the
+  PARENT session's main transcript file, not the subagent's own file** —
+  measured directly: a temporary stderr-adjacent debug log (removed after
+  the measurement, never committed) was added to `main()`, a real subagent
+  was spawned via the `Agent` tool, and its own `Bash` tool call inside the
+  subagent arrived at the hook with `transcript_path` pointing at this
+  session's own `43a46403-….jsonl` — the same file the parent's own tool
+  calls use. The main transcript's `isSidechain` count stayed at 0 even
+  after the subagent ran.
+
+Net effect: `readUsageFraction()`'s `isSidechain === true` skip branch is
+**unreachable in this Claude Code version** — not because the reader is
+reading the wrong file (it isn't; a subagent's tool call correctly falls
+back to gating on the *parent's* own occupancy, which is the conservative,
+safe direction), but because the file it reads, whoever's tool call
+triggered the hook, never contains an inline sidechain row to skip in the
+first place. This is a real, checked finding, not an assumption — and it
+means the acceptance line's implicit test scenario (a naturally-occurring
+mixed transcript) doesn't exist to test against.
+
+**What the tests do instead**, since asserting a synthetic mixed fixture
+would be exactly the thing the acceptance line was written to rule out:
+`real-sidechain-only.jsonl` is an actual subagent transcript (stripped to
+`type`/`isSidechain`/`message.usage`), proving the fail-open path over real
+all-sidechain data; `real-mixed-composite.jsonl` concatenates that same real
+subagent file's tail onto a real main-transcript tail, so the skip logic is
+exercised against real JSON shapes even though the concatenation itself is
+synthetic — documented as such in the test file, not presented as a
+naturally-occurring transcript.
+
+No follow-up card is proposed for this. The premise that failed was "the
+guard might be reading the subagent's own file" — measured and found false;
+what actually happens (parent-transcript fallback) is already the safe
+behavior the skip logic was written to guarantee, just reached by a
+narrower path than the acceptance line assumed.
+
+### Compaction-boundary validation of CONTEXT_WINDOW_TOKENS
+
+`scripts/session/calibrate-context-guard.mjs` (this card) scans every local
+transcript for `type:"system", subtype:"compact_boundary"` entries, each of
+which carries Claude Code's own `compactMetadata: { trigger, preTokens,
+postTokens }` — a directly authoritative "how full was the window right
+before this compaction" figure, not a reconstruction. Run 2026-09-21 against
+142 transcripts across 5 projects on this machine:
+
+**Exactly one compaction boundary exists anywhere in the sample.**
+`trigger: "manual"` (the transcript's own `<command-name>/compact</command-name>`
+entry confirms a typed `/compact`, not an automatic one),
+`preTokens: 87771`, `postTokens: 10055`, on `model: "claude-sonnet-4-6"`, in
+a different project (`trading-bot-v2`, a worktree) on a model outside the
+Claude 5 family these sessions actually run. A manual boundary says nothing
+about window size — the user can type `/compact` at any occupancy — so per
+the card's own stop condition this is excluded from the pass/fail check, and
+per the same condition's fallback: **the trigger here is determined (manual),
+but the sample it comes from is off-model and off-project, so even though
+the trigger is known, this one boundary establishes nothing about
+`CONTEXT_WINDOW_TOKENS` for the sessions the guard actually protects.**
+
+No AUTO boundary exists in the sample, so the STOP condition ("any AUTO
+boundary below `SOFT_LIMIT_FRACTION` of `CONTEXT_WINDOW_TOKENS`") could not
+fire either way — there is no evidence to trip it, which is different from
+passing. **`CONTEXT_WINDOW_TOKENS = 1_000_000` remains exactly as
+unvalidated after this card as before it** — the 2026-09-20 revision above
+already said this was a statement, not a measurement, and this run had no
+real compaction data on the relevant model to change that. The probe run's
+own "Not established by this run" section already anticipated this gap.
+
+### What would make us revisit this (successor to the item above)
+
+- An AUTO compaction boundary, on a Claude 5-family model, in a session this
+  guard actually protects, would be the first real evidence for or against
+  `CONTEXT_WINDOW_TOKENS`. None exists yet on this machine; re-run
+  `calibrate-context-guard.mjs` periodically as sessions accumulate, and
+  treat any exit code 2 from it as the user's decision point, not a
+  tuning trigger for the script to resolve on its own.
+- If sidechain entries are ever observed inline in a main transcript (a
+  Claude Code format change), the `isSidechain` skip branch in
+  `readUsageFraction()` would become reachable for the first time since this
+  revision — re-verify it against that real data rather than assuming the
+  2026-09-21 finding still holds.
+- The occupancy-definition gap between the 2026-09-20 probe (excludes
+  `output_tokens`) and the shipped `occupiedTokens()` (includes it) was
+  never reconciled numerically, only resolved going forward by having one
+  canonical function. If a future session wants the exact probe numbers
+  reproduced under the shipped definition, that is a fresh measurement, not
+  arithmetic on numbers already printed.
