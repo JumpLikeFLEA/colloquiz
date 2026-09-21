@@ -14,8 +14,16 @@ import type { SlotsItem } from "./types";
  * case also asserts the payload it uses is one `parse` accepts.
  */
 
+/** Merges in a default `fallbackExplanation` (ITEM-009) so fixtures that
+ * predate explanation coverage don't each need updating individually — a
+ * caller testing explanation resolution itself overrides `explanations`/
+ * `fallbackExplanation` explicitly. */
 function parsedItem(payload: unknown, id = "item-1"): SlotsItem {
-  const result = slotsModule.parse({ id, type: "slots", payload });
+  const result = slotsModule.parse({
+    id,
+    type: "slots",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) {
     throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   }
@@ -190,7 +198,13 @@ describe("slots — parse rejects items that cannot be scored meaningfully", () 
     return result.errors;
   };
 
-  const base = { prompt: "Fill in the blanks.", input: "typed", gaps: [gap("g1", "cat"), gap("g2", "dog")] };
+  const base = {
+    prompt: "Fill in the blanks.",
+    input: "typed",
+    gaps: [gap("g1", "cat"), gap("g2", "dog")],
+    explanations: {},
+    fallbackExplanation: "explanation",
+  };
 
   it("rejects zero gaps — an item with nothing to score measures nothing", () => {
     const errors = reject({ ...base, gaps: [] });

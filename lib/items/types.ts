@@ -83,8 +83,9 @@ export type ParseResult<TItem> =
  * docs/decisions/0009-subresult-identity.md.
  *
  * `explanationRef` is a REFERENCE into the item's own authored explanations,
- * not resolved text — resolution is ITEM-009's job, kept separate so this
- * contract does not depend on how explanations end up stored.
+ * not resolved text — `lib/items/explanations.ts` (ITEM-009) resolves it,
+ * kept separate so this contract does not depend on how explanations end up
+ * stored.
  */
 export interface SubResult {
   id: string;

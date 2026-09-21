@@ -13,8 +13,14 @@ import type { SelectionGridItem } from "./types";
  * case also asserts the payload it uses is one `parse` accepts.
  */
 
+/** Merges in a default `fallbackExplanation` (ITEM-009) so fixtures that
+ * predate explanation coverage don't each need updating individually. */
 function parsedItem(payload: unknown, id = "item-1"): SelectionGridItem {
-  const result = selectionGridModule.parse({ id, type: "selection_grid", payload });
+  const result = selectionGridModule.parse({
+    id,
+    type: "selection_grid",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) {
     throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   }
@@ -156,7 +162,12 @@ describe("selection_grid — parse rejects items that cannot be scored meaningfu
     return result.errors;
   };
 
-  const base = { prompt: "True or false?", rows: [row("r1", true), row("r2", false)] };
+  const base = {
+    prompt: "True or false?",
+    rows: [row("r1", true), row("r2", false)],
+    explanations: {},
+    fallbackExplanation: "explanation",
+  };
 
   it("rejects zero rows — this is the exact shape that turns a score into NaN", () => {
     const errors = reject({ ...base, rows: [] });

@@ -30,6 +30,8 @@ const selectionItem = () =>
       ],
       correctOptionIds: ["a"],
       explanationRef: "exp",
+      explanations: {},
+      fallbackExplanation: "explanation",
     },
   });
 
@@ -40,6 +42,8 @@ const selectionGridItem = () =>
     payload: {
       prompt: "True or false?",
       rows: [{ id: "r1", statement: "s", correct: true, explanationRef: "exp" }],
+      explanations: {},
+      fallbackExplanation: "explanation",
     },
   });
 
@@ -50,10 +54,11 @@ const orderingItem = () =>
     payload: {
       prompt: "Order these.",
       elements: [
-        { id: "a", text: "A" },
-        { id: "b", text: "B" },
+        { id: "a", text: "A", explanationRef: "exp-a" },
+        { id: "b", text: "B", explanationRef: "exp-b" },
       ],
-      explanationRef: "exp",
+      explanations: {},
+      fallbackExplanation: "explanation",
     },
   });
 

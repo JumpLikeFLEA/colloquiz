@@ -12,8 +12,14 @@ import type { SelectionItem } from "./types";
  * case also asserts the payload it uses is one `parse` accepts.
  */
 
+/** Merges in a default `fallbackExplanation` (ITEM-009) so fixtures that
+ * predate explanation coverage don't each need updating individually. */
 function parsedItem(payload: unknown, id = "item-1"): SelectionItem {
-  const result = selectionModule.parse({ id, type: "selection", payload });
+  const result = selectionModule.parse({
+    id,
+    type: "selection",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) {
     throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   }
@@ -214,6 +220,8 @@ describe("selection — parse rejects items that cannot be scored meaningfully",
     options: options("a", "b", "c"),
     correctOptionIds: ["a"],
     explanationRef: "exp",
+    explanations: {},
+    fallbackExplanation: "explanation",
   };
 
   it("rejects correctOptionIds naming an option that does not exist", () => {

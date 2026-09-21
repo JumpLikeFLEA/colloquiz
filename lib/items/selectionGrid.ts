@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { checkExplanationCoverage, ExplanationsSchema, FallbackExplanationSchema } from "./explanations";
 import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
@@ -28,7 +29,8 @@ const SelectionGridRowSchema = z.strictObject({
   statement: authoredString(),
   /** The row's answer key: true = the statement is true. */
   correct: z.boolean(),
-  /** A REFERENCE into the item's authored explanations; ITEM-009 resolves it. */
+  /** A reference into `explanations` (or the `fallbackExplanation`) — see
+   * lib/items/explanations.ts. */
   explanationRef: z.string().min(1),
 });
 
@@ -40,6 +42,8 @@ const SelectionGridPayloadSchema = z
     // Zero rows is rejected here, at parse, rather than reaching score() and
     // dividing 0/0 into NaN — this card's acceptance names that case explicitly.
     rows: z.array(SelectionGridRowSchema).min(1),
+    explanations: ExplanationsSchema,
+    fallbackExplanation: FallbackExplanationSchema,
   })
   .superRefine((payload, ctx) => {
     const ids = payload.rows.map((row) => row.id);
@@ -48,6 +52,26 @@ const SelectionGridPayloadSchema = z
         code: "custom",
         path: ["rows"],
         message: "row ids must be distinct — a response id must identify exactly one row",
+      });
+    }
+
+    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+      payload.rows.map((row) => row.explanationRef),
+      payload.explanations,
+      payload.fallbackExplanation,
+    );
+    if (missingRefs.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${missingRefs.join(", ")}`,
+      });
+    }
+    if (unusedKeys.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanations has key(s) no row's explanationRef references: ${unusedKeys.join(", ")}`,
       });
     }
   });

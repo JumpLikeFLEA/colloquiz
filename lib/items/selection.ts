@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { checkExplanationCoverage, ExplanationsSchema, FallbackExplanationSchema } from "./explanations";
 import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
@@ -44,10 +45,34 @@ const SelectionPayloadSchema = z
     multi: z.boolean(),
     options: z.array(SelectionOptionSchema).min(2),
     correctOptionIds: z.array(z.string().min(1)).min(1),
-    /** A REFERENCE into the item's authored explanations; ITEM-009 resolves it. */
+    /** A reference into `explanations` (or the `fallbackExplanation`) — see
+     * lib/items/explanations.ts. `selection` has exactly one sub-part per
+     * item (docs/decisions/0009), so there is exactly one ref. */
     explanationRef: z.string().min(1),
+    explanations: ExplanationsSchema,
+    fallbackExplanation: FallbackExplanationSchema,
   })
   .superRefine((payload, ctx) => {
+    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+      [payload.explanationRef],
+      payload.explanations,
+      payload.fallbackExplanation,
+    );
+    if (missingRefs.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanationRef "${payload.explanationRef}" resolves to no explanation and no fallbackExplanation is set`,
+      });
+    }
+    if (unusedKeys.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanations has key(s) no explanationRef references: ${unusedKeys.join(", ")}`,
+      });
+    }
+
     const ids = payload.options.map((option) => option.id);
 
     if (new Set(ids).size !== ids.length) {

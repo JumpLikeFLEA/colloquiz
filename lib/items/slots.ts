@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { checkExplanationCoverage, ExplanationsSchema, FallbackExplanationSchema } from "./explanations";
 import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
@@ -29,7 +30,8 @@ const SlotGapSchema = z.strictObject({
   // A list, not one string: docs/handoff.md's item-type table and this
   // card's acceptance both call this out explicitly.
   acceptedAnswers: z.array(authoredString()).min(1),
-  /** A REFERENCE into the item's authored explanations; ITEM-009 resolves it. */
+  /** A reference into `explanations` (or the `fallbackExplanation`) — see
+   * lib/items/explanations.ts. */
   explanationRef: z.string().min(1),
 });
 
@@ -40,6 +42,8 @@ const SlotsPayloadSchema = z
     prompt: authoredString(),
     input: z.enum(["typed", "drag"]),
     gaps: z.array(SlotGapSchema).min(1),
+    explanations: ExplanationsSchema,
+    fallbackExplanation: FallbackExplanationSchema,
   })
   .superRefine((payload, ctx) => {
     const ids = payload.gaps.map((gap) => gap.id);
@@ -48,6 +52,26 @@ const SlotsPayloadSchema = z
         code: "custom",
         path: ["gaps"],
         message: "gap ids must be distinct — a response id must identify exactly one gap",
+      });
+    }
+
+    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+      payload.gaps.map((gap) => gap.explanationRef),
+      payload.explanations,
+      payload.fallbackExplanation,
+    );
+    if (missingRefs.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${missingRefs.join(", ")}`,
+      });
+    }
+    if (unusedKeys.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanations has key(s) no gap's explanationRef references: ${unusedKeys.join(", ")}`,
       });
     }
   });

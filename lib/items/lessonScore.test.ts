@@ -10,14 +10,25 @@ import type { ItemScoreResult, OrderingItem, SelectionItem } from "./types";
  * function under test) to produce its own expectation.
  */
 
+// ITEM-009 requires every explanationRef to resolve; a `fallbackExplanation`
+// covers every ref used below since this file tests aggregation, not
+// explanation resolution itself (see explanations.test.ts for that).
 function parsedSelection(payload: unknown, id: string): SelectionItem {
-  const result = selectionModule.parse({ id, type: "selection", payload });
+  const result = selectionModule.parse({
+    id,
+    type: "selection",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   return result.item;
 }
 
 function parsedOrdering(payload: unknown, id: string): OrderingItem {
-  const result = orderingModule.parse({ id, type: "ordering", payload });
+  const result = orderingModule.parse({
+    id,
+    type: "ordering",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   return result.item;
 }
@@ -44,13 +55,12 @@ const fiveWordOrder = (id: string) =>
     {
       prompt: "Put the words in order.",
       elements: [
-        { id: "a", text: "word a" },
-        { id: "b", text: "word b" },
-        { id: "c", text: "word c" },
-        { id: "d", text: "word d" },
-        { id: "e", text: "word e" },
+        { id: "a", text: "word a", explanationRef: "exp-a" },
+        { id: "b", text: "word b", explanationRef: "exp-b" },
+        { id: "c", text: "word c", explanationRef: "exp-c" },
+        { id: "d", text: "word d", explanationRef: "exp-d" },
+        { id: "e", text: "word e", explanationRef: "exp-e" },
       ],
-      explanationRef: "exp-order",
     },
     id,
   );

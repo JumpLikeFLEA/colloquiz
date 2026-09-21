@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { checkExplanationCoverage, ExplanationsSchema, FallbackExplanationSchema } from "./explanations";
 import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
@@ -43,7 +44,8 @@ const MatchingPairSchema = z.strictObject({
   left: z.string().min(1),
   /** References `right[].id`. */
   right: z.string().min(1),
-  /** A REFERENCE into the item's authored explanations; ITEM-009 resolves it. */
+  /** A reference into `explanations` (or the `fallbackExplanation`) — see
+   * lib/items/explanations.ts. */
   explanationRef: z.string().min(1),
 });
 
@@ -58,8 +60,30 @@ const MatchingPayloadSchema = z
     // so `pairs` is not required to cover every `left` element — but at
     // least one pair is required, or the item measures nothing.
     pairs: z.array(MatchingPairSchema).min(1),
+    explanations: ExplanationsSchema,
+    fallbackExplanation: FallbackExplanationSchema,
   })
   .superRefine((payload, ctx) => {
+    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+      payload.pairs.map((pair) => pair.explanationRef),
+      payload.explanations,
+      payload.fallbackExplanation,
+    );
+    if (missingRefs.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${missingRefs.join(", ")}`,
+      });
+    }
+    if (unusedKeys.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanations has key(s) no pair's explanationRef references: ${unusedKeys.join(", ")}`,
+      });
+    }
+
     const leftIds = payload.left.map((element) => element.id);
     if (new Set(leftIds).size !== leftIds.length) {
       ctx.addIssue({

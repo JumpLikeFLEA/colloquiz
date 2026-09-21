@@ -14,22 +14,29 @@ import type { OrderingItem } from "./types";
  * case also asserts the payload it uses is one `parse` accepts.
  */
 
+/** Merges in a default `fallbackExplanation` (ITEM-009) so fixtures that
+ * predate explanation coverage don't each need updating individually. */
 function parsedItem(payload: unknown, id = "item-1"): OrderingItem {
-  const result = orderingModule.parse({ id, type: "ordering", payload });
+  const result = orderingModule.parse({
+    id,
+    type: "ordering",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) {
     throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   }
   return result.item;
 }
 
-const element = (id: string) => ({ id, text: `word ${id}` });
+// ITEM-009 moved explanationRef from the item to each element — a wrong
+// position is its own wrong sub-response, the same as a grid row.
+const element = (id: string) => ({ id, text: `word ${id}`, explanationRef: `exp-${id}` });
 
 /** 5 elements, correct order is a, b, c, d, e. */
 const fiveWordOrder = () =>
   parsedItem({
     prompt: "Put the words in order.",
     elements: [element("a"), element("b"), element("c"), element("d"), element("e")],
-    explanationRef: "exp-order",
   });
 
 const order = (...ids: string[]) => ({ order: ids });
@@ -62,9 +69,9 @@ describe("ordering — permutation of N elements", () => {
     const item = fiveWordOrder();
     const result = orderingModule.score(item, order("a", "c", "b", "d", "e"));
     expect(result.subResults).toHaveLength(5);
-    expect(result.subResults[0]).toEqual({ id: "a", correct: true, earned: 1, possible: 1, explanationRef: "exp-order" });
-    expect(result.subResults[1]).toEqual({ id: "b", correct: false, earned: 0, possible: 1, explanationRef: "exp-order" });
-    expect(result.subResults[2]).toEqual({ id: "c", correct: false, earned: 0, possible: 1, explanationRef: "exp-order" });
+    expect(result.subResults[0]).toEqual({ id: "a", correct: true, earned: 1, possible: 1, explanationRef: "exp-a" });
+    expect(result.subResults[1]).toEqual({ id: "b", correct: false, earned: 0, possible: 1, explanationRef: "exp-b" });
+    expect(result.subResults[2]).toEqual({ id: "c", correct: false, earned: 0, possible: 1, explanationRef: "exp-c" });
   });
 
   it("an unattempted item (null, undefined) scores 0 of the element count", () => {
@@ -136,7 +143,12 @@ describe("ordering — parse rejects items that cannot be scored meaningfully", 
     return result.errors;
   };
 
-  const base = { prompt: "Order these.", elements: [element("a"), element("b"), element("c")], explanationRef: "exp" };
+  const base = {
+    prompt: "Order these.",
+    elements: [element("a"), element("b"), element("c")],
+    explanations: {},
+    fallbackExplanation: "explanation",
+  };
 
   it("rejects fewer than two elements — a single order has nothing to measure", () => {
     const errors = reject({ ...base, elements: [element("a")] });
@@ -157,7 +169,7 @@ describe("ordering — parse rejects items that cannot be scored meaningfully", 
   });
 
   it("rejects a missing explanationRef", () => {
-    const errors = reject({ ...base, explanationRef: "" });
+    const errors = reject({ ...base, elements: [element("a"), { id: "b", text: "word b", explanationRef: "" }, element("c")] });
     expect(errors.some((e) => e.field.includes("explanationRef"))).toBe(true);
   });
 

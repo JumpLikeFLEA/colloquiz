@@ -14,8 +14,14 @@ import type { MatchingItem } from "./types";
  * case also asserts the payload it uses is one `parse` accepts.
  */
 
+/** Merges in a default `fallbackExplanation` (ITEM-009) so fixtures that
+ * predate explanation coverage don't each need updating individually. */
 function parsedItem(payload: unknown, id = "item-1"): MatchingItem {
-  const result = matchingModule.parse({ id, type: "matching", payload });
+  const result = matchingModule.parse({
+    id,
+    type: "matching",
+    payload: { explanations: {}, fallbackExplanation: "explanation", ...(payload as object) },
+  });
   if (!result.ok) {
     throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   }
@@ -187,6 +193,8 @@ describe("matching — parse rejects items that cannot be scored meaningfully", 
     left: [textElement("l1"), textElement("l2")],
     right: [textElement("r1"), textElement("r2")],
     pairs: [{ id: "p1", left: "l1", right: "r1", explanationRef: "exp" }],
+    explanations: {},
+    fallbackExplanation: "explanation",
   };
 
   it("rejects zero pairs — an item with nothing to score measures nothing", () => {

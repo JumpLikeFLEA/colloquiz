@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../courseContent";
+import { checkExplanationCoverage, ExplanationsSchema, FallbackExplanationSchema } from "./explanations";
 import { ItemResponseError } from "./errors";
 import {
   ItemEnvelopeSchema,
@@ -26,6 +27,14 @@ import {
 const OrderingElementSchema = z.strictObject({
   id: z.string().min(1),
   text: authoredString(),
+  /** A reference into `explanations` (or the `fallbackExplanation`) — see
+   * lib/items/explanations.ts. Per-element, not per-item: a wrong position is
+   * a wrong sub-response of its own (ITEM-009), the same as a grid row, a
+   * matching pair or a slots gap. This moved off the item level in ITEM-009;
+   * ordering shipped (ITEM-005) with a single item-level `explanationRef`,
+   * which ITEM-009's acceptance ("an ordering position... carries its own
+   * explanation") superseded — see docs/decisions/0017-explanation-resolution.md. */
+  explanationRef: z.string().min(1),
 });
 
 export type OrderingElement = z.infer<typeof OrderingElementSchema>;
@@ -36,8 +45,8 @@ const OrderingPayloadSchema = z
     // Fewer than 2 elements has only one possible order and measures nothing
     // — the ordering analogue of selection's "every option correct" rejection.
     elements: z.array(OrderingElementSchema).min(2),
-    /** A REFERENCE into the item's authored explanations; ITEM-009 resolves it. */
-    explanationRef: z.string().min(1),
+    explanations: ExplanationsSchema,
+    fallbackExplanation: FallbackExplanationSchema,
   })
   .superRefine((payload, ctx) => {
     const ids = payload.elements.map((element) => element.id);
@@ -46,6 +55,26 @@ const OrderingPayloadSchema = z
         code: "custom",
         path: ["elements"],
         message: "element ids must be distinct — a response id must identify exactly one element",
+      });
+    }
+
+    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+      payload.elements.map((element) => element.explanationRef),
+      payload.explanations,
+      payload.fallbackExplanation,
+    );
+    if (missingRefs.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${missingRefs.join(", ")}`,
+      });
+    }
+    if (unusedKeys.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["explanations"],
+        message: `explanations has key(s) no element's explanationRef references: ${unusedKeys.join(", ")}`,
       });
     }
   });
@@ -160,7 +189,7 @@ function readOrder(item: OrderingItem, response: unknown): string[] | null {
 }
 
 function score(item: OrderingItem, response: unknown): ItemScoreResult {
-  const { elements, explanationRef } = item.payload;
+  const { elements } = item.payload;
 
   // Not an ItemResponseError: the RESPONSE is fine, the ITEM is broken,
   // and `parse` rejects this shape. Only a hand-built item that skipped
@@ -175,7 +204,7 @@ function score(item: OrderingItem, response: unknown): ItemScoreResult {
   // no matching response entry.
   const subResults = elements.map((element, position) => {
     const correct = order !== null && order[position] === element.id;
-    return { id: element.id, correct, earned: correct ? 1 : 0, possible: 1, explanationRef };
+    return { id: element.id, correct, earned: correct ? 1 : 0, possible: 1, explanationRef: element.explanationRef };
   });
 
   return {
