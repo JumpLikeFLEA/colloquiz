@@ -271,13 +271,40 @@ export const CARDS = [
     ],
   },
   {
+    key: 'ITEM-011',
+    title: 'Shared response-error contract for item types',
+    milestone: 'M0',
+    epic: 'ITEM',
+    type: 'decision',
+    rank: 95,
+    dependsOn: ['ITEM-003', 'ITEM-004', 'ITEM-005'],
+    goal:
+      'Three item types (selection, selection_grid, ordering) each throw their ' +
+      'own typed response error with overlapping codes (malformed, unknown id, ' +
+      'duplicate id) — the threshold docs/decisions/0008-selection-scoring.md ' +
+      'named for revisiting the contract. Before matching and slots add a ' +
+      'fourth and fifth ad hoc error class, decide one shared contract so a ' +
+      'lesson-level caller (Σearned/Σpossible) can tell a client bug from a ' +
+      'legitimate zero score with a single check.',
+    acceptance: [
+      'Options laid out with evidence from the three existing error classes (SelectionResponseError, SelectionGridResponseError, OrderingResponseError): (1) a shared base error class (e.g. ItemResponseError { code, itemId, itemType }) with score()\'s signature unchanged; (2) an error channel on ItemScoreResult (score() returns ok | error). Include call-site and module impact for each. Decision recorded in docs/decisions/.',
+      'selection, selection_grid and ordering throw/return the chosen shared type. Codes that mean the same thing (malformed, unknown id, duplicate id) are unified into one union; type-specific codes (e.g. too_many_selections, missing_element) are kept.',
+      'A test proves a lesson-level caller distinguishes every existing response error from a legitimate zero score with one check.',
+      'The revisit notes in docs/decisions/0008-selection-scoring.md and docs/decisions/0011-ordering-scoring.md point at the new decision.',
+    ],
+    notes:
+      'type:decision — lay out the options with evidence, do not pick. This ' +
+      'card changes the shared ItemTypeModule / ItemScoreResult contract every ' +
+      'item-type module implements against.',
+  },
+  {
     key: 'ITEM-006',
     title: 'matching — pairs, including image matching',
     milestone: 'M0',
     epic: 'ITEM',
     type: 'task',
     rank: 100,
-    dependsOn: ['ITEM-002', 'ITEM-003'],
+    dependsOn: ['ITEM-002', 'ITEM-003', 'ITEM-011'],
     goal:
       'Word-to-definition and word-to-image are one type with different ' +
       'renderers. The module knows nothing about images.',
@@ -297,7 +324,7 @@ export const CARDS = [
     epic: 'ITEM',
     type: 'task',
     rank: 110,
-    dependsOn: ['ITEM-003'],
+    dependsOn: ['ITEM-003', 'ITEM-011'],
     goal:
       'Three of the twelve requested functions collapse into this one type. The ' +
       'hardest of the five, because typed input means answer normalisation.',

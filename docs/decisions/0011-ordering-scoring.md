@@ -117,9 +117,12 @@ convention as the other two types.
 
 ## What would make us revisit this
 
-- **A fourth type needing the throw-typed-error pattern** (ITEM-006 or
-  ITEM-007) is the point 0008/0010 already flagged: reconsider giving
-  `ItemScoreResult` a real error channel instead of a fourth ad hoc class.
+- **Not a future trigger — already met.** `ordering` is the THIRD item type
+  to need the throw-typed-error pattern (after `selection`, `selection_grid`),
+  which is the exact threshold `docs/decisions/0008-selection-scoring.md`
+  recorded: "if three of them need it, that is the evidence that
+  `ItemScoreResult` should have grown an error channel." The contract's
+  second pass is filed as ITEM-011.
 - If content ever wants partial credit for "close but not exact" placement
   (the distance-metric option rejected above), that is a genuine content
   need this decision does not serve, and revisiting it means re-opening
