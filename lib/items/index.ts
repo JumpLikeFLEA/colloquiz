@@ -38,3 +38,4 @@ export function scoreItem(item: Item, response: unknown): ItemScoreResult {
 }
 
 export * from "./types";
+export * from "./lessonScore";
