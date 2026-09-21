@@ -9,19 +9,52 @@
 -- `can_edit_course()` and the editor-grant RPCs survive unchanged — they are
 -- reshaped, not dropped, by 040.
 --
--- Pre-migration audit (scripts/_tmp_audit_course_retire.ts against the live
--- database, printed output, 2026-09-21):
+-- Pre-migration audit (against the live database, printed output,
+-- 2026-09-21 — re-verified after the first draft of this file; see the
+-- CNT-001 issue thread for the full session):
 --   courses: calculus-i (published), human-behavioral-biology (draft)
---   questions.course_stage_id IS NOT NULL: 158 total
---     visibility='course': 95   (the "95 course questions" 0018 refers to)
---     visibility='shared': 63   (promoted/spillover siblings — see below)
+--   Row counts, every table this migration touches:
+--     courses: 2, course_editors: 2, course_stages: 8,
+--     course_stage_theory: 8, course_stage_theory_versions: 23,
+--     course_stage_exercises: 1, course_enrollments: 2,
+--     course_stage_progress: 0, course_check_attempts: 0,
+--     course_variant_seen: 1
+--   questions: 3578 total, visibility='course': 95, visibility='shared': 3323,
+--     course_stage_id IS NOT NULL: 158, authored_key IS NOT NULL: 158
 --   quizzes.question_ids referencing a visibility='course' question: 0
 --   quizzes.question_ids referencing ANY course-linked question: 5 quizzes,
 --     all 5 referencing only the 63 promoted visibility='shared' rows
+--     (158 course-linked − 95 visibility='course' = 63 promoted/shared)
 --   results rows on those 5 quizzes: 3
---   course_editors: 2, course_stage_theory: 8, course_stage_theory_versions: 23,
---   course_stage_exercises: 1, course_enrollments: 2, course_stage_progress: 0,
---   course_check_attempts: 0, course_variant_seen: 1
+--   get_subject_stats() per subject, sum 3158 (unaffected by this migration
+--     — nothing it does touches visibility/status/subject/difficulty on any
+--     surviving row; compare against this exact breakdown post-apply):
+--       biology: easy=89 medium=127 hard=51 total=267
+--       chemistry: easy=30 medium=30 hard=30 total=90
+--       computer_science: easy=89 medium=80 hard=30 total=199
+--       data_analysis: easy=34 medium=34 hard=33 total=101
+--       esports_history: easy=30 medium=30 hard=30 total=90
+--       geography: easy=98 medium=98 hard=49 total=245
+--       history: easy=216 medium=176 hard=158 total=550
+--       literature: easy=32 medium=32 hard=30 total=94
+--       mathematics: easy=30 medium=38 hard=30 total=98
+--       music: easy=30 medium=30 hard=30 total=90
+--       philosophy: easy=176 medium=203 hard=93 total=472
+--       physics: easy=30 medium=30 hard=30 total=90
+--       psychology: easy=177 medium=202 hard=93 total=472
+--       science_history: easy=30 medium=30 hard=30 total=90
+--       sports_history: easy=45 medium=45 hard=30 total=120
+--       trivium: easy=30 medium=30 hard=30 total=90
+--   sampleQuestions()-shape query (mathematics, visibility='shared',
+--     status='approved', limit 10): 10 rows, mixing gen-* and crs-* ids —
+--     the promoted crs- siblings already serve through Quick Play today and
+--     this migration never touches their visibility/status/content.
+--   Full export of every row this migration deletes (the 8 course tables +
+--     the 95 visibility='course' questions) PLUS `courses` (2 rows) and
+--     `course_editors` (2 rows) — both kept, exported anyway as a complete
+--     pre-migration snapshot of everything course-shaped — written to a
+--     local, gitignored file (authored/_migration_039_export/*.json) before
+--     this migration runs, as a restore point independent of the audit above.
 --
 -- Consequence: the 95 visibility='course' rows are deleted outright (never
 -- referenced by any quiz — course practice/checks mint no quizzes row, see
@@ -33,7 +66,10 @@
 -- delete trigger from 028, which this migration keeps). They are unlinked
 -- from the course by nulling their course columns before those columns are
 -- dropped, and otherwise left exactly as they are: ordinary
--- visibility='shared' questions, indistinguishable from any other.
+-- visibility='shared' questions, indistinguishable from any other. Because
+-- their visibility/status/subject/difficulty/question/options never change,
+-- sampleQuestions() and get_subject_stats() are unaffected by this migration
+-- — nothing in it touches a column either function reads.
 --
 -- Kept, unaltered by this migration (reshaped by 040 instead):
 --   courses, course_editors, can_edit_course(), grant_course_editor(),
@@ -41,6 +77,14 @@
 --   in-app" marker — not course-specific, has no course dependency),
 --   the questions_block_referenced_delete trigger (028 — generically useful
 --   now that it exists; guards quizzes.question_ids regardless of course).
+--   Verified: no migration outside 028/029/030/032/035 references any
+--   object this file drops, and can_edit_course()/grant_course_editor()/
+--   revoke_course_editor() (029) touch only course_editors, courses and
+--   is_admin() — none of which this migration alters. No app code
+--   (app/, lib/, scripts/) references course_stage_id, variant_group,
+--   variant_ordinal, authored_key, updated_by, or visibility='course' as of
+--   this migration's commit — grepped clean, including the general question
+--   importer and the admin review/promote path.
 --
 -- Dropped:
 --   course_stages, course_stage_theory, course_stage_theory_versions,
@@ -55,25 +99,49 @@
 --   questions.variant_ordinal, questions.authored_key
 --   'course' from the questions.visibility CHECK constraint
 --   the "questions: enrolled course read" policy on questions
---   the "courses: editor read" / "course_stages: editor read" policies from
---     035 — course_stages is dropped in this migration; the "courses: editor
---     read" policy is recreated identically since courses survives (DROP
---     TABLE would have taken it with the table, but courses isn't dropped,
---     so it must be re-stated explicitly, matching 035's DROP POLICY IF
---     EXISTS / CREATE POLICY idiom).
+--   the "course_stages: published read" / "course_stages: editor read"
+--     policies (028/035) — go with the table via CASCADE, listed here for
+--     completeness only; courses' own two policies are untouched (see below)
+--
+-- FK ordering, load-bearing: questions.course_stage_id carries a live FK
+-- into course_stages (028: `REFERENCES course_stages(id) ON DELETE SET
+-- NULL`), and questions survives this migration. `DROP TABLE course_stages`
+-- therefore cannot run before that column (and the FK constraint it carries)
+-- is gone — Postgres refuses a bare DROP TABLE while an external FK still
+-- references it. Every other dropped table's inbound FKs come only from
+-- OTHER tables this same migration drops (course_stage_theory,
+-- course_stage_theory_versions, course_stage_exercises,
+-- course_stage_progress and course_check_attempts all FK into
+-- course_stages; nothing outside this dropped cluster FKs into any of
+-- them), so course_stages is the only ordering hazard. Step 3 below (drop
+-- the questions columns) therefore runs BEFORE step 5 (drop the course
+-- tables) — reordered from an earlier draft that had this backwards and
+-- would have failed on `DROP TABLE course_stages`. No CASCADE is used
+-- anywhere in this file: every drop is ordered so it is never needed,
+-- which is easier to audit than relying on CASCADE to paper over a
+-- dependency.
 --
 -- 039_theory_heading_block.sql (written, never applied — a CREATE OR REPLACE
 -- of save_stage_theory(), which this migration drops) is deleted from the
 -- repo in the same commit as this file. This migration takes its number, 039.
 --
+-- Wrapped in one explicit transaction: this migration mixes DELETEs, column
+-- drops and table drops across a dependent cluster of objects, and every
+-- statement in it is transactional DDL/DML in Postgres, so a mid-migration
+-- failure must not leave the schema half-retired. Run as one script (e.g.
+-- `psql -f` or pasted whole into the SQL Editor) so BEGIN/COMMIT bracket the
+-- entire file — if the tool used also wraps its own transaction around the
+-- whole script, this BEGIN is a no-op inside it, not a conflict.
+--
 -- Per the house rule, this file is written and handed off; migrations are
 -- applied by the user, never db push from the agent.
 --
--- NOT safe to blindly re-apply: the DELETE FROM courses / questions
--- statements are idempotent in effect (a second run deletes zero rows), but
--- this migration is a one-time retirement, not a steady-state schema change.
+-- NOT safe to blindly re-apply: the DELETE FROM questions statement is
+-- idempotent in effect (a second run deletes zero rows), but this migration
+-- is a one-time retirement, not a steady-state schema change.
 -- ============================================================
 
+BEGIN;
 
 -- ── 1. Unlink promoted (visibility='shared') questions from courses ────────
 -- These rows are staying — see the audit note above. Strip their course
@@ -97,7 +165,24 @@ WHERE course_stage_id IS NOT NULL
 DELETE FROM questions WHERE visibility = 'course';
 
 
--- ── 3. Drop course-only RPCs (reverse dependency order) ─────────────────────
+-- ── 3. Drop the course columns on questions (BEFORE the course tables — see
+--      the FK-ordering note above: this removes the questions_course_stage_id
+--      FK into course_stages, which step 5's DROP TABLE would otherwise hit) ─
+ALTER TABLE questions
+  DROP COLUMN IF EXISTS course_stage_id,
+  DROP COLUMN IF EXISTS variant_group,
+  DROP COLUMN IF EXISTS variant_ordinal,
+  DROP COLUMN IF EXISTS authored_key;
+
+-- Narrow the visibility CHECK back to the pre-028 + group value (014's
+-- shape). Same idiom as 014/028 — the constraint is always named
+-- questions_visibility_check regardless of which migration last touched it.
+ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_visibility_check;
+ALTER TABLE questions ADD  CONSTRAINT questions_visibility_check
+  CHECK (visibility IN ('shared', 'private', 'group'));
+
+
+-- ── 4. Drop course-only RPCs (reverse dependency order) ─────────────────────
 DROP FUNCTION IF EXISTS submit_stage_check(UUID, JSONB);
 DROP FUNCTION IF EXISTS start_stage_check(UUID);
 DROP FUNCTION IF EXISTS get_course_progress(UUID);
@@ -113,16 +198,19 @@ DROP FUNCTION IF EXISTS get_stage_authoring(UUID);
 DROP FUNCTION IF EXISTS delete_stage_theory_version(UUID);
 
 
--- ── 4. Drop the "questions: enrolled course read" policy ───────────────────
--- The other course-shaped policy on a kept table. courses/course_stages
--- policies are addressed in step 5 below, once course_stages is dropped.
+-- ── 5. Drop the "questions: enrolled course read" policy ───────────────────
+-- The other course-shaped policy on a kept table. courses' own two policies
+-- ("courses: published read" from 028, "courses: editor read" from 035) are
+-- untouched — courses is not dropped, and neither policy is course_stages-
+-- shaped, so nothing here needs to restate them.
 DROP POLICY IF EXISTS "questions: enrolled course read" ON questions;
 
 
--- ── 5. Drop course-only tables ──────────────────────────────────────────────
--- CASCADE drops each table's own policies, indexes and FKs. Order matters for
--- readability only — CASCADE means it would work in any order, but this
--- mirrors creation order reversed.
+-- ── 6. Drop course-only tables ──────────────────────────────────────────────
+-- No CASCADE: by this point nothing outside this cluster references any of
+-- these tables (see the FK-ordering note above — the one external FK, from
+-- questions.course_stage_id, was already dropped in step 3). Order here is
+-- for readability only.
 DROP TABLE IF EXISTS course_check_attempts;
 DROP TABLE IF EXISTS course_variant_seen;
 DROP TABLE IF EXISTS course_stage_progress;
@@ -132,23 +220,4 @@ DROP TABLE IF EXISTS course_stage_theory_versions;
 DROP TABLE IF EXISTS course_stage_theory;
 DROP TABLE IF EXISTS course_stages;
 
--- course_stages carried its own two policies ("course_stages: published
--- read" from 028, "course_stages: editor read" from 035); CASCADE took them
--- with the table. courses survives untouched — its policies ("courses:
--- published read" from 028, "courses: editor read" from 035) are on the
--- table already and need no action here.
-
-
--- ── 6. Drop the course columns on questions ─────────────────────────────────
-ALTER TABLE questions
-  DROP COLUMN IF EXISTS course_stage_id,
-  DROP COLUMN IF EXISTS variant_group,
-  DROP COLUMN IF EXISTS variant_ordinal,
-  DROP COLUMN IF EXISTS authored_key;
-
--- Narrow the visibility CHECK back to the pre-028 + group value (014's
--- shape). Same idiom as 014/028 — the constraint is always named
--- questions_visibility_check regardless of which migration last touched it.
-ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_visibility_check;
-ALTER TABLE questions ADD  CONSTRAINT questions_visibility_check
-  CHECK (visibility IN ('shared', 'private', 'group'));
+COMMIT;
