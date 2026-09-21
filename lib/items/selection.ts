@@ -265,7 +265,7 @@ function score(item: SelectionItem, response: unknown): ItemScoreResult {
   return {
     earned,
     possible,
-    subResults: [{ correct: earned === possible, earned, possible, explanationRef }],
+    subResults: [{ id: item.id, correct: earned === possible, earned, possible, explanationRef }],
   };
 }
 

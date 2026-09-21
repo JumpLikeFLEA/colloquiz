@@ -105,6 +105,7 @@ describe("selection — one type, three surface forms", () => {
     expect(partial.possible).toBe(1);
     expect(partial.subResults).toHaveLength(1);
     expect(partial.subResults[0]).toEqual({
+      id: "item-1", // one subResult per item: id is the item's own id
       correct: false, // partially credited is NOT correct in the pass/fail sense
       earned: 0.5,
       possible: 1,

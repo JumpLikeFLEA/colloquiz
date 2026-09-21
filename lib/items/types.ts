@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { SelectionPayload } from "./selection";
+import type { SelectionGridPayload } from "./selectionGrid";
 
 /**
  * The item-type contract — see docs/decisions/0006-item-type-contract.md for
@@ -39,7 +40,7 @@ interface ItemOf<TType extends string, TPayload = unknown> {
 }
 
 export type SelectionItem = ItemOf<"selection", SelectionPayload>;
-export type SelectionGridItem = ItemOf<"selection_grid">;
+export type SelectionGridItem = ItemOf<"selection_grid", SelectionGridPayload>;
 export type OrderingItem = ItemOf<"ordering">;
 export type MatchingItem = ItemOf<"matching">;
 export type SlotsItem = ItemOf<"slots">;
@@ -72,11 +73,18 @@ export type ParseResult<TItem> =
  * partially credited (see ItemScoreResult) without being "correct" in the
  * pass/fail sense the UI still needs for a per-row check/cross.
  *
+ * `id` identifies WHICH sub-part this is — a row id, a pair id, a gap id —
+ * so a renderer or a review UI can put a check/cross next to the right part
+ * of the item without relying on array order. For a type with exactly one
+ * sub-part (`selection`), `id` is the item's own id: see
+ * docs/decisions/0009-subresult-identity.md.
+ *
  * `explanationRef` is a REFERENCE into the item's own authored explanations,
  * not resolved text — resolution is ITEM-009's job, kept separate so this
  * contract does not depend on how explanations end up stored.
  */
 export interface SubResult {
+  id: string;
   correct: boolean;
   earned: number;
   possible: number;
