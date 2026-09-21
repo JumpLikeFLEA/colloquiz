@@ -138,6 +138,26 @@ export const CARDS = [
       'Report whether vitest was already present from the Colloquiz courses plan; if so this card is a verification pass and says so rather than reinstalling it.',
     ],
   },
+  {
+    key: 'OPS-005',
+    title: 'checkedAcceptanceLines matches ticked lines tolerantly',
+    milestone: 'M0',
+    epic: 'OPS',
+    type: 'task',
+    rank: 999,
+    dependsOn: ['OPS-001'],
+    goal:
+      'checkedAcceptanceLines (bootstrap-board.mjs) matches acceptance text by ' +
+      'exact string equality, so a ticked box in the live issue un-ticks itself ' +
+      'the moment GitHub or a hand-edit normalises a dash, a smart quote, or ' +
+      'trailing whitespace on that line — silently discarding completed-work ' +
+      'status on the next bootstrap run.',
+    acceptance: [
+      'Ticked state survives dash (`--` / `–` / `—`), smart-quote and trailing-whitespace differences between the live issue line and the backlog text for the same acceptance item.',
+      'A test covers the ITEM-002 case.',
+      'A genuinely changed acceptance line — not just a punctuation/whitespace normalisation — still renders unticked.',
+    ],
+  },
 
   // -------------------------------------------------------------- SHELL ---
   {
@@ -288,14 +308,33 @@ export const CARDS = [
       'legitimate zero score with a single check.',
     acceptance: [
       'Options laid out with evidence from the three existing error classes (SelectionResponseError, SelectionGridResponseError, OrderingResponseError): (1) a shared base error class (e.g. ItemResponseError { code, itemId, itemType }) with score()\'s signature unchanged; (2) an error channel on ItemScoreResult (score() returns ok | error). Include call-site and module impact for each. Decision recorded in docs/decisions/.',
-      'selection, selection_grid and ordering throw/return the chosen shared type. Codes that mean the same thing (malformed, unknown id, duplicate id) are unified into one union; type-specific codes (e.g. too_many_selections, missing_element) are kept.',
-      'A test proves a lesson-level caller distinguishes every existing response error from a legitimate zero score with one check.',
-      'The revisit notes in docs/decisions/0008-selection-scoring.md and docs/decisions/0011-ordering-scoring.md point at the new decision.',
     ],
     notes:
       'type:decision — lay out the options with evidence, do not pick. This ' +
       'card changes the shared ItemTypeModule / ItemScoreResult contract every ' +
       'item-type module implements against.',
+  },
+  {
+    key: 'ITEM-012',
+    title: 'Migrate selection/selection_grid/ordering to shared ItemResponseError',
+    milestone: 'M0',
+    epic: 'ITEM',
+    type: 'task',
+    rank: 97,
+    dependsOn: ['ITEM-011'],
+    goal:
+      'ITEM-011 (docs/decisions/0012-item-response-errors.md) decided the ' +
+      'shared error class; this card carries out the option-1 migration it ' +
+      'committed to, before matching and slots (ITEM-006/007) depend on it.',
+    acceptance: [
+      'ItemResponseError { code, itemId, itemType } in lib/items/errors.ts; one code union: malformed, unknown_id, duplicate_id, plus too_many_selections (selection) and missing_element (ordering).',
+      'selection.ts, selectionGrid.ts and ordering.ts throw it; the three module-specific classes deleted; old codes renamed, not aliased (unknown_option -> unknown_id, duplicate_selection -> duplicate_id, and any selection_grid equivalents), with their tests updated.',
+      'A test proves one `instanceof ItemResponseError` check distinguishes every existing response error from a legitimate zero score.',
+      '0008 and 0011 revisit notes point at 0012.',
+    ],
+    notes:
+      'Executes the option decided in docs/decisions/0012-item-response-errors.md ' +
+      '— do not relitigate the option here.',
   },
   {
     key: 'ITEM-006',
@@ -304,7 +343,7 @@ export const CARDS = [
     epic: 'ITEM',
     type: 'task',
     rank: 100,
-    dependsOn: ['ITEM-002', 'ITEM-003', 'ITEM-011'],
+    dependsOn: ['ITEM-002', 'ITEM-003', 'ITEM-012'],
     goal:
       'Word-to-definition and word-to-image are one type with different ' +
       'renderers. The module knows nothing about images.',
@@ -324,7 +363,7 @@ export const CARDS = [
     epic: 'ITEM',
     type: 'task',
     rank: 110,
-    dependsOn: ['ITEM-003', 'ITEM-011'],
+    dependsOn: ['ITEM-003', 'ITEM-012'],
     goal:
       'Three of the twelve requested functions collapse into this one type. The ' +
       'hardest of the five, because typed input means answer normalisation.',

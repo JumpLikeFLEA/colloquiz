@@ -96,6 +96,12 @@ an explicit diff in pass 2, not by "a matching-key issue exists so leave it
 alone." A skip is evidence the content is in sync, not evidence the
 reconciliation step ran and chose not to look.
 
+The corollary for reading `updated`: expect it to count every existing card
+whose desired state actually changed, **plus every newly created card that
+has a `dependsOn`** — pass 1 creates a new card's issue without a `Depends
+on` line (the dependency's issue number doesn't exist yet), so pass 2 always
+touches it again to add that line, which reads as an update, not a skip.
+
 ## Why Node ESM over `gh`, not Python or Octokit
 
 - `gh` is already the project's authenticated GitHub interface (used
