@@ -29,6 +29,7 @@ export const EPICS = [
   { key: 'ITEM', title: 'Item engine', desc: 'The item-type registry, scoring contract and per-type modules.' },
   { key: 'CNT', title: 'Content model', desc: 'Course/lesson schema, importer, publish pipeline.' },
   { key: 'AUTH', title: 'Authoring', desc: 'The UI the partner uses to write and publish lessons.' },
+  { key: 'PLAY', title: 'Lesson player', desc: 'The learner-facing player M2 wraps; built in M1 because preview needs it.' },
   { key: 'SHELL', title: 'Brand shell', desc: 'Routing, layouts, landing, the Colloquiz/English split.' },
   { key: 'ANON', title: 'Anonymous conversion', desc: 'Play-before-signup and the progress migration.' },
   { key: 'PAY', title: 'Entitlement & payments', desc: 'Free/paid resolution, MoR checkout, unlocking.' },
@@ -189,6 +190,65 @@ export const CARDS = [
       'a real directory move plus a wide Link sweep. Expect it to touch many ' +
       'files and almost no logic. Land it in one commit so the rename is one ' +
       'reviewable point in history.',
+  },
+  {
+    key: 'SHELL-002',
+    title: 'Prove Cyrillic coverage of the served webfonts',
+    milestone: 'M1',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 180,
+    dependsOn: [],
+    goal:
+      'docs/decisions/0018-alliengll-content-model.md Decision 5: no fallback ' +
+      'to a system font, anywhere Alliengll content renders.',
+    acceptance: [
+      '`next/font` is configured with the subsets needed for Russian text, for every face Alliengll content uses (Geist and Geist Mono if the player uses mono).',
+      'The served font files (from `next build` output, not the package\'s claims) are checked for coverage with a one-off script, not committed as a dependency. Its printed output shows every code point in U+0410-U+044F, `Ёё` (U+0401, U+0451), `« » — – №`, and straight and curly quotes.',
+      'Any gap stops the card and becomes a font-choice decision. It is not fixed with a fallback stack.',
+      'A test page with that full character set shows only the webfont in the browser\'s rendered-fonts panel, with a screenshot attached as evidence.',
+    ],
+  },
+  {
+    key: 'SHELL-003',
+    title: 'Re-derive design-token figures; guard against new hex literals',
+    milestone: 'M1',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 310,
+    dependsOn: [],
+    goal:
+      'The M1 audit (Phase 1, 2026-09-21) found the recorded hex-literal count ' +
+      'did not match a fresh `rg`, and found no source for the "three known ' +
+      '`.dark` bugs" claim. Replace stale figures with the command that ' +
+      'produces them, and stop the literal count from growing further ' +
+      '(docs/handoff.md, "Visual work" §1) without migrating the existing ones.',
+    acceptance: [
+      'Every token-debt figure in `CLAUDE.md` and `docs/handoff.md` is either replaced by the exact command that produces it plus that command\'s printed output today, or removed.',
+      'The stale "`--brand` absent from `.dark`" premise is removed wherever it appears (the M1 audit found both tokens already present in `.dark`).',
+      '`npm run check` fails on a new hex literal under `app/` or `lib/` outside an explicit allow-list (the Satori brand hexes in `lib/site.ts`, `global-error.tsx`), with no new npm dependency. It is shown failing on a planted literal and passing without it.',
+    ],
+  },
+  {
+    key: 'SHELL-004',
+    title: 'Spike: `.dark` token gaps and the "three known `.dark` bugs"',
+    milestone: 'M1',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 1000,
+    dependsOn: [],
+    goal:
+      'Low-priority, blocks nothing (docs/handoff.md, "Visual work" §1). Find ' +
+      'any genuine `.dark` token gap and either substantiate the "three known ' +
+      'bugs" claim or strike it — it has no citation anywhere in git log, ' +
+      'issues or docs as of the M1 audit.',
+    acceptance: [
+      'A printed diff lists every custom property defined in `:root` but not in `.dark` in `app/globals.css`. Each gap is fixed in this card if it is a missing token, or recorded as intentional.',
+      'Search `git log`, issues and `docs/` for the "three known bugs" claim\'s origin. Record where it came from, or that no source exists.',
+      'If sources exist, each bug is reproduced or shown fixed, and real ones become their own cards.',
+      'If no source exists, the claim is struck from `docs/handoff.md` with a pointer to this card.',
+    ],
+    notes: 'priority:low. Ranked last deliberately — nothing else in M1 depends on it.',
   },
 
   // --------------------------------------------------------------- ITEM ---
@@ -440,6 +500,309 @@ export const CARDS = [
       'The five examples are committed as fixtures and reused by the M2 player\'s tests rather than re-authored.',
       'Evidence is a screenshot or a recorded interaction per type, not a description.',
     ],
+  },
+
+  // ---------------------------------------------------------------- CNT ---
+  {
+    key: 'CNT-001',
+    title: 'Retire Colloquiz courses (code and data)',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 150,
+    dependsOn: [],
+    goal:
+      'Remove the Colloquiz course feature and write the migration that ' +
+      'deletes its data (docs/decisions/0018-alliengll-content-model.md ' +
+      'Decision 1). `courses`, `course_editors`, `can_edit_course` and the ' +
+      'editor-grant RPCs are kept — they are reshaped in CNT-002. Everything ' +
+      'else Decision 1 marks dropped goes.',
+    acceptance: [
+      'Before writing the migration, a printed audit counts every reference to a course question outside the course tables: `quizzes.question_ids` elements matching the course id prefix; `results` rows on such quizzes; `quiz_history` subject derivation. Any non-zero count is resolved in the migration (and recorded) rather than left as a dangling id that breaks History.',
+      'Both courses (`calculus-i` and `human-behavioral-biology`) and all their rows are deleted, with before/after row counts printed per table.',
+      '`supabase/migrations/039_theory_heading_block.sql` (never applied) is deleted from the repo. The retirement migration takes number 039.',
+      'The migration drops every course table, RPC and policy 0018 marks as dropped, deletes the course questions and their `questions` columns, and narrows the `visibility` CHECK. It is handed over unapplied, with the SQL to run.',
+      'Quick Play is untouched (standing rule). Before and after the migration, printed output shows these results unchanged: `sampleQuestions()`; `get_subject_stats()` per subject; the `visibility=\'shared\'` question count. The `visibility=\'course\'` rows were never visible to Quick Play, so any change is a bug to explain.',
+      'Removed from the app: `scripts/import-course.ts`, `lib/courseContent.ts` and `lib/theoryValidate.ts`, with their tests; the course learner and authoring routes, and `COURSES_ENABLED`; the sidebar and admin entries pointing at them.',
+      'KaTeX remains wherever Colloquiz quiz questions render it. A printed `rg` shows the remaining KaTeX imports, and none of them is under a course path.',
+      '`npm run check && npm test` exit 0. The vitest file count drops only by the removed suites, with before/after counts printed.',
+      '`CLAUDE.md` repo map and `docs/handoff.md` no longer describe Colloquiz courses as present.',
+      'The name "Alliengll" appears in no user-facing string, route segment or metadata. It is an internal name (0018).',
+    ],
+  },
+  {
+    key: 'CNT-002',
+    title: 'Alliengll schema migration',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 160,
+    dependsOn: ['CNT-001'],
+    goal:
+      'Implements 0018 Decisions 2, 4 and 6 as one migration: reshape ' +
+      '`courses`, create `lessons`, `lesson_versions` and ' +
+      '`course_entitlements`, write `can_read_lesson`, the RLS, the ' +
+      'save/publish/free-sample RPCs, and the image bucket.',
+    acceptance: [
+      '`courses` has lost `access` and gained `author_id`.',
+      '`lessons` and `lesson_versions` exist with the columns in 0018.',
+      '`lesson_versions` has no UPDATE or DELETE path for any app role.',
+      '`course_entitlements` exists, is empty, and has no grant allowing an app role to write it.',
+      '`can_read_lesson` matches the 0018 definition, and is the only thing the `lesson_versions` read policy calls for non-editors.',
+      '`save_lesson_version` enforces the concurrency token: saving against a stale latest-version id fails.',
+      '`publish_lesson` sets `published_version_id` and `published_item_count` together.',
+      '`set_lesson_free_sample` is separate from both, and neither save nor publish touches `in_free_sample`.',
+      'Creating a course\'s first lesson writes `in_free_sample = true`. Every later lesson defaults to false. Nothing derives it from `ordinal`.',
+      'Public storage bucket for lesson images: writes are scoped to course editors, and limits are declared in one `lib/` constant and enforced again on the bucket (the avatar precedent).',
+      'Full verification protocol (this card touches entitlement and RLS), run against seeded, non-empty data with the output printed: `anon`, a signed-in non-buyer, a signed-in buyer (seeded entitlement row) and an editor; each against a free-sample lesson, a paid lesson and an unpublished draft; a 12-cell matrix, every cell matching 0018.',
+      'Handed over unapplied with the SQL to run, as migration 040, after CNT-001\'s 039.',
+    ],
+  },
+  {
+    key: 'CNT-003',
+    title: 'Lesson document validator (lib/lessons/)',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 170,
+    dependsOn: ['ITEM-001', 'ITEM-009'],
+    goal:
+      'The single validator for a lesson document: the Alliengll theory-block ' +
+      'set with inline markup, plus practice blocks through `parseItem`.',
+    acceptance: [
+      'Theory block set covers at least heading, prose, example, callout, list, image and video. Its exact field shapes are recorded in a new decision file.',
+      'Inline markup is limited to emphasis and English-span, and is represented structurally (not a Markdown string), so it cannot corrupt content. No Markdown parser dependency.',
+      'No block type, and nothing imported by `lib/lessons/`, pulls KaTeX. This is verified by a test that inspects the module graph or by a printed `rg` over the import chain.',
+      'Practice blocks are accepted only if `parseItem` accepts them. Every 0008-0017 invariant, including explanation coverage, surfaces as a lesson-level error that names the block id and field.',
+      'Block ids are required and unique within a document. A duplicate is a parse error.',
+      'The video block accepts only a YouTube video id, not an arbitrary URL.',
+      'Tests cover: a valid mixed lesson; each rejection above; a lesson with zero practice blocks (decide and record: valid theory-only lesson, or rejected).',
+    ],
+  },
+  {
+    key: 'CNT-004',
+    title: 'Lesson importer',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 280,
+    dependsOn: ['CNT-002', 'CNT-003'],
+    goal: 'Import an authored lesson file into a draft `lesson_versions` row, never publishing.',
+    acceptance: [
+      '`npx tsx scripts/import-lesson.ts <file>` validates with CNT-003 before any write. An invalid file writes nothing.',
+      'Idempotent on `authored_key` for courses and lessons.',
+      'Writes a new `source=\'import\'` version as a draft, and never publishes.',
+      'Refuses to append over an editor save unless run with `--adopt`, and prints which lessons it skipped and why.',
+      'Dry-run mode prints what would change without writing.',
+    ],
+  },
+  {
+    key: 'CNT-005',
+    title: 'PDF -> lesson-document drafting step',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 290,
+    dependsOn: ['CNT-003'],
+    goal:
+      'Draft a lesson document from a real partner PDF via an LLM pass, in ' +
+      'exactly the CNT-003-validated shape (0018 Decision 3).',
+    acceptance: [
+      'First action of the card: check the PDF\'s structure against 0018 ("theory, then practice, repeated"). A mismatch stops the card (0018 revisit trigger).',
+      'A PDF-parsing library is a new npm dependency: stop and ask before adding one. Record the alternative considered, such as passing the PDF to the model directly.',
+      'Drafts a lesson document from one real partner PDF. The output passes the CNT-003 validator or reports exactly which blocks failed.',
+      'Drafted explanations are marked as drafts for review, never presented as authored.',
+      'The drafting prompt and model call live under `scripts/`, and nothing reads the PDF at runtime.',
+    ],
+    notes: 'Blocked on: a real lesson PDF from the partner (requested 2026-09-21, see 0018).',
+  },
+  {
+    key: 'CNT-006',
+    title: 'End-to-end: the finished course through the pipeline',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 300,
+    dependsOn: ['CNT-004', 'CNT-005', 'AUTH-005'],
+    goal: 'The M1 bar, demonstrated: the partner can publish a lesson without Gleb.',
+    acceptance: [
+      'The partner\'s finished course goes PDF -> draft -> import -> corrected in the editor -> previewed -> published, with the partner (not Gleb) doing the editing and publishing.',
+      'Every lesson of that course parses and plays in preview. Printed counts of lessons and blocks are copied from output.',
+      'Friction the partner hit is filed as new cards, not fixed inside this one.',
+    ],
+  },
+
+  // --------------------------------------------------------------- PLAY ---
+  {
+    key: 'PLAY-001',
+    title: 'Lesson player: shell and theory blocks',
+    milestone: 'M1',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 190,
+    dependsOn: ['CNT-003', 'ITEM-008', 'ITEM-009'],
+    goal:
+      'The M1 player that M2 will wrap. It lives outside the Colloquiz shell ' +
+      'from day one.',
+    acceptance: [
+      'Player components live outside `app/(main)/`, and import nothing from the Colloquiz shell, Recharts, KaTeX, or Framer Motion unless this card records why. A printed `rg` over the player\'s import graph is the evidence.',
+      'Renders a lesson document block by block in authored order, parsing on read. An invalid document renders a visible author-facing error, not a crash.',
+      'Every theory block renders. The English-span renders with `lang="en"`.',
+      'The video block is a click-to-load facade using `youtube-nocookie.com`, so no third-party cookie is set before the learner opts in (the no-cookie-banner decision is load-bearing). The report-only CSP is extended for it.',
+      'Uses tokens only: no new hex literals or palette classes. Mobile-first at 360px width.',
+      'Holds a lesson-level result via `aggregateLessonScore` (0016) and explanations via `resolveExplanations` (0017). Nothing is persisted (attempt storage is M2).',
+    ],
+  },
+  {
+    key: 'PLAY-002',
+    title: 'Player renderers: selection and selection_grid',
+    milestone: 'M1',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 200,
+    dependsOn: ['PLAY-001', 'ITEM-002', 'ITEM-003', 'ITEM-004'],
+    goal:
+      'Handoff\'s "item interaction design inside M1": whether the item works ' +
+      'on a phone, not how it looks.',
+    acceptance: [
+      'Submits the response shape `selection`/`selection_grid` expect, and a malformed-response `ItemResponseError` is impossible to reach from the UI. A test drives the renderer to submission and scores the result.',
+      'Presentation order comes from `lib/items/shuffle.ts`, and never affects scoring (0007).',
+      'After submission, each sub-part shows correct or incorrect plus its resolved explanation.',
+      'Usable on a 360px touch screen, with the interaction choices recorded in a decision file.',
+      'No `ItemPlaygroundClient.tsx` code is reused. Its header marks it throwaway.',
+    ],
+  },
+  {
+    key: 'PLAY-003',
+    title: 'Player renderers: ordering and matching',
+    milestone: 'M1',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 210,
+    dependsOn: ['PLAY-001', 'ITEM-002', 'ITEM-005', 'ITEM-006'],
+    goal:
+      'Handoff\'s "item interaction design inside M1": whether the item works ' +
+      'on a phone, not how it looks.',
+    acceptance: [
+      'Submits the response shape `ordering`/`matching` expect, and a malformed-response `ItemResponseError` is impossible to reach from the UI. A test drives the renderer to submission and scores the result.',
+      'Presentation order comes from `lib/items/shuffle.ts`, and never affects scoring (0007).',
+      'After submission, each sub-part shows correct or incorrect plus its resolved explanation.',
+      'Usable on a 360px touch screen, with the interaction choices recorded in a decision file. For drag items this covers target size, and what happens mid-drag on scroll.',
+      'A drag-and-drop library is a new npm dependency: stop and ask before adding one. Native pointer events are the default assumption.',
+      '`matching`: many-to-one is answerable (0013). If the renderer uses a consumable chip pool, 0013\'s revisit note is answered in the decision file.',
+      'No `ItemPlaygroundClient.tsx` code is reused. Its header marks it throwaway.',
+    ],
+  },
+  {
+    key: 'PLAY-004',
+    title: 'Player renderer: slots (typed and drag)',
+    milestone: 'M1',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 220,
+    dependsOn: ['PLAY-001', 'ITEM-007'],
+    goal:
+      'Handoff\'s "item interaction design inside M1": whether the item works ' +
+      'on a phone, not how it looks.',
+    acceptance: [
+      'Submits the response shape `slots` expects, and a malformed-response `ItemResponseError` is impossible to reach from the UI. A test drives the renderer to submission and scores the result.',
+      'Presentation order comes from `lib/items/shuffle.ts`, and never affects scoring (0007).',
+      'After submission, each sub-part shows correct or incorrect plus its resolved explanation.',
+      'Usable on a 360px touch screen, with the interaction choices recorded in a decision file. For the drag input this covers target size, and what happens mid-drag on scroll.',
+      'A drag-and-drop library is a new npm dependency: stop and ask before adding one. Native pointer events are the default assumption.',
+      'Typed and drag inputs score identically for the same answer (handoff), and normalisation is `lib/items/slots.ts`\'s, never re-implemented in the UI.',
+      'No `ItemPlaygroundClient.tsx` code is reused. Its header marks it throwaway.',
+    ],
+  },
+
+  // --------------------------------------------------------------- AUTH ---
+  {
+    key: 'AUTH-001',
+    title: 'Authoring: courses and lesson list',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 230,
+    dependsOn: ['CNT-002'],
+    goal: 'The minimum screen set to manage courses and their lesson lists.',
+    acceptance: [
+      'An editor can create a course (slug, title, description), and publish and unpublish it.',
+      'The lesson list supports create, rename, edit description, reorder, and archive. No hard delete, because purchasers keep access to what they bought.',
+      'The free-sample toggle is its own explicit control, calling `set_lesson_free_sample`.',
+      'Course editor delegation works through the existing grant/revoke RPCs.',
+      'English-only chrome, composed from existing admin components and classes.',
+    ],
+  },
+  {
+    key: 'AUTH-002',
+    title: 'Lesson editor: block list and theory-block forms',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 240,
+    dependsOn: ['AUTH-001', 'CNT-003'],
+    goal: 'The theory half of the block editor.',
+    acceptance: [
+      'Add, edit, delete and reorder blocks. Every theory block type has a form, and no raw JSON is ever shown to the author.',
+      'Inline emphasis and English-span can be applied without typing markup. A rich-text editor library is a new npm dependency: stop and ask. A minimal in-house control over the structural markup is the default assumption.',
+      'Save runs the CNT-003 validator in the server route before the RPC. Errors render next to the field they name.',
+      'A stale-token save shows "changed elsewhere, reload" and never silently overwrites.',
+      'Version history is listed, and any version can be restored as a new draft.',
+    ],
+  },
+  {
+    key: 'AUTH-003',
+    title: 'Lesson editor: practice-block forms for the five item types',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 250,
+    dependsOn: ['AUTH-002'],
+    goal: 'The practice half of the block editor.',
+    acceptance: [
+      'A form for each of `selection`, `selection_grid`, `ordering`, `matching` and `slots`, including `slots`\' `input: \'typed\' | \'drag\'`.',
+      'Per-sub-part explanation fields plus the item-level fallback. The form makes the cost visible: for example, "10 rows: add 10 explanations, or 1 fallback" (0017 Decision 5).',
+      'Every 0008-0017 parse rejection is reachable from the form and shown in place. There is one test per item type that submits an invalid form and asserts the rendered error.',
+    ],
+  },
+  {
+    key: 'AUTH-004',
+    title: 'Image upload for theory and matching blocks',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 260,
+    dependsOn: ['CNT-002', 'AUTH-002'],
+    goal: 'Image upload into the CNT-002 bucket, mirroring the avatar-upload precedent.',
+    acceptance: [
+      'Upload into the CNT-002 bucket from the image theory block and from image matching.',
+      'Limits are stated before the picker opens, and enforced client-side and on the bucket.',
+      'Objects are stored as `<course_id>/<uuid>.<ext>` (no URL reuse, no cache-busting). Replacing an image deletes the old object only after the new one is saved.',
+      'Alt text is required on every image.',
+    ],
+  },
+  {
+    key: 'AUTH-005',
+    title: 'Preview and publish',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 270,
+    dependsOn: ['AUTH-002', 'PLAY-001'],
+    goal:
+      'Preview through the real player, and a publish action that cannot ' +
+      'diverge from what was previewed.',
+    acceptance: [
+      'Preview renders the current draft version through the real player (PLAY-001..004), not a separate preview renderer and not sessionStorage.',
+      'Publish publishes exactly the version previewed. If a newer draft was saved since preview opened, publish refuses.',
+      'After publishing, the learner-visible version is unchanged by further draft edits until the next publish. This is demonstrated on a seeded lesson.',
+      'The editor shows whether a lesson has unpublished changes.',
+    ],
+    notes:
+      'Full acceptance coverage of the "real player" requirement depends on ' +
+      'PLAY-002..004 as well as PLAY-001; those may still be in progress when ' +
+      'this card starts, in which case preview covers whichever renderers ' +
+      'exist and the gap is named, not hidden.',
   },
 ];
 

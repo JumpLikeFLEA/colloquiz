@@ -216,11 +216,21 @@ behaviour.
 "Visuals" is three different things with three different right-times. Lumping
 them is what makes the question hard.
 
-1. **Token hygiene — start of M1, cheap half only.** Add the missing `.dark`
-   tokens, fix the three known `.dark` bugs, and hold the line that new
-   surfaces use tokens rather than literals. **Do NOT migrate the existing
-   461 hex literals** — that is a big-bang commit with no user-visible payoff.
-   The goal is to stop the debt growing, not to pay it off.
+1. **Token hygiene — deprioritised, not dropped (decided with the M1 card set,
+   2026-09-21).** The Phase 1 M1 audit re-derived the hex-literal count from
+   `rg` and got a different number than the one previously recorded here
+   (see SHELL-003, which replaces any figure in this file or CLAUDE.md with
+   the exact command that produced it), and found no citation anywhere for
+   the "three known `.dark` bugs" claim. Un-cited claims do not get ranked
+   first in a milestone. Two cards carry this instead: SHELL-003 holds the
+   line at normal M1 priority — CI fails on a new hex literal under `app/` or
+   `lib/` outside an explicit allow-list, so the debt stops growing without a
+   big-bang migration of the existing literals. SHELL-004 is a low-priority
+   spike, blocking nothing, that finds and fixes any genuine `.dark` token
+   gap and either substantiates the "three bugs" claim (filing real ones as
+   their own cards) or strikes it. **Do NOT migrate the existing hex
+   literals** as a batch — that is a big-bang commit with no user-visible
+   payoff; the goal is to stop the debt growing, not to pay it off.
 2. **Item interaction design — inside M1, with the player.** How a matching
    item lays out, how a drag target behaves on a phone, what a wrong slot
    looks like. This is whether the item WORKS, not how it looks; an unusably
