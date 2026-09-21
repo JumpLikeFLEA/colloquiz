@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { OrderingPayload } from "./ordering";
 import type { SelectionPayload } from "./selection";
 import type { SelectionGridPayload } from "./selectionGrid";
 
@@ -41,7 +42,7 @@ interface ItemOf<TType extends string, TPayload = unknown> {
 
 export type SelectionItem = ItemOf<"selection", SelectionPayload>;
 export type SelectionGridItem = ItemOf<"selection_grid", SelectionGridPayload>;
-export type OrderingItem = ItemOf<"ordering">;
+export type OrderingItem = ItemOf<"ordering", OrderingPayload>;
 export type MatchingItem = ItemOf<"matching">;
 export type SlotsItem = ItemOf<"slots">;
 

@@ -1,23 +1,215 @@
-import { ItemEnvelopeSchema, type ItemTypeModule, type OrderingItem } from "./types";
+import { z } from "zod";
+import { authoredString } from "../courseContent";
+import {
+  ItemEnvelopeSchema,
+  type ItemScoreResult,
+  type ItemTypeModule,
+  type OrderingItem,
+  type ParseError,
+  type ParseResult,
+} from "./types";
 
 /**
- * PLACEHOLDER — scaffolding for the registry (ITEM-001) only. Replaced
- * entirely by ITEM-005, which owns the real payload shape, parse and score
- * for ordering (permutation of N elements).
+ * `ordering` — a permutation of N elements (sequencing, word order). Drag is
+ * the presentation affordance (lib/items/shuffle.ts scrambles the DISPLAY
+ * order); scoring never sees or depends on it, only on the id sequence the
+ * learner submits — see shuffle.test.ts, "no scoring depends on presentation
+ * order".
+ *
+ * `elements` is authored IN THE CORRECT ORDER — there is no separate
+ * `correctOrder` field, the same convention `selection_grid`'s rows use
+ * (a row's own `correct` flag, not a side table). Scoring rule and the
+ * response-validity boundary: see docs/decisions/0011-ordering-scoring.md.
  */
-export const orderingModule: ItemTypeModule<OrderingItem> = {
-  parse(input) {
-    const parsed = ItemEnvelopeSchema.safeParse(input);
-    if (!parsed.success || parsed.data.type !== "ordering") {
-      return { ok: false, errors: [{ field: "type", message: "not an ordering item" }] };
+
+const OrderingElementSchema = z.strictObject({
+  id: z.string().min(1),
+  text: authoredString(),
+});
+
+export type OrderingElement = z.infer<typeof OrderingElementSchema>;
+
+const OrderingPayloadSchema = z
+  .strictObject({
+    prompt: authoredString(),
+    // Fewer than 2 elements has only one possible order and measures nothing
+    // — the ordering analogue of selection's "every option correct" rejection.
+    elements: z.array(OrderingElementSchema).min(2),
+    /** A REFERENCE into the item's authored explanations; ITEM-009 resolves it. */
+    explanationRef: z.string().min(1),
+  })
+  .superRefine((payload, ctx) => {
+    const ids = payload.elements.map((element) => element.id);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["elements"],
+        message: "element ids must be distinct — a response id must identify exactly one element",
+      });
     }
+  });
+
+/** The authored shape of an `ordering` item's payload. */
+export type OrderingPayload = z.infer<typeof OrderingPayloadSchema>;
+
+const OrderingResponseSchema = z.strictObject({
+  /** The learner's submitted sequence, by element id — never by position. */
+  order: z.array(z.string().min(1)),
+});
+
+/** What a learner submits for an `ordering` item. */
+export type OrderingResponse = z.infer<typeof OrderingResponseSchema>;
+
+export type OrderingResponseErrorCode =
+  /** Not the response shape at all — a client serialization bug. */
+  | "malformed"
+  /** The same element id appears twice — a permutation cannot repeat a slot. */
+  | "duplicate_element"
+  /** Names an element id the item does not have. */
+  | "unknown_element"
+  /** Omits an element id the item has — an incomplete permutation. */
+  | "missing_element";
+
+/**
+ * Thrown by `score` for a response that is not a permutation of the item's
+ * elements. Same pattern as `SelectionResponseError` / `SelectionGridResponseError`
+ * (docs/decisions/0008 §3, 0010 §3): a thrown typed error is distinguishable
+ * from a real (possibly zero) score, where a sentinel number could not be.
+ */
+export class OrderingResponseError extends Error {
+  readonly code: OrderingResponseErrorCode;
+  readonly itemId: string;
+
+  constructor(code: OrderingResponseErrorCode, itemId: string, message: string) {
+    super(message);
+    this.name = "OrderingResponseError";
+    this.code = code;
+    this.itemId = itemId;
+  }
+}
+
+/** Renders a zod issue path as a field string: `payload.elements[0].text`. */
+function formatPath(path: ReadonlyArray<PropertyKey>, prefix: string, emptyLabel = "(item)"): string {
+  const rendered = path.reduce<string>(
+    (acc, segment) =>
+      typeof segment === "number" ? `${acc}[${segment}]` : acc ? `${acc}.${String(segment)}` : String(segment),
+    prefix,
+  );
+  return rendered || emptyLabel;
+}
+
+function toParseErrors(error: z.ZodError, prefix: string): ParseError[] {
+  return error.issues.map((issue) => ({
+    field: formatPath(issue.path, prefix),
+    message: issue.message,
+  }));
+}
+
+function parse(input: unknown): ParseResult<OrderingItem> {
+  const envelope = ItemEnvelopeSchema.safeParse(input);
+  if (!envelope.success) {
+    return { ok: false, errors: toParseErrors(envelope.error, "") };
+  }
+  if (envelope.data.type !== "ordering") {
     return {
       ok: false,
-      errors: [{ field: "(item)", message: "ordering parsing not yet implemented — see ITEM-005" }],
+      errors: [{ field: "type", message: `expected "ordering", got "${envelope.data.type}"` }],
     };
-  },
-  score(_item, _response) {
-    return { earned: 0, possible: 1, subResults: [] };
-  },
+  }
+
+  const payload = OrderingPayloadSchema.safeParse(envelope.data.payload);
+  if (!payload.success) {
+    return { ok: false, errors: toParseErrors(payload.error, "payload") };
+  }
+
+  return {
+    ok: true,
+    item: { id: envelope.data.id, type: "ordering", payload: payload.data },
+  };
+}
+
+/**
+ * Validates a response against the item and returns the submitted id
+ * sequence, or `null` for unattempted. Anything else must be a COMPLETE
+ * permutation of the item's element ids — a partial drag (some slots filled,
+ * others not) has no well-defined per-position score the way a
+ * `selection_grid`'s unanswered row does, because a missing element leaves a
+ * gap in the sequence, not an independently-scorable "no answer" at a fixed
+ * position. That is the acceptance line this enforces: duplicate and missing
+ * cases are rejected before scoring, not scored as a wrong answer.
+ */
+function readOrder(item: OrderingItem, response: unknown): string[] | null {
+  if (response === null || response === undefined) return null;
+
+  const parsed = OrderingResponseSchema.safeParse(response);
+  if (!parsed.success) {
+    throw new OrderingResponseError(
+      "malformed",
+      item.id,
+      `response is not an ordering response: ${parsed.error.issues.map((i) => `${formatPath(i.path, "", "(response)")}: ${i.message}`).join("; ")}`,
+    );
+  }
+
+  const order = parsed.data.order;
+
+  if (new Set(order).size !== order.length) {
+    throw new OrderingResponseError(
+      "duplicate_element",
+      item.id,
+      `response places the same element more than once: ${order.join(", ")}`,
+    );
+  }
+
+  const known = new Set(item.payload.elements.map((element) => element.id));
+  const unknown = order.filter((id) => !known.has(id));
+  if (unknown.length > 0) {
+    throw new OrderingResponseError(
+      "unknown_element",
+      item.id,
+      `response places element(s) not on this item: ${unknown.join(", ")}`,
+    );
+  }
+
+  const missing = [...known].filter((id) => !order.includes(id));
+  if (missing.length > 0) {
+    throw new OrderingResponseError(
+      "missing_element",
+      item.id,
+      `response omits element(s) from this item: ${missing.join(", ")}`,
+    );
+  }
+
+  return order;
+}
+
+function score(item: OrderingItem, response: unknown): ItemScoreResult {
+  const { elements, explanationRef } = item.payload;
+
+  // Not an OrderingResponseError: the RESPONSE is fine, the ITEM is broken,
+  // and `parse` rejects this shape. Only a hand-built item that skipped
+  // `parse` can reach here.
+  if (elements.length < 2) {
+    throw new Error(`ordering item "${item.id}" has fewer than 2 elements — it did not come from parse()`);
+  }
+
+  const order = readOrder(item, response);
+
+  // Unattempted: every position is wrong, same as a selection_grid row with
+  // no matching response entry.
+  const subResults = elements.map((element, position) => {
+    const correct = order !== null && order[position] === element.id;
+    return { id: element.id, correct, earned: correct ? 1 : 0, possible: 1, explanationRef };
+  });
+
+  return {
+    earned: subResults.reduce((sum, r) => sum + r.earned, 0),
+    possible: subResults.reduce((sum, r) => sum + r.possible, 0),
+    subResults,
+  };
+}
+
+export const orderingModule: ItemTypeModule<OrderingItem> = {
+  parse,
+  score,
   rendererNeeds: { inputs: ["drag", "typed"] },
 };
