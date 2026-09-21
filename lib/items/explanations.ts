@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authoredString } from "../courseContent";
+import { authoredString } from "../authoredString";
 import type { Item, ItemScoreResult, SubResult } from "./types";
 
 /**
@@ -23,9 +23,9 @@ import type { Item, ItemScoreResult, SubResult } from "./types";
  *   why that is a parse-time rejection, not a runtime blank or a warning.
  */
 
-/** An authored explanation is prose: multi-line allowed, same guard as a
- * course `prose` block (lib/courseContent.ts) — a C0 control char other than
- * `\n` is still rejected. */
+/** An authored explanation is prose: multi-line allowed via authoredString's
+ * `allowNewlines` option (lib/authoredString.ts) — a C0 control char other
+ * than `\n` is still rejected. */
 const explanationText = () => authoredString(1, { allowNewlines: true });
 
 /** `payload.explanations` — every type's own schema declares this field with

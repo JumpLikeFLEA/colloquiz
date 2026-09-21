@@ -22,8 +22,8 @@
  * "(ID/Ref/Code #..)" and answer-key labels "(Landmark/Distractor/… #..)". This is
  * idempotent and no-ops on clean batches.
  *
- * LaTeX-escaping guards (mirrors scripts/import-course.ts, since the instruction
- * now permits \(…\) math in this path too): a raw-byte backslash lint runs BEFORE
+ * LaTeX-escaping guards (the instruction now permits \(…\) math in this path
+ * too): a raw-byte backslash lint runs BEFORE
  * JSON.parse (a single-backslash \frac is a legal JSON escape that parses silently
  * to a control char), the zod schema rejects C0 control characters via
  * authoredString, and every \(…\) / \[…\] segment is KaTeX-compiled with
@@ -49,8 +49,8 @@ import katex from "katex";
 import { slugifyForTag } from "../lib/utils";
 import { hashQuestion } from "../lib/generator/dedup";
 import { DifficultySchema } from "../lib/generator/schema";
-import { lintLatexBackslashes } from "../lib/courseLint";
-import { authoredString } from "../lib/courseContent";
+import { lintLatexBackslashes } from "../lib/latexLint";
+import { authoredString } from "../lib/authoredString";
 import { segmentMath, KATEX_BASE } from "../lib/richText";
 import type { Subject } from "../types";
 
@@ -179,8 +179,8 @@ function compileErrors(text: string, where: string): string[] {
 // The lint runs on the raw file text first: a single-backslash LaTeX command
 // (\frac, \ne, \to) is a LEGAL JSON escape that JSON.parse silently mangles into a
 // control char + letter, so it must be caught before parsing destroys the evidence.
-// Now that docs/instruction_external_LLM.txt permits \(…\), the quiz path inherits
-// the identical hazard the course importer guards against.
+// Now that docs/instruction_external_LLM.txt permits \(…\), the quiz path must
+// guard against the identical hazard.
 const rawText = readFileSync(filePath, "utf-8");
 const lintIssues = lintLatexBackslashes(rawText);
 if (lintIssues.length > 0) {

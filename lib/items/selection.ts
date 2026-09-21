@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authoredString } from "../courseContent";
+import { authoredString } from "../authoredString";
 import { checkExplanationCoverage, ExplanationsSchema, FallbackExplanationSchema } from "./explanations";
 import { ItemResponseError } from "./errors";
 import {

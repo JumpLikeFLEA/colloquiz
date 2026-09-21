@@ -255,7 +255,7 @@ describe("selection — parse rejects items that cannot be scored meaningfully",
   });
 
   it("applies the shared authoredString guard to prompt and option text", () => {
-    // Same C0-control rule as lib/courseContent.ts — no newline smuggled into a stem.
+    // Same C0-control rule as lib/authoredString.ts — no newline smuggled into a stem.
     expect(reject({ ...base, prompt: "two\nlines" })[0].field).toBe("payload.prompt");
     expect(reject({ ...base, options: [{ id: "a", text: "bad\ttab" }, { id: "b", text: "ok" }] })[0].field).toBe(
       "payload.options[0].text",

@@ -16,10 +16,10 @@ import { ItemPlaygroundClient } from "./ItemPlaygroundClient";
  *
  * Gated on BOTH `NODE_ENV !== "production"` (notFound() below — literally
  * unreachable in a production build/deploy, admin or not) AND the same
- * admin-role check every other admin/** page uses (app/(main)/app/admin/
- * courses/page.tsx, admin/review/page.tsx). Two independent gates because
- * this card's title is "dev-only", not just "admin-only" — a production
- * deploy must never serve this route regardless of who is signed in.
+ * admin-role check every other admin/** page uses (admin/review/page.tsx).
+ * Two independent gates because this card's title is "dev-only", not just
+ * "admin-only" — a production deploy must never serve this route regardless
+ * of who is signed in.
  */
 export default async function ItemPlaygroundPage() {
   if (process.env.NODE_ENV === "production") {

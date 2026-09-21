@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { lintLatexBackslashes } from "./courseLint";
+import { lintLatexBackslashes } from "./latexLint";
 
 // NOTE ON ESCAPING IN THIS FILE: the lint runs over RAW FILE BYTES. A TS literal
 // `"\\frac"` is the 5-char string `\frac` (one backslash) — i.e. a file authored

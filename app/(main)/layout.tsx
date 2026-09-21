@@ -55,31 +55,13 @@ export default async function MainLayout({
     ? getActiveSessionSummary(supabase, user.id).catch(() => null)
     : Promise.resolve(null);
 
-  // "Has at least one course_editors row." Non-admin editors need the
-  // /admin/courses nav entry to reach their editable courses (RLS "self read",
-  // 029). NOT gated on COURSES_ENABLED: the editor entry links to /admin/courses
-  // (which AppSidebar does not flag-filter — only the learner /courses nav is),
-  // and the whole authoring surface works while the feature is dormant so
-  // content can be prepared before launch. Chained off profilePromise (needs
-  // isAdmin from the profile row) rather than awaited — still concurrent with
-  // duelCountPromise/unreadPromise/sessionPromise, unlike the old serial
-  // trailing query.
-  const courseEditorPromise = profilePromise.then(async (profile) => {
-    if (!profile || profile.role === "admin") return false;
-    const { count } = await supabase
-      .from("course_editors")
-      .select("course_id", { head: true, count: "exact" });
-    return (count ?? 0) > 0;
-  });
-
   // The sidebar's three streamed slots (footer card, duels badge, role
   // sections) all read this one promise, so they resolve together instead of
   // each racing its own round trip.
   const sidebarPromise: Promise<SidebarData> = Promise.all([
     profilePromise,
     duelCountPromise,
-    courseEditorPromise,
-  ]).then(([data, duelCount, isCourseEditor]) => {
+  ]).then(([data, duelCount]) => {
     if (!data) {
       return {
         profile: {
@@ -91,7 +73,6 @@ export default async function MainLayout({
         },
         isAdmin: false,
         isAuthor: false,
-        isCourseEditor,
         duelCount,
       };
     }
@@ -108,7 +89,6 @@ export default async function MainLayout({
       },
       isAdmin: data.role === "admin",
       isAuthor: !!data.is_author || data.role === "admin",
-      isCourseEditor,
       duelCount,
     };
   });

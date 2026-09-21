@@ -1,7 +1,7 @@
 /**
  * Client-safe segmentation for math-aware rich text.
  *
- * Course theory, quiz stems, options and explanations may embed LaTeX with
+ * Quiz stems, options and explanations may embed LaTeX with
  * `\(…\)` (inline) and `\[…\]` (display) delimiters. `$…$` is deliberately NOT
  * a delimiter: the existing bank contains literal dollar amounts (e.g. a
  * Psychology question whose stem, an option and its `correct_answer` all read

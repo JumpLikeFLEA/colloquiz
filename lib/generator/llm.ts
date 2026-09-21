@@ -81,18 +81,3 @@ export async function callCritic(systemPrompt: string, userPrompt: string): Prom
   const text = await callLLM({ systemPrompt, userPrompt, modelId: CRITIC_MODEL });
   return extractJSON(text);
 }
-
-// Blind answer-solving (course verification, Layer 2). Uses the critic model at a
-// non-zero temperature so k independent samples vary — self-consistency across the
-// samples is what catches an arithmetic slip that a single deterministic pass would
-// reproduce. Returns raw text (the caller extracts + parses per sample, tolerating
-// a malformed one as an abstention rather than failing the batch).
-const BLIND_SOLVER_TEMPERATURE = 0.8;
-export async function callBlindSolver(systemPrompt: string, userPrompt: string): Promise<string> {
-  return callLLM({
-    systemPrompt,
-    userPrompt,
-    modelId: CRITIC_MODEL,
-    temperature: BLIND_SOLVER_TEMPERATURE,
-  });
-}

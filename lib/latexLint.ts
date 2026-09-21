@@ -13,8 +13,9 @@
  *
  * So the real fix is upstream, on the RAW file bytes before `JSON.parse`. This
  * catches both the loud and the silent case with a `line:col` message naming the
- * offending token and the fix. (The zod C0-control refinement in lib/courseContent
- * is the belt-and-braces second layer for the silent case; this is the first.)
+ * offending token and the fix. (The zod C0-control refinement in
+ * lib/authoredString is the belt-and-braces second layer for the silent case;
+ * this is the first.)
  *
  * Every backslash in valid JSON is inside a string literal and begins an escape,
  * so scanning the whole file text is sound — there is no non-string backslash to

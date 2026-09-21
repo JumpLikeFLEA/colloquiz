@@ -155,9 +155,6 @@ refactor.
     `.claude/settings.json`; injects the `CONTEXT SOFT LIMIT` message and
     denies non-essential tool calls past `CONTEXT HARD LIMIT` (see "Session
     handoff"). **Planned (M0).**
-  - `scripts/import-course.ts` — idempotent course importer, keyed on
-    `authored_key`. Archives or rejects, never DELETEs. Imports create
-    DRAFTS; nothing it writes is publicly readable until published.
 - `docs/`
   - `handoff.md` — purpose, audience, scope, principles, failure modes.
   - `ui-decisions.md` — the running log of deliberate UI decisions (until
@@ -187,8 +184,6 @@ node scripts/board/next-card.mjs
 node scripts/board/board-move.mjs <KEY> "In progress"
 node scripts/board/board-status.mjs
 node scripts/board/bootstrap-board.mjs   # writes issues; ASK FIRST
-
-npx tsx scripts/import-course.ts <file>  # writes DRAFTS only
 
 gh issue view <n> --comments
 ```

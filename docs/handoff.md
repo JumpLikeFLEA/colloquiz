@@ -121,9 +121,9 @@ What it means concretely:
   group's layout, never above it. `DuelRealtime` is already scoped this way;
   do not lift it.
 - Heavy Colloquiz dependencies must not appear in an English route's bundle:
-  Recharts (Progress charts), KaTeX (course maths), and any Framer Motion the
-  English surface doesn't itself use. KaTeX in particular is for Colloquiz
-  Calculus, not for English.
+  Recharts (Progress charts), KaTeX (quiz-question maths), and any Framer
+  Motion the English surface doesn't itself use. KaTeX in particular is for
+  Colloquiz quiz questions, not for English.
 - The landing and the free lesson render WITHOUT an authenticated Supabase
   session, so an anonymous visitor pays for no auth round trip and no
   `@supabase/ssr` client JS on the critical path.
@@ -197,8 +197,9 @@ and typing into it score identically.
 Every item returns `{ earned, possible, subResults[] }`. Lesson score is
 `Σearned / Σpossible`. The denominator is constant because English lessons are
 fixed authored sequences — the same items in the same order for every learner.
-This is what distinguishes them from Colloquiz course stage checks, which draw
-from a pool and therefore fix the denominator in config instead.
+(The retired Colloquiz course feature drew stage checks from a pool instead,
+fixing the denominator in config rather than in the authored sequence — see
+docs/decisions/0018 Decision 1.)
 
 Video and images are THEORY BLOCKS, not item types; they extend the existing
 `TheoryBlock` union.
@@ -329,7 +330,3 @@ most. Do not build a placeholder landing page.
   split is not.
 - Polar vs Paddle (M3 `type:decision`).
 - Pricing model: per-course purchase, bundle, or subscription.
-- The six M1 content-model decisions — reuse or replace the Colloquiz course
-  schema, where items live, import format, publish semantics, bilingual
-  content shape, minimum authoring UI. Blocked on the M1 audit; see
-  `prompts/m1-backlog.md`.
