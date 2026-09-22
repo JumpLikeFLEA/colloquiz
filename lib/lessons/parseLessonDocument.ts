@@ -1,0 +1,139 @@
+import { z } from "zod";
+import { parseItem, type Item } from "../items";
+import { TheoryBlockSchema, type TheoryBlock } from "./theoryBlocks";
+
+/**
+ * The single validator for a lesson document (CNT-003; 0018 Decision 2). A
+ * document is an ordered array of blocks, each either a THEORY block (parsed
+ * here, lib/lessons/theoryBlocks.ts) or a PRACTICE block — a `lib/items`
+ * item, parsed by delegating to `parseItem` so every 0008-0017 invariant
+ * (including explanation coverage) applies unchanged and is enforced in
+ * exactly one place.
+ *
+ * A practice block IS an item envelope plus `kind: 'practice'`: its `id`,
+ * `type` and `payload` are passed to `parseItem` as-is (the extra `kind` key
+ * is silently ignored by `ItemEnvelopeSchema`, which is non-strict — see
+ * lib/items/types.ts). This means a lesson document needs no separate
+ * "practice payload" schema of its own; the item registry already owns that
+ * contract.
+ */
+
+export interface LessonParseError {
+  /** "<blockId>: <field>" when the underlying error names a field, else just
+   * "<blockId>" — always names the block, per CNT-003's acceptance line.
+   * Falls back to a positional "blocks[N]" only when the block's own `id`
+   * could not be read at all (the id field itself is what's broken). */
+  field: string;
+  message: string;
+}
+
+export type LessonPracticeBlock = { id: string; kind: "practice"; item: Item };
+export type LessonBlock = TheoryBlock | LessonPracticeBlock;
+export type LessonDocument = LessonBlock[];
+
+export type LessonParseResult =
+  | { ok: true; document: LessonDocument }
+  | { ok: false; errors: LessonParseError[] };
+
+function blockLabel(raw: unknown, index: number): string {
+  if (typeof raw === "object" && raw !== null && "id" in raw) {
+    const id = (raw as { id: unknown }).id;
+    if (typeof id === "string" && id.length > 0) return id;
+  }
+  return `blocks[${index}]`;
+}
+
+function prefixField(label: string, field: string): string {
+  return field ? `${label}: ${field}` : label;
+}
+
+function readKind(raw: unknown): "theory" | "practice" | undefined {
+  if (typeof raw !== "object" || raw === null || !("kind" in raw)) return undefined;
+  const kind = (raw as { kind: unknown }).kind;
+  return kind === "theory" || kind === "practice" ? kind : undefined;
+}
+
+export function parseLessonDocument(input: unknown): LessonParseResult {
+  const arrayCheck = z.array(z.unknown()).safeParse(input);
+  if (!arrayCheck.success) {
+    return { ok: false, errors: [{ field: "", message: "lesson document must be a JSON array of blocks" }] };
+  }
+  const rawBlocks = arrayCheck.data;
+
+  const errors: LessonParseError[] = [];
+  const blocks: LessonBlock[] = [];
+  const seenIds = new Map<string, number>();
+
+  rawBlocks.forEach((raw, index) => {
+    const label = blockLabel(raw, index);
+    const kind = readKind(raw);
+
+    if (kind === undefined) {
+      errors.push({
+        field: label,
+        message: `block has no valid "kind" (expected "theory" or "practice"), got ${JSON.stringify(
+          (raw as { kind?: unknown })?.kind,
+        )}`,
+      });
+      return;
+    }
+
+    if (kind === "theory") {
+      const result = TheoryBlockSchema.safeParse(raw);
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          errors.push({
+            field: prefixField(label, formatIssuePath(issue.path)),
+            message: issue.message,
+          });
+        }
+        return;
+      }
+      recordId(result.data.id, index, label, seenIds, errors);
+      blocks.push(result.data);
+      return;
+    }
+
+    // kind === "practice": delegate entirely to the item registry.
+    const result = parseItem(raw);
+    if (!result.ok) {
+      for (const issue of result.errors) {
+        errors.push({ field: prefixField(label, issue.field), message: issue.message });
+      }
+      return;
+    }
+    recordId(result.item.id, index, label, seenIds, errors);
+    blocks.push({ id: result.item.id, kind: "practice", item: result.item });
+  });
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true, document: blocks };
+}
+
+function recordId(
+  id: string,
+  index: number,
+  label: string,
+  seenIds: Map<string, number>,
+  errors: LessonParseError[],
+): void {
+  const prior = seenIds.get(id);
+  if (prior !== undefined) {
+    errors.push({
+      field: label,
+      message: `duplicate block id "${id}" (already used by blocks[${prior}]) — every block id must be unique within the lesson`,
+    });
+    return;
+  }
+  seenIds.set(id, index);
+}
+
+function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
+  return path.reduce<string>(
+    (acc, segment) =>
+      typeof segment === "number" ? `${acc}[${segment}]` : acc ? `${acc}.${String(segment)}` : String(segment),
+    "",
+  );
+}
