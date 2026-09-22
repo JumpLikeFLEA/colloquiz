@@ -9,6 +9,7 @@ import {
   BookOpen,
   ChevronDown,
   GraduationCap,
+  Library,
   LogOut,
   Medal,
   MessageSquare,
@@ -99,6 +100,11 @@ const adminItems: NavItem[] = [
     label: "Quiz Builder",
     href: "/app/admin/quiz-builder",
     icon: Shield,
+  },
+  {
+    label: "Courses",
+    href: "/app/admin/courses",
+    icon: Library,
   },
   {
     label: "Review Queue",
