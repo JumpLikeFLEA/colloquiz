@@ -96,6 +96,54 @@ block for the partner's review, because it changes her exercise design.
 - Paper-only instructions ("write R or I", "circle", "cover it with your
   hand", "check Part 2") are rewritten for the screen.
 
+## Field shapes (CNT-007, implemented in `lib/lessons/`)
+
+Recorded here rather than in 0020 because these are 0022's own decisions
+(Decisions 2-4 above); 0020 stays the record of CNT-003's original seven.
+
+**`self_check`** (`lib/lessons/theoryBlocks.ts`) — a theory block, fields
+beyond `id`/`kind`/`type`:
+
+| field | shape | notes |
+|---|---|---|
+| `prompt` | `InlineContent` | the task itself |
+| `response` | `'none' \| 'short' \| 'long'` | required; `'none'` is a check-your-thinking reveal with no writing box |
+| `modelAnswer` | `InlineContent` | required — nothing to reveal without it |
+| `checklist` | `string[]`, optional, min 1 if present | self-assessment items |
+
+Never passes through `parseItem` — it is registered as a THEORY block
+(`THEORY_BLOCK_TYPES`), so `parseLessonDocument` never routes it there. This
+is what makes "contributes nothing to the aggregate/count" true by
+construction rather than by a special-case check: `aggregateLessonScore`
+only ever sees items its caller explicitly scored via `scoreItem`, and the
+new `countPracticeBlocks` helper (`lib/lessons/parseLessonDocument.ts`, the
+practice-block count a future publish route feeds to `publish_lesson`'s
+`p_item_count`, migration 041) filters strictly on `kind === "practice"`.
+Both are exercised in `parseLessonDocument.test.ts`.
+
+**`table`** (`lib/lessons/theoryBlocks.ts`) — fields beyond `id`/`kind`/`type`:
+
+| field | shape | notes |
+|---|---|---|
+| `header` | `InlineContent[]`, min 1 | one entry per column |
+| `rows` | `InlineContent[][]`, min 1 | each row's length must equal `header.length` |
+| `caption` | `InlineContent`, optional | |
+
+A row/header length mismatch is a `superRefine` issue at path `rows[i]`,
+which `parseLessonDocument`'s existing `formatIssuePath` + block-label
+prefixing turns into `"<blockId>: rows[i]"` with no new plumbing — the same
+mechanism CNT-003 already uses for every other field-level error.
+
+**Marks** (`lib/lessons/inline.ts`) — `INLINE_MARKS` gains `mark_a` and
+`mark_b`, alongside the existing `emphasis`/`english`. Nesting rule: `mark_a`
+and `mark_b` are **mutually exclusive on a single run** (a run cannot be
+simultaneously in both contrasting categories of the same highlighting
+dimension), enforced by a `refine` on `InlineRunSchema.marks` alongside the
+existing no-repeat refine. Each of `mark_a`/`mark_b` combines freely with
+`emphasis` and/or `english` — a run may be `["mark_a", "emphasis"]`,
+`["mark_b", "english"]`, or all three, just never `mark_a` and `mark_b`
+together. Covered by `inline.test.ts`.
+
 ## What would make us revisit this
 
 - **LLM grading arrives.** `self_check` with a response box is the

@@ -6,6 +6,8 @@ import {
   ImageBlockSchema,
   ListBlockSchema,
   ProseBlockSchema,
+  SelfCheckBlockSchema,
+  TableBlockSchema,
   TheoryBlockSchema,
   VideoBlockSchema,
 } from "./theoryBlocks";
@@ -120,11 +122,99 @@ describe("video", () => {
   });
 });
 
+describe("self_check", () => {
+  const base = {
+    id: "sc1",
+    kind: "theory" as const,
+    type: "self_check" as const,
+    prompt: text,
+    response: "short" as const,
+    modelAnswer: text,
+  };
+
+  it("accepts a valid self_check with no checklist", () => {
+    expect(SelfCheckBlockSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("accepts each response value, including 'none' for a check-your-thinking reveal", () => {
+    for (const response of ["none", "short", "long"]) {
+      expect(SelfCheckBlockSchema.safeParse({ ...base, response }).success).toBe(true);
+    }
+  });
+
+  it("accepts an optional checklist of strings", () => {
+    const result = SelfCheckBlockSchema.safeParse({ ...base, checklist: ["Used past simple", "Used a time marker"] });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a missing model answer — it is required, revealed on request", () => {
+    const { modelAnswer: _modelAnswer, ...rest } = base;
+    expect(SelfCheckBlockSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects an unknown response value", () => {
+    expect(SelfCheckBlockSchema.safeParse({ ...base, response: "essay" }).success).toBe(false);
+  });
+
+  it("rejects an empty checklist array", () => {
+    expect(SelfCheckBlockSchema.safeParse({ ...base, checklist: [] }).success).toBe(false);
+  });
+});
+
+describe("table", () => {
+  const header = [text, [{ text: "Answer" }]];
+  const rows = [
+    [text, [{ text: "row 1 col 2" }]],
+    [text, [{ text: "row 2 col 2" }]],
+  ];
+  const base = { id: "t1", kind: "theory" as const, type: "table" as const, header, rows };
+
+  it("accepts a valid table with matching row/header column counts", () => {
+    expect(TableBlockSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("accepts an optional caption", () => {
+    expect(TableBlockSchema.safeParse({ ...base, caption: text }).success).toBe(true);
+  });
+
+  it("rejects a row with a different column count than the header, naming the row", () => {
+    const result = TableBlockSchema.safeParse({ ...base, rows: [[text], [text, [{ text: "ok" }]]] });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.path.join(".") === "rows.0")).toBe(true);
+    }
+  });
+
+  it("rejects a document with zero rows or zero header cells", () => {
+    expect(TableBlockSchema.safeParse({ ...base, rows: [] }).success).toBe(false);
+    expect(TableBlockSchema.safeParse({ ...base, header: [] }).success).toBe(false);
+  });
+});
+
 describe("TheoryBlockSchema (the discriminated union)", () => {
   it("routes to the right member by `type`", () => {
     expect(TheoryBlockSchema.safeParse({ id: "h1", kind: "theory", type: "heading", text }).success).toBe(true);
     expect(
       TheoryBlockSchema.safeParse({ id: "v1", kind: "theory", type: "video", youtubeId: "dQw4w9WgXcQ" }).success,
+    ).toBe(true);
+    expect(
+      TheoryBlockSchema.safeParse({
+        id: "sc1",
+        kind: "theory",
+        type: "self_check",
+        prompt: text,
+        response: "none",
+        modelAnswer: text,
+      }).success,
+    ).toBe(true);
+    expect(
+      TheoryBlockSchema.safeParse({
+        id: "t1",
+        kind: "theory",
+        type: "table",
+        header: [text],
+        rows: [[text]],
+      }).success,
     ).toBe(true);
   });
 

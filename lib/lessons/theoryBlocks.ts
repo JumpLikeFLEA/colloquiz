@@ -23,6 +23,8 @@ export const THEORY_BLOCK_TYPES = [
   "list",
   "image",
   "video",
+  "self_check",
+  "table",
 ] as const;
 export type TheoryBlockType = (typeof THEORY_BLOCK_TYPES)[number];
 
@@ -109,6 +111,56 @@ export const VideoBlockSchema = z.strictObject({
   caption: InlineContentSchema.optional(),
 });
 
+/** 0022 Decision 2: an unscored theory-side block for open writing / "check
+ * your thinking" reveals. Never passes through `parseItem` — it is a THEORY
+ * block, not a practice one, so it contributes nothing to `parseLessonDocument`'s
+ * practice-item handling, nothing to `aggregateLessonScore`'s Σearned/Σpossible
+ * (docs/decisions/0016), and nothing to `countPracticeBlocks`
+ * (parseLessonDocument.ts), which the future publish path uses for
+ * `published_item_count` — see lib/lessons/parseLessonDocument.test.ts. */
+export const SELF_CHECK_RESPONSES = ["none", "short", "long"] as const;
+export type SelfCheckResponse = (typeof SELF_CHECK_RESPONSES)[number];
+
+export const SelfCheckBlockSchema = z.strictObject({
+  ...TheoryBlockBase,
+  type: z.literal("self_check"),
+  prompt: InlineContentSchema,
+  /** Whether the learner sees a response box, and how big — 'none' covers a
+   * "check your thinking" reveal with no writing prompt at all. */
+  response: z.enum(SELF_CHECK_RESPONSES),
+  /** Required, not optional: a self-check with no model answer gives the
+   * learner nothing to check against. Revealed on request, per 0022. */
+  modelAnswer: InlineContentSchema,
+  checklist: z.array(authoredString()).min(1).optional(),
+});
+
+/** 0022 Decision 3: vocabulary tables, form/question tables, rubrics. Cells
+ * carry the same inline markup as prose. `rows[i].length` must equal
+ * `header.length` — checked here via `superRefine` (not per-cell schema)
+ * so the error names the offending ROW, per CNT-007's acceptance line, and
+ * appears at path `rows[i]`, which `parseLessonDocument`'s existing
+ * `formatIssuePath` + block-label prefixing already turns into
+ * "<blockId>: rows[i]" with no extra plumbing. */
+export const TableBlockSchema = z
+  .strictObject({
+    ...TheoryBlockBase,
+    type: z.literal("table"),
+    header: z.array(InlineContentSchema).min(1),
+    rows: z.array(z.array(InlineContentSchema)).min(1),
+    caption: InlineContentSchema.optional(),
+  })
+  .superRefine((table, ctx) => {
+    table.rows.forEach((row, index) => {
+      if (row.length !== table.header.length) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rows", index],
+          message: `row has ${row.length} cell(s), header has ${table.header.length} — every row must match the header's column count`,
+        });
+      }
+    });
+  });
+
 export const TheoryBlockSchema = z.discriminatedUnion("type", [
   HeadingBlockSchema,
   ProseBlockSchema,
@@ -117,6 +169,8 @@ export const TheoryBlockSchema = z.discriminatedUnion("type", [
   ListBlockSchema,
   ImageBlockSchema,
   VideoBlockSchema,
+  SelfCheckBlockSchema,
+  TableBlockSchema,
 ]);
 
 export type TheoryBlock = z.infer<typeof TheoryBlockSchema>;

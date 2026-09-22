@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseLessonDocument } from "./parseLessonDocument";
+import { aggregateLessonScore, scoreItem, type LessonItemInput } from "../items";
+import { countPracticeBlocks, parseLessonDocument } from "./parseLessonDocument";
 
 function validSelectionBlock(id: string) {
   return {
@@ -108,6 +109,103 @@ describe("parseLessonDocument — rejections", () => {
     if (!result.ok) {
       expect(result.errors.some((e) => e.message.includes("duplicate block id"))).toBe(true);
     }
+  });
+});
+
+function validSelfCheckBlock(id: string) {
+  return {
+    id,
+    kind: "theory",
+    type: "self_check",
+    prompt: [{ text: "Rewrite this sentence using present perfect." }],
+    response: "short",
+    modelAnswer: [{ text: "I have already eaten." }],
+  };
+}
+
+function validTableBlock(id: string) {
+  return {
+    id,
+    kind: "theory",
+    type: "table",
+    header: [[{ text: "Verb" }], [{ text: "Past participle" }]],
+    rows: [
+      [[{ text: "go" }], [{ text: "gone" }]],
+      [[{ text: "eat" }], [{ text: "eaten" }]],
+    ],
+  };
+}
+
+describe("parseLessonDocument — self_check contributes nothing to scoring or the item count", () => {
+  it("countPracticeBlocks excludes self_check and every other theory block", () => {
+    const result = parseLessonDocument([validProseBlock("p1"), validSelfCheckBlock("sc1"), validSelectionBlock("q1")]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(countPracticeBlocks(result.document)).toBe(1);
+  });
+
+  it("a document of only self_check + theory blocks counts zero practice blocks", () => {
+    const result = parseLessonDocument([validSelfCheckBlock("sc1"), validProseBlock("p1")]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(countPracticeBlocks(result.document)).toBe(0);
+  });
+
+  it("feeding only the practice blocks to aggregateLessonScore excludes self_check's contribution entirely", () => {
+    const result = parseLessonDocument([validSelfCheckBlock("sc1"), validSelectionBlock("q1")]);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const inputs: LessonItemInput[] = result.document
+      .filter((block): block is Extract<typeof block, { kind: "practice" }> => block.kind === "practice")
+      .map((block) => ({ itemId: block.id, result: scoreItem(block.item, { selectedOptionIds: ["a"] }) }));
+
+    // Only q1 (possible: 1) enters the aggregate; sc1 contributes nothing —
+    // if it did, Σpossible would be > 1.
+    expect(inputs).toHaveLength(1);
+    const lesson = aggregateLessonScore(inputs);
+    expect(lesson.possible).toBe(1);
+  });
+});
+
+describe("parseLessonDocument — self_check never reaches parseItem", () => {
+  it("a self_check block with fields that would fail parseItem still parses as theory", () => {
+    // No "payload" at all — would be an instant parseItem rejection — yet
+    // self_check parses fine because it never goes through that path.
+    const result = parseLessonDocument([validSelfCheckBlock("sc1")]);
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("parseLessonDocument — table row/column mismatch", () => {
+  it("rejects a table row with a different column count than the header, naming the block id and row", () => {
+    const badTable = { ...validTableBlock("tbl1"), rows: [[[{ text: "go" }]], [[{ text: "eat" }], [{ text: "eaten" }]]] };
+    const result = parseLessonDocument([badTable]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((e) => e.field === "tbl1: rows[0]")).toBe(true);
+    }
+  });
+});
+
+describe("parseLessonDocument — a lesson using every new block and mark", () => {
+  it("accepts self_check, table, and mark_a/mark_b inline marks together with existing blocks", () => {
+    const result = parseLessonDocument([
+      validProseBlock("p1"),
+      { id: "hl1", kind: "theory", type: "prose", text: [{ text: "have eaten", marks: ["mark_a"] }, { text: " vs " }, { text: "ate", marks: ["mark_b"] }] },
+      validTableBlock("tbl1"),
+      validSelfCheckBlock("sc1"),
+      validSelectionBlock("q1"),
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.document).toHaveLength(5);
+      expect(countPracticeBlocks(result.document)).toBe(1);
+    }
+  });
+
+  it("an existing CNT-003 fixture still parses unchanged", () => {
+    const result = parseLessonDocument([validProseBlock("p1"), validSelectionBlock("q1"), validProseBlock("p2")]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.document).toHaveLength(3);
   });
 });
 

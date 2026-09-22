@@ -13,13 +13,31 @@ describe("InlineRunSchema", () => {
     expect(InlineRunSchema.safeParse({ text: "hello", marks: ["emphasis", "english"] }).success).toBe(true);
   });
 
-  it("rejects a mark outside emphasis/english", () => {
+  it("rejects a mark outside emphasis/english/mark_a/mark_b", () => {
     const result = InlineRunSchema.safeParse({ text: "hello", marks: ["strikethrough"] });
     expect(result.success).toBe(false);
   });
 
   it("rejects a repeated mark", () => {
     const result = InlineRunSchema.safeParse({ text: "hello", marks: ["emphasis", "emphasis"] });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts mark_a or mark_b alone, and combined with emphasis and/or english", () => {
+    expect(InlineRunSchema.safeParse({ text: "hello", marks: ["mark_a"] }).success).toBe(true);
+    expect(InlineRunSchema.safeParse({ text: "hello", marks: ["mark_b"] }).success).toBe(true);
+    expect(InlineRunSchema.safeParse({ text: "hello", marks: ["mark_a", "emphasis"] }).success).toBe(true);
+    expect(InlineRunSchema.safeParse({ text: "hello", marks: ["mark_b", "english"] }).success).toBe(true);
+    expect(InlineRunSchema.safeParse({ text: "hello", marks: ["mark_a", "emphasis", "english"] }).success).toBe(true);
+  });
+
+  it("rejects mark_a and mark_b together — contrasting categories, mutually exclusive on one run", () => {
+    const result = InlineRunSchema.safeParse({ text: "hello", marks: ["mark_a", "mark_b"] });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects mark_a and mark_b together even alongside emphasis/english", () => {
+    const result = InlineRunSchema.safeParse({ text: "hello", marks: ["mark_a", "mark_b", "emphasis", "english"] });
     expect(result.success).toBe(false);
   });
 

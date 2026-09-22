@@ -112,6 +112,19 @@ export function parseLessonDocument(input: unknown): LessonParseResult {
   return { ok: true, document: blocks };
 }
 
+/**
+ * The practice-block count the future publish route feeds to
+ * `publish_lesson`'s `p_item_count` parameter (migration 041, 0018 Decision
+ * 4) — counted here, once, rather than reintrospected per caller. Filters on
+ * `kind === "practice"`, so a theory block — including `self_check`, which
+ * exists specifically to hold ungraded content (docs/decisions/0022 Decision
+ * 2) — never contributes, with no self_check-specific branch needed: it is
+ * simply not a practice block.
+ */
+export function countPracticeBlocks(document: LessonDocument): number {
+  return document.filter((block) => block.kind === "practice").length;
+}
+
 function recordId(
   id: string,
   index: number,
