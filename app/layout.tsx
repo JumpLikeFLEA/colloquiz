@@ -7,9 +7,14 @@ import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
+// "cyrillic" is required, not decorative: SHELL-002 / docs/decisions/0018
+// Decision 5 — Alliengll course content is Russian, and no fallback to a
+// system font is allowed anywhere it renders. Geist Sans is the only face
+// Alliengll content uses (Geist Mono, below, is Colloquiz-quiz-only).
+// Coverage is PROVEN, not assumed — see docs/decisions/0021-shell002-geist-cyrillic-coverage.md.
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 // Used only on a handful of admin/quiz components (StageEditor, review
