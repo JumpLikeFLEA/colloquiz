@@ -555,7 +555,8 @@ export const CARDS = [
       'Creating a course\'s first lesson writes `in_free_sample = true`. Every later lesson defaults to false. Nothing derives it from `ordinal`.',
       'Public storage bucket for lesson images: writes are scoped to course editors, and limits are declared in one `lib/` constant and enforced again on the bucket (the avatar precedent).',
       'Full verification protocol (this card touches entitlement and RLS), run against seeded, non-empty data with the output printed: `anon`, a signed-in non-buyer, a signed-in buyer (seeded entitlement row) and an editor; each against a free-sample lesson, a paid lesson and an unpublished draft; a 12-cell matrix, every cell matching 0018.',
-      'Handed over unapplied with the SQL to run, as migration 040, after CNT-001\'s 039.',
+      'The migration applies cleanly to a local Supabase replaying every migration from 001 (supabase start + db reset), with output printed, before it is handed over.',
+      'Handed over unapplied with the SQL to run, as migration 041, after CNT-001\'s 039 and 040 (040 deletes the two retired `courses`/`course_editors` rows so this migration starts from an empty table).',
     ],
   },
   {
