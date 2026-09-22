@@ -104,7 +104,7 @@ export function SelectionGridRenderer({
 }
 
 function choiceClassName(active: boolean): string {
-  return `min-h-9 min-w-16 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer disabled:cursor-not-allowed ${
+  return `min-h-11 min-w-16 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer disabled:cursor-not-allowed ${
     active
       ? "border-brand bg-brand-subtle text-brand-text"
       : "border-border bg-background text-muted-foreground hover:border-brand/40"

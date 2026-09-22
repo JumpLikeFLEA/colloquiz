@@ -14,6 +14,14 @@ import { LessonPlayerDemoClient } from "./LessonPlayerDemoClient";
  *
  * Gated the same way: unreachable in a production build (`notFound()`) AND
  * admin-role-only in dev.
+ *
+ * `attemptId` (docs/decisions/0029 Decision 1) is generated here, per
+ * request, with `crypto.randomUUID()` — not memoized, not `useId()`. This
+ * page already reads `cookies()` (via `createClient()`/`getUser()` below), a
+ * Request-time API that forces the route into dynamic (per-request)
+ * rendering under this repo's default `dynamic: 'auto'` route segment config
+ * — the same mechanism `item-playground/page.tsx` already relies on with no
+ * explicit `dynamic` export, so no new caching behavior is introduced here.
  */
 
 const DEMO_DOCUMENT = [
@@ -154,6 +162,8 @@ export default async function LessonPlayerDemoPage() {
   const user = await getUser();
   if (!user) return null;
 
+  const attemptId = crypto.randomUUID();
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -181,7 +191,7 @@ export default async function LessonPlayerDemoPage() {
           player shell (app/components/lesson-player). Not the M2 route.
         </p>
       </div>
-      <LessonPlayerDemoClient document={DEMO_DOCUMENT} />
+      <LessonPlayerDemoClient document={DEMO_DOCUMENT} attemptId={attemptId} />
     </div>
   );
 }

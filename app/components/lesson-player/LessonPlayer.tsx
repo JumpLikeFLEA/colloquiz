@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
@@ -12,10 +12,9 @@ import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
 export interface PracticeRendererProps {
   block: LessonPracticeBlock;
   /** Seeds `lib/items/shuffle.ts`'s per-attempt-and-item presentation order
-   * (PLAY-002 acceptance). Generated once per `LessonPlayer` mount via
-   * `useId()` below — a remount (a retry) gets a fresh id and therefore a
-   * fresh scramble, matching shuffle.ts's documented contract, with no
-   * random-id generation or SSR hydration mismatch to manage. */
+   * (PLAY-002 acceptance). Passed straight through from `LessonPlayerProps.
+   * attemptId` — see that field's doc comment for why `LessonPlayer` does not
+   * generate this itself. */
   attemptId: string;
   /** Called by a real per-type renderer (PLAY-002..004) once the learner
    * submits a response. Recorded in local session state only — attempt
@@ -28,6 +27,15 @@ export interface LessonPlayerProps {
    * CNT-003/0018 Decision 2 ("the database is canonical", nothing reads a
    * pre-validated shape from elsewhere). */
   document: unknown;
+  /** Seeds `lib/items/shuffle.ts` presentation order (docs/decisions/0029
+   * Decision 1). MUST be unpredictable and distinct per learner/attempt —
+   * `LessonPlayer` does not generate one itself (a prior version used
+   * `useId()`, which is tree-position-derived, not random: every fresh
+   * server-rendered load produced the SAME id for every visitor, making the
+   * "shuffle" fixed per lesson rather than per attempt). The caller supplies
+   * it — `crypto.randomUUID()` today (no attempt storage exists yet, M2), the
+   * real server-issued attempt id once M2 lands. */
+  attemptId: string;
   /** Renders one practice block and reports its score back. Defaults to a
    * placeholder — no item type has an interactive renderer until
    * PLAY-002..004 land. */
@@ -43,10 +51,9 @@ export interface LessonPlayerProps {
  * (0016/0017, wrapped by lib/lessonPlayer/session.ts) — nothing here is
  * persisted; attempt storage is M2.
  */
-export function LessonPlayer({ document, practiceRenderer }: LessonPlayerProps) {
+export function LessonPlayer({ document, attemptId, practiceRenderer }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
   const [results, setResults] = useState<LessonSessionResults>({});
-  const attemptId = useId();
 
   if (!parsed.ok) {
     return <LessonPlayerError errors={parsed.errors} />;
