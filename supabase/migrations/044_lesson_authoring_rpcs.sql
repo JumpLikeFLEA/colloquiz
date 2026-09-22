@@ -87,6 +87,32 @@ BEGIN;
 ALTER TABLE lessons ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
 
 
+-- ── has_course_entitlement: the one place course_entitlements is queried ────
+-- SECURITY DEFINER so neither caller (can_read_lesson, itself already
+-- SECURITY DEFINER, nor the "lessons: published read" RLS policy, which
+-- runs as the CALLING role) ever needs a table-level grant on
+-- course_entitlements to ask this question — the same no-grant-needed shape
+-- CLAUDE.md's player_ratings rule already uses ("RLS on with no policies
+-- and no grants; only the tier reaches the client"), and the reason a
+-- GRANT SELECT ... TO anon on course_entitlements, briefly added by this
+-- same migration to fix the policy directly, is removed below in favour of
+-- this function (docs/decisions/0025 Decision 4).
+CREATE OR REPLACE FUNCTION has_course_entitlement(p_course_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM course_entitlements
+    WHERE user_id = (SELECT auth.uid()) AND course_id = p_course_id
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION has_course_entitlement(UUID) TO anon, authenticated;
+
+
 -- ── can_read_lesson: editor / free-sample / entitled ────────────────────────
 -- Three branches, each independently sufficient:
 --   1. editor  — can_edit_course; sees drafts, archived and unpublished alike
@@ -96,9 +122,9 @@ ALTER TABLE lessons ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
 --      flagged in_free_sample. An archived free-sample lesson stops being
 --      free-sample-readable: an anonymous/non-buying visitor never bought
 --      anything, so there is no purchaser promise to protect here.
---   3. entitled — a `course_entitlements` row for this course. Bypasses BOTH
---      `c.status` and `l.archived_at`: unpublishing the course or archiving
---      the lesson must not revoke a purchaser's access (docs/decisions/0025).
+--   3. entitled — has_course_entitlement(). Bypasses BOTH `c.status` and
+--      `l.archived_at`: unpublishing the course or archiving the lesson
+--      must not revoke a purchaser's access (docs/decisions/0025).
 -- `l.published_version_id IS NOT NULL` is required in every non-editor
 -- branch and never bypassed — a lesson that was never published stays
 -- invisible regardless of entitlement (0019 Decision 2).
@@ -120,10 +146,7 @@ AS $$
        )
        OR (
          l.published_version_id IS NOT NULL
-         AND EXISTS (
-           SELECT 1 FROM course_entitlements ce
-           WHERE ce.user_id = (SELECT auth.uid()) AND ce.course_id = l.course_id
-         )
+         AND has_course_entitlement(l.course_id)
        )
      FROM lessons l
      JOIN courses c ON c.id = l.course_id
@@ -143,26 +166,12 @@ GRANT EXECUTE ON FUNCTION can_read_lesson(UUID) TO anon, authenticated;
 -- visible for every lesson, free or paid, per docs/handoff.md). Entitled
 -- bypass (matching can_read_lesson's entitled branch): a purchaser can still
 -- SELECT the row — to render the lesson page's own title/description — even
--- when the lesson is archived or its course unpublished.
---
--- GRANT, not just RLS: unlike `can_read_lesson` (SECURITY DEFINER — reads
--- `course_entitlements` as its owner, so the caller's own grants never
--- matter), this policy's EXISTS subquery runs as the CALLING role. Postgres
--- checks table-level privileges for every relation a query plan touches
--- BEFORE row-level filtering, regardless of whether a boolean OR would
--- short-circuit past it at runtime — so referencing `course_entitlements`
--- here requires the caller to hold a grant on it, or EVERY read of `lessons`
--- by that role fails outright with "permission denied for table
--- course_entitlements", not just the archived/unpublished rows. 041 granted
--- `authenticated` SELECT on `course_entitlements` already; `anon` had none
--- (correctly — anon never held an entitlement), so anonymous catalogue
--- browsing broke entirely until this grant was added. `course_entitlements`
--- keeps `anon` at zero visible rows regardless: its own RLS
--- ("course_entitlements: owner read", 041) is `user_id = auth.uid()`, and
--- `auth.uid()` is NULL for anon, which no row matches — this grant changes
--- who may ASK the question, not what answer they get.
-GRANT SELECT ON TABLE course_entitlements TO anon;
-
+-- when the lesson is archived or its course unpublished. Calls
+-- has_course_entitlement() rather than querying course_entitlements
+-- directly — this is a plain RLS policy (no SECURITY DEFINER of its own),
+-- so a direct EXISTS here would run as the calling role, which is exactly
+-- the mistake this migration made and then fixed with a table grant before
+-- replacing that grant with this function (docs/decisions/0025 Decision 4).
 DROP POLICY IF EXISTS "lessons: published read" ON lessons;
 CREATE POLICY "lessons: published read"
   ON lessons FOR SELECT
@@ -173,10 +182,7 @@ CREATE POLICY "lessons: published read"
         archived_at IS NULL
         AND EXISTS (SELECT 1 FROM courses c WHERE c.id = lessons.course_id AND c.status = 'published')
       )
-      OR EXISTS (
-        SELECT 1 FROM course_entitlements ce
-        WHERE ce.user_id = (SELECT auth.uid()) AND ce.course_id = lessons.course_id
-      )
+      OR has_course_entitlement(lessons.course_id)
     )
   );
 

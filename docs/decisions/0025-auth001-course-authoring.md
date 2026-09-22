@@ -89,10 +89,10 @@ independent branches:
    `in_free_sample`. An archived free-sample lesson stops being
    free-sample-readable — an anonymous or non-buying visitor hasn't bought
    anything, so there is no purchaser promise to protect there.
-3. **entitled** — `published_version_id IS NOT NULL` AND a
-   `course_entitlements` row for the caller. Bypasses BOTH `course.status`
-   and `archived_at`: archiving a lesson or unpublishing its course no
-   longer revokes a purchaser's access to it.
+3. **entitled** — `published_version_id IS NOT NULL` AND
+   `has_course_entitlement(course_id)`. Bypasses BOTH `course.status` and
+   `archived_at`: archiving a lesson or unpublishing its course no longer
+   revokes a purchaser's access to it.
 
 `published_version_id IS NOT NULL` is required in every non-editor branch
 and is never bypassed — a lesson that was never published stays invisible
@@ -101,21 +101,41 @@ regardless of entitlement (0019 Decision 2's rule holds).
 The "lessons: published read" RLS policy gets the matching entitled bypass,
 so a purchaser can still `SELECT` the row (title/description/
 `published_item_count`) to render the lesson page when the lesson is
-archived or its course unpublished. This uncovered a second, independent
-bug: that policy's `EXISTS` subquery against `course_entitlements` runs as
-the CALLING role (unlike `can_read_lesson`, which is `SECURITY DEFINER` and
-reads it as the function owner) — and Postgres checks table-level grants on
-every relation a query plan touches before row-level filtering runs, so
-merely referencing `course_entitlements` from a policy requires the caller
-to hold a grant on it, or the ENTIRE `lessons` table becomes unreadable for
-that role, not just the archived/unpublished rows. `anon` had no grant on
-`course_entitlements` (correctly — it can never hold an entitlement), so
-migration 044 now also does `GRANT SELECT ON TABLE course_entitlements TO
-anon`. This is safe: `course_entitlements`'s own RLS
-("course_entitlements: owner read", 041) is `user_id = auth.uid()`, and
-`auth.uid()` is NULL for `anon`, which no row matches — the grant changes
-who may ask the question, not what answer they get. Verified directly (see
-"Verification" below).
+archived or its course unpublished. Writing that bypass directly as an
+`EXISTS` against `course_entitlements` uncovered a second, independent bug:
+a plain RLS policy (no `SECURITY DEFINER` of its own) runs its subqueries as
+the CALLING role, unlike `can_read_lesson` — and Postgres checks table-level
+grants on every relation a query plan touches before row-level filtering
+runs, so merely referencing `course_entitlements` from the policy required
+the caller to hold a grant on it, or the ENTIRE `lessons` table became
+unreadable for that role, not just the archived/unpublished rows. `anon`
+had no grant on `course_entitlements` (correctly — it can never hold an
+entitlement), so the first fix added `GRANT SELECT ON TABLE
+course_entitlements TO anon`, reasoning that it was safe because
+`course_entitlements`'s own RLS ("course_entitlements: owner read", 041) —
+`user_id = auth.uid()`, and `auth.uid()` is NULL for `anon` — keeps `anon`
+at zero visible rows regardless of the grant.
+
+**That diagnosis was correct, but the grant was the wrong fix and has been
+replaced** by `has_course_entitlement(p_course_id UUID)`, a `SECURITY
+DEFINER`, `STABLE` function wrapping the same `EXISTS` — called from both
+`can_read_lesson`'s entitled branch and the RLS policy, so the predicate
+exists exactly once. Being `SECURITY DEFINER`, it reads `course_entitlements`
+as its owner, so neither caller needs a grant on the table at all, and the
+narrow `anon` grant this migration briefly added is revoked again. This is
+the same shape CLAUDE.md's standing rule for `player_ratings` already uses —
+*"`player_ratings` has RLS on with no policies and no grants; only the tier
+reaches the client"* — and the same class of gate migration 006 established
+for `profiles`: *"a grant error, checked BEFORE RLS, not a policy
+failure."* A `GRANT SELECT` this narrow was probably harmless here, but it
+is still one more surface a future column addition to `course_entitlements`
+would need to remember is `anon`-readable; a `SECURITY DEFINER` function
+with no caller-side grant at all needs no such vigilance. The original bug
+— and the fact that the grant was a real, verified fix for it — is kept
+above rather than deleted, because it is the reason this function exists.
+Verified directly, including that the anonymous read path still works with
+`anon` holding no grant on `course_entitlements` (see "Verification"
+below).
 
 **What this deliberately does not solve:** revocable purchaser access (a
 chargeback, a refund) is still M3's `revoked_at` column, called out as
@@ -193,11 +213,26 @@ entitled buyer (Decision 4 holds); a never-published lesson stays invisible
 even to a buyer (0019 Decision 2 holds, entitlement never bypasses
 `published_version_id`); the course-A-only editor sees nothing extra in
 course B (per-course scoping holds, independent of Decision 4's bypass).
-This run is also what surfaced the `course_entitlements` grant bug fixed
-alongside Decision 4 — the first version of the policy rewrite made `anon`
-unable to read ANY published lesson (a hard permission error, not just a
-narrower result), caught only because the matrix includes a free-sample row
-for `anon` and it came back `false` instead of `true`.
+This run is also what surfaced the `course_entitlements` grant bug —
+the first version of the policy rewrite made `anon` unable to read ANY
+published lesson (a hard permission error, not just a narrower result),
+caught only because the matrix includes a free-sample row for `anon` and it
+came back `false` instead of `true`.
+
+**Re-run after replacing the grant with `has_course_entitlement()`:** same
+full reset-seed-query cycle, same table, byte-identical results — with
+`GRANT SELECT ON TABLE course_entitlements TO anon` revoked (`\dp
+course_entitlements` on the fresh replay lists only `postgres`,
+`service_role` and `authenticated` as grantees; `anon` has no entry at
+all). The `free-sample` row for `anon` still comes back `true/true`, which
+is the specific thing the `SECURITY DEFINER` route has to prove: the
+anonymous catalogue-read path works with zero table-level access to
+`course_entitlements`, because `has_course_entitlement()` reads it as its
+own owner, not as `anon`. Also confirmed directly: `authenticated` holds
+`SELECT` on `course_entitlements` (granted by migration 041, unchanged by
+this fix); RLS is enabled (`relrowsecurity = t`); exactly one policy exists
+("course_entitlements: owner read", `USING (user_id = auth.uid())`) — no
+permissive/open policy, so nothing here needed a stop.
 
 ## What would make us revisit this
 
