@@ -215,7 +215,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'SHELL',
     type: 'task',
-    rank: 310,
+    rank: 330,
     dependsOn: [],
     goal:
       'The M1 audit (Phase 1, 2026-09-21) found the recorded hex-literal count ' +
@@ -586,7 +586,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'CNT',
     type: 'task',
-    rank: 280,
+    rank: 300,
     dependsOn: ['CNT-002', 'CNT-003'],
     goal: 'Import an authored lesson file into a draft `lesson_versions` row, never publishing.',
     acceptance: [
@@ -603,19 +603,22 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'CNT',
     type: 'task',
-    rank: 290,
-    dependsOn: ['CNT-003'],
+    rank: 310,
+    dependsOn: ['CNT-003', 'CNT-007', 'CNT-008'],
     goal:
       'Draft a lesson document from a real partner PDF via an LLM pass, in ' +
       'exactly the CNT-003-validated shape (0018 Decision 3).',
     acceptance: [
-      'First action of the card: check the PDF\'s structure against 0018 ("theory, then practice, repeated"). A mismatch stops the card (0018 revisit trigger).',
-      'A PDF-parsing library is a new npm dependency: stop and ask before adding one. Record the alternative considered, such as passing the PDF to the model directly.',
-      'Drafts a lesson document from one real partner PDF. The output passes the CNT-003 validator or reports exactly which blocks failed.',
-      'Drafted explanations are marked as drafts for review, never presented as authored.',
+      'Drafts the whole course from the PDF: one lesson per section, with C and D merged (0022 Decision 1). Level and each lesson\'s estimated minutes are taken from the PDF.',
+      'Part 2\'s answers and "why" columns become per-sub-part explanations. Items with no source explanation are listed; their drafted explanations are marked as drafts.',
+      'Converted paper tasks (0022 Decision 6: D, F6, F10, and any others) are marked for partner review, each with a one-line note of what changed.',
+      'Open-writing tasks become `self_check` blocks with the PDF\'s model answers and checklists.',
+      'Paper-only instructions are rewritten for the screen.',
+      'Emits a partner QA report alongside the drafts. It lists: ambiguous items (at least F1 #4, where "came true" is defensible); internal inconsistencies (satellites "fifty" versus "sixty" years; earbuds "fifteen years" versus "since 2015"); pages missing from the file (2, 5, 24, 26-27, 38).',
+      'New npm dependency (a PDF parser) is still stop-and-ask. Passing the PDF to the model directly is the alternative to weigh first.',
       'The drafting prompt and model call live under `scripts/`, and nothing reads the PDF at runtime.',
     ],
-    notes: 'Blocked on: a real lesson PDF from the partner (requested 2026-09-21, see 0018).',
+    notes: 'PDF: `authored/Future Imperfect B1+ Present Perfect vs Past Simple.pdf`.',
   },
   {
     key: 'CNT-006',
@@ -623,13 +626,52 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'CNT',
     type: 'task',
-    rank: 300,
+    rank: 320,
     dependsOn: ['CNT-004', 'CNT-005', 'AUTH-005'],
     goal: 'The M1 bar, demonstrated: the partner can publish a lesson without Gleb.',
     acceptance: [
       'The partner\'s finished course goes PDF -> draft -> import -> corrected in the editor -> previewed -> published, with the partner (not Gleb) doing the editing and publishing.',
       'Every lesson of that course parses and plays in preview. Printed counts of lessons and blocks are copied from output.',
       'Friction the partner hit is filed as new cards, not fixed inside this one.',
+    ],
+    notes: 'The "finished course" is "Future Imperfect" (B1).',
+  },
+
+  {
+    key: 'CNT-007',
+    title: 'Extend the lesson block set: self_check, table, two highlight marks',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 190,
+    dependsOn: ['CNT-003'],
+    goal:
+      'Implements 0022 Decisions 2-4 in `lib/lessons/`. Records the exact ' +
+      'field shapes as a "Field shapes" section appended to ' +
+      'docs/decisions/0022.',
+    acceptance: [
+      '`self_check` is a theory-side block with a prompt, `response: \'none\' | \'short\' | \'long\'`, a required model answer, and an optional checklist of strings. It never passes through `parseItem`. A test proves it contributes nothing to the lesson aggregate (0016), and nothing to a practice-block count helper that the publish path uses for `published_item_count`.',
+      '`table` has a header row, body rows and an optional caption. Every row has the same column count as the header, and a mismatch is a parse error naming the block id and row. Cells carry inline markup.',
+      'Inline markup gains `mark_a` and `mark_b`. The rules for nesting them with emphasis and English-span are decided and recorded, and the tests cover them.',
+      'Still KaTeX-free. The existing module-graph test covers the new files.',
+      'Tests cover: a lesson using every new block and mark; each new rejection; an existing CNT-003 fixture, which still parses unchanged.',
+    ],
+  },
+  {
+    key: 'CNT-008',
+    title: 'Catalog metadata: courses.level, lessons.estimated_minutes',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 200,
+    dependsOn: ['CNT-002'],
+    goal: 'Migration 042. Implements 0022 Decision 5.',
+    acceptance: [
+      '`courses.level` is `NOT NULL`, with a CHECK over A1, A2, B1, B2, C1 and C2.',
+      '`lessons.estimated_minutes` is a nullable positive integer, with a CHECK that it is greater than 0.',
+      'Both are readable wherever published course and lesson metadata is readable (0018 RLS), so no document read is needed.',
+      'Neither is derived from content anywhere.',
+      'Applies cleanly on a local Supabase replaying from 001, with output printed, before it is handed over unapplied. This card is metadata only, so no entitlement matrix is needed.',
     ],
   },
 
@@ -640,8 +682,8 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'PLAY',
     type: 'task',
-    rank: 190,
-    dependsOn: ['CNT-003', 'ITEM-008', 'ITEM-009'],
+    rank: 210,
+    dependsOn: ['CNT-003', 'ITEM-008', 'ITEM-009', 'CNT-007'],
     goal:
       'The M1 player that M2 will wrap. It lives outside the Colloquiz shell ' +
       'from day one.',
@@ -652,6 +694,9 @@ export const CARDS = [
       'The video block is a click-to-load facade using `youtube-nocookie.com`, so no third-party cookie is set before the learner opts in (the no-cookie-banner decision is load-bearing). The report-only CSP is extended for it.',
       'Uses tokens only: no new hex literals or palette classes. Mobile-first at 360px width.',
       'Holds a lesson-level result via `aggregateLessonScore` (0016) and explanations via `resolveExplanations` (0017). Nothing is persisted (attempt storage is M2).',
+      '`self_check` renders the prompt and a response box sized to its `response` value, with the model answer hidden until the learner asks for it and the checklist ticks local and unscored. Nothing is persisted.',
+      '`table` scrolls horizontally inside its own container at 360px. The page itself never scrolls horizontally.',
+      '`mark_a` and `mark_b` are distinguishable without colour, and use tokens only.',
     ],
   },
   {
@@ -660,7 +705,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'PLAY',
     type: 'task',
-    rank: 200,
+    rank: 220,
     dependsOn: ['PLAY-001', 'ITEM-002', 'ITEM-003', 'ITEM-004'],
     goal:
       'Handoff\'s "item interaction design inside M1": whether the item works ' +
@@ -679,7 +724,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'PLAY',
     type: 'task',
-    rank: 210,
+    rank: 230,
     dependsOn: ['PLAY-001', 'ITEM-002', 'ITEM-005', 'ITEM-006'],
     goal:
       'Handoff\'s "item interaction design inside M1": whether the item works ' +
@@ -700,7 +745,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'PLAY',
     type: 'task',
-    rank: 220,
+    rank: 240,
     dependsOn: ['PLAY-001', 'ITEM-007'],
     goal:
       'Handoff\'s "item interaction design inside M1": whether the item works ' +
@@ -723,8 +768,8 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'AUTH',
     type: 'task',
-    rank: 230,
-    dependsOn: ['CNT-002'],
+    rank: 250,
+    dependsOn: ['CNT-002', 'CNT-008'],
     goal: 'The minimum screen set to manage courses and their lesson lists.',
     acceptance: [
       'An editor can create a course (slug, title, description), and publish and unpublish it.',
@@ -732,6 +777,7 @@ export const CARDS = [
       'The free-sample toggle is its own explicit control, calling `set_lesson_free_sample`.',
       'Course editor delegation works through the existing grant/revoke RPCs.',
       'English-only chrome, composed from existing admin components and classes.',
+      "Course level can be edited (required) and each lesson's estimated minutes can be edited.",
     ],
   },
   {
@@ -740,8 +786,8 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'AUTH',
     type: 'task',
-    rank: 240,
-    dependsOn: ['AUTH-001', 'CNT-003'],
+    rank: 260,
+    dependsOn: ['AUTH-001', 'CNT-003', 'CNT-007'],
     goal: 'The theory half of the block editor.',
     acceptance: [
       'Add, edit, delete and reorder blocks. Every theory block type has a form, and no raw JSON is ever shown to the author.',
@@ -749,6 +795,7 @@ export const CARDS = [
       'Save runs the CNT-003 validator in the server route before the RPC. Errors render next to the field they name.',
       'A stale-token save shows "changed elsewhere, reload" and never silently overwrites.',
       'Version history is listed, and any version can be restored as a new draft.',
+      "Forms exist for `self_check` and `table`. `mark_a` and `mark_b` are applied the same way as emphasis, without typing markup.",
     ],
   },
   {
@@ -757,7 +804,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'AUTH',
     type: 'task',
-    rank: 250,
+    rank: 270,
     dependsOn: ['AUTH-002'],
     goal: 'The practice half of the block editor.',
     acceptance: [
@@ -772,7 +819,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'AUTH',
     type: 'task',
-    rank: 260,
+    rank: 280,
     dependsOn: ['CNT-002', 'AUTH-002'],
     goal: 'Image upload into the CNT-002 bucket, mirroring the avatar-upload precedent.',
     acceptance: [
@@ -788,7 +835,7 @@ export const CARDS = [
     milestone: 'M1',
     epic: 'AUTH',
     type: 'task',
-    rank: 270,
+    rank: 290,
     dependsOn: ['AUTH-002', 'PLAY-001'],
     goal:
       'Preview through the real player, and a publish action that cannot ' +
