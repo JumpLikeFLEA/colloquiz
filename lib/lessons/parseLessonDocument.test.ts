@@ -209,6 +209,70 @@ describe("parseLessonDocument — a lesson using every new block and mark", () =
   });
 });
 
+describe("parseLessonDocument — convertedFrom (CNT-005, 0022 Decision 6)", () => {
+  it("carries convertedFrom through on a practice block that sets it", () => {
+    const result = parseLessonDocument([
+      { ...validSelectionBlock("q1"), convertedFrom: "Circle the wrong one and write the correction." },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.document[0]).toMatchObject({
+        id: "q1",
+        kind: "practice",
+        convertedFrom: "Circle the wrong one and write the correction.",
+      });
+    }
+  });
+
+  it("is absent (no key at all) on a practice block that does not set it", () => {
+    const result = parseLessonDocument([validSelectionBlock("q1")]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.document[0]).not.toHaveProperty("convertedFrom");
+    }
+  });
+
+  it("rejects an empty-string convertedFrom, naming the block and field", () => {
+    const result = parseLessonDocument([{ ...validSelectionBlock("q1"), convertedFrom: "" }]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((e) => e.field === "q1: convertedFrom")).toBe(true);
+    }
+  });
+
+  it("rejects a non-string convertedFrom, naming the block and field", () => {
+    const result = parseLessonDocument([{ ...validSelectionBlock("q1"), convertedFrom: 42 }]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((e) => e.field === "q1: convertedFrom")).toBe(true);
+    }
+  });
+
+  it(
+    "models import-lesson.ts: the field survives a JSON round trip, standing in for the " +
+      "JSONB write it lands in (import-lesson.ts stores parseLessonDocument's returned " +
+      "document unchanged as lesson_versions.document — see validateDocuments() and the " +
+      "insert call that writes `document: documents.get(lesson.slug)`)",
+    () => {
+      const result = parseLessonDocument([
+        { ...validSelectionBlock("q1"), convertedFrom: "Underline the errors." },
+        validProseBlock("p1"),
+      ]);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      const roundTripped = JSON.parse(JSON.stringify(result.document));
+      expect(roundTripped[0].convertedFrom).toBe("Underline the errors.");
+      expect(roundTripped[1]).not.toHaveProperty("convertedFrom");
+    },
+  );
+
+  it("theory blocks reject an unrecognized convertedFrom key (strict schema, unchanged by this card)", () => {
+    const result = parseLessonDocument([{ ...validProseBlock("p1"), convertedFrom: "n/a" }]);
+    expect(result.ok).toBe(false);
+  });
+});
+
 describe("parseLessonDocument — a lesson with zero practice blocks", () => {
   // Decided in docs/decisions/0020-cnt003-lesson-blocks.md: VALID. A
   // theory-only lesson is accepted, not rejected — see that file for why.

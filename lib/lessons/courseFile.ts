@@ -4,13 +4,20 @@ import { CEFR_LEVELS } from "../courseLevels";
 
 /**
  * The authored-file shape for one course plus every one of its lessons
- * (CNT-004's `authored/courses/<slug>.json`; CNT-005 drafts into the same
- * shape). Extracted from `scripts/import-lesson.ts` (CNT-005) so the
- * drafting step and the importer validate against one schema instead of two
- * that could drift — a document each writes/reads is not re-implemented
- * per caller. `document` is validated structurally only (a bare array); the
- * actual block-shape / practice-item contract is CNT-003+CNT-007's job,
- * enforced by `parseLessonDocument` — never re-implemented here.
+ * (CNT-004's `authored/courses/<slug>.json`). Shared by `import-lesson.ts`
+ * (CNT-004, the importer) and `validate-course-file.ts` (the offline shape
+ * check a course file must pass before being handed to the importer), so
+ * the two validate against one schema instead of two that could drift.
+ * `document` is validated structurally only (a bare array); the actual
+ * block-shape / practice-item contract is CNT-003+CNT-007's job, enforced by
+ * `parseLessonDocument` — never re-implemented here.
+ *
+ * Originally (CNT-005) also shared with a scripted LLM drafting step
+ * (`scripts/draft-lesson.ts`) that produced files in this same shape. That
+ * script was dropped — docs/decisions/0028 — in favour of drafting in a chat
+ * session from `prompts/draft-lesson.md`; the file CONTRACT here is
+ * unchanged, only that one producer is gone. Do not reintroduce a
+ * "shared with the drafting step" rationale without re-reading 0028 first.
  */
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;

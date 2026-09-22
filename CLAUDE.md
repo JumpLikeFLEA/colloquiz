@@ -164,9 +164,12 @@ refactor.
     never publishes. Supersedes the retired `scripts/import-course.ts`
     (removed, 0018 Decision 1) — the Colloquiz course schema it imported into
     no longer exists.
-  - `scripts/draft-lesson.ts` — drafts that same course-file shape from a
-    partner PDF via an LLM pass (CNT-005); writes to `authored/`, never to
-    the database.
+  - `scripts/validate-course-file.ts` — offline shape check (CourseFileSchema
+    + `parseLessonDocument` per lesson, no network, no env var) for a course
+    file before it reaches `import-lesson.ts`. CNT-005's scripted LLM
+    drafting step was dropped (docs/decisions/0028) in favour of drafting in
+    a chat session from `prompts/draft-lesson.md`; this script is what
+    replaced its validation half.
 - `docs/`
   - `handoff.md` — purpose, audience, scope, principles, failure modes.
   - `ui-decisions.md` — the running log of deliberate UI decisions (until
@@ -182,7 +185,7 @@ refactor.
   `next.config.ts` (headers, report-only CSP, remote image host),
   `eslint.config.mjs` (flat config), `DEVELOPMENT-MAP.md` (layered task map
   over the board; refreshed when a card reaches Done — see "Working on a
-  board issue" step 8), `PLAN.md` (historical Noosphere record, not current).
+  board issue" step 8).
 
 Exact commands:
 

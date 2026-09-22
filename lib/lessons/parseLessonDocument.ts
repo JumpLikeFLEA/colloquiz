@@ -27,7 +27,23 @@ export interface LessonParseError {
   message: string;
 }
 
-export type LessonPracticeBlock = { id: string; kind: "practice"; item: Item };
+/**
+ * `convertedFrom` (CNT-005, docs/decisions/0022 Decision 6): an optional
+ * authoring-provenance note on a practice block, set when the drafting step
+ * converted a paper-only task into a scorable one — the original paper
+ * instruction, so the partner can see what changed. Deliberately NOT on
+ * `ItemEnvelopeSchema`/`Item` (lib/items/types.ts): that would put an
+ * authoring concern inside the item-scoring contract every type module
+ * shares, which is the "if accommodating it requires changing the
+ * interface, the abstraction was wrong" trap docs/handoff.md names for
+ * `free_text`. It is read directly off the raw block here, one layer above
+ * `parseItem`, so the five item type modules and their shared envelope are
+ * untouched. See docs/decisions/<CNT-005 field addition> for why capture is
+ * one-shot and why no editor renders it yet.
+ */
+const ConvertedFromSchema = z.string().min(1);
+
+export type LessonPracticeBlock = { id: string; kind: "practice"; item: Item; convertedFrom?: string };
 export type LessonBlock = TheoryBlock | LessonPracticeBlock;
 export type LessonDocument = LessonBlock[];
 
@@ -102,8 +118,20 @@ export function parseLessonDocument(input: unknown): LessonParseResult {
       }
       return;
     }
+
+    const convertedFrom = parseConvertedFrom(raw, label);
+    if (convertedFrom.error) {
+      errors.push(convertedFrom.error);
+      return;
+    }
+
     recordId(result.item.id, index, label, seenIds, errors);
-    blocks.push({ id: result.item.id, kind: "practice", item: result.item });
+    blocks.push({
+      id: result.item.id,
+      kind: "practice",
+      item: result.item,
+      ...(convertedFrom.value !== undefined ? { convertedFrom: convertedFrom.value } : {}),
+    });
   });
 
   if (errors.length > 0) {
@@ -123,6 +151,26 @@ export function parseLessonDocument(input: unknown): LessonParseResult {
  */
 export function countPracticeBlocks(document: LessonDocument): number {
   return document.filter((block) => block.kind === "practice").length;
+}
+
+/** Reads the optional `convertedFrom` marker directly off the raw block —
+ * never off `parseItem`'s result, since `ItemEnvelopeSchema` is a plain
+ * `z.object` that would silently drop an unrecognized key rather than carry
+ * it into `Item`. Absent is valid (most blocks are not conversions); present
+ * but not a non-empty string is a validation error naming the block, same
+ * as every other field-level error in this file. */
+function parseConvertedFrom(raw: unknown, label: string): { value?: string; error?: LessonParseError } {
+  if (typeof raw !== "object" || raw === null || !("convertedFrom" in raw)) return {};
+  const result = ConvertedFromSchema.safeParse((raw as { convertedFrom: unknown }).convertedFrom);
+  if (!result.success) {
+    return {
+      error: {
+        field: prefixField(label, "convertedFrom"),
+        message: result.error.issues[0]?.message ?? "convertedFrom must be a non-empty string",
+      },
+    };
+  }
+  return { value: result.data };
 }
 
 function recordId(
