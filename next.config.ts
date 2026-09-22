@@ -41,6 +41,10 @@ const csp = [
   `img-src 'self' blob: data: ${supabaseHttps}`.trim(),
   `font-src 'self' data:`,
   `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com`.replace(/\s+/g, " ").trim(),
+  // PLAY-001 lesson video facade: no iframe exists until the learner clicks
+  // (see app/components/lesson-player/blocks/VideoBlock.tsx), so this only
+  // ever permits an embed the learner opted into, never an eager one.
+  `frame-src 'self' https://www.youtube-nocookie.com`,
   `frame-ancestors 'none'`,
   `base-uri 'self'`,
   `form-action 'self'`,
