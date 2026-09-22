@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import type { LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
@@ -11,6 +11,12 @@ import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
 
 export interface PracticeRendererProps {
   block: LessonPracticeBlock;
+  /** Seeds `lib/items/shuffle.ts`'s per-attempt-and-item presentation order
+   * (PLAY-002 acceptance). Generated once per `LessonPlayer` mount via
+   * `useId()` below — a remount (a retry) gets a fresh id and therefore a
+   * fresh scramble, matching shuffle.ts's documented contract, with no
+   * random-id generation or SSR hydration mismatch to manage. */
+  attemptId: string;
   /** Called by a real per-type renderer (PLAY-002..004) once the learner
    * submits a response. Recorded in local session state only — attempt
    * storage is M2, so nothing here reaches the network. */
@@ -40,6 +46,7 @@ export interface LessonPlayerProps {
 export function LessonPlayer({ document, practiceRenderer }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
   const [results, setResults] = useState<LessonSessionResults>({});
+  const attemptId = useId();
 
   if (!parsed.ok) {
     return <LessonPlayerError errors={parsed.errors} />;
@@ -49,6 +56,7 @@ export function LessonPlayer({ document, practiceRenderer }: LessonPlayerProps) 
     <LessonPlayerBody
       document={parsed.document}
       results={results}
+      attemptId={attemptId}
       onScore={(itemId, result) => setResults((prev) => ({ ...prev, [itemId]: result }))}
       practiceRenderer={practiceRenderer}
     />
@@ -58,11 +66,13 @@ export function LessonPlayer({ document, practiceRenderer }: LessonPlayerProps) 
 function LessonPlayerBody({
   document,
   results,
+  attemptId,
   onScore,
   practiceRenderer,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
+  attemptId: string;
   onScore: (itemId: string, result: ItemScoreResult) => void;
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
 }) {
@@ -83,7 +93,7 @@ function LessonPlayerBody({
         block.kind === "practice" ? (
           <div key={block.id}>
             {practiceRenderer ? (
-              practiceRenderer({ block, onScore: (result) => onScore(block.id, result) })
+              practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
             ) : (
               <PracticeBlockPlaceholder block={block} />
             )}

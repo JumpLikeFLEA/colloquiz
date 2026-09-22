@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
-import { LessonPlayer } from "@/app/components/lesson-player";
+import { LessonPlayerDemoClient } from "./LessonPlayerDemoClient";
 
 /**
  * PLAY-001 — dev-only harness to view the lesson player shell in a browser.
@@ -92,6 +92,57 @@ const DEMO_DOCUMENT = [
       explanations: { r1: "Regular verbs add -ed in the past simple: walk → walked." },
     },
   },
+  {
+    id: "q2",
+    kind: "practice",
+    type: "selection",
+    payload: {
+      prompt: "Which of these are irregular past simple forms? (select all that apply)",
+      multi: true,
+      options: [
+        { id: "a", text: "went" },
+        { id: "b", text: "walked" },
+        { id: "c", text: "ate" },
+        { id: "d", text: "played" },
+      ],
+      correctOptionIds: ["a", "c"],
+      explanationRef: "r2",
+      explanations: { r2: "go -> went and eat -> ate are irregular; walked/played just add -ed." },
+    },
+  },
+  {
+    id: "q3",
+    kind: "practice",
+    type: "selection_grid",
+    payload: {
+      prompt: "True or false?",
+      rows: [
+        {
+          id: "row1",
+          statement: "'She walked to school' is past simple.",
+          correct: true,
+          explanationRef: "g1",
+        },
+        {
+          id: "row2",
+          statement: "'She walk to school' is correct past simple.",
+          correct: false,
+          explanationRef: "g2",
+        },
+        {
+          id: "row3",
+          statement: "'They studied every day' is past simple.",
+          correct: true,
+          explanationRef: "g3",
+        },
+      ],
+      explanations: {
+        g1: "Correct — regular past simple, -ed added.",
+        g2: "Incorrect — the verb needs -ed: 'She walked to school.'",
+        g3: "Correct — study -> studied (y -> ied).",
+      },
+    },
+  },
 ];
 
 export default async function LessonPlayerDemoPage() {
@@ -130,7 +181,7 @@ export default async function LessonPlayerDemoPage() {
           player shell (app/components/lesson-player). Not the M2 route.
         </p>
       </div>
-      <LessonPlayer document={DEMO_DOCUMENT} />
+      <LessonPlayerDemoClient document={DEMO_DOCUMENT} />
     </div>
   );
 }
