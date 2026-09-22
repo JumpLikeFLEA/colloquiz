@@ -80,9 +80,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
-import { z } from "zod";
-import { authoredString } from "../lib/authoredString";
-import { CEFR_LEVELS } from "../lib/courseLevels";
+import { CourseFileSchema, type CourseFile, type LessonFile } from "../lib/lessons/courseFile";
 import { parseLessonDocument, type LessonDocument } from "../lib/lessons";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -107,48 +105,6 @@ if (!filePath) {
 if (!url || !key) {
   die("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in env");
 }
-
-// ── Authored file schema ─────────────────────────────────────
-const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const slugField = () => z.string().regex(SLUG_RE, "must be lowercase kebab-case (a-z, 0-9, single hyphens)");
-
-const LessonFileSchema = z.strictObject({
-  slug: slugField(),
-  title: authoredString(),
-  description: authoredString(1, { allowNewlines: true }).optional(),
-  estimatedMinutes: z.number().int().positive().optional(),
-  // Validated structurally here (a bare array); the actual block-shape /
-  // practice-item contract is CNT-003+CNT-007's job, enforced below by
-  // parseLessonDocument — never re-implemented in this schema.
-  document: z.array(z.unknown()),
-});
-
-const CourseFileSchema = z
-  .strictObject({
-    slug: slugField(),
-    title: authoredString(),
-    subtitle: authoredString(1).optional(),
-    description: authoredString(1, { allowNewlines: true }).optional(),
-    level: z.enum(CEFR_LEVELS),
-    status: z.enum(["draft", "published"]).default("draft"),
-    lessons: z.array(LessonFileSchema).min(1),
-  })
-  .superRefine((course, ctx) => {
-    const seen = new Set<string>();
-    course.lessons.forEach((lesson, index) => {
-      if (seen.has(lesson.slug)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["lessons", index, "slug"],
-          message: `duplicate lesson slug "${lesson.slug}" within this file`,
-        });
-      }
-      seen.add(lesson.slug);
-    });
-  });
-
-type CourseFile = z.infer<typeof CourseFileSchema>;
-type LessonFile = z.infer<typeof LessonFileSchema>;
 
 // ── Load + validate (file shape, then every lesson's document) ──────────
 function loadCourseFile(path: string): CourseFile {
