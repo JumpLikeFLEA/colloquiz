@@ -35,15 +35,23 @@
 -- NULL constraint today. docs/decisions/0023 "Consequence for AUTH-001":
 -- "the lesson editor must generate a lesson's slug from its title at
 -- CREATION time only." Slugified here (not in a TS layer) because the
--- generation must happen under the same FOR UPDATE lock on the parent course
+-- generation happens under the same `FOR UPDATE` lock on the parent course
 -- that already exists in this function, for the same reason `in_free_sample`
 -- is decided under that lock (041): two concurrent creates with the same
 -- title must not race to the same slug. Deduped by suffixing -2, -3, ... on
 -- collision within the course (`lessons.slug` is unique per course, 043, not
--- globally). `lib/lessonSlug.ts` (added alongside this migration) mirrors
--- this algorithm in TS for the create-lesson form's live preview only — it
--- has no authority of its own, matching the `CEFR_LEVELS`/`courses_level_
--- check` mirroring precedent (042).
+-- globally). VERIFIED, not just reasoned: two real concurrent psql sessions
+-- (docs/decisions/0025 "Verification (create_lesson concurrency)") called
+-- create_lesson with the identical title against the same course — the
+-- second call blocked on the lock for the full duration the first held its
+-- transaction open, then produced the correctly-deduped `-2` slug once the
+-- first committed. `lessons_course_slug_idx` (043's `UNIQUE (course_id,
+-- slug)`) is the backstop if this lock were ever removed — it would turn a
+-- race into a constraint-violation error instead of a silent collision, not
+-- prevent the race. `lib/lessonSlug.ts` (added alongside this migration)
+-- mirrors this algorithm in TS for the create-lesson form's live preview
+-- only — it has no authority of its own, matching the
+-- `CEFR_LEVELS`/`courses_level_check` mirroring precedent (042).
 --
 -- ── create_course is admin-only, not can_edit_course ────────────────────────
 -- A course has no `course_editors` rows until after it exists, so gating
@@ -251,6 +259,20 @@ GRANT EXECUTE ON FUNCTION create_lesson(UUID, TEXT, TEXT) TO authenticated;
 -- set_lesson_archived (below) — same "explicit action, not a side effect"
 -- reasoning 0018/041 already applies to in_free_sample. slug is NOT a
 -- parameter: immutable once created (0023), no RPC path may change it.
+--
+-- FULL REPLACE, NOT A PARTIAL PATCH: p_description and p_estimated_minutes
+-- are written exactly as given, including NULL — passing NULL CLEARS the
+-- field, it does not mean "leave unchanged". This is a deliberate choice,
+-- not an oversight (docs/decisions/0025): the only caller today
+-- (EditLessonDialog, app/(main)/app/admin/courses/[id]/CourseDetailView.tsx)
+-- always initialises its form from the lesson's current values and submits
+-- all three fields together, so it is a whole-form save by construction —
+-- clearing the description field in that form and saving SHOULD clear it in
+-- the database, and there is no cheaper way to represent "clear this" than
+-- NULL once title stays required. A future caller that wants to change only
+-- one field must read the lesson first and pass its existing
+-- description/estimated_minutes back explicitly; passing NULL to preserve
+-- them is a bug in that caller, not in this function.
 CREATE OR REPLACE FUNCTION update_lesson(
   p_lesson_id         UUID,
   p_title             TEXT,

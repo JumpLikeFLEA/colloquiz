@@ -141,7 +141,11 @@ refactor.
   - `lib/entitlement.ts` — the client-side MIRROR of the entitlement SQL
     function. Mirror only; the function is the authority. **Planned (M3).**
 - `supabase/migrations/NNN_*.sql` — schema. Numbered, applied by me, never by
-  a session. Latest applied: 038.
+  a session. Latest applied: 043 (re-derived 2026-09-22 against the hosted
+  project by probing which 039-044 objects PostgREST can see — `course_stages`
+  gone, `lessons`/`course_entitlements`/`courses.level`/`lessons.slug` all
+  present, `lessons.archived_at` and `has_course_entitlement()` both absent).
+  044 (AUTH-001) is written but not yet applied — unpushed.
 - `scripts/`
   - `scripts/board/` — `backlog.mjs` (board data, incl. `rankOf()`),
     `bootstrap-board.mjs` (backlog → GitHub issues/board), `board-move.mjs`,
@@ -155,6 +159,14 @@ refactor.
     `.claude/settings.json`; injects the `CONTEXT SOFT LIMIT` message and
     denies non-essential tool calls past `CONTEXT HARD LIMIT` (see "Session
     handoff"). **Planned (M0).**
+  - `scripts/import-lesson.ts` — imports an authored `authored/courses/
+    <slug>.json` course file into draft `lesson_versions` rows (CNT-004);
+    never publishes. Supersedes the retired `scripts/import-course.ts`
+    (removed, 0018 Decision 1) — the Colloquiz course schema it imported into
+    no longer exists.
+  - `scripts/draft-lesson.ts` — drafts that same course-file shape from a
+    partner PDF via an LLM pass (CNT-005); writes to `authored/`, never to
+    the database.
 - `docs/`
   - `handoff.md` — purpose, audience, scope, principles, failure modes.
   - `ui-decisions.md` — the running log of deliberate UI decisions (until

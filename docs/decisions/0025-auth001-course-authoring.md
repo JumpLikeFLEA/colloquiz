@@ -164,6 +164,36 @@ would be able to mass-revoke a course's catalogue/free-sample visibility
 being an admin. Not fixed here — proposed as its own card below (see "What
 would make us revisit this").
 
+## Decision 5 — `courses.author_id` stays nullable; `create_course` is not the only write path that needed checking
+
+0019 Decision 3 made `author_id` nullable specifically because, at that
+migration, "no course-creation RPC exists yet... Whichever future card adds
+the first course-creation write path (an authoring RPC, or CNT-004's
+importer) is where `NOT NULL` becomes provable and should be added then." —
+naming BOTH candidate paths explicitly, not just an authoring RPC.
+
+044's `create_course` is one such path, and it always sets `author_id =
+auth.uid()` (Decision 2) — a `NOT NULL` constraint would be provable against
+it alone. But `scripts/import-lesson.ts` (CNT-004) is 0019 Decision 3's
+OTHER named path, and it also creates courses directly
+(`supabase.from("courses").insert({...})`, no session, service role) without
+ever setting `author_id` — it has no `author_id` field in its authored-file
+schema (`lib/lessons/courseFile.ts`) or its insert payload at all. This
+importer is not a stopgap being phased out; `docs/handoff.md`'s authoring
+design keeps it as the permanent PDF-to-draft path, so it will keep creating
+`author_id IS NULL` courses indefinitely.
+
+**Decided:** `author_id` stays nullable. Adding `NOT NULL` now would either
+break the importer's course-creation path outright, or require inventing an
+attribution for it (which profile owns an imported-but-not-yet-assigned
+course?) that nothing in CNT-004's or AUTH-001's acceptance asked for —
+exactly the kind of unrequested scope 0019 Decision 3 and this file's
+Decision 3 both already declined elsewhere. This isn't a new decision so
+much as 0019 Decision 3 not yet being satisfied: `create_course` alone
+doesn't complete "whichever future card adds the first course-creation
+write path" when a second one (the importer) already existed before it and
+still doesn't set the column.
+
 ## Other decisions made while implementing (not separately escalated)
 
 - **`reorder_lessons` takes the full new order, not a single move.** The
@@ -185,7 +215,18 @@ would make us revisit this").
   base-slug algorithm in TypeScript for the create-lesson form's live
   preview only; it has no authority and never dedupes, the same "mirror,
   not source of truth" relationship `CEFR_LEVELS` has with `courses_level_
-  check` (042).
+  check` (042). Verified with two real concurrent sessions, not just
+  reasoned about — see "Verification (create_lesson concurrency)" below.
+- **`update_lesson` is a full replace, not a partial patch.** `p_description`
+  and `p_estimated_minutes` are written exactly as given; passing `NULL`
+  clears the field rather than leaving it untouched. The only caller
+  (`EditLessonDialog`) always initialises its form from the lesson's current
+  values and submits all three fields together, so a whole-form save is the
+  correct contract for it today — clearing the description in that form and
+  saving should clear it in the database. Documented in the function's own
+  header comment (migration 044) rather than changed, since changing it to
+  a "skip NULL fields" patch semantics would be a behavior change with no
+  caller asking for it.
 
 ## Verification (Decision 4)
 
@@ -234,6 +275,32 @@ this fix); RLS is enabled (`relrowsecurity = t`); exactly one policy exists
 ("course_entitlements: owner read", `USING (user_id = auth.uid())`) — no
 permissive/open policy, so nothing here needed a stop.
 
+## Verification (`create_lesson` concurrency)
+
+The file header's claim that `create_lesson`'s `FOR UPDATE` lock on the
+parent course prevents two concurrent creates from racing to the same slug
+had never been tested against real concurrency — verified here with two
+genuinely concurrent `psql` sessions against the local replay (Docker
+Postgres, migrations 001-044, never the hosted project), both authenticated
+as the same admin, both calling `create_lesson(<same course>, 'Same
+Title', NULL)`:
+
+- Session A: explicit `BEGIN`, calls `create_lesson` (acquires the course
+  row's `FOR UPDATE` lock, inserts `same-title`), then `pg_sleep(5)` before
+  `COMMIT` — holding the lock open on purpose.
+- Session B: started ~1 second after A, in autocommit mode, calls
+  `create_lesson` with the identical title.
+
+Timestamps: A acquired its lock and inserted at `18:11:43.54`, began
+sleeping, and committed at `18:11:48.56`. B started its call at
+`18:11:44.58` and did not return until `18:11:48.57` — blocked for the
+remaining ~4 seconds of A's held transaction, not the sub-millisecond a
+non-blocking call would take. B's result was `{"slug": "same-title-2", ...}`
+— it saw A's committed row and deduped correctly. This is the shape only a
+real row lock produces (a non-blocking implementation would either race to
+the same slug or fail with a distinct error, not simply take exactly as
+long as the other session's transaction).
+
 ## What would make us revisit this
 
 - A future card giving a delegated non-admin editor their own authoring
@@ -248,6 +315,10 @@ permissive/open policy, so nothing here needed a stop.
   revisit Decision 4 — extend `course_entitlements` with `revoked_at`
   (0018 Decision 6) and have the entitled branch check it; don't fork a
   second entitlement check.
+- A card that needs to attribute an imported course to a specific author
+  (the partner, by email) would revisit Decision 5 — add that lookup to
+  `scripts/import-lesson.ts`'s course-creation path, then `author_id
+  NOT NULL` becomes provable across every writer and can be added.
 - **Proposed card (M3, alongside the merchant-of-record work):** *"Gate
   `set_lesson_archived`/`unpublish_course` (and any other RPC that changes a
   published lesson's or course's read-visibility) on `is_admin`, or design an
