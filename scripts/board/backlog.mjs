@@ -616,6 +616,7 @@ export const CARDS = [
       'Paper-only instructions are rewritten for the screen.',
       'Emits a partner QA report alongside the drafts. It lists: ambiguous items (at least F1 #4, where "came true" is defensible); internal inconsistencies (satellites "fifty" versus "sixty" years; earbuds "fifteen years" versus "since 2015"); pages missing from the file (2, 5, 24, 26-27, 38).',
       'New npm dependency (a PDF parser) is still stop-and-ask. Passing the PDF to the model directly is the alternative to weigh first.',
+      'Every drafted lesson document passes the lesson validator (CNT-003 + CNT-007 extensions), or the run reports exactly which blocks failed. Drafts are written to authored/; this card writes nothing to the database (import is CNT-004).',
       'The drafting prompt and model call live under `scripts/`, and nothing reads the PDF at runtime.',
     ],
     notes: 'PDF: `authored/Future Imperfect B1+ Present Perfect vs Past Simple.pdf`.',
