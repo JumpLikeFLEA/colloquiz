@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Archive, ArchiveRestore, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -156,6 +166,9 @@ function LessonsSection({
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AuthoredLesson | null>(null);
+  // Only archiving (not restoring) is confirmed — restoring is purely
+  // additive, undoing whatever archiving hid (docs/decisions/0025 Decision 4).
+  const [confirmArchive, setConfirmArchive] = useState<AuthoredLesson | null>(null);
 
   async function createLesson() {
     if (!newTitle.trim()) return;
@@ -310,7 +323,7 @@ function LessonsSection({
                 <Pencil size={14} />
               </button>
               <button
-                onClick={() => toggleArchived(lesson)}
+                onClick={() => (lesson.archivedAt ? toggleArchived(lesson) : setConfirmArchive(lesson))}
                 disabled={pendingId !== null}
                 aria-label={lesson.archivedAt ? `Restore ${lesson.title}` : `Archive ${lesson.title}`}
                 className="cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
@@ -378,6 +391,31 @@ function LessonsSection({
           }}
         />
       )}
+
+      <AlertDialog open={confirmArchive !== null} onOpenChange={(open) => { if (!open) setConfirmArchive(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {confirmArchive?.title}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This hides the lesson from the catalogue and the free sample. Existing purchasers
+              keep it — archiving never revokes access to a lesson someone already bought. You
+              can restore it later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmArchive) toggleArchived(confirmArchive);
+                setConfirmArchive(null);
+              }}
+              className="rounded-xl"
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

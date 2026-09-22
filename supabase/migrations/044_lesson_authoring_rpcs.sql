@@ -9,11 +9,25 @@
 -- ── lessons.archived_at (soft archive, no hard delete) ──────────────────────
 -- AUTH-001 acceptance: "No hard delete, because purchasers keep access to
 -- what they bought." Mirrors `course_stages.archived_at` (028). An archived
--- lesson must stop being playable/readable by a non-editor — see the
--- `can_read_lesson` and "lessons: published read" changes below — but stays
--- fully visible to editors (existing "lessons: editor read" policy, 041,
--- already has no archived-state clause and needs none: editors must keep
--- seeing an archived lesson to unarchive it).
+-- lesson must stop being playable/readable by a non-editor, non-purchaser —
+-- see the `can_read_lesson` and "lessons: published read" changes below —
+-- but stays fully visible to editors (existing "lessons: editor read"
+-- policy, 041, already has no archived-state clause and needs none: editors
+-- must keep seeing an archived lesson to unarchive it).
+--
+-- ── entitled reads bypass content-state gates (docs/decisions/0025) ────────
+-- An earlier version of this migration gated `archived_at IS NULL`
+-- unconditionally, ahead of the entitlement check — which revoked a
+-- purchaser's read access exactly like a hard delete would, contradicting
+-- the "purchasers keep access" line above. `can_read_lesson` below is now
+-- three branches (editor; free-sample; entitled), and entitled reads bypass
+-- BOTH `archived_at` and the course's `status`, so `unpublish_course`
+-- (added further down this file) doesn't revoke a purchaser's access
+-- either. `published_version_id IS NOT NULL` stays un-bypassed in every
+-- branch — a lesson that was never published stays invisible regardless of
+-- entitlement (0019 Decision 2). See docs/decisions/0025 for the full
+-- reasoning and what this deliberately does not solve (revocable access is
+-- M3's `revoked_at`, not built here).
 --
 -- ── create_lesson: now generates its own slug (0023, CNT-002/041 gap) ──────
 -- Migration 043 made `lessons.slug` NOT NULL with no DEFAULT, but 041's
@@ -73,11 +87,21 @@ BEGIN;
 ALTER TABLE lessons ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
 
 
--- ── can_read_lesson: archived lessons are never readable by non-editors ────
--- Same shape as 041's original, with one added clause. can_edit_course is
--- unaffected: editors still read an archived lesson via the existing
--- "lessons: editor read" / "lesson_versions: editor read" policies, which
--- this function doesn't gate.
+-- ── can_read_lesson: editor / free-sample / entitled ────────────────────────
+-- Three branches, each independently sufficient:
+--   1. editor  — can_edit_course; sees drafts, archived and unpublished alike
+--      via the existing "lessons: editor read" policy, which this function
+--      doesn't gate.
+--   2. free-sample — course published, lesson published, NOT archived, and
+--      flagged in_free_sample. An archived free-sample lesson stops being
+--      free-sample-readable: an anonymous/non-buying visitor never bought
+--      anything, so there is no purchaser promise to protect here.
+--   3. entitled — a `course_entitlements` row for this course. Bypasses BOTH
+--      `c.status` and `l.archived_at`: unpublishing the course or archiving
+--      the lesson must not revoke a purchaser's access (docs/decisions/0025).
+-- `l.published_version_id IS NOT NULL` is required in every non-editor
+-- branch and never bypassed — a lesson that was never published stays
+-- invisible regardless of entitlement (0019 Decision 2).
 CREATE OR REPLACE FUNCTION can_read_lesson(p_lesson_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -92,12 +116,13 @@ AS $$
          c.status = 'published'
          AND l.published_version_id IS NOT NULL
          AND l.archived_at IS NULL
-         AND (
-           l.in_free_sample
-           OR EXISTS (
-             SELECT 1 FROM course_entitlements ce
-             WHERE ce.user_id = (SELECT auth.uid()) AND ce.course_id = l.course_id
-           )
+         AND l.in_free_sample
+       )
+       OR (
+         l.published_version_id IS NOT NULL
+         AND EXISTS (
+           SELECT 1 FROM course_entitlements ce
+           WHERE ce.user_id = (SELECT auth.uid()) AND ce.course_id = l.course_id
          )
        )
      FROM lessons l
@@ -110,14 +135,49 @@ $$;
 GRANT EXECUTE ON FUNCTION can_read_lesson(UUID) TO anon, authenticated;
 
 
--- ── RLS: lessons published read excludes archived ──────────────────────────
+-- ── RLS: lessons published read, with the same entitled bypass ─────────────
+-- Base case (everyone): a published, non-archived lesson's title/description/
+-- published_item_count is visible to anon and authenticated alike, matching
+-- can_read_lesson's free-sample branch's content-state conditions (this
+-- policy itself carries no in_free_sample check — preview metadata is
+-- visible for every lesson, free or paid, per docs/handoff.md). Entitled
+-- bypass (matching can_read_lesson's entitled branch): a purchaser can still
+-- SELECT the row — to render the lesson page's own title/description — even
+-- when the lesson is archived or its course unpublished.
+--
+-- GRANT, not just RLS: unlike `can_read_lesson` (SECURITY DEFINER — reads
+-- `course_entitlements` as its owner, so the caller's own grants never
+-- matter), this policy's EXISTS subquery runs as the CALLING role. Postgres
+-- checks table-level privileges for every relation a query plan touches
+-- BEFORE row-level filtering, regardless of whether a boolean OR would
+-- short-circuit past it at runtime — so referencing `course_entitlements`
+-- here requires the caller to hold a grant on it, or EVERY read of `lessons`
+-- by that role fails outright with "permission denied for table
+-- course_entitlements", not just the archived/unpublished rows. 041 granted
+-- `authenticated` SELECT on `course_entitlements` already; `anon` had none
+-- (correctly — anon never held an entitlement), so anonymous catalogue
+-- browsing broke entirely until this grant was added. `course_entitlements`
+-- keeps `anon` at zero visible rows regardless: its own RLS
+-- ("course_entitlements: owner read", 041) is `user_id = auth.uid()`, and
+-- `auth.uid()` is NULL for anon, which no row matches — this grant changes
+-- who may ASK the question, not what answer they get.
+GRANT SELECT ON TABLE course_entitlements TO anon;
+
 DROP POLICY IF EXISTS "lessons: published read" ON lessons;
 CREATE POLICY "lessons: published read"
   ON lessons FOR SELECT
   USING (
     published_version_id IS NOT NULL
-    AND archived_at IS NULL
-    AND EXISTS (SELECT 1 FROM courses c WHERE c.id = lessons.course_id AND c.status = 'published')
+    AND (
+      (
+        archived_at IS NULL
+        AND EXISTS (SELECT 1 FROM courses c WHERE c.id = lessons.course_id AND c.status = 'published')
+      )
+      OR EXISTS (
+        SELECT 1 FROM course_entitlements ce
+        WHERE ce.user_id = (SELECT auth.uid()) AND ce.course_id = lessons.course_id
+      )
+    )
   );
 
 
@@ -229,6 +289,15 @@ GRANT EXECUTE ON FUNCTION update_lesson(UUID, TEXT, TEXT, INT) TO authenticated;
 
 
 -- ── set_lesson_archived ─────────────────────────────────────────────────
+-- Gated on can_edit_course, same as every RPC in this file except
+-- create_course (see file header) — so any course_editors delegate, not
+-- only an admin, can archive a lesson. Since can_read_lesson's entitled
+-- branch now bypasses archived_at (above), this no longer touches a
+-- purchaser's access; it only removes the lesson from the free sample and
+-- the catalogue. docs/decisions/0025 notes this RPC (and unpublish_course,
+-- below) are reachable directly regardless of the admin-only page gate on
+-- /app/admin/courses/**, and revisits that when a delegated-editor screen
+-- is built.
 CREATE OR REPLACE FUNCTION set_lesson_archived(p_lesson_id UUID, p_archived BOOLEAN)
 RETURNS JSONB
 LANGUAGE plpgsql
