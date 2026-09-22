@@ -255,6 +255,10 @@ Steps:
 
    **Never push.** I review and push; the push closes the issue and the board
    moves it to Done.
+
+   Never edit acceptance-line text in an issue body — tick the box, put
+   evidence in the comment. The body must stay reconcilable with
+   backlog.mjs.
 7. If new work turns up, propose a new issue (title + acceptance) instead of
    doing it inside this one.
 8. When a card reaches Done — you tell me, or `board-status.mjs` shows `Done`
