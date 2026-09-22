@@ -779,6 +779,7 @@ export const CARDS = [
       'Course editor delegation works through the existing grant/revoke RPCs.',
       'English-only chrome, composed from existing admin components and classes.',
       "Course level can be edited (required) and each lesson's estimated minutes can be edited.",
+      'Creating a lesson generates its slug from the title at creation time; the slug is immutable afterward (docs/decisions/0023 — the importer matches re-imports on it).',
     ],
   },
   {
