@@ -7,65 +7,125 @@ system font is allowed" anywhere Alliengll content renders, and the served
 webfont "must be proven from the font files served, not assumed from a
 subset name." SHELL-002 (issue #63) is that proof.
 
-## What was checked and how
+**Revised after review.** The first version of this file and the code change
+it described were wrong about the mechanism, caught by two questions asked
+in review: (1) whether `fontkit`/`playwright` had landed as real project
+dependencies, and (2) whether the Cyrillic font file was being preloaded on
+every route, Colloquiz included. (1) was already fine — see "What was
+checked, corrected" below. (2) was real, and re-deriving *why* uncovered
+that the original code change (`subsets: ["latin", "cyrillic"]`) added that
+unwanted preload while contributing nothing to actual glyph coverage. The
+shipped fix is a full revert of the `subsets` change, not a `preload: false`
+patch.
 
-1. **Configuration**: `app/layout.tsx`'s `geistSans` (`next/font/google`
-   `Geist`) `subsets` widened from `["latin"]` to `["latin", "cyrillic"]`.
-   `geistMono` was left at `["latin"]` — it is Colloquiz-quiz-only (per its
-   existing comment; no Alliengll surface uses it) and Alliengll content
-   never renders in it.
+## What `subsets` actually does for this font (re-derived from `next/font`'s own source)
 
-2. **Glyph-table check, against the real build output.** `npm run build`,
-   then every served `.woff2` file Next attributed to the `Geist` family
-   (via `@font-face` rules in the emitted CSS — 5 files, split by
-   `unicode-range`) was parsed with `fontkit` (installed in a throwaway
-   scratch npm project outside this repo, per the acceptance line: "checked
-   ... with a one-off script, not committed as a dependency" — no font
-   parser was added to `package.json`). The script called
-   `hasGlyphForCodePoint` directly, not the CSS `unicode-range` hints, for
-   every code point SHELL-002's acceptance line names: U+0410-U+044F
+`next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js`
+constructs the Google Fonts CSS request from family, weights, styles and
+`display` only — `subsets` is never part of the URL. Fetching Google's css2
+endpoint for `family=Geist` directly (`curl`) confirms the response always
+contains the font's full split, five `@font-face` blocks, each preceded by
+a comment naming its subset:
+
+```
+/* cyrillic-ext */ ... unicode-range: U+0460-052F, ...
+/* cyrillic */     ... unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116
+/* vietnamese */   ...
+/* latin-ext */    ...
+/* latin */        ... unicode-range: U+0000-00FF, ..., U+2000-206F, ...
+```
+
+`find-font-files-in-css.js` then uses `subsets` for exactly one thing: which
+of those comment-labeled blocks gets marked `preloadFontFile: true`
+(`subsetsToPreload.includes(currentSubset)`) — i.e. which files get an eager
+`<link rel=preload>` / HTTP `Link` header on every route. **The CSS itself,
+and therefore which glyphs are servable, does not depend on `subsets` at
+all for this font.** The Cyrillic `@font-face` rule (and thus the glyphs
+SHELL-002 cares about) is present in the page's font CSS whether or not
+`"cyrillic"` is listed — this is also why `geistMono` (still `subsets:
+["latin"]`, never touched by this card) was already observed shipping a
+cyrillic-range file of its own: nothing font-specific about Sans caused
+that, it's this loader behavior, for every `Geist`-family font in this app.
+
+Confirmed empirically, not just from source, with matched pairs of clean
+builds (`rm -rf .next && npm run build`, then `npm start` + `curl -sI
+/login | grep Link:`, each pair using a fresh server process — a first
+attempt at this comparison was invalidated by a stale server left on port
+3000 from an earlier build, since this environment's `pkill` is not
+available and silently no-ops; verified via `Get-NetTCPConnection` before
+trusting a result the second time):
+
+| `subsets` | `@font-face` blocks in the built CSS | Files preloaded (`Link:` header) |
+|---|---|---|
+| `["latin"]` | 5 (all, cyrillic included) | 1 (latin only) |
+| `["latin", "cyrillic"]` | 5 (identical) | 2 (latin + cyrillic) |
+
+Same CSS either way; the only difference is a second font file force-fetched
+on every route when `"cyrillic"` is listed — including every current
+Colloquiz page, none of which render Cyrillic text yet. That runs against
+the performance boundary (`docs/handoff.md`) for no coverage benefit, so
+**the shipped code reverts `subsets` to `["latin"]`, unchanged from before
+this card.** The Cyrillic `@font-face` rule still ships in the shared CSS;
+the browser fetches that specific file lazily, on its own, the moment
+Alliengll content first renders a Cyrillic character — no system-font
+fallback at any point, satisfying Decision 5 with less eager network cost
+than the first version of this change.
+
+## What was checked, corrected
+
+1. **No new project dependency.** `fontkit` and `playwright` were installed
+   only in a throwaway scratch npm project outside this repo (`npm init -y`
+   + `npm install <pkg>` run from a temp directory, never from
+   `D:\Git\colloquiz`). `git show <SHELL-002 commit> -- package.json
+   package-lock.json` is empty — confirmed on review request, not assumed.
+
+2. **Glyph-table check, against the real build output.** Every `.woff2`
+   file Next attributes to the `Geist` family (5 files, by `unicode-range`)
+   was parsed with `fontkit` and checked via `hasGlyphForCodePoint` — not
+   the CSS `unicode-range` hint, which only says which file a browser
+   *would* fetch for a character, not whether that file's glyph table
+   actually contains it — for every code point SHELL-002 names: U+0410-U+044F
    (Cyrillic А-Я/а-я), U+0401/U+0451 (Ёё), U+00AB/U+00BB/U+2013/U+2014/U+2116
    (« » – — №), U+0022/U+0027 (straight quotes), U+2018/U+2019/U+201C/U+201D
-   (curly quotes). Result: **68/68 required code points present** across
-   the 5 files (0 gaps) — printed per-group counts, no group partial.
-
-   This distinction matters: `unicode-range` only tells a browser which file
-   to *fetch* for a given character; it says nothing about whether that
-   file's glyph table actually contains a drawable glyph for every code
-   point in its declared range. A subsetted build can under-declare or
-   (rarely) over-declare its own range. Checking the parsed font directly is
-   what "proven from the font files served, not assumed" requires.
+   (curly quotes). **68/68 covered, 0 gaps** — re-confirmed against the
+   final (`subsets: ["latin"]`) build's actual files, not only the
+   intermediate `["latin", "cyrillic"]` build; the file's content and glyph
+   set are identical between the two, only its "is this preloaded" filename
+   marker (`-s.p.` vs `-s.`) differs.
 
 3. **Rendered-fonts check, in a real browser.** A standalone HTML page
-   (outside the Next app, so it renders with zero application code — just
-   the `@font-face` rules copied verbatim from the real build CSS, repointed
-   at local copies of the same 5 served files) displaying the full required
-   character set with `font-family: Geist` and **no fallback stack**,
-   loaded in headless Edge via Playwright (the repo's existing precedent for
-   driving a real browser — `.claude/skills/verify/SKILL.md`). Playwright's
-   CDP session called `CSS.getPlatformFontsForNode` on the text container —
-   this is the exact data Chrome DevTools' "Rendered Fonts" panel shows,
-   not a CSS declaration or a script's guess. Result: exactly one font
-   family rendered the node, `"Geist"`, `isCustomFont: true` — no fallback
-   used for any character. A screenshot was captured as the acceptance
-   line's required visual evidence: https://claude.ai/artifact/UzUr1aia2H2bkPj4sQusor
-   (published artifact; also viewable as the Playwright screenshot referenced
-   in the SHELL-002 evidence comment).
+   (outside the Next app — just the `@font-face` rules copied verbatim from
+   the real build CSS, `font-family: Geist` with **no fallback stack**)
+   showing the full required character set, loaded in headless Edge via
+   Playwright. CDP's `CSS.getPlatformFontsForNode` (the same data behind
+   DevTools' "Rendered Fonts" panel) returned exactly one family, `"Geist"`,
+   `isCustomFont: true`, for the whole node — no fallback used. Screenshot:
+   https://claude.ai/artifact/UzUr1aia2H2bkPj4sQusor. This check depends on
+   the `@font-face` rule being present with a correct `src`, not on preload
+   timing, so it is unaffected by the subsets revert above.
 
 ## Result
 
-No gap. **No font-choice decision was triggered** — Geist Sans (`latin` +
-`cyrillic` subsets) covers the full required set. The acceptance line "any
-gap stops the card and becomes a font-choice decision" did not fire.
+No coverage gap — confirmed against both the intermediate and final builds.
+**No font-choice decision was triggered.** The code change that shipped is
+narrower than SHELL-002's acceptance line implies at first read: `subsets`
+was reverted to its pre-card value, and the actual deliverable is the proof
+itself plus this record of how `next/font`'s Google loader behaves for this
+font family, so a future session does not re-derive it from scratch or,
+worse, re-add the unwanted preload while "fixing" the subsets array to
+literally match the acceptance line's wording.
 
 ## What would make us revisit this
 
-- A future required character set grows beyond what SHELL-002 named (e.g.
-  a currency symbol, an IPA character for pronunciation notation) — re-run
-  the same two-step check (glyph table, then rendered-fonts) against the
-  new set before assuming coverage.
-- Geist itself changes its Cyrillic glyph set in a future version bump —
-  `next/font/google` pins by family/weight, not by a font-file hash, so a
-  Google-side font update would silently change what ships. If Alliengll
-  content ever reports visibly wrong Cyrillic rendering, re-run this check
-  before assuming a CSS/layout bug.
+- A future required character set grows beyond what SHELL-002 named — re-run
+  the same two checks (glyph table, then rendered-fonts) against the new set.
+- Geist changes its Cyrillic glyph set in a future version; `next/font`
+  pins by family/weight, not a file hash, so a Google-side update would
+  silently change what ships. Re-run this check before assuming a
+  CSS/layout bug if Alliengll content ever renders Cyrillic wrong.
+- If Alliengll content later needs the Cyrillic file preloaded on ITS OWN
+  routes specifically (once `app/(english)/` exists, M2) — that is a
+  legitimate, narrower use of `subsets`/`preload`, scoped to a layout that
+  actually renders Cyrillic, not the shared root layout every Colloquiz page
+  also loads. A future card doing that should re-read the mechanism above
+  rather than re-add `"cyrillic"` to the shared root layout's `subsets`.

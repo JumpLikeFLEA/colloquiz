@@ -7,14 +7,23 @@ import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
-// "cyrillic" is required, not decorative: SHELL-002 / docs/decisions/0018
-// Decision 5 — Alliengll course content is Russian, and no fallback to a
-// system font is allowed anywhere it renders. Geist Sans is the only face
-// Alliengll content uses (Geist Mono, below, is Colloquiz-quiz-only).
-// Coverage is PROVEN, not assumed — see docs/decisions/0021-shell002-geist-cyrillic-coverage.md.
+// `subsets` is deliberately just ["latin"], unchanged from before SHELL-002 —
+// see docs/decisions/0021. Google's css2 response for "Geist" always returns
+// the font's full unicode-range split (cyrillic included) regardless of what
+// `subsets` asks for; next/font's Google loader uses `subsets` ONLY to pick
+// which of those @font-face buckets get an eager <link rel=preload>/Link
+// header (next/dist/compiled/@next/font/dist/google/find-font-files-in-css.js).
+// Adding "cyrillic" here does not add any glyph coverage that wasn't already
+// present — it only adds a second font file, force-fetched on every route
+// including ones with no Cyrillic text, which runs against the performance
+// boundary (docs/handoff.md). The Cyrillic @font-face rule ships either way,
+// so the browser still fetches it lazily, on demand, via its own unicode-range
+// matching, the moment Alliengll content actually renders Cyrillic text — no
+// system-font fallback occurs at any point. Coverage is PROVEN (not merely
+// inferred from this reasoning) in docs/decisions/0021.
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin", "cyrillic"],
+  subsets: ["latin"],
 });
 
 // Used only on a handful of admin/quiz components (StageEditor, review
