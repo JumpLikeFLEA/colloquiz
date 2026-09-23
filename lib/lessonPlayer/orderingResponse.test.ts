@@ -3,7 +3,7 @@ import { scoreItem } from "../items";
 import { orderingModule } from "../items/ordering";
 import type { OrderingItem } from "../items";
 import { shuffleOrderingIndices } from "../items/shuffle";
-import { buildOrderingResponse, initialOrder, moveOrderElement } from "./orderingResponse";
+import { buildOrderingResponse, initialOrder, moveOrderElement, moveOrderElementToIndex } from "./orderingResponse";
 
 /** Drives the same move/build helpers a renderer's up/down-button handlers
  * call, through to `scoreItem`, without any React/jsdom involved — see the
@@ -39,6 +39,44 @@ describe("moveOrderElement", () => {
   it("moving an id not present in the order is a no-op", () => {
     const order = moveOrderElement(["a", "b"], "z", "up");
     expect(order).toEqual(["a", "b"]);
+  });
+});
+
+describe("moveOrderElementToIndex", () => {
+  it("moves an element forward across multiple positions in one call (a drag drop, not a single-step swap)", () => {
+    const order = moveOrderElementToIndex(["a", "b", "c", "d"], "a", 2);
+    expect(order).toEqual(["b", "c", "a", "d"]);
+  });
+
+  it("moves an element backward across multiple positions in one call", () => {
+    const order = moveOrderElementToIndex(["a", "b", "c", "d"], "d", 0);
+    expect(order).toEqual(["d", "a", "b", "c"]);
+  });
+
+  it("clamps a target past the end of the list to the last index, rather than throwing", () => {
+    const order = moveOrderElementToIndex(["a", "b", "c"], "a", 99);
+    expect(order).toEqual(["b", "c", "a"]);
+  });
+
+  it("clamps a target before the start of the list to index 0", () => {
+    const order = moveOrderElementToIndex(["a", "b", "c"], "c", -5);
+    expect(order).toEqual(["c", "a", "b"]);
+  });
+
+  it("is a no-op when the target index equals the current index", () => {
+    const order = moveOrderElementToIndex(["a", "b", "c"], "b", 1);
+    expect(order).toEqual(["a", "b", "c"]);
+  });
+
+  it("moving an id not present in the order is a no-op", () => {
+    const order = moveOrderElementToIndex(["a", "b"], "z", 0);
+    expect(order).toEqual(["a", "b"]);
+  });
+
+  it("agrees with moveOrderElement's adjacent-swap result for an up/down move", () => {
+    const order = ["a", "b", "c"];
+    expect(moveOrderElementToIndex(order, "b", 0)).toEqual(moveOrderElement(order, "b", "up"));
+    expect(moveOrderElementToIndex(order, "b", 2)).toEqual(moveOrderElement(order, "b", "down"));
   });
 });
 
