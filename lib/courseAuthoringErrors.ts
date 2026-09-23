@@ -22,6 +22,12 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   stale: { status: 409, message: "This lesson changed elsewhere — reload and try again." },
   invalid_document: { status: 400, message: "The lesson content isn't a valid document." },
   no_draft: { status: 400, message: "There's no draft to publish yet." },
+  // publish_lesson (045): should be unreachable, since the publish route
+  // always derives p_item_count server-side from the stored version's own
+  // document (never from the request) — kept for the same reason every
+  // other RPC error code here is mapped rather than falling through to the
+  // generic 400.
+  invalid_item_count: { status: 400, message: "That lesson's item count couldn't be determined." },
 };
 
 export function courseAuthoringErrorResponse(code: string | undefined): { status: number; body: { error: string } } {

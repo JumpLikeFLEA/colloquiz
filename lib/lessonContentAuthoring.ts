@@ -17,6 +17,10 @@ export type LessonContentDraft = {
    * `save_lesson_version` can detect a concurrent edit. Null when the lesson
    * has no versions yet (a brand-new lesson). */
   baseVersionId: string | null;
+  /** `lessons.published_version_id` — AUTH-005: compared against
+   * `baseVersionId` to show whether the lesson has unpublished changes.
+   * Null when the lesson has never been published. */
+  publishedVersionId: string | null;
 };
 
 export async function getLessonContentDraft(lessonId: string): Promise<LessonContentDraft | null> {
@@ -24,7 +28,7 @@ export async function getLessonContentDraft(lessonId: string): Promise<LessonCon
 
   const { data: lesson, error: lessonErr } = await supabase
     .from("lessons")
-    .select("id, title, course_id")
+    .select("id, title, course_id, published_version_id")
     .eq("id", lessonId)
     .maybeSingle();
   if (lessonErr) throw new Error(lessonErr.message);
@@ -45,6 +49,7 @@ export async function getLessonContentDraft(lessonId: string): Promise<LessonCon
     courseId: lesson.course_id,
     document: (latest?.document as unknown[] | undefined) ?? [],
     baseVersionId: latest?.id ?? null,
+    publishedVersionId: lesson.published_version_id,
   };
 }
 

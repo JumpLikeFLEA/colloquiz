@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, History } from "lucide-react";
+import { ArrowLeft, Eye, History } from "lucide-react";
 import { parseLessonDocument, type LessonBlock } from "@/lib/lessons";
 import { mapParseErrorsToFieldErrors, type LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
 import {
@@ -12,6 +12,7 @@ import {
   lessonImagePathFromUrl,
   validateLessonImageFile,
 } from "@/lib/lessonImages";
+import { lessonPublishStatus } from "@/lib/lessonPublishStatus";
 import { createClient } from "@/lib/supabase/client";
 import type { LessonContentDraft, LessonVersionSummary } from "@/lib/lessonContentAuthoring";
 import { BlockList } from "./BlockList";
@@ -64,6 +65,17 @@ export function LessonContentEditor({
   const [pendingImageDeletions, setPendingImageDeletions] = useState<string[]>([]);
 
   const documentErrors = fieldErrors.get("")?.get("") ?? [];
+  const publishStatus = lessonPublishStatus(baseVersionId, draft.publishedVersionId);
+  const PUBLISH_STATUS_LABEL: Record<typeof publishStatus, string> = {
+    unpublished: "Unpublished",
+    "published-current": "Published",
+    "published-stale": "Unpublished changes",
+  };
+  const PUBLISH_STATUS_CLASS: Record<typeof publishStatus, string> = {
+    unpublished: "bg-muted text-muted-foreground",
+    "published-current": "bg-brand-subtle text-brand-text",
+    "published-stale": "bg-warning-subtle text-warning",
+  };
 
   function updateBlocks(next: LessonBlock[]) {
     setBlocks(next);
@@ -183,9 +195,23 @@ export function LessonContentEditor({
             <ArrowLeft size={12} />
             Back to course
           </Link>
-          <h1 className="text-2xl font-bold text-foreground mt-1">{draft.lessonTitle}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <h1 className="text-2xl font-bold text-foreground">{draft.lessonTitle}</h1>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PUBLISH_STATUS_CLASS[publishStatus]}`}>
+              {PUBLISH_STATUS_LABEL[publishStatus]}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {baseVersionId && (
+            <Link
+              href={`/app/admin/courses/${courseId}/lessons/${draft.lessonId}/preview?version=${baseVersionId}`}
+              className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors"
+            >
+              <Eye size={14} />
+              Preview
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setHistoryOpen(true)}
