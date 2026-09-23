@@ -82,3 +82,48 @@ export function lessonImagePathFromUrl(url: string | null | undefined): string |
   const path = url.slice(at + marker.length).split("?")[0];
   return path.length > 0 ? decodeURIComponent(path) : null;
 }
+
+/**
+ * Every image URL a raw (unparsed) lesson document actually carries, in
+ * authored order — AUTH-006's orphan sweep. Two authored shapes carry one
+ * (lib/lessons/theoryBlocks.ts's `ImageBlockSchema`, lib/items/matching.ts's
+ * `MatchingContentSchema`):
+ *   - a theory block: { kind: "theory", type: "image", url }
+ *   - a matching item's left/right content: { kind: "image", src }
+ * Reads a raw document, not a `parseLessonDocument` result — the sweep runs
+ * over every stored `lesson_versions.document`, including malformed rows a
+ * later schema change left behind, so this skips anything not shaped like a
+ * recognised block instead of throwing.
+ */
+export function extractLessonImageUrls(document: unknown): string[] {
+  if (!Array.isArray(document)) return [];
+  const urls: string[] = [];
+
+  for (const block of document) {
+    if (!block || typeof block !== "object") continue;
+    const b = block as Record<string, unknown>;
+
+    if (b.kind === "theory" && b.type === "image" && typeof b.url === "string") {
+      urls.push(b.url);
+      continue;
+    }
+
+    if (b.kind === "practice" && b.type === "matching") {
+      const payload = b.payload as Record<string, unknown> | undefined;
+      for (const side of ["left", "right"] as const) {
+        const entries = payload?.[side];
+        if (!Array.isArray(entries)) continue;
+        for (const entry of entries) {
+          const content = (entry as Record<string, unknown> | undefined)?.content as
+            | Record<string, unknown>
+            | undefined;
+          if (content?.kind === "image" && typeof content.src === "string") {
+            urls.push(content.src);
+          }
+        }
+      }
+    }
+  }
+
+  return urls;
+}
