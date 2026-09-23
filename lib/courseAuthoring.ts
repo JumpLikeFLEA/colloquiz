@@ -87,9 +87,13 @@ export async function getAuthoredCourseDetail(courseId: string): Promise<Authore
     .order("ordinal");
   if (lessonsErr) throw new Error(lessonsErr.message);
 
+  // course_editors has two FKs to profiles (user_id, granted_by), so the
+  // implicit embed below is ambiguous to PostgREST without a hint — "!user_id"
+  // picks the FK by column name rather than the (unnamed-in-migration, so
+  // auto-generated) constraint name.
   const { data: editors, error: editorsErr } = await supabase
     .from("course_editors")
-    .select("user_id, granted_at, profiles(display_name, full_name)")
+    .select("user_id, granted_at, profiles!user_id(display_name, full_name)")
     .eq("course_id", courseId);
   if (editorsErr) throw new Error(editorsErr.message);
 
