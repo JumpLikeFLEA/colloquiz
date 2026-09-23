@@ -106,6 +106,7 @@ export function OrderingRenderer({
     <div className="rounded-lg border border-border bg-card p-3">
       <p className="mb-3 text-sm font-medium text-foreground">{item.payload.prompt}</p>
       <DndContext
+        id={`ordering-${item.id}`}
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}

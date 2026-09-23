@@ -157,6 +157,26 @@ don't need the same accommodation. This is the "touch target extends via
 padding/negative margin rather than visual height" mechanism the request
 names directly.
 
+## Decision 6 — an explicit `DndContext id`, to fix an SSR hydration mismatch
+
+`DndContext` auto-generates the id it uses for its `aria-describedby`
+attribute (`DndDescribedBy-N`) from a module-level counter that increments
+once per `DndContext` mounted. `lesson-player-demo`'s fixture document
+mounts several `DndContext`s on one page (one per `ordering`/`slots`-drag
+practice block) via server-side rendering, and the counter's starting value
+differed between the server render pass and the client hydration pass —
+React flagged it as a hydration mismatch (attributes not matching), traced to
+`BankChip`'s `aria-describedby`. This is a documented dnd-kit SSR caveat, not
+a bug in this renderer's own logic: the library's fix is to pass an explicit,
+stable `id` prop to `DndContext` instead of relying on the auto-counter.
+
+Both `OrderingRenderer` and `DragSlots` now pass
+`id={`ordering-${item.id}`}` / `id={`slots-${item.id}`}` — `item.id` is
+authored content, identical on the server and the client, so the id is
+stable across the hydration boundary and unique per practice block on the
+page (two `slots`/`ordering` blocks in the same lesson never share an
+`item.id`, per each type's own `parse`).
+
 ## Verification
 
 `npm run check` and `npm test` pass (419 tests; `moveOrderElementToIndex`,
