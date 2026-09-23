@@ -761,6 +761,32 @@ export const CARDS = [
       'No `ItemPlaygroundClient.tsx` code is reused. Its header marks it throwaway.',
     ],
   },
+  {
+    key: 'PLAY-005',
+    title: 'RTL smoke tests for the PLAY-002..004 renderers',
+    milestone: 'M1',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 1010,
+    dependsOn: ['PLAY-002', 'PLAY-003', 'PLAY-004'],
+    goal:
+      'Low-priority, blocks nothing. AUTH-003 (2026-09-23) added React Testing ' +
+      'Library + jsdom to this repo for the first time — the "revisit when" a ' +
+      'component-rendering setup exists, named by docs/decisions/0024 Decision ' +
+      '4 and 0029 Decision 3. Until now every PLAY-002..004 renderer was ' +
+      'verified only through pure lib/items/*.test.ts helpers plus manual ' +
+      'browser checks; the hydration mismatch and client-boundary bugs fixed ' +
+      'during PLAY-001..004 (see the DndContext/SortableContext id fixes in ' +
+      'recent commits) slipped through exactly that gap. A cheap smoke layer ' +
+      'now that the tooling exists, not a full interaction-test rewrite.',
+    acceptance: [
+      'One RTL test per practice renderer (selection, selection_grid, ordering, matching, slots) that mounts it inside `LessonPlayer` with a real fixture (reuse `lib/items/__fixtures__/playgroundExamples.ts`, same precedent AUTH-003\'s tests set) and asserts it renders without throwing.',
+      'At least one interaction per renderer reaches `onScore`/`scoreItem` — e.g. selecting an option, submitting an order — proving the renderer is wired to real scoring, not just that it paints.',
+      'Uses the `editor` vitest project (docs/decisions/0036) or a renamed equivalent; no new test-runner config beyond what AUTH-003 already added.',
+      'Does not replace the existing pure `lib/items/*.test.ts` coverage or the 360px Playwright-viewport checks recorded in 0029 Decision 3/4 — this is additive, a rendering smoke layer only.',
+    ],
+    notes: 'priority:low. Proposed 2026-09-23 during AUTH-003/004/005 review, not blocking any open card.',
+  },
 
   // --------------------------------------------------------------- AUTH ---
   {
@@ -853,6 +879,29 @@ export const CARDS = [
       'PLAY-002..004 as well as PLAY-001; those may still be in progress when ' +
       'this card starts, in which case preview covers whichever renderers ' +
       'exist and the gap is named, not hidden.',
+  },
+  {
+    key: 'AUTH-006',
+    title: 'Sweep orphaned lesson-image uploads',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 1020,
+    dependsOn: ['AUTH-004'],
+    goal:
+      'Low-priority, blocks nothing. AUTH-004/docs/decisions/0037 deliberately ' +
+      'defers deleting a replaced lesson image until the SAVE that replaces it ' +
+      'succeeds, so an image uploaded during an edit that is never saved (tab ' +
+      'closed, navigated away, CNT-003 rejected the block) becomes an orphan ' +
+      'object in the `lesson-images` bucket — nothing ever references it and ' +
+      'nothing ever deletes it. Accepted as a stray-file cost at the time, not ' +
+      'a correctness bug, but unbounded over time without a sweep.',
+    acceptance: [
+      'A script (or scheduled job) lists every object in the `lesson-images` bucket and every image URL actually referenced by any `lesson_versions.document` (theory image blocks and matching image content), and reports objects in the bucket that are referenced by none.',
+      'Deletion is a separate, explicit step from the report — the first run is read-only, printed output only, so the report can be sanity-checked against real data before anything is deleted.',
+      'Run manually first against seeded/real data with output printed; only scheduled once that output looks correct.',
+    ],
+    notes: 'priority:low. Proposed 2026-09-23 during AUTH-004 review, not blocking any open card.',
   },
 ];
 
