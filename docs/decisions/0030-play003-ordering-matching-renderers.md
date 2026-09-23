@@ -125,3 +125,15 @@ updated to say which.
   the expand-in-place chip picker may need to become a proper modal/sheet
   instead of an inline reveal — not needed for the sizes this card's fixtures
   and the one shipped course use.
+
+## Superseded in part by 0032
+
+**Decision 1 (`ordering`: no drag) is reversed by docs/decisions/0032**, at
+explicit user request and with `@dnd-kit/sortable`/`@dnd-kit/utilities`
+approved as dependencies — the "what would make us revisit this" condition
+above (a resolution to the mid-drag-scroll question) is met by dnd-kit's own
+`TouchSensor` activation-delay/tolerance handling, not by an on-device test
+this session ran. The up/down move buttons this decision designed stay, now
+as the keyboard/no-gesture fallback 0032 explicitly keeps them as — they were
+never removed. `matching` (Decision 2) is UNCHANGED by 0032; only `ordering`
+and `slots` (0031/0032) gained real drag.
