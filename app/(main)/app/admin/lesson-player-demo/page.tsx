@@ -195,6 +195,40 @@ const DEMO_DOCUMENT = [
       },
     },
   },
+  {
+    id: "q6",
+    kind: "practice",
+    type: "slots",
+    payload: {
+      prompt: "Yesterday I ___ to the shop and ___ some bread.",
+      input: "typed",
+      gaps: [
+        { id: "s1", acceptedAnswers: ["went"], explanationRef: "s1r" },
+        { id: "s2", acceptedAnswers: ["bought"], explanationRef: "s2r" },
+      ],
+      explanations: {
+        s1r: "go is irregular: go -> went.",
+        s2r: "buy is irregular: buy -> bought.",
+      },
+    },
+  },
+  {
+    id: "q7",
+    kind: "practice",
+    type: "slots",
+    payload: {
+      prompt: "She ___ TV and then ___ to bed.",
+      input: "drag",
+      gaps: [
+        { id: "d1", acceptedAnswers: ["watched"], explanationRef: "d1r" },
+        { id: "d2", acceptedAnswers: ["went"], explanationRef: "d2r" },
+      ],
+      explanations: {
+        d1r: "watch is regular: watch -> watched.",
+        d2r: "go is irregular: go -> went.",
+      },
+    },
+  },
 ];
 
 export default async function LessonPlayerDemoPage() {

@@ -4,13 +4,15 @@ import { MatchingRenderer } from "./MatchingRenderer";
 import { OrderingRenderer } from "./OrderingRenderer";
 import { SelectionGridRenderer } from "./SelectionGridRenderer";
 import { SelectionRenderer } from "./SelectionRenderer";
+import { SlotsRenderer } from "./SlotsRenderer";
 
 /**
- * PLAY-002/003 — the real `practiceRenderer` for `LessonPlayer`, dispatching
- * on `block.item.type`. `selection`/`selection_grid`/`ordering`/`matching`
- * have interactive renderers now; `slots` falls back to the PLAY-001
- * placeholder until PLAY-004 lands, same "renders something for every
- * authored block in order" contract PracticeBlockPlaceholder documents.
+ * PLAY-002..004 — the real `practiceRenderer` for `LessonPlayer`, dispatching
+ * on `block.item.type`. All five item types have interactive renderers now;
+ * `default` stays as the PLAY-001 placeholder for forward-compatibility with
+ * a future sixth type (`free_text`, deferred per docs/handoff.md), same
+ * "renders something for every authored block in order" contract
+ * PracticeBlockPlaceholder documents.
  */
 export function practiceRenderer({ block, attemptId, onScore }: PracticeRendererProps) {
   switch (block.item.type) {
@@ -22,6 +24,8 @@ export function practiceRenderer({ block, attemptId, onScore }: PracticeRenderer
       return <OrderingRenderer item={block.item} attemptId={attemptId} onScore={onScore} />;
     case "matching":
       return <MatchingRenderer item={block.item} attemptId={attemptId} onScore={onScore} />;
+    case "slots":
+      return <SlotsRenderer item={block.item} attemptId={attemptId} onScore={onScore} />;
     default:
       return <PracticeBlockPlaceholder block={block} />;
   }
