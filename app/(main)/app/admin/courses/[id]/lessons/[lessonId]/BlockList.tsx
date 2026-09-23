@@ -30,6 +30,7 @@ import { THEORY_BLOCK_TYPES, type TheoryBlock, type TheoryBlockType } from "@/li
 import type { LessonBlock } from "@/lib/lessons";
 import type { LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
 import { BlockForm } from "./BlockForm";
+import { PracticeItemForm } from "./PracticeItemForm";
 
 // The block-list half of AUTH-002: add, edit (theory only — practice-block
 // forms are AUTH-003), delete and reorder every block in the lesson
@@ -286,10 +287,11 @@ function BlockRow({
       {expanded && (
         <div className="px-4 pb-4 pt-1 border-t border-border">
           {block.kind === "practice" ? (
-            <p className="text-sm text-muted-foreground py-2">
-              Practice items are edited in the item editor (AUTH-003), not yet built. This block can still be
-              reordered or deleted here.
-            </p>
+            <PracticeItemForm
+              item={block.item}
+              onChange={(item) => onChange({ ...block, item })}
+              errors={blockErrors}
+            />
           ) : (
             <BlockForm block={block} onChange={onChange} errors={blockErrors} />
           )}

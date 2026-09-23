@@ -25,15 +25,15 @@ import { InlineEditor } from "./InlineEditor";
 // (theoryBlocks.ts), so each form here writes exactly the fields that
 // type's schema declares, nothing more.
 
-const inputClass =
+export const inputClass =
   "w-full px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none";
-const labelClass = "text-xs font-medium text-muted-foreground";
+export const labelClass = "text-xs font-medium text-muted-foreground";
 
-function errorsFor(errors: BlockFieldErrors | undefined, path: string): string[] | undefined {
+export function errorsFor(errors: BlockFieldErrors | undefined, path: string): string[] | undefined {
   return errors?.get(path);
 }
 
-function TextField({
+export function TextField({
   label,
   value,
   onChange,
