@@ -1,6 +1,20 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { Check, X } from "lucide-react";
 import { scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SlotsItem } from "@/lib/items";
@@ -8,9 +22,10 @@ import { shuffleForItem } from "@/lib/items/shuffle";
 import {
   buildSlotsResponse,
   buildSlotsResponseFromChips,
-  clearChip,
   clearGapAnswer,
-  placeChip,
+  firstEmptyGapId,
+  moveChipToBank,
+  moveChipToGap,
   setGapAnswer,
   splitPromptOnGaps,
 } from "@/lib/lessonPlayer/slotsResponse";
@@ -18,7 +33,7 @@ import {
 type SubResultById = Map<string, ItemScoreResult["subResults"][number]>;
 
 /**
- * PLAY-004 — `slots` renderer (cloze / word insertion; lib/items/slots.ts).
+ * PLAY-004/0032 — `slots` renderer (cloze / word insertion; lib/items/slots.ts).
  * `payload.input` picks the interaction per item — this component dispatches
  * to `TypedSlots` or `DragSlots`, never re-implements normalisation (that
  * stays in slots.ts's `score`, per this card's own acceptance line).
@@ -30,15 +45,18 @@ type SubResultById = Map<string, ItemScoreResult["subResults"][number]>;
  * item" discipline as PracticeBlockPlaceholder) rather than misplacing a gap
  * against the wrong point in the sentence.
  *
- * `drag` is TAP-TO-PLACE, not a pointer-drag gesture — same touch/scroll
- * reasoning as docs/decisions/0030 Decisions 1-2 (ordering/matching): a
- * hand-rolled native-drag gesture has real touch-scroll conflicts on a 360px
- * screen, and `slotsModule.rendererNeeds.inputs` including `"typed"` shows
- * the type itself treats a non-continuous-gesture input as a first-class
- * alternative. Unlike matching's REUSABLE right-side pool (0013 many-to-one),
- * a slots chip is CONSUMED once placed: each gap is authored with its own
- * primary word (`acceptedAnswers[0]`) and there are exactly as many chips as
- * gaps, a 1:1 assignment, not a many-to-one one.
+ * `drag` is now an ACTUAL pointer/touch drag (`@dnd-kit/core`), reversing
+ * 0031's "tap-to-place only" call the same way docs/decisions/0032 reverses
+ * 0030 Decision 1 for `ordering` — see 0032 for why that reversal is safe.
+ * The full tap flow (tap a gap, then a chip; tap a chip with no gap selected
+ * to fill the first empty one) is KEPT, not replaced — it is still the
+ * keyboard/no-pointer-gesture path, and both flows go through the identical
+ * `moveChipToGap`/`moveChipToBank` pair in lib/lessonPlayer/slotsResponse.ts,
+ * so no placement logic is duplicated between them. Unlike matching's
+ * REUSABLE right-side pool (0013 many-to-one), a slots chip is CONSUMED once
+ * placed: each gap is authored with its own primary word
+ * (`acceptedAnswers[0]`) and there are exactly as many chips as gaps, a 1:1
+ * assignment, not a many-to-one one — unchanged by this card.
  */
 export function SlotsRenderer({
   item,
@@ -192,12 +210,22 @@ function TypedSlots({
   );
 }
 
+/** A droppable target that isn't any authored gap — where a dragged chip
+ * returns to the bank. Authored gap ids come from `SlotGapSchema` (min-1
+ * strings an author chooses), so this sentinel only needs to not collide
+ * with one in practice; it is never compared against authored content. */
+const BANK_DROPPABLE_ID = "__slots_bank__";
+
 /**
- * `input: 'drag'` — tap-to-place. Tapping a gap makes it "active" and shows
- * the pool of not-yet-placed chips below the prompt; tapping a chip places
- * it at the active gap and consumes it from the pool. A single shared pool
- * panel (not one per gap, unlike MatchingRenderer's per-row expand) because
- * gaps sit inline in running text here, not as separate full-width rows.
+ * `input: 'drag'` — the option bank is ALWAYS visible below the prompt (not
+ * gated behind selecting a gap), and every chip and every gap is a
+ * `@dnd-kit/core` draggable/droppable. Tap flow is kept alongside it: tap a
+ * gap to select it (highlighted), then tap a bank chip to fill it; or tap a
+ * bank chip with no gap selected to fill the first empty gap
+ * (`firstEmptyGapId`). Both flows, and every drag drop (chip-to-gap,
+ * chip-to-bank, gap-to-gap), resolve through `moveChipToGap`/
+ * `moveChipToBank` — this component only ever decides WHICH chip/gap ids to
+ * pass in, never how the placement map changes.
  */
 function DragSlots({
   item,
@@ -211,16 +239,27 @@ function DragSlots({
   segments: string[] | null;
 }) {
   const { gaps, prompt } = item.payload;
+  const gapIds = useMemo(() => gaps.map((gap) => gap.id), [gaps]);
   const chips = useMemo(() => gaps.map((gap) => ({ id: gap.id, text: gap.acceptedAnswers[0] })), [gaps]);
   const chipTextById = useMemo(() => new Map(chips.map((chip) => [chip.id, chip.text])), [chips]);
   const shuffledChips = useMemo(() => shuffleForItem(chips, attemptId, item.id), [chips, attemptId, item.id]);
 
   const [placedChip, setPlacedChip] = useState<Map<string, string>>(new Map());
   const [activeGap, setActiveGap] = useState<string | null>(null);
+  const [draggingChipId, setDraggingChipId] = useState<string | null>(null);
   const [result, setResult] = useState<ItemScoreResult | null>(null);
   const submitted = result !== null;
   const subResultById: SubResultById = new Map(result?.subResults.map((r) => [r.id, r]));
   const usedChipIds = new Set(placedChip.values());
+
+  // Same sensor set as OrderingRenderer (docs/decisions/0032): a small
+  // pointer-distance constraint and a ~200ms/~5px touch activation constraint
+  // so a plain tap or a vertical page swipe never gets mistaken for a drag.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
 
   function submit() {
     const scored = scoreItem(item, buildSlotsResponseFromChips(placedChip, chipTextById));
@@ -228,73 +267,250 @@ function DragSlots({
     onScore(scored);
   }
 
+  function fillFromChip(chipId: string) {
+    const targetGap = activeGap ?? firstEmptyGapId(gapIds, placedChip);
+    if (!targetGap) return; // every gap already holds a chip -- nothing to do
+    setPlacedChip((prev) => moveChipToGap(prev, chipId, targetGap));
+    setActiveGap(null);
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setDraggingChipId(event.active.id as string);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setDraggingChipId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const chipId = active.id as string;
+    if (over.id === BANK_DROPPABLE_ID) {
+      setPlacedChip((prev) => moveChipToBank(prev, chipId));
+    } else {
+      setPlacedChip((prev) => moveChipToGap(prev, chipId, over.id as string));
+    }
+  }
+
   return (
     <div className="rounded-lg border border-border bg-card p-3">
-      <GapLayout
-        prompt={prompt}
-        segments={segments}
-        gapCount={gaps.length}
-        renderGap={(index) => {
-          const gap = gaps[index];
-          const chipId = placedChip.get(gap.id);
-          const subResult = subResultById.get(gap.id);
-          return (
-            <button
-              type="button"
-              disabled={submitted}
-              aria-label={`Gap ${index + 1}${chipId ? `, filled with "${chipTextById.get(chipId)}"` : ", empty"}`}
-              onClick={() => setActiveGap((prev) => (prev === gap.id ? null : gap.id))}
-              className={`${gapControlClassName({ submitted, correct: subResult?.correct })} cursor-pointer disabled:cursor-not-allowed ${
-                !submitted && activeGap === gap.id ? "border-brand bg-brand-subtle" : ""
-              }`}
-            >
-              {chipId ? chipTextById.get(chipId) : "___"}
-              {submitted &&
-                (subResult?.correct ? (
-                  <Check className="ml-1 size-4 shrink-0 text-success" aria-hidden="true" />
-                ) : (
-                  <X className="ml-1 size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-                ))}
-            </button>
-          );
-        }}
-      />
-      {!submitted && activeGap && (
-        <div className="mb-3 flex flex-wrap gap-2 rounded-lg border border-border bg-background p-2">
-          {shuffledChips
-            .filter((chip) => !usedChipIds.has(chip.id))
-            .map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => {
-                  setPlacedChip((prev) => placeChip(prev, activeGap, chip.id));
-                  setActiveGap(null);
-                }}
-                className="min-h-11 rounded-md border border-border bg-card px-3 py-1.5 text-sm transition-colors cursor-pointer hover:border-brand/40"
-              >
-                {chip.text}
-              </button>
-            ))}
-          {placedChip.has(activeGap) && (
-            <button
-              type="button"
-              onClick={() => {
-                setPlacedChip((prev) => clearChip(prev, activeGap));
-                setActiveGap(null);
-              }}
-              className="min-h-11 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors cursor-pointer hover:border-destructive-border"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      )}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setDraggingChipId(null)}
+      >
+        <GapLayout
+          prompt={prompt}
+          segments={segments}
+          gapCount={gaps.length}
+          renderGap={(index) => {
+            const gap = gaps[index];
+            const chipId = placedChip.get(gap.id);
+            const subResult = subResultById.get(gap.id);
+            return (
+              <GapDropTarget
+                gapId={gap.id}
+                index={index}
+                chipId={chipId}
+                chipText={chipId ? chipTextById.get(chipId) : undefined}
+                submitted={submitted}
+                correct={subResult?.correct}
+                active={activeGap === gap.id}
+                onTapToggle={() => setActiveGap((prev) => (prev === gap.id ? null : gap.id))}
+              />
+            );
+          }}
+        />
+        <ChipBank
+          chips={shuffledChips}
+          usedChipIds={usedChipIds}
+          submitted={submitted}
+          onTapChip={fillFromChip}
+        />
+        {!submitted && activeGap && placedChip.has(activeGap) && (
+          <button
+            type="button"
+            onClick={() => {
+              setPlacedChip((prev) => moveChipToBank(prev, placedChip.get(activeGap)!));
+              setActiveGap(null);
+            }}
+            className="mb-3 min-h-11 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors cursor-pointer hover:border-destructive-border"
+          >
+            Clear
+          </button>
+        )}
+        <DragOverlay>
+          {draggingChipId ? <ChipPreview text={chipTextById.get(draggingChipId) ?? ""} /> : null}
+        </DragOverlay>
+      </DndContext>
       {!submitted && (
         <button type="button" onClick={submit} className={submitButtonClassName()}>
           Submit
         </button>
       )}
+    </div>
+  );
+}
+
+/** A gap in the sentence: a droppable zone always, and (when filled) also
+ * the draggable chip sitting in it — dragging that chip back out reads as
+ * "move", handled by the same `onDragEnd` as every other drop. */
+function GapDropTarget({
+  gapId,
+  index,
+  chipId,
+  chipText,
+  submitted,
+  correct,
+  active,
+  onTapToggle,
+}: {
+  gapId: string;
+  index: number;
+  chipId: string | undefined;
+  chipText: string | undefined;
+  submitted: boolean;
+  correct: boolean | undefined;
+  active: boolean;
+  onTapToggle: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: gapId, disabled: submitted });
+
+  return (
+    <span
+      ref={setNodeRef}
+      className={`${gapControlClassName({ submitted, correct })} ${
+        !submitted && isOver ? "ring-2 ring-brand" : ""
+      } ${!submitted && active ? "border-brand bg-brand-subtle" : ""}`}
+    >
+      {chipId && chipText ? (
+        <DraggableChip id={chipId} text={chipText} submitted={submitted} onTap={onTapToggle} />
+      ) : (
+        <button
+          type="button"
+          disabled={submitted}
+          aria-label={`Gap ${index + 1}, empty`}
+          onClick={onTapToggle}
+          className="flex h-full w-full cursor-pointer items-center justify-center disabled:cursor-not-allowed"
+        >
+          ___
+        </button>
+      )}
+      {submitted &&
+        (correct ? (
+          <Check className="ml-1 size-4 shrink-0 text-success" aria-hidden="true" />
+        ) : (
+          <X className="ml-1 size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+        ))}
+    </span>
+  );
+}
+
+/** A chip already placed at a gap — draggable (to move it), and tappable
+ * (to select its gap, same as tapping an empty gap does). */
+function DraggableChip({
+  id,
+  text,
+  submitted,
+  onTap,
+}: {
+  id: string;
+  text: string;
+  submitted: boolean;
+  onTap: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, disabled: submitted });
+  const style = { transform: CSS.Translate.toString(transform), touchAction: "none" };
+
+  return (
+    <button
+      ref={setNodeRef}
+      style={style}
+      type="button"
+      disabled={submitted}
+      aria-label={`"${text}" in this gap — tap to select, or drag to move`}
+      onClick={onTap}
+      className={`flex h-full w-full cursor-grab items-center justify-center disabled:cursor-not-allowed ${
+        isDragging ? "opacity-40" : ""
+      }`}
+      {...attributes}
+      {...listeners}
+    >
+      {text}
+    </button>
+  );
+}
+
+/** The always-visible word bank. Only unplaced chips render here — a placed
+ * chip renders once, inline at its gap (`DraggableChip`), never duplicated. */
+function ChipBank({
+  chips,
+  usedChipIds,
+  submitted,
+  onTapChip,
+}: {
+  chips: Array<{ id: string; text: string }>;
+  usedChipIds: Set<string>;
+  submitted: boolean;
+  onTapChip: (chipId: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: BANK_DROPPABLE_ID, disabled: submitted });
+  const available = chips.filter((chip) => !usedChipIds.has(chip.id));
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`mb-3 flex min-h-14 flex-wrap items-center gap-2 rounded-lg border p-2 transition-colors ${
+        !submitted && isOver ? "border-brand bg-brand-subtle/30" : "border-border bg-background"
+      }`}
+    >
+      {available.length === 0 && submitted === false && (
+        <span className="px-1 text-xs text-muted-foreground">All words placed</span>
+      )}
+      {available.map((chip) => (
+        <BankChip key={chip.id} id={chip.id} text={chip.text} submitted={submitted} onTap={() => onTapChip(chip.id)} />
+      ))}
+    </div>
+  );
+}
+
+function BankChip({
+  id,
+  text,
+  submitted,
+  onTap,
+}: {
+  id: string;
+  text: string;
+  submitted: boolean;
+  onTap: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, disabled: submitted });
+  const style = { transform: CSS.Translate.toString(transform), touchAction: "none" };
+
+  return (
+    <button
+      ref={setNodeRef}
+      style={style}
+      type="button"
+      disabled={submitted}
+      onClick={onTap}
+      className={`min-h-11 rounded-md border border-border bg-card px-3 py-1.5 text-sm transition-colors cursor-grab hover:border-brand/40 disabled:cursor-not-allowed ${
+        isDragging ? "opacity-40" : ""
+      }`}
+      {...attributes}
+      {...listeners}
+    >
+      {text}
+    </button>
+  );
+}
+
+/** The floating clone `DragOverlay` renders at the pointer while a chip is
+ * lifted, from either the bank or a gap. */
+function ChipPreview({ text }: { text: string }) {
+  return (
+    <div className="min-h-11 rounded-md border border-brand bg-card px-3 py-1.5 text-sm text-foreground shadow-lg">
+      {text}
     </div>
   );
 }

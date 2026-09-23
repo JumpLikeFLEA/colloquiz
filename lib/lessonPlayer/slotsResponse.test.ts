@@ -6,9 +6,10 @@ import { shuffleForItem } from "../items/shuffle";
 import {
   buildSlotsResponse,
   buildSlotsResponseFromChips,
-  clearChip,
   clearGapAnswer,
-  placeChip,
+  firstEmptyGapId,
+  moveChipToBank,
+  moveChipToGap,
   setGapAnswer,
   splitPromptOnGaps,
 } from "./slotsResponse";
@@ -69,20 +70,57 @@ describe("setGapAnswer / clearGapAnswer", () => {
   });
 });
 
-describe("placeChip / clearChip", () => {
-  it("sets and overwrites a gap's placed chip", () => {
-    let placed = placeChip(new Map(), "g1", "chip-a");
+describe("moveChipToGap / moveChipToBank", () => {
+  it("places a chip at an empty gap", () => {
+    const placed = moveChipToGap(new Map(), "chip-a", "g1");
     expect(placed.get("g1")).toBe("chip-a");
-    placed = placeChip(placed, "g1", "chip-b");
-    expect(placed.get("g1")).toBe("chip-b");
   });
 
-  it("clear removes only the named gap's placement", () => {
-    let placed = placeChip(new Map(), "g1", "chip-a");
-    placed = placeChip(placed, "g2", "chip-b");
-    placed = clearChip(placed, "g1");
+  it("moving a chip to a new gap vacates its previous gap", () => {
+    let placed = moveChipToGap(new Map(), "chip-a", "g1");
+    placed = moveChipToGap(placed, "chip-a", "g2");
+    expect(placed.has("g1")).toBe(false);
+    expect(placed.get("g2")).toBe("chip-a");
+  });
+
+  it("moving a chip onto an already-filled gap swaps -- the displaced chip returns to the bank, not lost", () => {
+    let placed = moveChipToGap(new Map(), "chip-a", "g1");
+    placed = moveChipToGap(placed, "chip-b", "g1");
+    expect(placed.get("g1")).toBe("chip-b");
+    expect([...placed.values()]).not.toContain("chip-a"); // chip-a is back in the bank, not on any gap
+  });
+
+  it("moveChipToBank removes only the named chip's placement", () => {
+    let placed = moveChipToGap(new Map(), "chip-a", "g1");
+    placed = moveChipToGap(placed, "chip-b", "g2");
+    placed = moveChipToBank(placed, "chip-a");
     expect(placed.has("g1")).toBe(false);
     expect(placed.get("g2")).toBe("chip-b");
+  });
+
+  it("moveChipToBank on a chip that isn't placed anywhere is a no-op", () => {
+    const placed = moveChipToGap(new Map(), "chip-a", "g1");
+    const next = moveChipToBank(placed, "chip-z");
+    expect(next).toEqual(placed);
+  });
+});
+
+describe("firstEmptyGapId", () => {
+  it("returns the first gap (in authored order) with no chip placed", () => {
+    const placed = moveChipToGap(new Map(), "chip-a", "g2");
+    expect(firstEmptyGapId(["g1", "g2", "g3"], placed)).toBe("g1");
+  });
+
+  it("skips a filled gap even if it isn't first alphabetically/numerically out of order", () => {
+    let placed = moveChipToGap(new Map(), "chip-a", "g1");
+    placed = moveChipToGap(placed, "chip-b", "g3");
+    expect(firstEmptyGapId(["g1", "g2", "g3"], placed)).toBe("g2");
+  });
+
+  it("returns null when every gap already holds a chip", () => {
+    let placed = moveChipToGap(new Map(), "chip-a", "g1");
+    placed = moveChipToGap(placed, "chip-b", "g2");
+    expect(firstEmptyGapId(["g1", "g2"], placed)).toBeNull();
   });
 });
 
@@ -121,9 +159,9 @@ describe("slots (drag): place -> build -> score", () => {
 
   it("scores all gaps right when every chip lands on its own gap", () => {
     const item = parsedSlots(THREE_GAP_ITEM);
-    let placed = placeChip(new Map(), "g1", "g1");
-    placed = placeChip(placed, "g2", "g2");
-    placed = placeChip(placed, "g3", "g3");
+    let placed = moveChipToGap(new Map(), "g1", "g1");
+    placed = moveChipToGap(placed, "g2", "g2");
+    placed = moveChipToGap(placed, "g3", "g3");
 
     const result = scoreItem(item, buildSlotsResponseFromChips(placed, chipTextById));
     expect(result.earned).toBe(3);
@@ -132,7 +170,7 @@ describe("slots (drag): place -> build -> score", () => {
 
   it("a chip dropped on the wrong gap scores that gap incorrect", () => {
     const item = parsedSlots(THREE_GAP_ITEM);
-    const placed = placeChip(new Map(), "g1", "g2"); // "run" answer text on g1 (wants "cat")
+    const placed = moveChipToGap(new Map(), "g2", "g1"); // "run" answer text on g1 (wants "cat")
 
     const result = scoreItem(item, buildSlotsResponseFromChips(placed, chipTextById));
     expect(result.subResults.find((r) => r.id === "g1")?.correct).toBe(false);
@@ -144,7 +182,7 @@ describe("slots (drag): place -> build -> score", () => {
     const typedAnswers = setGapAnswer(new Map(), "g1", "cat");
     const typedResult = scoreItem(item, buildSlotsResponse(typedAnswers));
 
-    const draggedPlacement = placeChip(new Map(), "g1", "g1");
+    const draggedPlacement = moveChipToGap(new Map(), "g1", "g1");
     const dragResult = scoreItem(item, buildSlotsResponseFromChips(draggedPlacement, chipTextById));
 
     expect(dragResult.subResults.find((r) => r.id === "g1")?.correct).toBe(
@@ -159,10 +197,10 @@ describe("slots (drag): place -> build -> score", () => {
     const presented = shuffleForItem(chips, "attempt-1", item.id);
     expect(presented.map((c) => c.id).sort()).toEqual(["g1", "g2", "g3"]);
 
-    // Tap whichever presented chip IS "g1" for gap g1 -- the renderer never
-    // reasons about chip position, only the chip's own id.
+    // Drop/tap whichever presented chip IS "g1" onto gap g1 -- the renderer
+    // never reasons about chip position, only the chip's own id.
     const tapped = presented.find((c) => c.id === "g1")!;
-    const placed = placeChip(new Map(), "g1", tapped.id);
+    const placed = moveChipToGap(new Map(), tapped.id, "g1");
     const result = scoreItem(item, buildSlotsResponseFromChips(placed, chipTextById));
     expect(result.subResults.find((r) => r.id === "g1")?.correct).toBe(true);
   });

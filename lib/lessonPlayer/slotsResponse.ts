@@ -57,24 +57,61 @@ export function buildSlotsResponse(answers: ReadonlyMap<string, string>): SlotsR
 
 /**
  * `placedChip` maps gap id -> chip id (one chip per gap, keyed by the
- * originating gap's own id — see SlotsRenderer). A chip already placed at
- * one gap is never offered for another (the renderer's pool filters on
- * `placedChip`'s values), so `placeChip` never needs to look for and remove
- * a chip's prior placement itself — the same "consumable, not reusable"
- * pool discipline `matchingResponse.ts` deliberately does NOT use (0013
- * makes matching many-to-one; a slots gap/chip pairing is 1:1, one blank per
- * word).
+ * originating gap's own id — see SlotsRenderer). A chip pairing is 1:1 and
+ * CONSUMED once placed — the opposite of `matchingResponse.ts`'s
+ * deliberately reusable right-side pool (0013 makes matching many-to-one;
+ * a slots gap/chip pairing has exactly as many chips as gaps, one blank per
+ * word). `moveChipToGap`/`moveChipToBank` are the only two state
+ * transitions, and BOTH the tap flow (tap a gap, then a chip; or tap a chip
+ * with no gap selected) and the drag flow (drop a chip on a gap or on the
+ * bank) go through them — see docs/decisions/0032. That is what keeps the
+ * invariant this pool depends on always true: a chip occupies at most one
+ * gap, and a gap holds at most one chip.
  */
-export function placeChip(placedChip: ReadonlyMap<string, string>, gapId: string, chipId: string): Map<string, string> {
+
+/** Removes `chipId` from wherever it currently sits (if anywhere) — the
+ * "return to bank" half of every move. Private: every exported transition
+ * below is expressed in terms of it, so the invariant only needs proving
+ * once. */
+function withoutChip(placedChip: ReadonlyMap<string, string>, chipId: string): Map<string, string> {
   const next = new Map(placedChip);
+  for (const [gapId, placed] of next) {
+    if (placed === chipId) {
+      next.delete(gapId);
+      break; // a chip occupies at most one gap -- nothing more to remove
+    }
+  }
+  return next;
+}
+
+/** Drops `chipId` back in the bank (drag-to-bank, or a tap "Clear"). */
+export function moveChipToBank(placedChip: ReadonlyMap<string, string>, chipId: string): Map<string, string> {
+  return withoutChip(placedChip, chipId);
+}
+
+/**
+ * Moves `chipId` to `gapId`, vacating both `chipId`'s previous gap (if any)
+ * and `gapId`'s previous chip (if any) — the displaced chip returns to the
+ * bank rather than being silently dropped, so dragging (or tapping) a new
+ * chip onto an already-filled gap reads as a swap, never data loss.
+ */
+export function moveChipToGap(
+  placedChip: ReadonlyMap<string, string>,
+  chipId: string,
+  gapId: string,
+): Map<string, string> {
+  const next = withoutChip(placedChip, chipId);
+  next.delete(gapId); // vacate whatever chip previously sat at gapId
   next.set(gapId, chipId);
   return next;
 }
 
-export function clearChip(placedChip: ReadonlyMap<string, string>, gapId: string): Map<string, string> {
-  const next = new Map(placedChip);
-  next.delete(gapId);
-  return next;
+/** The first gap (in authored `gapIds` order) with no chip placed —
+ * "tapping a chip with no gap selected fills the first empty gap". `null`
+ * when every gap already holds a chip. */
+export function firstEmptyGapId(gapIds: readonly string[], placedChip: ReadonlyMap<string, string>): string | null {
+  const filled = new Set(placedChip.keys());
+  return gapIds.find((gapId) => !filled.has(gapId)) ?? null;
 }
 
 /** Resolves each placed chip id to its display text (`chipTextById`) and
