@@ -151,6 +151,50 @@ const DEMO_DOCUMENT = [
       },
     },
   },
+  {
+    id: "q4",
+    kind: "practice",
+    type: "ordering",
+    payload: {
+      prompt: "Put the words in the correct order.",
+      elements: [
+        { id: "w1", text: "She", explanationRef: "o1" },
+        { id: "w2", text: "walked", explanationRef: "o1" },
+        { id: "w3", text: "to school", explanationRef: "o1" },
+        { id: "w4", text: "yesterday", explanationRef: "o1" },
+      ],
+      explanations: { o1: "Subject, verb, place, time — the usual English word order." },
+    },
+  },
+  {
+    id: "q5",
+    kind: "practice",
+    type: "matching",
+    payload: {
+      prompt: "Match the verb to its past simple form.",
+      left: [
+        { id: "m1", content: { kind: "text", text: "walk" } },
+        { id: "m2", content: { kind: "text", text: "study" } },
+        { id: "m3", content: { kind: "text", text: "go" } },
+      ],
+      right: [
+        { id: "n1", content: { kind: "text", text: "walked" } },
+        { id: "n2", content: { kind: "text", text: "studied" } },
+        { id: "n3", content: { kind: "text", text: "went" } },
+        { id: "n4", content: { kind: "text", text: "goed" } },
+      ],
+      pairs: [
+        { id: "pm1", left: "m1", right: "n1", explanationRef: "m1r" },
+        { id: "pm2", left: "m2", right: "n2", explanationRef: "m2r" },
+        { id: "pm3", left: "m3", right: "n3", explanationRef: "m3r" },
+      ],
+      explanations: {
+        m1r: "walk is regular: walk -> walked.",
+        m2r: "study is regular with a spelling change: study -> studied.",
+        m3r: "go is irregular: go -> went, not 'goed'.",
+      },
+    },
+  },
 ];
 
 export default async function LessonPlayerDemoPage() {
