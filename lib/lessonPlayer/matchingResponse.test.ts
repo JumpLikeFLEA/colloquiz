@@ -3,7 +3,7 @@ import { scoreItem } from "../items";
 import { matchingModule } from "../items/matching";
 import type { MatchingItem } from "../items";
 import { shuffleForItem } from "../items/shuffle";
-import { buildMatchingResponse, clearMatchingPair, setMatchingPair } from "./matchingResponse";
+import { buildMatchingResponse, clearMatchingPair, firstEmptyLeftId, moveMatchingPair, setMatchingPair } from "./matchingResponse";
 
 /** Drives the same pair/build helpers a renderer's tap-to-pair handlers
  * call, through to `scoreItem`, without any React/jsdom involved — see the
@@ -64,6 +64,48 @@ describe("setMatchingPair / clearMatchingPair", () => {
     pairs = setMatchingPair(pairs, "l2", "r1");
     expect(pairs.get("l1")).toBe("r1");
     expect(pairs.get("l2")).toBe("r1");
+  });
+});
+
+describe("moveMatchingPair", () => {
+  it("moves a placed answer from one slot to another", () => {
+    let pairs = setMatchingPair(new Map(), "l1", "r1");
+    pairs = moveMatchingPair(pairs, "l1", "l2");
+    expect(pairs.has("l1")).toBe(false);
+    expect(pairs.get("l2")).toBe("r1");
+  });
+
+  it("overwrites whatever the target slot held, without any bank bookkeeping (0013 reusable pool)", () => {
+    let pairs = setMatchingPair(new Map(), "l1", "r1");
+    pairs = setMatchingPair(pairs, "l2", "r2");
+    pairs = moveMatchingPair(pairs, "l1", "l2");
+    expect(pairs.has("l1")).toBe(false);
+    expect(pairs.get("l2")).toBe("r1"); // r2 is simply dropped, still available in the bank
+  });
+
+  it("is a no-op when the source slot is empty", () => {
+    const pairs = setMatchingPair(new Map(), "l2", "r2");
+    const next = moveMatchingPair(pairs, "l1", "l2");
+    expect(next).toEqual(pairs);
+  });
+
+  it("is a no-op when source and target are the same slot", () => {
+    const pairs = setMatchingPair(new Map(), "l1", "r1");
+    const next = moveMatchingPair(pairs, "l1", "l1");
+    expect(next).toEqual(pairs);
+  });
+});
+
+describe("firstEmptyLeftId", () => {
+  it("returns the first left id in authored order with no pairing", () => {
+    const pairs = setMatchingPair(new Map(), "l1", "r1");
+    expect(firstEmptyLeftId(["l1", "l2", "l3"], pairs)).toBe("l2");
+  });
+
+  it("returns null once every slot is filled", () => {
+    let pairs = setMatchingPair(new Map(), "l1", "r1");
+    pairs = setMatchingPair(pairs, "l2", "r2");
+    expect(firstEmptyLeftId(["l1", "l2"], pairs)).toBeNull();
   });
 });
 
