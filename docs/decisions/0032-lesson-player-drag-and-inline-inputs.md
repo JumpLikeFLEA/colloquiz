@@ -171,11 +171,24 @@ a bug in this renderer's own logic: the library's fix is to pass an explicit,
 stable `id` prop to `DndContext` instead of relying on the auto-counter.
 
 Both `OrderingRenderer` and `DragSlots` now pass
-`id={`ordering-${item.id}`}` / `id={`slots-${item.id}`}` — `item.id` is
-authored content, identical on the server and the client, so the id is
-stable across the hydration boundary and unique per practice block on the
-page (two `slots`/`ordering` blocks in the same lesson never share an
-`item.id`, per each type's own `parse`).
+`id={`ordering-${attemptId}:${item.id}`}` / `id={`slots-${attemptId}:${item.id}`}`
+to `DndContext`, and `OrderingRenderer`'s `SortableContext` gets the same id
+too — `SortableContext` derives its own container id from the identical kind
+of module-level counter, which may never surface as a DOM-visible mismatch
+(its id isn't necessarily rendered), but setting it explicitly removes the
+whole class of problem rather than leaving it to chance.
+
+**Scoped to `${attemptId}:${item.id}`, not `item.id` alone**: `item.id` alone
+collides if the same item is ever rendered twice on one page — a review
+screen re-showing a lesson's items, or the same item reused across lessons
+displayed together — which would give two mounted `DndContext`/
+`SortableContext` pairs the same id and duplicate `aria-describedby` targets.
+`attemptId` (a required prop `LessonPlayer` already threads down from a
+server-generated `crypto.randomUUID()`, PLAY-002 follow-up — see that
+commit's message for why it moved server-side) is unique per attempt and, as
+a prop rather than something generated client-side, deterministic across the
+server render and client hydration passes, same as `item.id`. The combined
+id is therefore both collision-resistant and hydration-safe.
 
 ## Verification
 

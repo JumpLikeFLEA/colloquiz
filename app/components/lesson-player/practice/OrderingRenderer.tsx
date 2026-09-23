@@ -106,13 +106,18 @@ export function OrderingRenderer({
     <div className="rounded-lg border border-border bg-card p-3">
       <p className="mb-3 text-sm font-medium text-foreground">{item.payload.prompt}</p>
       <DndContext
-        id={`ordering-${item.id}`}
+        id={`ordering-${attemptId}:${item.id}`}
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <SortableContext items={order} strategy={verticalListSortingStrategy} disabled={submitted}>
+        <SortableContext
+          id={`ordering-${attemptId}:${item.id}`}
+          items={order}
+          strategy={verticalListSortingStrategy}
+          disabled={submitted}
+        >
           <div className="flex flex-col gap-2">
             {order.map((id, position) => {
               const element = elementsById.get(id)!;
