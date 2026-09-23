@@ -4,13 +4,8 @@ import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
   useDraggable,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -28,6 +23,7 @@ import {
   setMatchingPair,
 } from "@/lib/lessonPlayer/matchingResponse";
 import { MatchingContentView } from "./MatchingContentView";
+import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
 /**
  * PLAY-003/0039 — `matching` renderer (pairs between a left and right side;
@@ -82,15 +78,9 @@ export function MatchingRenderer({
     usedCountByRightId.set(rightId, (usedCountByRightId.get(rightId) ?? 0) + 1);
   }
 
-  // Same sensor set as DragSlots/OrderingRenderer (docs/decisions/0032): a
-  // small pointer-distance constraint and a ~200ms/~5px touch activation
-  // constraint so a plain tap or a vertical page swipe never gets mistaken
-  // for a drag.
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor),
-  );
+  // Shared sensor config (docs/decisions/0032, extracted to a hook by 0040)
+  // — see useLessonPlayerSensors for what each constraint does and why.
+  const sensors = useLessonPlayerSensors();
 
   function submit() {
     const scored = scoreItem(item, buildMatchingResponse(pairs));

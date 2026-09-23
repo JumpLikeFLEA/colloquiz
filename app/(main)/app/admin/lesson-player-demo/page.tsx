@@ -229,6 +229,43 @@ const DEMO_DOCUMENT = [
       },
     },
   },
+  {
+    // 0040 — image content on the matching right side (bank), added to
+    // check MatchingRenderer's bank sizing against real image chips (0039
+    // Decision 5 flagged this as unverified: no image fixture existed yet).
+    // Images are static files under public/images/demo/, not Supabase
+    // Storage — MatchingContentSchema's `src` is an arbitrary authored
+    // string (lib/items/matching.ts), so a root-relative public/ path is a
+    // legal value with no Storage/auth dependency, same as any other
+    // same-origin next/image src.
+    id: "q8",
+    kind: "practice",
+    type: "matching",
+    payload: {
+      prompt: "Match the word to its picture.",
+      left: [
+        { id: "w1", content: { kind: "text", text: "apple" } },
+        { id: "w2", content: { kind: "text", text: "book" } },
+        { id: "w3", content: { kind: "text", text: "cup" } },
+      ],
+      right: [
+        { id: "img1", content: { kind: "image", src: "/images/demo/apple.png", alt: "An apple" } },
+        { id: "img2", content: { kind: "image", src: "/images/demo/book.png", alt: "A book" } },
+        { id: "img3", content: { kind: "image", src: "/images/demo/cup.png", alt: "A cup" } },
+        { id: "img4d", content: { kind: "text", text: "pen" } }, // text distractor, no pair
+      ],
+      pairs: [
+        { id: "pw1", left: "w1", right: "img1", explanationRef: "w1r" },
+        { id: "pw2", left: "w2", right: "img2", explanationRef: "w2r" },
+        { id: "pw3", left: "w3", right: "img3", explanationRef: "w3r" },
+      ],
+      explanations: {
+        w1r: "apple -> the apple picture.",
+        w2r: "book -> the book picture.",
+        w3r: "cup -> the cup picture.",
+      },
+    },
+  },
 ];
 
 export default async function LessonPlayerDemoPage() {

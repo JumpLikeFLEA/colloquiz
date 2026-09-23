@@ -4,13 +4,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import {
   DndContext,
   DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
   useDraggable,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -30,6 +25,7 @@ import {
   setGapAnswer,
   splitPromptOnGaps,
 } from "@/lib/lessonPlayer/slotsResponse";
+import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
 type SubResultById = Map<string, ItemScoreResult["subResults"][number]>;
 
@@ -282,14 +278,9 @@ function DragSlots({
   const subResultById: SubResultById = new Map(result?.subResults.map((r) => [r.id, r]));
   const usedChipIds = new Set(placedChip.values());
 
-  // Same sensor set as OrderingRenderer (docs/decisions/0032): a small
-  // pointer-distance constraint and a ~200ms/~5px touch activation constraint
-  // so a plain tap or a vertical page swipe never gets mistaken for a drag.
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor),
-  );
+  // Shared sensor config (docs/decisions/0032, extracted to a hook by 0040)
+  // — see useLessonPlayerSensors for what each constraint does and why.
+  const sensors = useLessonPlayerSensors();
 
   function submit() {
     const scored = scoreItem(item, buildSlotsResponseFromChips(placedChip, chipTextById));

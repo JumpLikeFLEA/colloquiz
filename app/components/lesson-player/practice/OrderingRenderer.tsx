@@ -1,17 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
+import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -29,6 +19,7 @@ import {
   moveOrderElement,
   moveOrderElementToIndex,
 } from "@/lib/lessonPlayer/orderingResponse";
+import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
 /**
  * PLAY-003/0032 — `ordering` renderer (permutation of N elements;
@@ -72,16 +63,11 @@ export function OrderingRenderer({
   const [activeId, setActiveId] = useState<string | null>(null);
   const submitted = result !== null;
 
-  // Same sensor set for both PLAY-004's drag interactions (docs/decisions/
-  // 0032): PointerSensor's small distance constraint keeps a plain tap from
-  // starting a drag; TouchSensor's activation delay lets a vertical swipe
-  // scroll the page normally, only arming the drag after the finger has
-  // stayed roughly still for ~200ms; KeyboardSensor is the accessible path.
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  // Shared sensor config (docs/decisions/0032, extracted to a hook by 0040)
+  // — see useLessonPlayerSensors for what each constraint does and why.
+  // `sortableKeyboardCoordinates` is passed because this renderer operates
+  // over a `SortableContext`; the other drag-capable renderers don't.
+  const sensors = useLessonPlayerSensors(sortableKeyboardCoordinates);
 
   function submit() {
     const scored = scoreItem(item, buildOrderingResponse(order));
