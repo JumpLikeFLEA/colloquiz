@@ -1,0 +1,15 @@
+{
+  "app/(main)/app/advanced/AdvancedForm.tsx": 5,
+  "app/(main)/app/leaderboard/LeaderboardView.tsx": 3,
+  "app/(main)/app/progress/AchievementsView.tsx": 15,
+  "app/(main)/app/progress/DashboardView.tsx": 9,
+  "app/(main)/app/quiz/[id]/QuizSession.tsx": 9,
+  "app/(main)/app/results/[id]/page.tsx": 5,
+  "app/(main)/app/students/review/[assignmentId]/page.tsx": 5,
+  "app/apple-icon.tsx": 1,
+  "app/components/ProviderIcons.tsx": 5,
+  "app/icon.tsx": 1,
+  "app/opengraph-image.tsx": 2,
+  "lib/categoricalColor.ts": 3,
+  "lib/glicko2.ts": 7
+}

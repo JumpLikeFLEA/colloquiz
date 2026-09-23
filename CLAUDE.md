@@ -87,10 +87,23 @@ refactor.
     Groups / Leaderboard / Duels precedent, which by now is most of the app.
     It governs the whole English surface, which never had a design source.
   - Colours come from tokens (`--brand`, `--brand-subtle`, `--primary`,
-    `--card`, the destructive-* set), never new hex literals. There is a known
-    backlog of 461 hex literals across 48 values plus 644 hardcoded Tailwind
-    palette classes with no `dark:` variants; do not add to it. A new colour
-    is a token decision, not a class.
+    `--card`, the destructive-* set), never new hex literals. A new colour
+    is a token decision, not a class. The existing backlog (re-derived
+    2026-09-23, SHELL-003) is 78 hex-literal occurrences across 34 distinct
+    values in `app/` and `lib/`, outside `app/globals.css` (the token
+    definitions), `app/components/ui/**` and `app/components/figma/**`
+    (vendored, unlinted) —
+    `rg -o --no-filename "#[0-9a-fA-F]{3,8}\b" app lib -g '!app/globals.css' -g '!app/components/ui/**' -g '!app/components/figma/**' | wc -l`
+    (unique values: pipe through `| tr 'A-F' 'a-f' | sort -u | wc -l`). It is
+    not being migrated (see `docs/handoff.md`, "Visual work" §1); it is
+    frozen by `scripts/check-hex-literals.mjs`, run as part of `npm run
+    check`, which fails if any file's count grows past its recorded baseline
+    in `scripts/hex-literal-baseline.json` or a new file gains one. The
+    earlier "644 hardcoded Tailwind palette classes with no `dark:` variants"
+    figure could not be reproduced (a same-scope `rg` for literal palette
+    utility classes — `bg-red-500` and siblings — finds 3, and nothing in the
+    codebase distinguishes "has a `dark:` pairing" from "doesn't") and is
+    dropped for lack of a citation rather than replaced with a guess.
   - `app/globals.css` is the single source of truth for tokens, and every new
     token is defined in `:root` AND in `.dark`.
   - A deliberate visual change to an existing surface is still recorded in
