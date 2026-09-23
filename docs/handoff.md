@@ -223,15 +223,21 @@ them is what makes the question hard.
    (see SHELL-003, which replaces any figure in this file or CLAUDE.md with
    the exact command that produced it), and found no citation anywhere for
    the "three known `.dark` bugs" claim. Un-cited claims do not get ranked
-   first in a milestone. Two cards carry this instead: SHELL-003 holds the
-   line at normal M1 priority — CI fails on a new hex literal under `app/` or
-   `lib/` outside an explicit allow-list, so the debt stops growing without a
-   big-bang migration of the existing literals. SHELL-004 is a low-priority
-   spike, blocking nothing, that finds and fixes any genuine `.dark` token
-   gap and either substantiates the "three bugs" claim (filing real ones as
-   their own cards) or strikes it. **Do NOT migrate the existing hex
-   literals** as a batch — that is a big-bang commit with no user-visible
-   payoff; the goal is to stop the debt growing, not to pay it off.
+   first in a milestone. SHELL-003 holds the line at normal M1 priority — CI
+   fails on a new hex literal under `app/` or `lib/` outside an explicit
+   allow-list, so the debt stops growing without a big-bang migration of the
+   existing literals. **Do NOT migrate the existing hex literals** as a
+   batch — that is a big-bang commit with no user-visible payoff; the goal is
+   to stop the debt growing, not to pay it off. SHELL-004 (spike, resolved
+   2026-09-23, see `docs/decisions/0035-shell004-dark-token-spike.md`) traced
+   the "three known `.dark` bugs" claim to commit `d15f774` ("Update
+   handoff.md", 2026-09-21), where it was asserted for the first time with no
+   supporting evidence — no earlier source exists in git history, issues, or
+   docs. **The claim is struck; it never had a citation.** The same spike
+   diffed every custom property in `:root` against `.dark` in
+   `app/globals.css`: the only gap is `--font-size` and `--radius`, both
+   non-colour layout tokens that do not vary by theme, so this is not a real
+   `.dark` gap. No genuine token gap or bug was found.
 2. **Item interaction design — inside M1, with the player.** How a matching
    item lays out, how a drag target behaves on a phone, what a wrong slot
    looks like. This is whether the item WORKS, not how it looks; an unusably
