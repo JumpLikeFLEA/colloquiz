@@ -19,6 +19,7 @@ import {
 } from "@/lib/lessons";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
 import { InlineEditor } from "./InlineEditor";
+import { LessonImageUploadButton, type UploadLessonImage } from "./LessonImageUploadButton";
 
 // One field-group per theory block type — no raw JSON is ever shown to the
 // author (AUTH-002 acceptance). Every block is a z.strictObject
@@ -94,10 +95,12 @@ export function BlockForm({
   block,
   onChange,
   errors,
+  onUploadImage,
 }: {
   block: TheoryBlock;
   onChange: (next: TheoryBlock) => void;
   errors?: BlockFieldErrors;
+  onUploadImage: UploadLessonImage;
 }) {
   switch (block.type) {
     case "heading":
@@ -234,17 +237,19 @@ export function BlockForm({
     case "image":
       return (
         <div className="space-y-3">
+          <LessonImageUploadButton
+            currentUrl={block.url || undefined}
+            onUploaded={(url) => onChange({ ...block, url })}
+            onUpload={onUploadImage}
+          />
           <TextField
             label="Image URL"
             value={block.url}
             onChange={(url) => onChange({ ...block, url })}
             errors={errors}
             path="url"
-            placeholder="https://…"
+            placeholder="https://… (or upload above)"
           />
-          <p className="text-xs text-muted-foreground -mt-2">
-            Pasted URL for now — direct upload lands with AUTH-004.
-          </p>
           <TextField
             label="Alt text"
             value={block.alt}

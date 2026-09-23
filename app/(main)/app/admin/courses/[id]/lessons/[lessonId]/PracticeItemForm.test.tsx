@@ -22,6 +22,10 @@ import { PracticeItemForm } from "./PracticeItemForm";
 // that item + those errors — proving the message a real invalid submission
 // would produce actually appears next to the field it names.
 
+// Not exercised by these tests (no image field is invalid in any fixture
+// here) — AUTH-004's own tests cover the upload path.
+const noopUploadImage = () => Promise.resolve({ error: "not used in this test" });
+
 function exampleFor(prefix: string): unknown {
   const found = PLAYGROUND_EXAMPLES.find((e) => e.label.startsWith(prefix));
   if (!found) throw new Error(`no playground example starting with "${prefix}"`);
@@ -49,7 +53,7 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     };
 
     const errors = fieldErrorsFor(invalid);
-    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} />);
+    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
     expect(
       screen.getByText("at least one option must be incorrect — an item with no wrong answer measures nothing"),
@@ -67,7 +71,7 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     };
 
     const errors = fieldErrorsFor(invalid);
-    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} />);
+    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
     expect(
       screen.getByText("row ids must be distinct — a response id must identify exactly one row"),
@@ -85,7 +89,7 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     };
 
     const errors = fieldErrorsFor(invalid);
-    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} />);
+    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
     expect(
       screen.getByText("element ids must be distinct — a response id must identify exactly one element"),
@@ -103,7 +107,7 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     };
 
     const errors = fieldErrorsFor(invalid);
-    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} />);
+    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
     expect(screen.getByText("each left element may be the subject of at most one pair")).toBeDefined();
   });
@@ -116,7 +120,7 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     };
 
     const errors = fieldErrorsFor(invalid);
-    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} />);
+    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
     expect(
       screen.getByText(

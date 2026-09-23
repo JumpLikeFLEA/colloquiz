@@ -6,9 +6,17 @@ import { toast } from "sonner";
 import { ArrowLeft, History } from "lucide-react";
 import { parseLessonDocument, type LessonBlock } from "@/lib/lessons";
 import { mapParseErrorsToFieldErrors, type LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
+import {
+  LESSON_IMAGE_BUCKET,
+  lessonImageObjectPath,
+  lessonImagePathFromUrl,
+  validateLessonImageFile,
+} from "@/lib/lessonImages";
+import { createClient } from "@/lib/supabase/client";
 import type { LessonContentDraft, LessonVersionSummary } from "@/lib/lessonContentAuthoring";
 import { BlockList } from "./BlockList";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
+import type { UploadLessonImage } from "./LessonImageUploadButton";
 
 // Orchestrates the AUTH-002 block editor: holds the working document as
 // plain client state (matching update_lesson's "whole document, not a
@@ -49,6 +57,11 @@ export function LessonContentEditor({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  // Storage paths of images a save has replaced — see uploadLessonImage. Not
+  // deleted immediately: an unsaved edit must not remove an object the
+  // lesson's last SAVED version still points at. Cleared (best-effort) once
+  // the save that replaced them actually succeeds.
+  const [pendingImageDeletions, setPendingImageDeletions] = useState<string[]>([]);
 
   const documentErrors = fieldErrors.get("")?.get("") ?? [];
 
@@ -56,6 +69,26 @@ export function LessonContentEditor({
     setBlocks(next);
     setDirty(true);
   }
+
+  const uploadLessonImage: UploadLessonImage = async (file, previousUrl) => {
+    // Re-checked here (not just in the picker UI) so a caller can never skip
+    // the client-side limits by constructing its own File. The bucket itself
+    // (migration 041) enforces the same limits a third time.
+    const reason = validateLessonImageFile(file);
+    if (reason) return { error: reason };
+
+    const supabase = createClient();
+    const path = lessonImageObjectPath(courseId, file.type, crypto.randomUUID());
+    const { error: uploadError } = await supabase.storage
+      .from(LESSON_IMAGE_BUCKET)
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (uploadError) return { error: uploadError.message };
+
+    const { data: pub } = supabase.storage.from(LESSON_IMAGE_BUCKET).getPublicUrl(path);
+    const previousPath = lessonImagePathFromUrl(previousUrl);
+    if (previousPath) setPendingImageDeletions((paths) => [...paths, previousPath]);
+    return { url: pub.publicUrl };
+  };
 
   async function refreshVersions() {
     const res = await fetch(`/api/admin/courses/${courseId}/lessons/${draft.lessonId}/versions`);
@@ -89,6 +122,14 @@ export function LessonContentEditor({
       setDirty(false);
       toast.success("Saved.");
       refreshVersions();
+
+      if (pendingImageDeletions.length > 0) {
+        // Best-effort, same as the avatar precedent: a failure here costs a
+        // stray file in the bucket, not correctness of the saved lesson.
+        const supabase = createClient();
+        await supabase.storage.from(LESSON_IMAGE_BUCKET).remove(pendingImageDeletions);
+        setPendingImageDeletions([]);
+      }
     } finally {
       setSaving(false);
     }
@@ -185,7 +226,7 @@ export function LessonContentEditor({
         </div>
       )}
 
-      <BlockList blocks={blocks} onChange={updateBlocks} fieldErrors={fieldErrors} />
+      <BlockList blocks={blocks} onChange={updateBlocks} fieldErrors={fieldErrors} onUploadImage={uploadLessonImage} />
 
       <VersionHistoryPanel
         open={historyOpen}

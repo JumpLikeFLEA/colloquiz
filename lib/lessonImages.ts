@@ -64,3 +64,21 @@ export function validateLessonImageFile(file: { type: string; size: number }): s
 export function lessonImageObjectPath(courseId: string, mimeType: string, uuid: string): string {
   return `${courseId}/${uuid}.${EXTENSION[mimeType] ?? "png"}`;
 }
+
+/**
+ * The storage path inside the lesson-images bucket for a stored public URL,
+ * or null if the URL is not one of ours (an author-pasted external URL, or
+ * a placeholder from an LLM draft that was never uploaded here). Used to
+ * queue the replaced object for deletion — see AUTH-004: deletion is
+ * deferred until the lesson SAVE succeeds, not fired on upload, because an
+ * unsaved edit must not delete an object a published/saved version still
+ * references. Mirrors lib/avatar.ts's avatarPathFromUrl.
+ */
+export function lessonImagePathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const marker = `/${LESSON_IMAGE_BUCKET}/`;
+  const at = url.indexOf(marker);
+  if (at === -1) return null;
+  const path = url.slice(at + marker.length).split("?")[0];
+  return path.length > 0 ? decodeURIComponent(path) : null;
+}

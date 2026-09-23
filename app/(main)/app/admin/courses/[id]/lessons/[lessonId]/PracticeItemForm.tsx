@@ -23,6 +23,7 @@ import type {
 import type { MatchingContent, MatchingElement } from "@/lib/items/matching";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
 import { errorsFor, inputClass, labelClass, TextField } from "./BlockForm";
+import { LessonImageUploadButton, type UploadLessonImage } from "./LessonImageUploadButton";
 
 // The practice half of the block editor (AUTH-003) — one form per item type,
 // mirroring BlockForm.tsx's rule: no raw JSON is ever shown to the author,
@@ -530,6 +531,7 @@ function MatchingElementEditor({
   errors,
   errorPrefix,
   label,
+  onUploadImage,
 }: {
   element: MatchingElement;
   onChange: (next: MatchingElement) => void;
@@ -538,6 +540,7 @@ function MatchingElementEditor({
   errors?: BlockFieldErrors;
   errorPrefix: string;
   label: string;
+  onUploadImage: UploadLessonImage;
 }) {
   const content = element.content;
   return (
@@ -578,12 +581,17 @@ function MatchingElementEditor({
           </div>
         ) : (
           <div className="space-y-1.5">
+            <LessonImageUploadButton
+              currentUrl={content.src || undefined}
+              onUploaded={(src) => onChange({ ...element, content: { ...content, src } })}
+              onUpload={onUploadImage}
+            />
             <div>
               <input
                 value={content.src}
                 onChange={(e) => onChange({ ...element, content: { ...content, src: e.target.value } })}
                 className={inputClass}
-                placeholder="Image URL"
+                placeholder="Image URL (or upload above)"
               />
               {errorList(errors, `${errorPrefix}.content.src`)}
             </div>
@@ -610,10 +618,12 @@ function MatchingForm({
   item,
   onChange,
   errors,
+  onUploadImage,
 }: {
   item: MatchingItem;
   onChange: (next: MatchingItem) => void;
   errors?: BlockFieldErrors;
+  onUploadImage: UploadLessonImage;
 }) {
   const { payload } = item;
 
@@ -668,6 +678,7 @@ function MatchingForm({
               onRemove={() => removeSideElement("left", i)}
               errors={errors}
               errorPrefix={`payload.left[${i}]`}
+              onUploadImage={onUploadImage}
             />
           ))}
           <AddButton label="Add left element" onClick={() => onChange({ ...item, payload: { ...payload, left: [...payload.left, { id: newId(), content: EMPTY_TEXT_CONTENT }] } })} />
@@ -685,6 +696,7 @@ function MatchingForm({
               onRemove={() => removeSideElement("right", i)}
               errors={errors}
               errorPrefix={`payload.right[${i}]`}
+              onUploadImage={onUploadImage}
             />
           ))}
           <AddButton label="Add right element" onClick={() => onChange({ ...item, payload: { ...payload, right: [...payload.right, { id: newId(), content: EMPTY_TEXT_CONTENT }] } })} />
@@ -876,10 +888,12 @@ export function PracticeItemForm({
   item,
   onChange,
   errors,
+  onUploadImage,
 }: {
   item: Item;
   onChange: (next: Item) => void;
   errors?: BlockFieldErrors;
+  onUploadImage: UploadLessonImage;
 }) {
   switch (item.type) {
     case "selection":
@@ -889,7 +903,7 @@ export function PracticeItemForm({
     case "ordering":
       return <OrderingForm item={item} onChange={onChange} errors={errors} />;
     case "matching":
-      return <MatchingForm item={item} onChange={onChange} errors={errors} />;
+      return <MatchingForm item={item} onChange={onChange} errors={errors} onUploadImage={onUploadImage} />;
     case "slots":
       return <SlotsForm item={item} onChange={onChange} errors={errors} />;
   }
