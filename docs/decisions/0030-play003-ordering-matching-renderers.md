@@ -137,3 +137,15 @@ this session ran. The up/down move buttons this decision designed stay, now
 as the keyboard/no-gesture fallback 0032 explicitly keeps them as — they were
 never removed. `matching` (Decision 2) is UNCHANGED by 0032; only `ordering`
 and `slots` (0031/0032) gained real drag.
+
+## Superseded in part by 0039
+
+**Decision 2 (`matching`: expand/collapse tap-to-pair) is replaced by
+docs/decisions/0039** — row slots + an always-visible shared bank, plus real
+drag (dnd-kit, same reversal conditions 0032 already established: the
+library is pre-approved and its `TouchSensor` activation constraint answers
+the touch-scroll question this decision's "no drag" call was originally
+worried about). Decision 3 (the right side is a REUSABLE pool) is KEPT,
+unchanged in substance — 0039's bank is still non-consumable for the same
+0013 many-to-one reason, it is simply always visible instead of gated behind
+an expanded row. Decision 1 (`ordering`) is untouched by 0039.
