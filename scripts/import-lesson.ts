@@ -81,7 +81,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { CourseFileSchema, type CourseFile, type LessonFile } from "../lib/lessons/courseFile";
-import { parseLessonDocument, type LessonDocument } from "../lib/lessons";
+import { parseLessonDocument } from "../lib/lessons";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -143,8 +143,13 @@ function canonicalJson(value: unknown): string {
   });
 }
 
-function validateDocuments(course: CourseFile): Map<string, LessonDocument> {
-  const documents = new Map<string, LessonDocument>();
+// Validates every lesson's document with the same parser the editor's save
+// path uses (CNT-003). What gets WRITTEN to `lesson_versions.document` is
+// the raw `lesson.document` from the file, never `result.document` — the
+// parsed form nests a practice block's item under `item: {...}`
+// (serializeLessonDocument's docstring explains why), which is not the
+// shape `parseLessonDocument` reads back on a future preview/publish.
+function validateDocuments(course: CourseFile): void {
   const errors: string[] = [];
 
   for (const lesson of course.lessons) {
@@ -153,9 +158,7 @@ function validateDocuments(course: CourseFile): Map<string, LessonDocument> {
       for (const err of result.errors) {
         errors.push(`lesson "${lesson.slug}" [${err.field}]: ${err.message}`);
       }
-      continue;
     }
-    documents.set(lesson.slug, result.document);
   }
 
   if (errors.length > 0) {
@@ -163,7 +166,6 @@ function validateDocuments(course: CourseFile): Map<string, LessonDocument> {
     for (const e of errors) console.error(`  ${e}`);
     process.exit(1);
   }
-  return documents;
 }
 
 // ── Plan: what each lesson would do, computed against current DB state ──
@@ -175,7 +177,7 @@ type LessonPlan =
 
 async function run() {
   const course = loadCourseFile(filePath!);
-  const documents = validateDocuments(course);
+  validateDocuments(course);
 
   const supabase = createClient(url!, key!);
 
@@ -229,7 +231,7 @@ async function run() {
       }
 
       const unchanged =
-        latestVersion != null && canonicalJson(latestVersion.document) === canonicalJson(documents.get(lesson.slug));
+        latestVersion != null && canonicalJson(latestVersion.document) === canonicalJson(lesson.document);
       plans.push({
         slug: lesson.slug,
         action: unchanged ? "update-metadata-only-unchanged-content" : "update-metadata-and-append",
@@ -351,7 +353,7 @@ async function run() {
     if (plan.action === "create" || plan.action === "update-metadata-and-append") {
       const { error: versionErr } = await supabase.from("lesson_versions").insert({
         lesson_id: lessonId,
-        document: documents.get(lesson.slug),
+        document: lesson.document,
         source: "import",
       });
       if (versionErr) die(`version insert failed for "${lesson.slug}": ${versionErr.message}`);

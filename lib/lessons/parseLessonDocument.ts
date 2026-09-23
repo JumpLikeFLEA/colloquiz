@@ -141,6 +141,36 @@ export function parseLessonDocument(input: unknown): LessonParseResult {
 }
 
 /**
+ * The inverse of the practice branch of `parseLessonDocument`: turns a
+ * parsed `LessonDocument` back into the flat authored shape
+ * ({ id, kind: 'practice', type, payload } for a practice block, ItemEnvelopeSchema)
+ * that `parseLessonDocument` itself accepts as input. Needed because a
+ * practice block's PARSED form nests the item under `item: { id, type,
+ * payload }` (so the editor can address `block.item.type` /
+ * `block.item.payload` while working on it), which is not the shape
+ * `parseItem` — and so `parseLessonDocument` — reads back. Any caller that
+ * holds a `LessonDocument` (parsed) and needs to hand it to something that
+ * will re-parse it (a save endpoint, a re-import) must serialize it back
+ * through this function first; writing the parsed form directly reproduces
+ * the "type: missing item type" failure this function exists to prevent.
+ * Theory blocks need no conversion: `TheoryBlockSchema`'s parsed output is
+ * already valid input to itself (zod fills in defaults, it does not add a
+ * wrapper), so they pass through unchanged.
+ */
+export function serializeLessonDocument(document: LessonDocument): unknown[] {
+  return document.map((block) => {
+    if (block.kind !== "practice") return block;
+    return {
+      id: block.item.id,
+      kind: "practice",
+      type: block.item.type,
+      payload: block.item.payload,
+      ...(block.convertedFrom !== undefined ? { convertedFrom: block.convertedFrom } : {}),
+    };
+  });
+}
+
+/**
  * The practice-block count the future publish route feeds to
  * `publish_lesson`'s `p_item_count` parameter (migration 041, 0018 Decision
  * 4) — counted here, once, rather than reintrospected per caller. Filters on

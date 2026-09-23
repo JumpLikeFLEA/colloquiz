@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { aggregateLessonScore, scoreItem, type LessonItemInput } from "../items";
-import { countPracticeBlocks, parseLessonDocument } from "./parseLessonDocument";
+import { countPracticeBlocks, parseLessonDocument, serializeLessonDocument } from "./parseLessonDocument";
 
 function validSelectionBlock(id: string) {
   return {
@@ -249,10 +249,10 @@ describe("parseLessonDocument — convertedFrom (CNT-005, 0022 Decision 6)", () 
   });
 
   it(
-    "models import-lesson.ts: the field survives a JSON round trip, standing in for the " +
-      "JSONB write it lands in (import-lesson.ts stores parseLessonDocument's returned " +
-      "document unchanged as lesson_versions.document — see validateDocuments() and the " +
-      "insert call that writes `document: documents.get(lesson.slug)`)",
+    "the field survives a JSON round trip through serializeLessonDocument, standing in for " +
+      "the JSONB write import-lesson.ts and the editor's save path both make (both write " +
+      "serializeLessonDocument's output, never parseLessonDocument's parsed document — see " +
+      "serializeLessonDocument's docstring for why the parsed form is not writable as-is)",
     () => {
       const result = parseLessonDocument([
         { ...validSelectionBlock("q1"), convertedFrom: "Underline the errors." },
@@ -261,7 +261,7 @@ describe("parseLessonDocument — convertedFrom (CNT-005, 0022 Decision 6)", () 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
 
-      const roundTripped = JSON.parse(JSON.stringify(result.document));
+      const roundTripped = JSON.parse(JSON.stringify(serializeLessonDocument(result.document)));
       expect(roundTripped[0].convertedFrom).toBe("Underline the errors.");
       expect(roundTripped[1]).not.toHaveProperty("convertedFrom");
     },
@@ -270,6 +270,41 @@ describe("parseLessonDocument — convertedFrom (CNT-005, 0022 Decision 6)", () 
   it("theory blocks reject an unrecognized convertedFrom key (strict schema, unchanged by this card)", () => {
     const result = parseLessonDocument([{ ...validProseBlock("p1"), convertedFrom: "n/a" }]);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("serializeLessonDocument — round-tripping a practice block back through parseLessonDocument", () => {
+  it("parsing a document's own parsed output directly fails — the parsed shape nests item.type/item.payload", () => {
+    const first = parseLessonDocument([validSelectionBlock("q1")]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    // This is the AUTH-005 preview bug: feeding parseLessonDocument's own
+    // output back into itself, unserialized, fails because a practice
+    // block's `type`/`payload` moved under `item` on the way out.
+    const reparsed = parseLessonDocument(JSON.parse(JSON.stringify(first.document)));
+    expect(reparsed.ok).toBe(false);
+  });
+
+  it("serializeLessonDocument's output re-parses successfully and reproduces the same item", () => {
+    const first = parseLessonDocument([validProseBlock("p1"), validSelectionBlock("q1")]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const serialized = JSON.parse(JSON.stringify(serializeLessonDocument(first.document)));
+    const reparsed = parseLessonDocument(serialized);
+    expect(reparsed.ok).toBe(true);
+    if (!reparsed.ok) return;
+
+    expect(reparsed.document).toEqual(first.document);
+  });
+
+  it("passes theory blocks through unchanged", () => {
+    const first = parseLessonDocument([validProseBlock("p1")]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    expect(serializeLessonDocument(first.document)).toEqual(first.document);
   });
 });
 

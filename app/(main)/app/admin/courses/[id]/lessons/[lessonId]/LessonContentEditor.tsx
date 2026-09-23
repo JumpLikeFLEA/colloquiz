@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, History } from "lucide-react";
-import { parseLessonDocument, type LessonBlock } from "@/lib/lessons";
+import { parseLessonDocument, serializeLessonDocument, type LessonBlock } from "@/lib/lessons";
 import { mapParseErrorsToFieldErrors, type LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
 import {
   LESSON_IMAGE_BUCKET,
@@ -114,7 +114,7 @@ export function LessonContentEditor({
     setFieldErrors(new Map());
     try {
       const { res, data } = await postJson(`/api/admin/courses/${courseId}/lessons/${draft.lessonId}/content`, {
-        document: blocks,
+        document: serializeLessonDocument(blocks),
         baseVersionId,
       });
       if (res.status === 422) {
