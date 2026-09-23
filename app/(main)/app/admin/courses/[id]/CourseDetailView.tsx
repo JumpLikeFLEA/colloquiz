@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Archive, ArchiveRestore, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, Archive, ArchiveRestore, Blocks, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -315,6 +316,13 @@ function LessonsSection({
                 />
               </label>
 
+              <Link
+                href={`/app/admin/courses/${courseId}/lessons/${lesson.id}`}
+                aria-label={`Edit content for ${lesson.title}`}
+                className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <Blocks size={14} />
+              </Link>
               <button
                 onClick={() => setEditing(lesson)}
                 aria-label={`Edit ${lesson.title}`}
