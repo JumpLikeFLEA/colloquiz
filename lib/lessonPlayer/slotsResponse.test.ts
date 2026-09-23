@@ -8,6 +8,7 @@ import {
   buildSlotsResponseFromChips,
   clearGapAnswer,
   firstEmptyGapId,
+  gapInputWidthCh,
   moveChipToBank,
   moveChipToGap,
   setGapAnswer,
@@ -102,6 +103,26 @@ describe("moveChipToGap / moveChipToBank", () => {
     const placed = moveChipToGap(new Map(), "chip-a", "g1");
     const next = moveChipToBank(placed, "chip-z");
     expect(next).toEqual(placed);
+  });
+});
+
+describe("gapInputWidthCh", () => {
+  it("sizes to the longest accepted answer plus the default padding", () => {
+    expect(gapInputWidthCh(["run", "ran"])).toBe(5); // "run"/"ran" (3) + 2 padding
+    expect(gapInputWidthCh(["watched"])).toBe(9); // 7 + 2
+  });
+
+  it("floors at minCh for a very short answer", () => {
+    expect(gapInputWidthCh(["a"])).toBe(5); // 1 + 2 = 3, floored to minCh (5)
+  });
+
+  it("uses the LONGEST accepted answer, not the first", () => {
+    expect(gapInputWidthCh(["ran", "running"])).toBe(9); // 7 + 2, not 3 + 2
+  });
+
+  it("respects custom minCh/paddingCh", () => {
+    expect(gapInputWidthCh(["cat"], 2, 1)).toBe(4); // 3 + 1, above the 2 floor
+    expect(gapInputWidthCh(["x"], 10, 1)).toBe(10); // 1 + 1 = 2, floored to 10
   });
 });
 

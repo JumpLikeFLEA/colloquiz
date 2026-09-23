@@ -24,6 +24,7 @@ import {
   buildSlotsResponseFromChips,
   clearGapAnswer,
   firstEmptyGapId,
+  gapInputWidthCh,
   moveChipToBank,
   moveChipToGap,
   setGapAnswer,
@@ -81,21 +82,27 @@ export function SlotsRenderer({
 
 /** Renders `prompt` with each gap's control interleaved at its `"___"`
  * position (`segments` from `splitPromptOnGaps`), or falls back to the full
- * prompt text followed by a labeled list of gaps when the split failed. */
+ * prompt text followed by a labeled list of gaps when the split failed.
+ * `lineClassName` lets a caller widen the line-height around taller/shorter
+ * gap controls (docs/decisions/0032 — `TypedSlots` needs more room than
+ * `DragSlots`' default so wrapped lines don't collide) without every caller
+ * re-declaring the shared text styling. */
 function GapLayout({
   prompt,
   segments,
   gapCount,
   renderGap,
+  lineClassName = "mb-3 text-sm leading-8 text-foreground",
 }: {
   prompt: string;
   segments: string[] | null;
   gapCount: number;
   renderGap: (index: number) => ReactNode;
+  lineClassName?: string;
 }) {
   if (segments) {
     return (
-      <p className="mb-3 text-sm leading-8 text-foreground">
+      <p className={lineClassName}>
         {segments.map((segment, index) => (
           <span key={index}>
             {segment}
@@ -142,10 +149,31 @@ function gapControlClassName({
     : `${base} border-destructive-border bg-destructive-subtle text-destructive-text`;
 }
 
+/** Compact inline underline style — docs/decisions/0032's typed-gap sizing
+ * rule. `py-2.5 -my-2.5` extends the actual (padding-box) touch/click target
+ * a few pixels beyond the input's visible underline without the padding
+ * enlarging the surrounding line's rendered height: the matching negative
+ * margin pulls the box's layout footprint back to where it would sit
+ * unpadded, while the padding itself still counts for hit-testing. This is
+ * "the touch target can extend via padding/negative margin rather than
+ * visual height" — the input LOOKS compact; it is not smaller to tap. */
+function typedGapInputClassName({ submitted, correct }: { submitted: boolean; correct: boolean | undefined }): string {
+  const base =
+    "inline-block max-w-full rounded-sm border-0 border-b-2 bg-transparent px-1 py-2.5 -my-2.5 text-center text-sm leading-none align-baseline transition-colors focus:outline-none disabled:cursor-not-allowed";
+  if (!submitted) {
+    return `${base} border-border text-foreground focus:border-brand`;
+  }
+  return correct
+    ? `${base} border-success-border bg-success-subtle/60 text-success`
+    : `${base} border-destructive-border bg-destructive-subtle/60 text-destructive-text`;
+}
+
 /**
- * `input: 'typed'` — a real `<input>` inline at each gap. State only ever
- * holds gap ids read off `item.payload.gaps` (via `setGapAnswer`), so
- * `readResponse`'s `unknown_id` is unreachable from here by construction.
+ * `input: 'typed'` — a real `<input>` inline at each gap, sized to its own
+ * longest accepted answer (`gapInputWidthCh`) so the sentence reads as one
+ * flowing line instead of N identical wide boxes forcing ragged wraps. State
+ * only ever holds gap ids read off `item.payload.gaps` (via `setGapAnswer`),
+ * so `readResponse`'s `unknown_id` is unreachable from here by construction.
  */
 function TypedSlots({
   item,
@@ -174,11 +202,12 @@ function TypedSlots({
         prompt={prompt}
         segments={segments}
         gapCount={gaps.length}
+        lineClassName="mb-3 text-sm leading-[44px] text-foreground"
         renderGap={(index) => {
           const gap = gaps[index];
           const subResult = subResultById.get(gap.id);
           return (
-            <span className="inline-flex items-center align-middle">
+            <span className="mx-0.5 inline-flex items-baseline align-baseline">
               <input
                 type="text"
                 aria-label={`Gap ${index + 1}`}
@@ -189,13 +218,14 @@ function TypedSlots({
                     e.target.value === "" ? clearGapAnswer(prev, gap.id) : setGapAnswer(prev, gap.id, e.target.value),
                   )
                 }
-                className={gapControlClassName({ submitted, correct: subResult?.correct })}
+                style={{ width: `${gapInputWidthCh(gap.acceptedAnswers)}ch`, maxWidth: "100%" }}
+                className={typedGapInputClassName({ submitted, correct: subResult?.correct })}
               />
               {submitted &&
                 (subResult?.correct ? (
-                  <Check className="ml-1 size-4 shrink-0 text-success" aria-hidden="true" />
+                  <Check className="ml-0.5 size-3.5 shrink-0 self-center text-success" aria-hidden="true" />
                 ) : (
-                  <X className="ml-1 size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+                  <X className="ml-0.5 size-3.5 shrink-0 self-center text-destructive-text" aria-hidden="true" />
                 ))}
             </span>
           );

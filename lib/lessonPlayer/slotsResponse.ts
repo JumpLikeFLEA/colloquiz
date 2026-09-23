@@ -53,6 +53,21 @@ export function buildSlotsResponse(answers: ReadonlyMap<string, string>): SlotsR
   return [...answers.entries()].map(([gapId, answer]) => ({ gapId, answer }));
 }
 
+/**
+ * Width (in `ch`) for a typed gap's inline `<input>` — docs/decisions/0032's
+ * inline-input sizing rule: the longest accepted answer, plus `paddingCh` of
+ * breathing room, floored at `minCh` so a one-letter answer doesn't render as
+ * a sliver. There is deliberately no upper clamp here — the renderer caps
+ * the input's visual width with `max-width: 100%` of its line instead, so a
+ * genuinely long answer wraps onto its own line rather than being squeezed
+ * (squeezing would hide MORE about the answer's length via scroll/overflow
+ * cues, not less).
+ */
+export function gapInputWidthCh(acceptedAnswers: readonly string[], minCh = 5, paddingCh = 2): number {
+  const longest = acceptedAnswers.reduce((max, answer) => Math.max(max, answer.length), 0);
+  return Math.max(longest + paddingCh, minCh);
+}
+
 // --- drag input ---------------------------------------------------------
 
 /**
