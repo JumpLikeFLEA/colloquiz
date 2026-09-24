@@ -259,11 +259,15 @@ function main() {
 
     const title = cardTitle(card);
     const body = cardBody(card, [], new Set()); // deps unresolved this early; pass 2 fills them
+    // A card with no `milestone` (the INFRA epic, deliberately outside M0-M4 —
+    // see OPS-011) resolves to `undefined` here rather than a real title;
+    // `--milestone` is omitted entirely for it below rather than sent as the
+    // literal string "undefined", which `gh` would reject (no such milestone).
     const milestoneTitle = MILESTONE_TITLES[card.milestone];
     const labels = cardLabels(card);
 
     if (dryRun) {
-      log(`${card.key}: WOULD CREATE issue "${title}" (milestone "${milestoneTitle}", labels ${labels.join(',')})`);
+      log(`${card.key}: WOULD CREATE issue "${title}" (milestone ${milestoneTitle ? `"${milestoneTitle}"` : '(none)'}, labels ${labels.join(',')})`);
       numbersByKey.set(card.key, `(pending ${card.key})`);
       if (!sampleBody) sampleBody = { key: card.key, title, body };
       created++;
@@ -271,18 +275,9 @@ function main() {
     }
 
     try {
-      const url = gh([
-        'issue',
-        'create',
-        '--title',
-        title,
-        '--body',
-        body,
-        '--milestone',
-        milestoneTitle,
-        '--label',
-        labels.join(','),
-      ]).trim();
+      const createArgs = ['issue', 'create', '--title', title, '--body', body, '--label', labels.join(',')];
+      if (milestoneTitle) createArgs.push('--milestone', milestoneTitle);
+      const url = gh(createArgs).trim();
       const number = Number(url.split('/').pop());
       if (!Number.isInteger(number)) throw new Error(`could not parse issue number from "${url}"`);
       numbersByKey.set(card.key, number);
@@ -317,7 +312,12 @@ function main() {
     if (existing) {
       const currentLabels = new Set(existing.labels);
       const labelsOk = desiredLabels.every((l) => currentLabels.has(l));
-      const milestoneOk = existing.milestoneTitle === desiredMilestone;
+      // A milestone-less card's `existing.milestoneTitle` reads back as
+      // `null` (see fetchExistingBoardIssues) while `desiredMilestone` is
+      // `undefined` — treat those as equal so an already-correct
+      // milestone-less card reports "up to date" instead of "updating"
+      // every single run.
+      const milestoneOk = (existing.milestoneTitle ?? undefined) === desiredMilestone;
       const titleOk = existing.title === desiredTitle;
       // GitHub sometimes echoes back a trailing newline that wasn't in what
       // we sent (e.g. an issue edited via --body-file, which always ends in
@@ -333,19 +333,9 @@ function main() {
 
       log(`${card.key}: #${number} ${dryRun ? 'WOULD UPDATE' : 'updating'} (title:${titleOk} body:${bodyOk} labels:${labelsOk} milestone:${milestoneOk})`);
       if (!dryRun) {
-        gh([
-          'issue',
-          'edit',
-          String(number),
-          '--title',
-          desiredTitle,
-          '--body',
-          desiredBody,
-          '--milestone',
-          desiredMilestone,
-          '--add-label',
-          desiredLabels.join(','),
-        ]);
+        const editArgs = ['issue', 'edit', String(number), '--title', desiredTitle, '--body', desiredBody, '--add-label', desiredLabels.join(',')];
+        if (desiredMilestone) editArgs.push('--milestone', desiredMilestone);
+        gh(editArgs);
       }
       updated++;
     } else if (deps.filter((d) => d.ref !== undefined).length > 0) {

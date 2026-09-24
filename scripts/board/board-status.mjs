@@ -88,7 +88,10 @@ function main() {
     return {
       key: card.key,
       title: truncate(card.title, 50),
-      milestone: card.milestone,
+      // A card with no milestone (the INFRA epic, deliberately outside
+      // M0-M4 — see OPS-011) has `card.milestone === undefined`; render it
+      // rather than let `.length` below throw on it.
+      milestone: card.milestone ?? '—',
       column,
       blocked: openDeps.length > 0 ? `blocked by ${openDeps.join(', ')}` : '-',
     };
