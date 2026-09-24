@@ -35,6 +35,7 @@ export const EPICS = [
   { key: 'PAY', title: 'Entitlement & payments', desc: 'Free/paid resolution, MoR checkout, unlocking.' },
   { key: 'PROG', title: 'Progression', desc: 'English progression, separate from Colloquiz XP.' },
   { key: 'OPS', title: 'Ops', desc: 'Board tooling, session harness, test infrastructure.' },
+  { key: 'INFRA', title: 'Infrastructure', desc: 'Storage, egress and hosting plan — outside the milestones.' },
 ];
 
 export const CARDS = [
@@ -928,6 +929,543 @@ export const CARDS = [
     notes:
       'Plan settled in chat on 2026-09-24 — see the AUTH-007 work prompt. ' +
       '044 is applied; 2 course_editors rows exist (added after 040).',
+  },
+
+  // ---------------------------------------------------------- M1, misc ---
+  {
+    key: 'SHELL-013',
+    title: '`/` → `/app` redirect becomes temporary (307)',
+    milestone: 'M1',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 145,
+    dependsOn: [],
+    goal:
+      'next.config.ts redirects() currently sends `/` to `/app` with ' +
+      '`permanent: true` (a 308) — SHELL-001\'s Colloquiz-under-/app move. M2 ' +
+      'needs `/` to eventually serve the English landing; a 308 is cached by ' +
+      'browsers and some in-app browsers well past the point the redirect ' +
+      'entry is removed, so it has to stop being permanent before any M2 card ' +
+      'starts building toward a public `/`. Found during the M2 scoping audit, ' +
+      '2026-09-24 — not something any draft M2 card was pointed at.',
+    acceptance: [
+      'The `/` entry in next.config.ts redirects() has `permanent: false`, and only that entry — every other entry in movedSegments keeps permanent: true.',
+      '`curl -I /` against a local `next start` shows `307`, not `308`.',
+    ],
+    notes:
+      'SHELL-010 owns removing this redirect entirely once the English ' +
+      'landing is real content, not a stub — see SHELL-010\'s acceptance.',
+  },
+  {
+    key: 'OPS-011',
+    title: 'Board tooling accepts a milestone-less card (INFRA)',
+    milestone: 'M1',
+    epic: 'OPS',
+    type: 'task',
+    rank: 146,
+    dependsOn: [],
+    goal:
+      'INFRA cards sit outside the M0-M4 milestones by design (see INFRA-001 ' +
+      'etc.), but bootstrap-board.mjs, board-status.mjs and next-card.mjs were ' +
+      'all written assuming every card.milestone resolves to one of M0-M4. ' +
+      'board-status.mjs crashes outright the moment a milestone-less card ' +
+      'exists in CARDS; bootstrap-board.mjs would pass a literal "undefined" ' +
+      'milestone title to gh. Both found during the M2 scoping audit, ' +
+      '2026-09-24. Fix before Phase 4 bootstraps INFRA-001.',
+    acceptance: [
+      'bootstrap-board.mjs omits `--milestone` entirely (in both the issue-create and issue-edit gh calls) when card.milestone is falsy, instead of passing the literal string "undefined".',
+      'board-status.mjs renders a milestone-less card\'s MILESTONE column as `—` instead of throwing. Reproduce the crash first against a synthetic milestone-less card (`card.milestone.length` at the column-width calculation throws `Cannot read properties of undefined`), then show it fixed.',
+      'A unit test against next-card.mjs\'s exported decide() proves a milestone-less synthetic record is never returned as a pick, for any set of other records — this confirms the existing M0-M4-only matching in activeMilestoneKey already excludes it by construction, so the test is a proof, not new picking logic.',
+      '`node scripts/board/bootstrap-board.mjs --dry-run` against the real INFRA-001 card (once it exists in CARDS) prints a WOULD CREATE line with no milestone, and board-status.mjs lists it without crashing.',
+    ],
+  },
+
+  // ------------------------------------------------------ M2 (Alliengll) ---
+  {
+    key: 'OPS-006',
+    title: 'Route budget guard: cold-load JS bytes',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2000,
+    dependsOn: [],
+    goal:
+      'Next 16 removed the `First Load JS`/`size` columns from `next build` ' +
+      'output ("we found these to be inaccurate in server-driven ' +
+      'architectures using React Server Components... both our Turbopack and ' +
+      'Webpack implementations had issues" — Next 16 upgrade guide, ' +
+      'node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md). ' +
+      'Every M2 English-route budget in docs/handoff.md\'s Performance ' +
+      'boundary depends on a printed number; this card builds the ' +
+      'replacement measurement before any card needs to cite it, and ' +
+      'baselines the smallest route that exists today, since no route ' +
+      'currently prints any size at all to compare against.',
+    acceptance: [
+      'Playwright is added as a new devDependency — approved 2026-09-24 (owner) specifically for this card; record the decision in docs/decisions/ when this card is actually worked.',
+      '`npm run budget` starts the production server (`next start`) and, per a configured list of routes, loads each with headless Chromium in a fresh, cache-disabled browser context, sums the compressed byte size of every script resource actually downloaded, and prints `route | KB | budget`.',
+      'A route whose navigation fails (non-2xx response, timeout, a page error) is a hard failure for that route, not a 0 KB pass — demonstrated by pointing the guard at a route that 500s and showing it exits non-zero, not silently green.',
+      'Exits non-zero when any route exceeds its configured budget. Kept out of `npm run check` (a full server boot is slow); added to CLAUDE.md\'s command list as its own `npm run budget`.',
+      'Accepts a base-URL override (env var or CLI arg) so OPS-010\'s launch rehearsal can point it at the deployed production URL instead of local `next start`, without a second tool.',
+      'Baselines `/login` — the smallest route that exists today per the phase-1 audit (no route currently prints any size). Its cold-load KB is printed and recorded as the floor any English route budget starts from.',
+      'Forbidden-package check is separate from the byte-budget run: an ESLint `no-restricted-imports` rule, added via `overrides` scoped to `app/(english)/**` and `app/components/lesson-player/**`, denying imports of recharts, katex, framer-motion, @supabase/ssr. Runs inside `npm run check`, shown failing on a planted import and passing without it.',
+      'Demonstrated failing once on a deliberately lowered budget number for an existing route, then passing at the real budget. Both outputs printed.',
+    ],
+    notes:
+      'docs/handoff.md\'s Performance boundary section already cites this ' +
+      'card by name for the replacement wording (2026-09-24 delta).',
+  },
+  {
+    key: 'SHELL-006',
+    title: 'The English surface gets its own root layout (or doesn\'t)',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'decision',
+    rank: 2010,
+    dependsOn: ['OPS-006'],
+    goal:
+      'Route groups can define multiple root layouts, each with its own ' +
+      '<html> (confirmed against the installed docs, not memory: ' +
+      'node_modules/next/dist/docs/.../layout.md and .../route-groups.md). ' +
+      'Decide whether the English surface takes one, and settle every ' +
+      'consequence that decision has for app-root-singular files before ' +
+      'SHELL-007 builds on top of it.',
+    acceptance: [
+      'Evidence: `npm run budget` output for a stub English route under (a) the shared root layout and (b) its own root layout. Both printed — not a next build table, which Next 16 no longer produces (see OPS-006).',
+      'The case for (b): `<html lang="ru">`, no ThemeProvider or katex CSS unless the English surface wants them. The only known cost is a full page reload crossing root layouts, confirmed in route-groups.md — accepted per settled input 7 (Colloquiz reached only through a footer link).',
+      'not-found: app/not-found.tsx and app/global-not-found.js are both app-root-singular files, not per-route-group. Decide between keeping app/not-found.tsx (shared, generic copy) or adopting global-not-found.js (experimental, needs `experimental.globalNotFound` in next.config.ts) — the case for it is exactly "multiple root layouts, so there\'s no single layout to compose a global 404 from" (Next docs, not-found.md). Record which, and why.',
+      'global-error.tsx has no per-root-layout equivalent at all — it stays a single shared file regardless of which option wins, and "replaces the root layout... when active" (Next docs, error.md). State this as a known constraint, not something SHELL-007 discovers later.',
+      'opengraph-image.tsx and the icon files (icon.tsx, apple-icon.tsx) ARE per-route-segment conventions (confirmed, opengraph-image.md) — each root group can carry its own; state this so SHELL-009 doesn\'t re-derive it.',
+      'Which root layout (auth) and (legal) sit under is decided and stated explicitly — today both inherit the single shared app/layout.tsx.',
+      'Sentry\'s client init (instrumentation-client.ts) is a genuinely global Next instrumentation hook, not something app/layout.tsx opts into — its cost is measured as part of the OPS-006 stub-route baseline, and whether/how (or whether at all) it can be scoped away from English routes is decided here, not assumed solved by giving English its own layout.',
+      'Records the cold-load KB budget for each English route kind (landing, course page, lesson) as this card\'s output, per docs/handoff.md\'s Performance boundary.',
+    ],
+  },
+  {
+    key: 'SHELL-005',
+    title: 'English URL scheme and the public-path rule',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'decision',
+    rank: 2020,
+    dependsOn: [],
+    goal:
+      'Telegram posts link directly to a course or a lesson (settled input ' +
+      '2), so the URL shape has to be decided before any public route exists ' +
+      'to link to.',
+    acceptance: [
+      'Choice recorded between /c/[course]/[lesson] and /courses/[course]/[lesson], and whether a lesson slug is unique per course — lessons.slug is already unique PER COURSE, not globally (migration 043), so a cross-course-unique scheme would need a second key.',
+      'proxy.ts\'s exact-match publicRoutes (today: /terms, /privacy, /subprocessors, /robots.txt — proxy.ts:47) is replaced by a prefix rule admitting the chosen English path shape, unauthenticated.',
+      'Decides whether an anonymous English request skips the Supabase session refresh in proxy.ts (server latency only — no client JS either way, since the session refresh already happens server-side before any response).',
+      'URLs are stated to never change when a lesson is reordered — lessons.ordinal carries no uniqueness constraint and is explicitly display-order-only (migration 041 comment), so the chosen scheme must key off something that doesn\'t move, i.e. slug.',
+    ],
+  },
+  {
+    key: 'ANON-001',
+    title: 'Attempt storage and the anonymous→account migration',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'decision',
+    rank: 2030,
+    dependsOn: [],
+    goal:
+      'Progress lives in the in-app browser\'s localStorage (Instagram or ' +
+      'Telegram). The email-confirmation link usually opens in the system ' +
+      'browser, whose storage is empty — "migrate after registration" can ' +
+      'find nothing there. Redesigned 2026-09-24 (owner) for confirmations ' +
+      'ON at launch: the hosted project has them OFF today only temporarily.',
+    acceptance: [
+      'Compares exactly two options — (b) a claim token carried in emailRedirectTo, vs (c) Supabase anonymous users created lazily at lesson end, kept off the critical path. Option (a) ("upload local attempts when the signup form is submitted") is dropped: with confirmations ON there is no live, confirmed session at the moment the form submits, so nothing proves the anonymous attempts belong to the not-yet-real account.',
+      'Settles the attempt record shape, keyed (lesson_version_id, block_id) per 0018.',
+      'Settles that client-computed scores are accepted (0018: answer keys ship to the client; there is no English leaderboard), with the server capping earned at possible.',
+      'Settles how "best score" behaves across republished versions.',
+    ],
+    notes:
+      'Hosted project\'s "Confirm email" is OFF today and will be ON at ' +
+      'launch (owner, 2026-09-24) — design for ON. ANON-004\'s cross-browser ' +
+      'test and OPS-010\'s launch rehearsal both depend on this being real.',
+  },
+  {
+    key: 'SHELL-007',
+    title: 'English route group, layout and Russian strings module',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2040,
+    dependsOn: ['SHELL-005', 'SHELL-006'],
+    goal:
+      'The route group SHELL-005/SHELL-006 decided, built for real, with no ' +
+      'Colloquiz weight riding along.',
+    acceptance: [
+      'app/(english)/ exists with its own layout per SHELL-006\'s decision. proxy.ts lets its paths through anonymously per SHELL-005\'s prefix rule. It has an English-surface not-found page per SHELL-006\'s choice.',
+      'All learner-facing chrome strings live in one module (e.g. lib/alliengll/copy.ts), in Russian — landing, catalogue, course page, player buttons, completion screen, signup offer (docs/handoff.md, Audience and language, 2026-09-24 delta). Nothing selects a locale.',
+      'A route under it renders with no Supabase session and no @supabase/ssr in its client chunks — verified in the actual build output, not asserted.',
+      'Cold-load KB budget printed via `npm run budget` (OPS-006).',
+    ],
+  },
+  {
+    key: 'CNT-009',
+    title: 'Catalogue fields: course cover and short summary',
+    milestone: 'M2',
+    epic: 'CNT',
+    type: 'task',
+    rank: 2050,
+    dependsOn: [],
+    goal:
+      'The catalogue is course cards — cover, title, short summary (owner, ' +
+      '2026-09-24) — and neither field exists on `courses` today (confirmed ' +
+      'against migrations 041-045: only author_id, level and slug were ' +
+      'added/kept; description stays the long-form text on the course page).',
+    acceptance: [
+      'A migration (written, not applied) adds a cover-image reference and a short summary to courses.',
+      'Decided inside the card and recorded in a decision file: the column names; whether a published course requires a cover (NOT NULL at publish, like level in 042) or falls back to a placeholder; which bucket covers live in (reuse lesson-images or a new one).',
+      'Anonymous read of the new columns is verified on a seeded published course, and a draft course\'s fields stay invisible to anon — checked against seeded rows in both states, not an empty table.',
+    ],
+  },
+  {
+    key: 'AUTH-008',
+    title: 'Authoring: edit summary, description and cover',
+    milestone: 'M2',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2060,
+    dependsOn: ['CNT-009', 'AUTH-004'],
+    goal:
+      'The partner can set a course\'s summary, long description and cover ' +
+      'from the authoring UI, and replace the cover. Today\'s CourseDetailView ' +
+      'edits only title, description and level (confirmed by reading the ' +
+      'component) — summary and cover are net-new fields with no editor.',
+    acceptance: [
+      'The partner can set a course\'s summary, long description and cover from the authoring UI, and replace the cover.',
+      'Upload reuses the AUTH-004 path, limits and deferred-deletion rule (0037).',
+      'The editor shows the catalogue card as it will render.',
+    ],
+    notes:
+      'Renamed from a draft "AUTH-007" — AUTH-007 was already taken by the ' +
+      '2026-09-24 "Open course authoring to delegated editors" card (closed) ' +
+      'before this card was drafted. Renaming avoids bootstrap-board.mjs\'s ' +
+      'title-prefix matching silently overwriting that closed issue.',
+  },
+  {
+    key: 'PLAY-006',
+    title: 'Public lesson page',
+    milestone: 'M2',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2070,
+    dependsOn: ['SHELL-007'],
+    goal:
+      'The first genuinely public read path — anonymous, no session, ' +
+      'entitlement-gated by can_read_lesson (migration 041).',
+    acceptance: [
+      'The server reads the published version with the anon key and no session. attemptId is generated on the server (0029).',
+      'A free lesson opens the player. An unpublished lesson returns 404. An invalid stored document shows a visible author error, not a crash.',
+      'A paid lesson without entitlement renders nothing playable. In M2 this is a plain "not available" state; the real preview screen is M3.',
+      'Full protocol, because this is the first public read path. Seed a free lesson, a paid lesson, a draft lesson and one entitlement row, then check anon, signed-in and entitled callers against each. Every result is printed — a check against empty tables is a failure.',
+      'Cold-load KB budget printed via `npm run budget`.',
+    ],
+  },
+  {
+    key: 'PLAY-007',
+    title: 'Lesson completion screen',
+    milestone: 'M2',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2080,
+    dependsOn: ['PLAY-006'],
+    goal:
+      'Closes the loop after a lesson without ever reading as a failure ' +
+      '(handoff: scoring principles).',
+    acceptance: [
+      'Shows the lesson score and the explanation review, plus a link to the next lesson (by ordinal, never forced).',
+      'Has a slot for the registration offer (ANON-004).',
+      'Nothing on it blocks, and nothing says "failed".',
+      'Russian chrome, from the shared strings module (SHELL-007).',
+    ],
+  },
+  {
+    key: 'SHELL-008',
+    title: 'Course page (the target of a catalogue card)',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2090,
+    dependsOn: ['SHELL-007', 'CNT-009'],
+    goal: 'The page a catalogue card opens into.',
+    acceptance: [
+      'Shows the cover, title, level and long description.',
+      'Lesson list: title, description, item count, estimated_minutes, and the learner\'s best score where one exists.',
+      'One tap from this page to the first free lesson. No locks and no forced order.',
+      'Course progress is the two numbers as text (lessons attempted / total; average over attempted lessons only), never blended into one (docs/handoff.md, Scoring and progress).',
+      'Cold-load KB budget printed via `npm run budget`.',
+    ],
+  },
+  {
+    key: 'SHELL-012',
+    title: 'English is the default surface; Colloquiz behind a footer link',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2100,
+    dependsOn: ['SHELL-007'],
+    goal:
+      'Settled input 7 (owner, 2026-09-24): Colloquiz is reachable only ' +
+      'through a footer link; signed-in users land on / after login, not ' +
+      '/app. This card verifies the REDIRECT LOGIC only — that every login, ' +
+      'signup, OAuth-callback and email-confirm path is configured to send a ' +
+      'signed-in user to /. Whether a real, live English surface actually sits ' +
+      'at / in production is a separate claim: `/` still 307-redirects to ' +
+      '/app until SHELL-010 removes that redirect entirely once the landing ' +
+      'is real content. That end-to-end, on-production confirmation belongs ' +
+      'to OPS-010\'s launch rehearsal, not this card — otherwise this card ' +
+      'would transitively depend on the partner\'s landing-page copy (SHELL-010\'s ' +
+      'own external dependency), inverting the section B/C/D build order.',
+    acceptance: [
+      'The English surface has its own lightweight navigation. AppSidebar, NotificationBell and DuelRealtime never appear in any English route (checked with rg against the English route group\'s imports, and in the build chunks).',
+      'A footer link is the only way from the English surface to /app.',
+      'Every redirect target found in the phase-1 audit (proxy.ts:66-85: unauthenticated bounce, signed-in-on-auth-route bounce, stray-code forwarding) is reviewed against the SHELL-005/SHELL-007 English paths and updated to send a signed-in user to / — verified against a build with SHELL-013\'s temporary redirect disabled locally, since production `/` still redirects to /app until SHELL-010.',
+      'Existing Colloquiz entry points (duel invites, notifications, share links) still go to /app.',
+      'Production confirmation that a signed-in user actually lands on live English content at / is explicitly OUT of this card\'s acceptance — it is OPS-010\'s job.',
+    ],
+  },
+  {
+    key: 'ANON-002',
+    title: 'localStorage attempt store (lib/)',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2110,
+    dependsOn: ['ANON-001'],
+    goal: 'The client-side half of whatever ANON-001 decides.',
+    acceptance: [
+      'A versioned schema, as decided in ANON-001.',
+      'Keeps the best score and never lowers a visible number.',
+      'Never throws: when storage is unavailable or full, it falls back to memory. Tested under lib/, including an unparseable and an old-version payload.',
+    ],
+  },
+  {
+    key: 'ANON-003',
+    title: 'lesson_attempts table and record RPC',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2120,
+    dependsOn: ['ANON-001'],
+    goal:
+      'The server-side attempt record. Neither lib/accountExport.ts (covers ' +
+      'profiles, results, user_achievements, group_members, get_my_duels()) ' +
+      'nor lib/accountDelete.ts covers this table today — confirmed by ' +
+      'reading both, phase-1 audit.',
+    acceptance: [
+      'Migration written, not applied. The RPC is SECURITY DEFINER, checks can_read_lesson for each attempt, and caps earned at possible.',
+      'The table is added to account export and account deletion. Full protocol, on seeded rows: export contains them, and deletion removes/anonymises them per the existing docs/adr/0002 pattern.',
+    ],
+  },
+  {
+    key: 'ANON-004',
+    title: 'Registration offer and progress migration',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2130,
+    dependsOn: ['ANON-002', 'ANON-003', 'PLAY-007', 'SHELL-012'],
+    goal: 'The conversion moment — after value has been delivered, not before.',
+    acceptance: [
+      'Shown after a completed lesson, never before one.',
+      'The signup form on the English surface is in Russian and returns to the lesson.',
+      'Local attempts reach the account via the mechanism ANON-001 chose. Demonstrated end to end in the cross-browser case, WITH EMAIL CONFIRMATION ON: play in browser A, confirm the email in browser B, and the attempts are visible in B. The hosted project has confirmations OFF today (temporary) — this test runs against a local build with `enable_confirmations = true` set in supabase/config.toml for the run, not the current hosted default.',
+      'OAuth buttons are hidden, or come with a warning, inside in-app browsers. Google rejects OAuth in embedded webviews; this is verified on a device in OPS-007, not assumed.',
+    ],
+  },
+  {
+    key: 'ANON-005',
+    title: 'Signed-in learners record attempts directly',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2140,
+    dependsOn: ['ANON-003', 'PLAY-006'],
+    goal: 'The steady-state path once ANON-004 has converted someone.',
+    acceptance: [
+      'A signed-in learner\'s completed lesson writes a lesson_attempts row, and the course page shows their best score from the server.',
+    ],
+  },
+  {
+    key: 'SHELL-009',
+    title: 'Per-page share metadata (OG) for Telegram',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2150,
+    dependsOn: ['SHELL-008', 'CNT-009'],
+    goal:
+      'Telegram renders rich link previews (settled input 2), so per-page OG ' +
+      'metadata is a real feature here, not polish.',
+    acceptance: [
+      'Course and lesson pages carry a Russian title, a description and the course cover as the OG image — built as opengraph-image.tsx files scoped to the relevant route segment (confirmed per-segment in SHELL-006\'s audit), not the single app-root file.',
+      'A real Telegram post of each URL type shows a rich preview (screenshot attached).',
+      'If app/robots.ts\'s blanket disallow (app/robots.ts:11-18) blocks the preview fetcher, the card says so with evidence and proposes the smallest fix as a separate card — this was flagged unknown in the phase-1 audit and is exactly what this card tests empirically.',
+    ],
+  },
+  {
+    key: 'OPS-007',
+    title: 'Spike: devices inside the Instagram and Telegram in-app browsers',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2160,
+    dependsOn: ['PLAY-006'],
+    goal:
+      'Real-device verification of every in-app-browser assumption this ' +
+      'backlog makes. Deliberately run in TWO PASSES, not gated by a formal ' +
+      'dependsOn edge on ANON-004: OPS-007\'s OAuth-in-webview finding is an ' +
+      'INPUT to ANON-004\'s "hide or warn" decision, so OPS-007 has to start ' +
+      'before ANON-004 exists — but one of its own rows (the signup → ' +
+      'confirm round trip) needs ANON-004\'s actual signup form to test ' +
+      'against. A dependsOn: [\'ANON-004\'] edge would block the whole card, ' +
+      'including the part ANON-004 is waiting on — so instead that row is a ' +
+      'named partial, closed in a second pass on this same card rather than a ' +
+      'hidden or circular dependency.',
+    acceptance: [
+      'First pass (before ANON-004): the matrix covers iOS and Android × Instagram and Telegram for every item type, with dnd-kit drag against page scrolling; inline inputs with the on-screen keyboard; whether localStorage survives closing and reopening the in-app browser; whether the OAuth buttons work against a bare Supabase OAuth link (no signup flow needed for this row — it does not require ANON-004 to exist).',
+      'NAMED PARTIAL, second pass (after ANON-004 ships): the signup → email-confirm round trip, with confirmations ON (per ANON-001), re-run against ANON-004\'s real form. Left explicitly unchecked when this card first closes; completed as a follow-up on this same card, not a new one, and not silently skipped.',
+      'Recorded as a table in a decision file, one row per matrix cell plus the named partial. Every failure becomes a proposed card.',
+    ],
+    notes: 'ANON-004\'s last acceptance row depends on this card\'s OAuth-in-webview finding.',
+  },
+  {
+    key: 'OPS-008',
+    title: 'Minimal funnel events',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2170,
+    dependsOn: ['SHELL-007'],
+    goal: 'Minimal funnel analytics are in M2 (settled input 3).',
+    acceptance: [
+      'Record the choice inside the card: a first-party events table through a route handler, or Vercel custom events (check the plan they require).',
+      'Four events: landing view, lesson start, lesson complete, signup. Each records its source (utm_source or referrer: instagram, telegram, direct).',
+      'A privacy-page change goes in the same commit if the chosen route adds a processor or a new category of data.',
+      'Shown firing once each on a preview deployment.',
+    ],
+  },
+  {
+    key: 'SHELL-010',
+    title: 'Russian landing page with the catalogue (built once, late)',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2180,
+    dependsOn: ['SHELL-008', 'AUTH-008', 'SHELL-009'],
+    goal:
+      'docs/handoff.md, Visual work §1 exception: the landing page IS the ' +
+      'function, built once, late. "Do not build a placeholder landing page."',
+    acceptance: [
+      'A hero section, then a catalogue of course cards (cover, title, summary). Tapping a card opens its course page.',
+      'From the bio link to the first free lesson takes at most one tap after / loads.',
+      'The / → /app redirect (SHELL-013\'s temporary 307) is removed entirely from next.config.ts: `curl -I /` returns 200, and the redirect entry is gone.',
+      'Cold-load KB budget printed via `npm run budget`. No placeholder version ships before this card.',
+    ],
+    notes:
+      'Depends on the partner\'s copy and visuals — a named external ' +
+      'dependency, per the original draft. Cannot be scheduled purely by ' +
+      'engineering rank.',
+  },
+  {
+    key: 'SHELL-011',
+    title: 'Visual polish pass on the English surface',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2190,
+    dependsOn: ['SHELL-010'],
+    goal: 'docs/handoff.md, Visual work §3 — brand and aesthetic polish, end of M2.',
+    acceptance: [
+      'Typography, spacing and the player\'s look.',
+      'Every deliberate change has an entry in ui-decisions.md, and every colour is a token.',
+    ],
+  },
+  {
+    key: 'OPS-009',
+    title: 'Legal copy changes',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2200,
+    dependsOn: ['ANON-003', 'OPS-008'],
+    goal: 'Lesson attempts, localStorage progress and funnel events are new categories of data the legal pages don\'t cover yet.',
+    acceptance: [
+      'The privacy page covers lesson attempts, localStorage progress and the analytics events.',
+      'Open question, recorded rather than decided: do the legal pages need a Russian version for this audience?',
+    ],
+  },
+  {
+    key: 'OPS-010',
+    title: 'Launch rehearsal (M2 exit)',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2210,
+    dependsOn: [
+      'SHELL-010', 'SHELL-011', 'SHELL-012', 'SHELL-013', 'ANON-004', 'ANON-005',
+      'OPS-006', 'OPS-007', 'OPS-008', 'OPS-009', 'PLAY-007', 'INFRA-001',
+    ],
+    goal:
+      'M2\'s bar, proven end to end on production: a reel viewer can play a ' +
+      'free lesson with no account.',
+    acceptance: [
+      'On production: tap the bio link and a Telegram post on a real phone; play a free lesson anonymously; register and see the progress carried over.',
+      'Hosted "Confirm email" is ON (owner, 2026-09-24 — it is OFF today only temporarily); the rehearsal\'s signup goes through a real confirmation email opened in a different browser than the one that played the lesson — this is what SHELL-012\'s production-landing claim and ANON-004\'s cross-browser claim both resolve to in the end.',
+      'The production `npm run budget` output is pasted (pointed at the deployed URL, per OPS-006\'s base-URL override).',
+      'The first course is published and all its lessons are free (settled input 1), with counts printed.',
+    ],
+  },
+
+  // -------------------------------------------------------------- INFRA ---
+  {
+    key: 'INFRA-001',
+    title: 'Measure storage, egress and plan',
+    epic: 'INFRA',
+    type: 'task',
+    rank: 3000,
+    dependsOn: ['OPS-011'],
+    goal:
+      'Outside the milestones (see OPS-011 for why this card has no ' +
+      'milestone field). Self-hosting Postgres on AWS is explicitly NOT the ' +
+      'starting point; measurement is.',
+    acceptance: [
+      'Print the database size, each bucket\'s size, monthly egress, and the Supabase plan.',
+      'On the free plan, record the inactivity-pause behaviour as a launch risk.',
+      'Set trigger thresholds (e.g. 60% of any limit) that open INFRA-003.',
+      'Must run before OPS-010.',
+    ],
+  },
+  {
+    key: 'INFRA-002',
+    title: 'Resize and convert images at upload',
+    epic: 'INFRA',
+    type: 'task',
+    rank: 3010,
+    dependsOn: ['INFRA-001'],
+    goal: 'Bound per-image storage and egress cost before volume grows.',
+    acceptance: [
+      'Lesson images and covers are resized to a maximum width and converted to WebP on upload.',
+      'Before/after byte sizes for the existing bucket contents are printed.',
+      'New npm dependency (e.g. sharp), so stop and ask.',
+    ],
+  },
+  {
+    key: 'INFRA-003',
+    title: 'Storage and hosting when a threshold fires',
+    epic: 'INFRA',
+    type: 'decision',
+    rank: 3020,
+    dependsOn: ['INFRA-001'],
+    goal: 'Opened only by INFRA-001\'s trigger.',
+    acceptance: [
+      'Options, in order: upgrade the Supabase plan; move images to an egress-free object store; self-host.',
+      'Self-hosting costs rebuilding auth, RLS roles (auth.uid(), anon, authenticated), PostgREST and Storage. That cost is stated with evidence.',
+      'Local Docker Postgres already exists through the Supabase CLI (supabase start), so "easier local testing" is not an argument for it.',
+    ],
   },
 ];
 
