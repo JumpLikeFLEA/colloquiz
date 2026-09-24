@@ -6,8 +6,8 @@ project has already identified.
 
 Status: M0 (foundations & item engine) complete — the five item types score
 under test, `/app` carries Colloquiz (decision 0005), and a demo player
-exists. M1 is being scoped. Update this file in the same commit as any work
-that contradicts it.
+exists. M1 is closing, and M2 is being scoped. Update this file in the same
+commit as any work that contradicts it.
 
 ## Product thesis
 
@@ -66,6 +66,14 @@ One Next.js app, one Supabase project, one account per person.
 
 **Launch bar: one finished course.** One exists today, two more are coming.
 The catalogue does not need to look full before the first learners arrive.
+**The first one or two courses are entirely free** (owner, 2026-09-24): all
+their lessons have `in_free_sample = true`. Consequence for M2: the "paid,
+not entitled" state is unreachable in the UI at launch, so its preview screen
+moves to M3; the RLS denial path is still tested in M2, on seeded data.
+
+**Catalogue shape (owner, 2026-09-24):** the catalogue is course cards — a
+cover image, the title and a short description. Tapping the cover opens a
+course page with the detailed information and the lesson list.
 
 ## Entitlement and access
 
@@ -142,9 +150,18 @@ What it means concretely:
 - **Russian is for course CONTENT — explanations, instructions, theory.** The
   interface chrome is not translated wholesale; only what the learner reads
   as part of a lesson. Do not build a full i18n layer on this basis alone.
-- They arrive from an Instagram reel. The path from that tap to a playable
-  lesson must have no extra clicks: no signup wall, no interstitial, no
-  "choose your level" gate before anything happens.
+  **Superseded for the English surface specifically (owner, 2026-09-24):**
+  its whole learner-facing chrome — landing, catalogue, course page, player
+  buttons, completion screen, signup offer — is Russian. This is one surface
+  written in one language, not an i18n layer: a single strings module, no
+  locale switching, no library. Colloquiz and authoring chrome stay English
+  (0018 Decision 5).
+- They arrive from an Instagram reel, via a single static bio link that
+  points to `/`, or by tapping a link in an Alliengll Telegram channel post,
+  which can point to a course or a lesson (owner, 2026-09-24). Both open
+  inside an in-app browser. The path from that tap to a playable lesson must
+  have no extra clicks: no signup wall, no interstitial, no "choose your
+  level" gate before anything happens.
 - **Anonymous play is a launch requirement, not a later addition.** The first
   lesson is playable with no account; progress lives in localStorage until
   registration, then migrates. Registration is offered AFTER a completed
@@ -277,9 +294,11 @@ most. Do not build a placeholder landing page.
   author cannot publish what she cannot see. M2 therefore WRAPS a player
   rather than building one.
 - **M2 — public surface.** Anonymous play, the reel-to-lesson path, the
-  landing page, the performance budgets. **Anonymous play is required for
-  launch** — an earlier proposal to split M2 and ship first to known students
-  without it was considered and rejected.
+  landing page, the performance budgets, minimal funnel analytics, and
+  minimal course progress (the two numbers as text; the ring stays
+  deferred). **Anonymous play is required for launch** — an earlier proposal
+  to split M2 and ship first to known students without it was considered and
+  rejected.
 - **M3 — monetisation.**
 - **M4 — progression & polish**, including content export.
 
@@ -327,9 +346,12 @@ most. Do not build a placeholder landing page.
   eventually carries a sub-brand or its own name on the same domain is
   deliberately deferred — it is a naming decision, not a blocker, and nothing
   in the build should assume a rename is coming.
-- How Colloquiz is reached from the English surface — a toggle, a footer link,
-  a nav entry — and whether a signed-in Colloquiz user lands on `/` or on
-  their Colloquiz home.
+- ~~How Colloquiz is reached from the English surface — a toggle, a footer
+  link, a nav entry — and whether a signed-in Colloquiz user lands on `/` or
+  on their Colloquiz home.~~ **Answered (owner, 2026-09-24):** a footer link
+  only. Main content and navigation belong entirely to the English surface,
+  both to avoid distracting newcomers and to keep it lightweight. Signed-in
+  users land on `/` after login, not on `/app`.
 - The partner's role beyond content and promotion — revenue split, capital,
   whether this stays one codebase under one owner. Named as valid, not yet
   answered. Content ownership and purchaser access ARE settled; the commercial
