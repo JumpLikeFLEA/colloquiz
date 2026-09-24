@@ -114,7 +114,10 @@ const nextConfig: NextConfig = {
       "students",
     ];
     return [
-      { source: "/", destination: "/app", permanent: true },
+      // SHELL-013: temporary (307) — `/` will serve the English landing once
+      // M2 lands, and a 308 here would be cached by browsers past the point
+      // the entry is removed. SHELL-010 removes this redirect entirely.
+      { source: "/", destination: "/app", permanent: false },
       ...movedSegments.map((segment) => ({
         source: `/${segment}/:path*`,
         destination: `/app/${segment}/:path*`,
