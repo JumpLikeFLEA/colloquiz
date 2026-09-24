@@ -1,16 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CefrLevel } from "@/lib/courseLevels";
 
-// Read side of Admin > Courses (AUTH-001).
+// Read side of Admin > Courses (AUTH-001), opened to delegated editors by
+// AUTH-007 (docs/decisions/0041).
 //
-// ADMIN-ONLY BY THE PAGE, NOT BY RLS: unlike lib/feedbackQueue.ts, `courses`
-// and `lessons` are readable by any signed-in course editor too ("courses:
-// editor read" / "lessons: editor read", migrations 035/041), not just
-// admins — RLS alone would let a non-admin editor list every course's
-// metadata via this same query. The admin-only gate lives in the page
-// component (docs/decisions/0025: this first authoring UI is admin-only,
-// not yet opened to delegated editors), so treat that check as load-bearing,
-// not a formality this module could skip.
+// PAGE-LEVEL GATE, NOT RLS ALONE: `courses` and `lessons` are readable by any
+// signed-in course editor too ("courses: editor read" / "lessons: editor
+// read", migrations 035/041) via `can_edit_course`, not just admins — so RLS
+// alone scopes a query to "every course this caller may edit or read as
+// published", never to "every course in the database". The page decides who
+// may call these functions at all (lib/courseAccess.ts's `getCourseAccess`/
+// `canEditCourse`, backed by the same `can_edit_course` RPC); `courseIds`
+// below is this module's own additional narrowing for a non-admin editor's
+// course LIST, so an editor of course A never sees course B's row just
+// because "courses: published read" (028) would otherwise let them read it.
 
 export type AuthoredCourse = {
   id: string;
@@ -22,12 +25,19 @@ export type AuthoredCourse = {
   lessonCount: number;
 };
 
-export async function listAuthoredCourses(): Promise<AuthoredCourse[]> {
+/** `courseIds` narrows to a non-admin editor's own courses (see header
+ * comment); omitted (admin) lists every course. An empty array is a real,
+ * distinct input — a granted-nothing editor — and must return no rows, not
+ * "no filter": `.in("id", [])` does that correctly, so no special-case
+ * branch is needed for it. */
+export async function listAuthoredCourses(courseIds?: string[]): Promise<AuthoredCourse[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("courses")
     .select("id, slug, title, description, level, status, lessons(count)")
     .order("title");
+  if (courseIds !== undefined) query = query.in("id", courseIds);
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
 
   return (data ?? []).map((c) => ({
@@ -67,7 +77,15 @@ export type AuthoredCourseDetail = {
   editors: CourseEditor[];
 };
 
-export async function getAuthoredCourseDetail(courseId: string): Promise<AuthoredCourseDetail | null> {
+/** `includeEditors` is false for a non-admin caller: the Editors section
+ * (grant/revoke) is admin-only (`grant_course_editor`/`revoke_course_editor`
+ * stay `is_admin`-gated, 029), so a non-admin editor's page has nothing to
+ * show there and the query — a second round trip — is skipped rather than
+ * fetched and then hidden. */
+export async function getAuthoredCourseDetail(
+  courseId: string,
+  includeEditors = true,
+): Promise<AuthoredCourseDetail | null> {
   const supabase = await createClient();
 
   const { data: course, error: courseErr } = await supabase
@@ -91,11 +109,15 @@ export async function getAuthoredCourseDetail(courseId: string): Promise<Authore
   // implicit embed below is ambiguous to PostgREST without a hint — "!user_id"
   // picks the FK by column name rather than the (unnamed-in-migration, so
   // auto-generated) constraint name.
-  const { data: editors, error: editorsErr } = await supabase
-    .from("course_editors")
-    .select("user_id, granted_at, profiles!user_id(display_name, full_name)")
-    .eq("course_id", courseId);
-  if (editorsErr) throw new Error(editorsErr.message);
+  let editors: { user_id: string; granted_at: string; profiles: unknown }[] = [];
+  if (includeEditors) {
+    const { data, error } = await supabase
+      .from("course_editors")
+      .select("user_id, granted_at, profiles!user_id(display_name, full_name)")
+      .eq("course_id", courseId);
+    if (error) throw new Error(error.message);
+    editors = data ?? [];
+  }
 
   return {
     course: {

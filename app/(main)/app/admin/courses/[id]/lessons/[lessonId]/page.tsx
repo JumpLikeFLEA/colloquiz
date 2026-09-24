@@ -1,32 +1,29 @@
 import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { getUser } from "@/lib/supabase/queries";
+import { canEditCourse } from "@/lib/courseAccess";
 import { getLessonContentDraft, listLessonVersions } from "@/lib/lessonContentAuthoring";
 import { LessonContentEditor } from "./LessonContentEditor";
 
-// Admin-only, same gate as app/(main)/app/admin/courses/[id]/page.tsx and
-// docs/decisions/0025 — course_editors could read this via RLS
-// ("lesson_versions: editor read", migration 041), but AUTH-002 keeps the
-// authoring UI itself admin-only, matching AUTH-001.
+// Gated on can_edit_course(courseId) — admin or this course's delegated
+// editor (AUTH-007, docs/decisions/0041, reopening 0025 Decision 1, which
+// also covered AUTH-002's original admin-only gate here). The URL's `id` is
+// what's checked; the draft.courseId === courseId comparison below (already
+// present for the not-found case) is what makes gating on the URL's course
+// id sound — a lessonId can't be swapped in from a course this caller
+// doesn't hold a grant for and still pass this check.
 export default async function LessonContentPage({
   params,
 }: {
   params: Promise<{ id: string; lessonId: string }>;
 }) {
   const { id: courseId, lessonId } = await params;
-  const supabase = await createClient();
-  const user = await getUser();
-  if (!user) return null;
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "admin") {
+  if (!(await canEditCourse(courseId))) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <ShieldAlert className="size-12 text-muted-foreground mb-4" />
         <h1 className="text-xl font-semibold">Forbidden</h1>
-        <p className="text-muted-foreground mt-2">You need admin privileges to access this page.</p>
+        <p className="text-muted-foreground mt-2">You need admin or delegated-editor access to see this page.</p>
       </div>
     );
   }

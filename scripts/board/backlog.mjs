@@ -628,7 +628,7 @@ export const CARDS = [
     epic: 'CNT',
     type: 'task',
     rank: 320,
-    dependsOn: ['CNT-004', 'CNT-005', 'AUTH-005'],
+    dependsOn: ['CNT-004', 'CNT-005', 'AUTH-005', 'AUTH-007'],
     goal: 'The M1 bar, demonstrated: the partner can publish a lesson without Gleb.',
     acceptance: [
       'The partner\'s finished course goes PDF -> draft -> import -> corrected in the editor -> previewed -> published, with the partner (not Gleb) doing the editing and publishing.',
@@ -902,6 +902,32 @@ export const CARDS = [
       'Run manually first against seeded/real data with output printed; only scheduled once that output looks correct.',
     ],
     notes: 'priority:low. Proposed 2026-09-23 during AUTH-004 review, not blocking any open card.',
+  },
+  {
+    key: 'AUTH-007',
+    title: 'Open course authoring to delegated editors',
+    milestone: 'M1',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 315,
+    dependsOn: ['AUTH-005'],
+    goal:
+      'A course_editors delegate (non-admin) can open, edit, preview and ' +
+      'publish the lessons of the courses they were granted, from the app — ' +
+      'the precondition for CNT-006\'s "the partner (not Gleb) doing the ' +
+      'editing and publishing".',
+    acceptance: [
+      '/app/admin/courses, /app/admin/courses/[id], .../lessons/[lessonId] and .../lessons/[lessonId]/preview admit an admin or a can_edit_course editor of that course; anyone else gets the existing Forbidden screen.',
+      'Page-level access is decided by the SQL function can_edit_course (rpc), not re-implemented in TypeScript.',
+      'A non-admin editor\'s course list shows only courses they hold a course_editors row for — verified while at least one published course they do NOT edit exists.',
+      'A non-admin editor sees no "New course" button and no Editors (grant/revoke) section; everything else on the course page, including the free-sample toggle, archive and publish/unpublish, stays available.',
+      'The sidebar shows a "Course editing" section with a Courses link to non-admin editors; admins keep Courses under Admin. Recorded in docs/ui-decisions.md.',
+      'No migration, no RPC change, no new npm dependency.',
+      'Decision recorded as docs/decisions/0041-*.md, reopening 0025 Decision 1.',
+    ],
+    notes:
+      'Plan settled in chat on 2026-09-24 — see the AUTH-007 work prompt. ' +
+      '044 is applied; 2 course_editors rows exist (added after 040).',
   },
 ];
 

@@ -28,7 +28,7 @@ const STATUS_STYLE: Record<AuthoredCourse["status"], string> = {
   published: "bg-brand-subtle text-brand-text",
 };
 
-export function CoursesListView({ courses }: { courses: AuthoredCourse[] }) {
+export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[]; isAdmin: boolean }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [slug, setSlug] = useState("");
@@ -74,19 +74,21 @@ export function CoursesListView({ courses }: { courses: AuthoredCourse[] }) {
             Manage English mini-courses and their lesson lists.
           </p>
         </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors shrink-0"
-        >
-          <Plus className="size-4" />
-          New course
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setCreating(true)}
+            className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors shrink-0"
+          >
+            <Plus className="size-4" />
+            New course
+          </button>
+        )}
       </div>
 
       {courses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground rounded-2xl border border-dashed border-border">
           <BookOpen size={32} className="mb-2 opacity-40" />
-          <p className="text-sm">No courses yet. Create the first one.</p>
+          <p className="text-sm">{isAdmin ? "No courses yet. Create the first one." : "No courses have been shared with you yet."}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">

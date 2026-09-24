@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 
-// Read side of the lesson content editor (AUTH-002). Same admin-only-by-the-
-// page pattern as lib/courseAuthoring.ts: "lesson_versions: editor read"
-// (migration 041) lets any course editor read every version via
-// can_edit_course, not just admins, so the page component's admin gate is
-// what's load-bearing here, not RLS alone.
+// Read side of the lesson content editor (AUTH-002), opened to delegated
+// editors by AUTH-007 (docs/decisions/0041). Same page-level-gate pattern as
+// lib/courseAuthoring.ts: "lesson_versions: editor read" (migration 041)
+// scopes every version read to can_edit_course, so the page component's
+// canEditCourse(courseId) check (lib/courseAccess.ts) is what's load-bearing
+// here, not RLS alone.
 
 export type LessonContentDraft = {
   lessonId: string;

@@ -95,6 +95,19 @@ const authorItems = [
   },
 ];
 
+// Non-admin course_editors delegates (AUTH-007, docs/decisions/0041): the
+// same /app/admin/courses route as adminItems' "Courses" entry, but surfaced
+// under its own section since these users aren't admins and the page itself
+// scopes to only the course(s) they were granted — see
+// app/(main)/app/admin/courses/page.tsx.
+const courseEditorItems: NavItem[] = [
+  {
+    label: "Courses",
+    href: "/app/admin/courses",
+    icon: Library,
+  },
+];
+
 const adminItems: NavItem[] = [
   {
     label: "Quiz Builder",
@@ -137,6 +150,10 @@ export type SidebarData = {
   profile: UserProfile;
   isAdmin: boolean;
   isAuthor: boolean;
+  /** A non-admin course_editors delegate (AUTH-007). An admin is already
+   * isAdmin and sees Courses under Admin, so this only drives the separate
+   * "Course editing" section for a non-admin editor. */
+  isCourseEditor: boolean;
   /** Duels awaiting this user's move — shown as a badge on the Duels entry. */
   duelCount: number;
 };
@@ -423,7 +440,7 @@ function RoleSections({
   pathname: string;
   renderNavLink: (item: NavItem) => React.ReactNode;
 }) {
-  const { isAdmin, isAuthor } = use(sidebarPromise);
+  const { isAdmin, isAuthor, isCourseEditor } = use(sidebarPromise);
 
   return (
     <>
@@ -467,6 +484,19 @@ function RoleSections({
                 </Link>
               );
             })}
+          </nav>
+        </div>
+      )}
+
+      {/* Course editing — non-admin course_editors delegates only; an admin
+          already sees Courses under Admin below. */}
+      {isCourseEditor && !isAdmin && (
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2 group-data-[collapsible=icon]:hidden">
+            Course editing
+          </p>
+          <nav className="flex flex-col gap-1">
+            {courseEditorItems.map(renderNavLink)}
           </nav>
         </div>
       )}

@@ -46,7 +46,7 @@ async function postJson(url: string, body: unknown, method: "POST" | "PATCH" | "
   return data;
 }
 
-export function CourseDetailView({ detail }: { detail: AuthoredCourseDetail }) {
+export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDetail; isAdmin: boolean }) {
   const router = useRouter();
   const { course, lessons, editors } = detail;
   const [busy, setBusy] = useState(false);
@@ -146,7 +146,7 @@ export function CourseDetailView({ detail }: { detail: AuthoredCourseDetail }) {
 
       <LessonsSection courseId={course.id} lessons={lessons} onChanged={() => router.refresh()} />
 
-      <EditorsSection courseId={course.id} editors={editors} onChanged={() => router.refresh()} />
+      {isAdmin && <EditorsSection courseId={course.id} editors={editors} onChanged={() => router.refresh()} />}
     </div>
   );
 }

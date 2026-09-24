@@ -400,3 +400,18 @@ Appended to in the same commit as the change it records. Referenced from
   the export, and survived this pass deliberately — the name is a leftover, the code is
   not. A "per Figma" or "matches Figma" comment found with no folder to check against
   should land here, not be treated as broken
+- AppSidebar: a "Course editing" section added (2026-09-24, AUTH-007,
+  docs/decisions/0041) for a signed-in user who holds a `course_editors` grant
+  but is NOT an admin — a single "Courses" link to `/app/admin/courses`,
+  reusing the same route and icon (`Library`) as the existing Admin section's
+  "Courses" entry rather than a second component. An admin who is also an
+  editor sees only the Admin section's Courses link; the two are mutually
+  exclusive (`isCourseEditor && !isAdmin`) so nobody gets the entry twice.
+  Modelled on the existing Author section's structure (its own `NavItem[]`,
+  its own conditional block in `RoleSections`), not on the Admin section's
+  multi-item list — course editing is one link, not a sub-app. `isCourseEditor`
+  is a head+count query against `course_editors` scoped to the caller's own
+  `user_id`, resolved through the same `sidebarPromise` as the duels badge and
+  unread count so all three streamed slots settle together. Do not add
+  Quiz Builder / Review Queue / Feedback to this section — those stay
+  admin-only per docs/decisions/0025/0041.

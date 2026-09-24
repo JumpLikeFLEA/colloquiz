@@ -154,11 +154,10 @@ refactor.
   - `lib/entitlement.ts` — the client-side MIRROR of the entitlement SQL
     function. Mirror only; the function is the authority. **Planned (M3).**
 - `supabase/migrations/NNN_*.sql` — schema. Numbered, applied by me, never by
-  a session. Latest applied: 043 (re-derived 2026-09-22 against the hosted
-  project by probing which 039-044 objects PostgREST can see — `course_stages`
-  gone, `lessons`/`course_entitlements`/`courses.level`/`lessons.slug` all
-  present, `lessons.archived_at` and `has_course_entitlement()` both absent).
-  044 (AUTH-001) is written but not yet applied — unpushed.
+  a session. Latest applied: 045 (confirmed with the owner 2026-09-24, AUTH-007
+  — this line was stale: it still read 043/"044 not yet applied" after 044 and
+  045 had both gone in. Re-derive by probing PostgREST or ask, never carry this
+  number forward by assumption).
 - `scripts/`
   - `scripts/board/` — `backlog.mjs` (board data, incl. `rankOf()`),
     `bootstrap-board.mjs` (backlog → GitHub issues/board), `board-move.mjs`,

@@ -55,13 +55,29 @@ export default async function MainLayout({
     ? getActiveSessionSummary(supabase, user.id).catch(() => null)
     : Promise.resolve(null);
 
-  // The sidebar's three streamed slots (footer card, duels badge, role
-  // sections) all read this one promise, so they resolve together instead of
-  // each racing its own round trip.
+  // Whether this user holds ANY course_editors grant (AUTH-007, docs/
+  // decisions/0041) — only needs to know "at least one row exists", so a
+  // head+count is the whole payload, same shape as unreadPromise above.
+  // Degrades to 0 (no "Course editing" section) rather than breaking the
+  // shell on a hiccup, same reasoning as duelCountPromise/unreadPromise.
+  const courseEditorCountPromise: Promise<number> = user
+    ? Promise.resolve(
+        supabase
+          .from("course_editors")
+          .select("course_id", { head: true, count: "exact" })
+          .eq("user_id", user.id)
+          .then(({ count }) => count ?? 0, () => 0),
+      )
+    : Promise.resolve(0);
+
+  // The sidebar's streamed slots (footer card, duels badge, role sections)
+  // all read this one promise, so they resolve together instead of each
+  // racing its own round trip.
   const sidebarPromise: Promise<SidebarData> = Promise.all([
     profilePromise,
     duelCountPromise,
-  ]).then(([data, duelCount]) => {
+    courseEditorCountPromise,
+  ]).then(([data, duelCount, courseEditorCount]) => {
     if (!data) {
       return {
         profile: {
@@ -73,6 +89,7 @@ export default async function MainLayout({
         },
         isAdmin: false,
         isAuthor: false,
+        isCourseEditor: courseEditorCount > 0,
         duelCount,
       };
     }
@@ -89,6 +106,7 @@ export default async function MainLayout({
       },
       isAdmin: data.role === "admin",
       isAuthor: !!data.is_author || data.role === "admin",
+      isCourseEditor: courseEditorCount > 0,
       duelCount,
     };
   });
