@@ -136,9 +136,17 @@ What it means concretely:
   session, so an anonymous visitor pays for no auth round trip and no
   `@supabase/ssr` client JS on the critical path.
 - **This is enforced as an acceptance criterion, with a number.** Every M2
-  card that adds an English route states the First Load JS budget for that
-  route and shows the `next build` output proving it. A budget with no
-  printed figure behind it is not evidence.
+  card that adds an English route states a cold-load JS byte budget for that
+  route and shows the `npm run budget` output proving it — `next build`'s
+  `First Load JS`/`size` columns were removed in Next 16 ("we found these to
+  be inaccurate in server-driven architectures using React Server
+  Components... both our Turbopack and Webpack implementations had issues" —
+  Next 16 upgrade guide,
+  `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`).
+  `npm run budget` measures the replacement directly (OPS-006): a cold,
+  cache-disabled `next start` load through headless Chromium, summing
+  compressed script bytes actually downloaded. A budget with no printed
+  figure behind it is not evidence.
 - One Tailwind build serves both surfaces, so the stylesheet is shared and
   that is accepted — CSS is small next to JS. Do not split the build to chase
   it.
