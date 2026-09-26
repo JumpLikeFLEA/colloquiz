@@ -82,6 +82,96 @@ preserving the query string).
 or now `(english)`) — such a route would need its own explicit guard rather
 than relying on the old blanket bounce.
 
+### Full-protocol audit (requested before push, since Decision 3 moves an auth boundary)
+
+**1. Every route outside `/app`, enumerated:**
+
+- `app/api/**` — 51 `route.ts` files (listed by `find app/api -name route.ts`).
+  Excluded from `proxy.ts`'s matcher entirely (`config.matcher` at
+  `proxy.ts:120-124` negative-lookahead-excludes `api`) — before and after
+  Decision 3, `/api` was never gated by `proxy.ts` at all. This audit exists
+  to confirm that independently, not because Decision 3 could have touched it.
+- `app/auth/callback/route.ts`, `app/auth/confirm/route.ts` — in the
+  `authRoutes` exact-match list (`proxy.ts:61`), so `isAuthRoute` is `true`
+  for both; Decision 3's `isProtectedRoute` guard never applied to them
+  either before or after (the guard only ever wraps `!isAuthRoute` branches).
+- Metadata: `app/icon.tsx`, `app/apple-icon.tsx`, `app/opengraph-image.tsx`,
+  `app/robots.ts` (`/robots.txt`), `app/favicon.ico` (excluded by the matcher
+  by literal name).
+- Auth pages: `/login`, `/signup` (in `authRoutes`); `/reset-password`
+  (NOT in `authRoutes` — see finding below).
+- Legal pages: `/terms`, `/privacy`, `/subprocessors` (in the exact-match
+  `publicRoutes` list, `proxy.ts:47`).
+- English surface: `app/(english)/courses/[courseSlug]/[lessonSlug]`
+  (admitted by the new `/courses` prefix rule).
+- `app/global-error.tsx`, `app/global-not-found.tsx` — not routes; rendering
+  fallbacks Next invokes directly, never reached through `proxy.ts` routing.
+
+**2. Every `/api` handler's own auth check**, by file:line (grep-verified,
+not asserted):
+
+- 41 files call `authUserFrom` directly and return `{error: "Unauthorized"}, 401`
+  on a null user, inline in the handler (e.g. `app/api/account/delete/route.ts:16-18`,
+  `app/api/results/route.ts:15-16, 29-30`, `app/api/quiz/session/route.ts:15-16,
+  32-33, 58-59, 82` — the full per-file list is in this card's evidence comment
+  on issue #92).
+- The remaining files route through one of three shared guards, each of which
+  itself calls `authUserFrom` and returns the same `{error}, 401` shape before
+  doing anything else:
+  - `requireAuthor` (`lib/authorQuiz.ts:53-65`) — `app/api/assignments/route.ts`,
+    `app/api/author/quiz/route.ts`, `app/api/author/quiz/[id]/route.ts`,
+    `app/api/author/questions/[id]/submit-to-pool/route.ts`,
+    `app/api/invites/route.ts`. Adds an `is_author`/`role === 'admin'` check
+    (403 if neither) after the 401 check.
+  - `requireGroupMember` / `requireGroupOwner` (`lib/groups.ts:15-45`) — every
+    `app/api/groups/[gid]/**` route. Adds a `group_members` row lookup after
+    the 401 check; a non-member gets 404 (deliberately, not 403 — "whether a
+    given group id exists is not information a stranger needs",
+    `lib/groups.ts:29-31`), and `requireGroupOwner` additionally 403s a
+    member who isn't the group's owner.
+- **Service-role client (`lib/supabase/admin.ts`) usage**: exactly one file,
+  `app/api/account/delete/route.ts`. `authUserFrom` (line 16) runs and returns
+  401 on failure BEFORE `createAdminClient()` is ever called (line 47); every
+  admin-client call after that (`admin.storage.from("avatars")...`,
+  `admin.auth.admin.updateUserById`) is scoped to `user.id` from that
+  authenticated caller, not to caller-supplied input. No route was found
+  using the admin client without a preceding identity check.
+
+**3. Unauthenticated curl sweep** (`next start` on a clean build matching
+this commit, zero cookies, each route's real HTTP method) — full script and
+raw output kept for this audit, not committed:
+
+- All 63 `/api` method+path combinations enumerated from every `route.ts`
+  export → **401** (`{"error":"Unauthorized"}` or the route's equivalent),
+  with no 200, no 403-before-401, and no 500.
+- `/auth/callback`, `/auth/confirm` (no `code` param) → 307 to
+  `/login?error=oauth` / `/login?error=confirm_expired` — no data.
+- `/icon`, `/apple-icon`, `/opengraph-image`, `/robots.txt`, `/login`,
+  `/signup`, `/terms`, `/privacy`, `/subprocessors`, `/courses/x/y` → 200,
+  all intentionally public.
+- `/courses/x`, bare `/courses`, `/courses/x/y/z` → 404 (no route matches
+  those shapes; SHELL-008 owns the course-only page).
+- An arbitrary unmatched path → 404, rendering `global-not-found.tsx`.
+
+**Finding: `/reset-password` is reachable anonymously post-fix, where it
+previously wasn't** — it's not in `authRoutes` and isn't under `/app`, so
+before Decision 3 an anonymous request (no session cookie) was 307'd to
+`/login`; after, it falls through and renders the form directly (curl:
+200, body contains the "Update password" form). **Not a security finding**:
+`ResetPasswordScreen.tsx` performs no server-side read or write of its own —
+its only action is a client-side `supabase.auth.updateUser({ password })`
+call (`ResetPasswordScreen.tsx:30`), which requires a live Supabase session
+token to succeed at all. An anonymous visitor with no recovery session sees
+the form and gets a Supabase auth error on submit; no data is read, shown,
+or written. This is a UX regression (an anonymous visitor now sees a form
+that will fail, instead of being bounced to `/login`), not an auth-boundary
+break — recorded rather than fixed inline here, since fixing display
+behavior for a client-only page is outside this card's scope. **Proposed
+follow-up (not filed as an issue yet):** `ResetPasswordScreen` checks for a
+live session on mount and shows an explicit "this link has expired" state
+instead of a form that will error, for the case of an anonymous visitor or a
+stale recovery link.
+
 ## Note — `<SpeedInsights/>` was missed on the first pass
 
 The layout was first written without `<SpeedInsights/>`, against
