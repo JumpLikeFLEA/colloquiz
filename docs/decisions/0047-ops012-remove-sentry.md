@@ -46,6 +46,17 @@ Removed (code, config, deps):
 - A new `docs/ui-decisions.md` entry marking the 2026-08-29 "Ops & resilience
   surface" entry's Sentry bullet as superseded, rather than rewriting that
   entry (append-only convention).
+- **Added after initial review** (owner feedback, same day): 0046's stub-floor
+  measurement (253.0 KB) and the per-route-kind budgets built on it
+  (300/300/350 KB) were taken *with* Sentry's global client init present, so
+  removing Sentry left them stale in the direction that matters — the budgets
+  now carry Sentry's removed weight as unguarded slack rather than as headroom
+  for actual English content. Re-measured in a throwaway `git worktree` (never
+  touching the main tree) and recorded as an addendum to `docs/decisions/0046`
+  itself, not a new decision file, since it corrects that card's own numbers
+  rather than making a new decision: new floor 159.6 KB (was 253.0 KB),
+  budgets corrected to 210/210/260 KB (same headroom-over-floor as before).
+  Full method and chunk-by-chunk breakdown in 0046's addendum.
 
 **Left alone, deliberately:**
 

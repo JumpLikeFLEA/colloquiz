@@ -223,3 +223,84 @@ removal (OPS-012) is not approved — in which case this decision's "propose
 removing" resolution for the Sentry cost needs a different answer (most
 likely: accept the client-init cost on English routes as an unavoidable
 global hook, and say so explicitly rather than re-opening this card).
+
+## Addendum (2026-09-26, after OPS-012 — the stub floor re-derived)
+
+OPS-012 (issue #118) removed Sentry per this card's proposal. The 253.0 KB
+stub floor above was measured *with* Sentry's global client init present
+(the whole reason removal was proposed here rather than "scope it away" —
+`instrumentation-client.ts` isn't something a layout opts into), so it
+overstated the true floor once Sentry was gone, and the per-route-kind
+budgets built on top of it (300/300/350 KB) were carrying that gap as unused
+slack. Re-measured rather than left stale, per OPS-006's "re-derive from a
+real run before raising [or lowering] it" rule — the same rule this card's
+own budgets cite.
+
+**Method.** Sentry's removal (OPS-012) already touched `next.config.ts` and
+deleted the global instrumentation files, so reproducing the original
+stub-under-its-own-root scenario now requires *removing* the top-level
+`app/layout.tsx` (Next only lets a route group define its own root when
+nothing sits above it — `layout.md:142`), which would otherwise break
+`(main)`/`(auth)`/`(legal)`, none of which have a root layout of their own
+yet (that split is SHELL-014's job, still open). Rather than risk the working
+tree, the whole experiment ran in a throwaway `git worktree`, deleted after:
+the same `(shell006-stub)` route (`<html lang="ru">`, Geist Sans only,
+`globals.css`, no other imports) was recreated, `app/layout.tsx` was removed,
+and `(main)`/`(auth)`/`(legal)` each got a bare temporary `<html>/<body>`
+wrapper around their unchanged existing content purely so the build stayed
+valid (never merged — the worktree was removed with `git worktree remove
+--force` once the measurement was captured, and `git status` on the main
+tree was confirmed clean before and after). `/stub` was allow-listed in that
+worktree's `proxy.ts`, the app was built and started with `next start`, and
+a headless-Chromium CDP session recorded every script resource's
+`Network.loadingFinished` `encodedDataLength` — same wire-byte methodology
+`scripts/budget.ts` uses, itemized per chunk instead of only summed, to show
+where the bytes go:
+
+```
+Script chunks for /stub (post-Sentry-removal, 2026-09-26):
+   72.12 KB  /_next/static/chunks/02b8n0jyfwrqz.js
+   37.65 KB  /_next/static/chunks/0d-o1gc95ma1r.js
+   13.70 KB  /_next/static/chunks/0e~vbafj-cof3.js
+   10.18 KB  /_next/static/chunks/0i_mddebjo41u.js
+    9.77 KB  /_next/static/chunks/0heymb0~4to1s.js
+    5.19 KB  /_next/static/chunks/turbopack-05kap75p04_eg.js
+    5.17 KB  /_next/static/chunks/0so17x9nnf0b1.js
+    2.54 KB  /_next/static/chunks/01xlw8hd842-c.js
+    1.84 KB  /_next/static/chunks/14_18q1zpom_g.js
+    1.41 KB  /_next/static/chunks/0fldi-4fgo6om.js
+
+Total: 159.58 KB (163,406 B)
+```
+
+| route | root layout | script KB |
+|---|---|---|
+| `/stub`, with Sentry (2026-09-23 spike, above) | own | 253.0 KB |
+| `/stub`, without Sentry (this addendum) | own | 159.6 KB |
+
+**159.6 KB is today's re-derived floor**, 93.4 KB below the original. This is
+larger than the 69.3 KB `/login` dropped by in the same OPS-012 commit
+(371.6 KB → 302.3 KB, issue #118) — expected, not a discrepancy to chase down:
+Sentry's client chunk is a fixed absolute weight, so it is a bigger fraction
+of a near-empty stub than of `/login`'s much larger bundle. Some of the 93.4
+KB may also be ordinary dependency drift between 2026-09-23 and today (a
+`package-lock.json` change unrelated to Sentry) rather than 100% attributable
+to Sentry alone — not chased further here since it doesn't change which
+number the budgets should now use, only how it's fully explained.
+
+**Per-route-kind budgets, corrected** (same headroom-over-floor this card
+originally stated, floor swapped in; still starting points per this card's
+own "not a promise" rule above — SHELL-007/PLAY-006/SHELL-008 re-measure
+their real routes and can raise these with a printed run, same as before):
+
+| route kind | old budget (stale floor) | headroom (unchanged) | new budget |
+|---|---|---|---|
+| landing (SHELL-010) | 300 KB | 47 KB | **210 KB** |
+| course page (SHELL-008) | 300 KB | 47 KB | **210 KB** |
+| lesson player (PLAY-006) | 350 KB | 97 KB | **260 KB** |
+
+Until SHELL-007/SHELL-008/PLAY-006 land and re-measure their real routes,
+`scripts/budget.ts`'s `ROUTES` list still only configures `/login` — this
+addendum's job is to correct the reference numbers those cards will read,
+not to add unbuilt routes to the guard early. A future session picking up
+one of those cards should cite 210/210/260 KB, not 300/300/350.
