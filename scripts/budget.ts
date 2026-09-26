@@ -94,6 +94,17 @@ const ROUTES: RouteBudget[] = [
   // docs/decisions/0057 for the measured baseline and what would close any
   // gap; do not raise it to match whatever the guard currently prints.
   { path: "/courses/future-imperfect/true-or-false", budgetKB: 260, guardForbiddenSignatures: true },
+  // PLAY-012 (docs/decisions/0057): a SEPARATE regression budget for a
+  // drag-heavy lesson — `future-imperfect`'s `applied-practice` (matching +
+  // ordering + selection, 25 blocks; also seeded by
+  // scripts/seed-local-fixtures.ts). This is NOT the 260 KB reel-entry-point
+  // budget (docs/handoff.md scopes that to a course's first free lesson
+  // only) — a lesson that legitimately loads dnd-kit will never clear it.
+  // budgetKB below is this lesson's own measured post-split size (277.4 KB,
+  // PLAY-012, docs/decisions/0057 addendum) plus ~12.6 KB (4.5%) headroom;
+  // re-derive both from a real `npm run budget` run before changing it,
+  // never guess.
+  { path: "/courses/future-imperfect/applied-practice", budgetKB: 290, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

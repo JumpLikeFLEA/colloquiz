@@ -123,6 +123,55 @@ instruction) — PLAY-012 is the top M2 pick once nothing is In Progress or in
 Verify, ahead of PLAY-011/PLAY-007, since a permanently red `npm run budget`
 trains sessions to stop reading it.
 
+## Addendum (PLAY-012 implementation, 2026-09-26)
+
+The acceptance this decision sets was implemented and measured for real
+against a local `supabase start` stack (docker; the hosted project has no
+`applied-practice` lesson to point at, and the verify skill's "no local
+stack" note is about day-to-day dev, not this one-off measurement).
+`app/components/lesson-player/practice/index.tsx` now dispatches to a
+`next/dynamic(() => import(...))` per item type instead of five static
+imports — the exact shape 0057 above specifies, not a blanket dynamic
+wrapper around the whole practice slot.
+
+Freshly measured, mobile viewport, against the real code split (not the
+renderer-stripping prototype this decision's own measurement used):
+
+```
+/courses/future-imperfect/true-or-false      | 251.2 KB | 260 KB  (clears the 260 KB target)
+/courses/future-imperfect/applied-practice   | 277.4 KB | 290 KB  (new route + budget)
+```
+
+`true-or-false` still contains only `selection_grid` (confirmed by reading
+`authored/courses/future-imperfect.json` directly — unchanged since this
+decision's original measurement). `applied-practice` (the drag-heavy second
+route this decision calls for) is `future-imperfect`'s real 25-block lesson
+mixing `matching`/`selection`/`ordering` — `scripts/seed-local-fixtures.ts`
+now seeds it alongside `true-or-false` (both `in_free_sample = true`, a local
+fixture convenience so the anonymous budget crawl can read both — not a
+statement about the real course's eventual entitlement). Its 290 KB budget
+is 277.4 KB measured plus ~12.6 KB (4.5%) headroom, per this file's own
+"budgetKB is a target you re-derive, never guess" convention.
+
+No forbidden-package signature (`recharts`/`katex`/`framer-motion`/
+`@supabase/ssr`) was found in either route's downloaded chunks.
+
+Rendering/scoring correctness was verified with a throwaway Playwright
+script driving `applied-practice` end to end against a local `next start`:
+both `matching` blocks, the `selection` block and the `ordering` block (via
+its keyboard grip-handle path, docs/decisions/0054) each submitted and
+scored with zero page errors — the lazy-loaded chunks for all three
+drag-capable renderers plus the two non-drag ones load and function
+correctly together on one page. Script not committed (ad hoc verification,
+not a maintained test).
+
+`app/components/lesson-player/LessonPlayer.test.tsx`'s ten practice-renderer
+smoke tests needed updating: with per-type `next/dynamic`, a renderer's
+first paint resolves a tick later than `render()` even in RTL, so each
+test's first DOM query became a `findBy*` (async) instead of `getBy*`
+(sync). This is a mechanical consequence of the split, not a behavior
+change — the same assertions, now awaited.
+
 ## What would make us revisit it
 
 - If a future lesson shape puts practice content meaningfully below the

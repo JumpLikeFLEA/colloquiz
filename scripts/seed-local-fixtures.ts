@@ -9,17 +9,20 @@
  *
  * Also seeds a SECOND, separate course — the real `future-imperfect`
  * (slug and all, read straight from `authored/courses/future-imperfect.json`,
- * never hand-copied) with just its first lesson, `true-or-false`, published
- * and in the free sample. This exists purely so `scripts/budget.ts` measures
- * a realistic lesson instead of the synthetic `play-006-smoke` fixture's
- * minimal one — PLAY-012's review note: "budget against realistic content,
- * not a worst case" (docs/decisions/0057). If that course is ever actually
- * imported and published for real (OPS-010), this fixture's slug already
- * matches it, so budget.ts's route needs no further change at that point.
+ * never hand-copied) with its first lesson, `true-or-false`, and its
+ * drag-heavy lesson, `applied-practice` (matching + ordering + selection, 25
+ * blocks), both published and in the free sample. This exists purely so
+ * `scripts/budget.ts` measures realistic lessons instead of the synthetic
+ * `play-006-smoke` fixture's minimal one — PLAY-012's review note: "budget
+ * against realistic content, not a worst case" (docs/decisions/0057). If
+ * that course is ever actually imported and published for real (OPS-010),
+ * this fixture's slugs already match it, so budget.ts's routes need no
+ * further change at that point.
  *
- * `scripts/budget.ts`'s `/courses/future-imperfect/true-or-false` route
- * entry requires this seed to exist before that measurement resolves to
- * anything but a 404 — run this script first against a local stack.
+ * `scripts/budget.ts`'s `/courses/future-imperfect/true-or-false` and
+ * `/courses/future-imperfect/applied-practice` route entries require this
+ * seed to exist before those measurements resolve to anything but a 404 —
+ * run this script first against a local stack.
  *
  * ANON-003/005/006 (attempt recording) are expected to reuse this same
  * fixture set rather than each growing their own throwaway seed — see
@@ -268,6 +271,13 @@ async function main() {
 // content, not the synthetic single-item fixture above. Reads straight from
 // the authored file rather than copying its content inline, so this fixture
 // can never drift from what CNT-004's importer would actually write.
+//
+// PLAY-012 (docs/decisions/0057): also seeds `applied-practice`, the same
+// file's drag-heavy lesson (matching + ordering + selection, 25 blocks) —
+// `scripts/budget.ts`'s second, drag-heavy regression route. Marked in the
+// free sample here too, purely so the anonymous budget crawl can read it;
+// this is a local fixture, not a statement about the real course's
+// entitlement once it's actually published (OPS-010).
 async function seedRealLessonFixture(editorId: string): Promise<void> {
   const filePath = join(process.cwd(), "authored", "courses", "future-imperfect.json");
   const file = JSON.parse(readFileSync(filePath, "utf8")) as {
@@ -279,13 +289,22 @@ async function seedRealLessonFixture(editorId: string): Promise<void> {
     lessons: Array<{ slug: string; title: string; description?: string; document: unknown[] }>;
   };
   const firstLesson = file.lessons[0];
-
-  const parsed = parseLessonDocument(firstLesson.document);
-  if (!parsed.ok) {
+  const dragHeavyLesson = file.lessons.find((l) => l.slug === "applied-practice");
+  if (!dragHeavyLesson) {
     throw new Error(
-      `authored/courses/future-imperfect.json's first lesson ("${firstLesson.slug}") no longer validates: ` +
-        parsed.errors.map((e) => `${e.field}: ${e.message}`).join("; "),
+      `authored/courses/future-imperfect.json no longer has an "applied-practice" lesson — ` +
+        "scripts/budget.ts's drag-heavy route depends on this fixture.",
     );
+  }
+
+  for (const lesson of [firstLesson, dragHeavyLesson]) {
+    const parsed = parseLessonDocument(lesson.document);
+    if (!parsed.ok) {
+      throw new Error(
+        `authored/courses/future-imperfect.json's lesson ("${lesson.slug}") no longer validates: ` +
+          parsed.errors.map((e) => `${e.field}: ${e.message}`).join("; "),
+      );
+    }
   }
 
   const { data: course, error: courseErr } = await supabase
@@ -318,6 +337,15 @@ async function seedRealLessonFixture(editorId: string): Promise<void> {
       inFreeSample: true,
       ordinal: 1,
       document: firstLesson.document,
+      archived: false,
+    },
+    {
+      slug: dragHeavyLesson.slug,
+      title: dragHeavyLesson.title,
+      description: dragHeavyLesson.description ?? "",
+      inFreeSample: true,
+      ordinal: 2,
+      document: dragHeavyLesson.document,
       archived: false,
     },
   ]);

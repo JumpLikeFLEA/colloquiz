@@ -1,10 +1,28 @@
+import dynamic from "next/dynamic";
 import type { PracticeRendererProps } from "../LessonPlayer";
 import { PracticeBlockPlaceholder } from "../PracticeBlockPlaceholder";
-import { MatchingRenderer } from "./MatchingRenderer";
-import { OrderingRenderer } from "./OrderingRenderer";
-import { SelectionGridRenderer } from "./SelectionGridRenderer";
-import { SelectionRenderer } from "./SelectionRenderer";
-import { SlotsRenderer } from "./SlotsRenderer";
+
+// PLAY-012/0057 — each renderer is its own chunk, loaded only when a block of
+// that item type is actually rendered. `selection`/`selection_grid` need no
+// drag interaction; `ordering`/`matching`/`slots` pull in dnd-kit. Splitting
+// per type (rather than one `next/dynamic` around the whole practice slot,
+// which 0057 measured making the real free-sample lesson WORSE) means a
+// lesson using only the first two types never downloads dnd-kit at all.
+const SelectionRenderer = dynamic(() =>
+  import("./SelectionRenderer").then((m) => m.SelectionRenderer),
+);
+const SelectionGridRenderer = dynamic(() =>
+  import("./SelectionGridRenderer").then((m) => m.SelectionGridRenderer),
+);
+const OrderingRenderer = dynamic(() =>
+  import("./OrderingRenderer").then((m) => m.OrderingRenderer),
+);
+const MatchingRenderer = dynamic(() =>
+  import("./MatchingRenderer").then((m) => m.MatchingRenderer),
+);
+const SlotsRenderer = dynamic(() =>
+  import("./SlotsRenderer").then((m) => m.SlotsRenderer),
+);
 
 /**
  * PLAY-002..004 — the real `practiceRenderer` for `LessonPlayer`, dispatching
