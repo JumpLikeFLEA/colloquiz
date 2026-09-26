@@ -6,7 +6,7 @@ import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
-import { LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./layout";
+import { LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
 import { TheoryBlockRenderer } from "./TheoryBlockRenderer";

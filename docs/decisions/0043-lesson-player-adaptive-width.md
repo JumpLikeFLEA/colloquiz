@@ -37,11 +37,17 @@ headers, so all three needed to move together or the preview's promise of
   the width wrapper class — the block components themselves never know their
   own width.
 - **Where the class strings live** — one small module,
-  `app/components/lesson-player/layout.ts`, exporting full literal Tailwind
+  `app/components/lesson-player/columnLayout.ts`, exporting full literal Tailwind
   class strings (`LESSON_COLUMN_CLASS`, `LESSON_HEADER_COLUMN_CLASS`,
   `READING_WIDTH_CLASS`, `THEORY_BODY_TEXT_CLASS`) rather than composing
   classes at runtime — Tailwind only picks up complete class names from
-  source. `PreviewClient` and the demo page both import
+  source. First named `layout.ts`; `tsc` failed
+  (`.next/dev/types/validator.ts`, "Property 'default' is missing... required
+  in type `LayoutConfig`") because Next's App Router treats any file named
+  exactly `layout.{js,jsx,ts,tsx}` anywhere under `app/` as a route-layout
+  convention file, not just inside a route segment — renamed to
+  `columnLayout.ts` to get out of that reserved name entirely. `PreviewClient`
+  and the demo page both import
   `LESSON_HEADER_COLUMN_CLASS` (re-exported from the `lesson-player` barrel)
   for their headers instead of repeating the literal, so the three surfaces
   cannot drift apart again the way `max-w-xl` had.
@@ -62,6 +68,15 @@ headers, so all three needed to move together or the preview's promise of
   `<input>`/`<textarea>` (left at `text-sm` on purpose, so the block isn't a
   mix of a text-base prompt and a text-base-but-not-quite input; the inputs
   are form controls, not read content, and were excluded from the ask).
+- **Heading text centred at `lg`+ (`HeadingBlockView`, `lg:text-center`)** —
+  added after seeing a first render: `heading` is reading-width like prose, so
+  its box is centred inside the column, but a left-aligned title sitting
+  directly above/below an edge-to-edge wide table read as oddly offset rather
+  than as a section title. Owner chose centring the heading TEXT (not
+  widening the block to "wide") over the alternative of promoting `heading`
+  to wide width, which would have left it flush against the table's edge
+  instead of reading as a title. `lg:`-scoped like every other class here, so
+  mobile heading alignment is unchanged.
 - **Practice blocks stay at reading width and unchanged internally** —
   PLAY-010's job is to redesign matching/practice layout for wide screens;
   giving it the wide column here (without a layout redesign to fill it) would

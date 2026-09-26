@@ -427,9 +427,13 @@ Appended to in the same commit as the change it records. Referenced from
   without a layout redesign is PLAY-010's job, not this task's. A wide table
   or image is therefore intentionally wider than the reading text on both
   sides (a "breakout" look) — seen as intended, not a bug, pending a look in a
-  real browser. `next/image`'s `sizes` on `ImageBlockView` moved from
+  real browser. `HeadingBlockView` text gets `lg:text-center` (owner review,
+  2026-09-26): a left-aligned heading in its centred reading-width box read as
+  oddly offset next to an edge-to-edge wide table above/below it; centring
+  the TEXT was chosen over promoting `heading` to wide width. `next/image`'s
+  `sizes` on `ImageBlockView` moved from
   `640px` to `1024px` to match. Class strings live in
-  `app/components/lesson-player/layout.ts` as full literal strings
+  `app/components/lesson-player/columnLayout.ts` as full literal strings
   (`LESSON_COLUMN_CLASS`, `LESSON_HEADER_COLUMN_CLASS`, `READING_WIDTH_CLASS`,
   `THEORY_BODY_TEXT_CLASS`); `PreviewClient.tsx` and
   `lesson-player-demo/page.tsx` both import `LESSON_HEADER_COLUMN_CLASS`

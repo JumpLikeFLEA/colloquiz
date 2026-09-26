@@ -1,7 +1,7 @@
 import { AlertTriangle, Info, Lightbulb } from "lucide-react";
 import type { z } from "zod";
 import type { CalloutBlockSchema, CalloutVariant } from "@/lib/lessons";
-import { THEORY_BODY_TEXT_CLASS } from "../layout";
+import { THEORY_BODY_TEXT_CLASS } from "../columnLayout";
 import { InlineContentView } from "../InlineContent";
 
 const VARIANT_STYLE: Record<CalloutVariant, { box: string; icon: typeof Lightbulb }> = {

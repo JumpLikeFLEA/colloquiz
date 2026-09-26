@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { TableBlockSchema } from "@/lib/lessons";
-import { THEORY_BODY_TEXT_CLASS } from "../layout";
+import { THEORY_BODY_TEXT_CLASS } from "../columnLayout";
 import { InlineContentView } from "../InlineContent";
 
 /**
