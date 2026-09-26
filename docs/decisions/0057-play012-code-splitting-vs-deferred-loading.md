@@ -156,6 +156,36 @@ is 277.4 KB measured plus ~12.6 KB (4.5%) headroom, per this file's own
 No forbidden-package signature (`recharts`/`katex`/`framer-motion`/
 `@supabase/ssr`) was found in either route's downloaded chunks.
 
+**SSR, checked directly (owner review, 2026-09-26).** All five `dynamic()`
+calls in `practice/index.tsx` use next/dynamic's plain default — no `ssr`
+option and no `loading` fallback passed, so `ssr: true` (Next's default) is
+in effect for every one of them, including the three that pull in dnd-kit
+(`OrderingRenderer`, `MatchingRenderer`, `SlotsRenderer`). Verified by
+`curl`ing the built `/courses/future-imperfect/true-or-false` and
+`/courses/future-imperfect/applied-practice` pages from a local `next start`
+(no JS execution) and grepping the raw response body:
+- `true-or-false`: the row text "Ray Bradbury described tiny wireless
+  earpieces in his 1953 novel Fahrenheit 451." appears inside real rendered
+  markup (`<span class="text-sm text-foreground">…</span>`, row-numbered
+  "2."), not only inside the serialized RSC/flight payload later in the same
+  document — i.e. `SelectionGridRenderer`'s actual DOM output is in the
+  server response.
+- `applied-practice`: the matching row text ("Arthur C. Clarke described
+  communication satellites…") is likewise present as rendered markup, and
+  `OrderingRenderer`'s grip-handle buttons (`aria-label="Drag to reorder
+  ..."`) — the dnd-kit-backed control — are present in the same raw HTML,
+  proving the dnd-kit-dependent renderer is server-rendered too, not
+  client-only.
+
+Because every renderer is `ssr: true` with no custom `loading` state, there
+is no renderer-specific loading fallback to reserve height for and no
+first-load layout shift risk: the initial HTML already contains the finished
+practice block, exactly as before this change, and `next/dynamic` only adds
+a separate chunk boundary for the browser to fetch on hydration/subsequent
+client-side navigation. (A `loading: null` gap could only show on an
+in-app *client-side* navigation to a not-yet-cached chunk — outside this
+issue's SSR-cold-load acceptance and not measured here.)
+
 Rendering/scoring correctness was verified with a throwaway Playwright
 script driving `applied-practice` end to end against a local `next start`:
 both `matching` blocks, the `selection` block and the `ordering` block (via
