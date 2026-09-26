@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { z } from "zod";
 import type { SelfCheckBlockSchema } from "@/lib/lessons";
+import { THEORY_BODY_TEXT_CLASS } from "../layout";
 import { InlineContentView } from "../InlineContent";
 
 /**
@@ -18,7 +19,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
 
   return (
     <div className="rounded-lg border border-brand-border bg-brand-subtle px-3 py-3 space-y-3">
-      <p className="text-sm font-medium text-foreground">
+      <p className={`font-medium text-foreground ${THEORY_BODY_TEXT_CLASS}`}>
         <InlineContentView content={block.prompt} />
       </p>
 
@@ -46,7 +47,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
           {block.checklist.map((item, index) => (
             // Checklist strings are not guaranteed unique; `checklist` is
             // re-derived fresh on every parse, never reordered in place.
-            <li key={index} className="flex items-center gap-2 text-sm">
+            <li key={index} className={`flex items-center gap-2 ${THEORY_BODY_TEXT_CLASS}`}>
               <input
                 type="checkbox"
                 checked={checked[index] ?? false}
@@ -63,7 +64,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
       )}
 
       {revealed ? (
-        <div className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground">
+        <div className={`rounded-md border border-border bg-background px-3 py-2 text-foreground ${THEORY_BODY_TEXT_CLASS}`}>
           <p className="text-xs font-medium text-muted-foreground mb-1">Model answer</p>
           <InlineContentView content={block.modelAnswer} />
         </div>

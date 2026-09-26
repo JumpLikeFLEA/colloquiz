@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type { TableBlockSchema } from "@/lib/lessons";
+import { THEORY_BODY_TEXT_CLASS } from "../layout";
 import { InlineContentView } from "../InlineContent";
 
 /**
@@ -12,7 +13,7 @@ export function TableBlockView({ block }: { block: z.infer<typeof TableBlockSche
   return (
     <figure className="space-y-1">
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-max text-sm">
+        <table className={`w-full min-w-max ${THEORY_BODY_TEXT_CLASS}`}>
           <thead>
             <tr className="bg-muted">
               {block.header.map((cell, index) => (

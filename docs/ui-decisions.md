@@ -415,3 +415,30 @@ Appended to in the same commit as the change it records. Referenced from
   unread count so all three streamed slots settle together. Do not add
   Quiz Builder / Review Queue / Feedback to this section — those stay
   admin-only per docs/decisions/0025/0041.
+- Lesson player: adaptive content width on wide screens (2026-09-26, ad-hoc,
+  docs/decisions/0043). `LessonPlayer.tsx`'s column grows from `max-w-xl`
+  (576px) to `lg:max-w-5xl`, and each block gets one of two widths, decided
+  per block type by the pure `lessonBlockWidth()` (`lib/lessonPlayer/
+  blockWidth.ts`), never by the block component itself: WIDE (full column) —
+  `table`, `image`, `video`; READING (`w-full lg:max-w-2xl lg:mx-auto`,
+  centred) — every other theory block, EVERY PRACTICE BLOCK, the progress
+  banner and the per-block explanation lines. Practice blocks (incl.
+  `matching`) deliberately stay at reading width; giving them the wide column
+  without a layout redesign is PLAY-010's job, not this task's. A wide table
+  or image is therefore intentionally wider than the reading text on both
+  sides (a "breakout" look) — seen as intended, not a bug, pending a look in a
+  real browser. `next/image`'s `sizes` on `ImageBlockView` moved from
+  `640px` to `1024px` to match. Class strings live in
+  `app/components/lesson-player/layout.ts` as full literal strings
+  (`LESSON_COLUMN_CLASS`, `LESSON_HEADER_COLUMN_CLASS`, `READING_WIDTH_CLASS`,
+  `THEORY_BODY_TEXT_CLASS`); `PreviewClient.tsx` and
+  `lesson-player-demo/page.tsx` both import `LESSON_HEADER_COLUMN_CLASS`
+  (re-exported from the `lesson-player` barrel) for their own headers instead
+  of repeating `max-w-xl`, so the three surfaces cannot drift apart the way
+  they had. ALSO INCLUDES a `text-sm` → `text-sm lg:text-base` experiment on
+  every theory block's body text (not captions, not `self_check`'s
+  `<input>`/`<textarea>`), isolated to `THEORY_BODY_TEXT_CLASS` so it reverts
+  in one line if it reads wrong. Below `lg` (1024px) nothing changes — every
+  new class is `lg:`-prefixed. No new `overflow` was added on any ancestor
+  between the matching bank and the page scroller (docs/decisions/0039
+  Decision 5 still holds).

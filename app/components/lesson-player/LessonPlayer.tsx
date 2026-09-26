@@ -5,6 +5,8 @@ import type { LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
+import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
+import { LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./layout";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
 import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
@@ -90,15 +92,18 @@ function LessonPlayerBody({
   const explanations = explanationsForSession(document, results);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-4">
+    <div className={LESSON_COLUMN_CLASS}>
       {lessonScore.status === "scored" && (
-        <div className="rounded-lg border border-brand-border bg-brand-subtle px-3 py-2 text-sm text-brand-text">
+        <div
+          className={`rounded-lg border border-brand-border bg-brand-subtle px-3 py-2 text-sm text-brand-text ${READING_WIDTH_CLASS}`}
+        >
           Progress: {lessonScore.percent}% ({lessonScore.earned}/{lessonScore.possible})
         </div>
       )}
-      {document.map((block) =>
-        block.kind === "practice" ? (
-          <div key={block.id}>
+      {document.map((block) => {
+        const widthClass = lessonBlockWidth(block) === "reading" ? READING_WIDTH_CLASS : "";
+        return block.kind === "practice" ? (
+          <div key={block.id} className={widthClass}>
             {practiceRenderer ? (
               practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
             ) : (
@@ -111,11 +116,11 @@ function LessonPlayerBody({
             ))}
           </div>
         ) : (
-          <div key={block.id}>
+          <div key={block.id} className={widthClass}>
             <TheoryBlockRenderer block={block} />
           </div>
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

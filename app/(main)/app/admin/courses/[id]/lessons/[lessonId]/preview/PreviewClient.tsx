@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, CloudUpload } from "lucide-react";
-import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
+import { LESSON_HEADER_COLUMN_CLASS, LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 
 // AUTH-005 — preview through the REAL player (not a separate preview
 // renderer, not sessionStorage): this is the same LessonPlayer/
@@ -68,7 +68,7 @@ export function PreviewClient({
 
   return (
     <div className="py-8">
-      <div className="mx-auto max-w-xl px-4 mb-4 flex items-start justify-between gap-4">
+      <div className={`${LESSON_HEADER_COLUMN_CLASS} mb-4 flex items-start justify-between gap-4`}>
         <div>
           <Link
             href={`/app/admin/courses/${courseId}/lessons/${lessonId}`}
@@ -94,7 +94,7 @@ export function PreviewClient({
       </div>
 
       {stale && (
-        <div className="mx-auto max-w-xl px-4 mb-4">
+        <div className={`${LESSON_HEADER_COLUMN_CLASS} mb-4`}>
           <div className="rounded-lg border border-destructive-border bg-destructive-subtle text-destructive-text px-4 py-3 text-sm flex items-center justify-between gap-3">
             <span>A newer draft was saved since this preview opened — reload and preview it before publishing.</span>
             <button

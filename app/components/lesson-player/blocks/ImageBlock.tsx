@@ -11,7 +11,7 @@ export function ImageBlockView({ block }: { block: z.infer<typeof ImageBlockSche
          * stored — see theoryBlocks.ts), so `fill` inside a fixed-aspect box
          * rather than requiring authored width/height. */}
         <div className="aspect-video relative">
-          <Image src={block.url} alt={block.alt} fill className="object-contain" sizes="(max-width: 640px) 100vw, 640px" />
+          <Image src={block.url} alt={block.alt} fill className="object-contain" sizes="(max-width: 1024px) 100vw, 1024px" />
         </div>
       </div>
       {block.caption && (

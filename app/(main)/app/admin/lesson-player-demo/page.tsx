@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
+import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player";
 import { LessonPlayerDemoClient } from "./LessonPlayerDemoClient";
 
 /**
@@ -299,7 +300,7 @@ export default async function LessonPlayerDemoPage() {
 
   return (
     <div className="py-8">
-      <div className="mx-auto max-w-xl px-4 mb-4">
+      <div className={`${LESSON_HEADER_COLUMN_CLASS} mb-4`}>
         <h1 className="text-xl font-semibold">Lesson player demo</h1>
         <p className="text-muted-foreground mt-1">
           Dev-only. A fixture lesson document rendered through the real
