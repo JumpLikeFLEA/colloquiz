@@ -39,16 +39,16 @@ it on GitHub. Open a section below the overview to see inside a folder.
 
 ```mermaid
 flowchart LR
-  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz' style='color:inherit'>colloquiz</a></b><br/><small>569 files · 91k lines</small>"]
-  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/.github/workflows' style='color:inherit'>.github/workflows</a></b><br/><small>1 file · 34 lines</small><br/><i>CI: type-check, lint, tests</i>"]
-  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app' style='color:inherit'>app</a></b><br/><small>255 files · 34k lines</small><br/><i>Web pages and server endpoints (Next.js)</i>"]
-  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/data' style='color:inherit'>data</a></b><br/><small>2 files · 240 lines</small><br/><i>Quiz subjects and example questions</i>"]
-  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs' style='color:inherit'>docs</a></b><br/><small>81 files · 13k lines</small><br/><i>Decisions, handoff notes, legal texts</i>"]
-  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib' style='color:inherit'>lib</a></b><br/><small>129 files · 14k lines</small><br/><i>Logic without UI, mostly unit-tested</i>"]
-  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/prompts' style='color:inherit'>prompts</a></b><br/><small>3 files · 1.1k lines</small><br/><i>Lesson-drafting prompt and backlogs</i>"]
-  n7["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts' style='color:inherit'>scripts</a></b><br/><small>29 files · 6.4k lines</small><br/><i>Command-line tools: import, checks, benchmarks</i>"]
-  n8["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/supabase' style='color:inherit'>supabase</a></b><br/><small>49 files · 9.9k lines</small><br/><i>Database</i>"]
-  n9["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/types' style='color:inherit'>types</a></b><br/><small>1 file · 260 lines</small><br/><i>Shared TypeScript types</i>"]
+  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz' style='color:inherit'>colloquiz</a></b>"]
+  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/.github/workflows' style='color:inherit'>.github/workflows</a></b><br/><i>CI: type-check, lint, tests</i>"]
+  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app' style='color:inherit'>app</a></b><br/><i>Web pages and server endpoints (Next.js)</i>"]
+  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/data' style='color:inherit'>data</a></b><br/><i>Quiz subjects and example questions</i>"]
+  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs' style='color:inherit'>docs</a></b><br/><i>Decisions, handoff notes, legal texts</i>"]
+  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib' style='color:inherit'>lib</a></b><br/><i>Logic without UI, mostly unit-tested</i>"]
+  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/prompts' style='color:inherit'>prompts</a></b><br/><i>Lesson-drafting prompt and backlogs</i>"]
+  n7["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts' style='color:inherit'>scripts</a></b><br/><i>Command-line tools: import, checks, benchmarks</i>"]
+  n8["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/supabase' style='color:inherit'>supabase</a></b><br/><i>Database</i>"]
+  n9["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/types' style='color:inherit'>types</a></b><br/><i>Shared TypeScript types</i>"]
   n10["<a href='https://github.com/JumpLikeFLEA/colloquiz/blob/main/CLAUDE.md' style='color:inherit'>CLAUDE.md</a><br/><i>Working rules for AI coding sessions</i>"]
   n11["<a href='https://github.com/JumpLikeFLEA/colloquiz/blob/main/proxy.ts' style='color:inherit'>proxy.ts</a><br/><i>Decides which pages need a login</i>"]
   n0 --> n1
@@ -75,39 +75,39 @@ flowchart LR
 <sub>🟨 Alliengll (English courses) · 🟦 Colloquiz (quiz platform) · dashed border = has more subfolders than shown · open the sections below for detail</sub>
 
 <details>
-<summary><b>app/</b> — 255 files · 34k lines — Web pages and server endpoints (Next.js)</summary>
+<summary><b>app/</b> — Web pages and server endpoints (Next.js)</summary>
 
 ```mermaid
 flowchart LR
-  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app' style='color:inherit'>app</a></b><br/><small>255 files · 34k lines</small><br/><i>Web pages and server endpoints (Next.js)</i>"]
-  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)' style='color:inherit'>(colloquiz)</a></b><br/><small>92 files · 19k lines</small><br/><i>Quiz platform, served under /app</i>"]
-  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)/(auth)' style='color:inherit'>(auth)</a></b><br/><small>7 files · 790 lines</small><br/><i>Log in, sign up, reset password</i>"]
-  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)/(legal)' style='color:inherit'>(legal)</a></b><br/><small>4 files · 110 lines</small><br/><i>Terms, privacy, subprocessors</i>"]
-  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)/(main)' style='color:inherit'>(main)</a></b><br/><small>79 files · 18k lines</small><br/><i>Signed-in pages, incl. admin and course editor</i>"]
-  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(english)' style='color:inherit'>(english)</a></b><br/><small>6 files · 370 lines</small><br/><i>English course pages, open to everyone</i>"]
-  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(english)/courses/%5BcourseSlug%5D' style='color:inherit'>courses/[courseSlug]</a></b><br/><small>3 files · 220 lines</small>"]
-  n7["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api' style='color:inherit'>api</a></b><br/><small>53 files · 3.4k lines</small><br/><i>Server endpoints the pages call</i>"]
-  n8["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/account' style='color:inherit'>account</a></b><br/><small>2 files · 210 lines</small>"]
-  n9["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/admin' style='color:inherit'>admin</a></b><br/><small>19 files · 1k lines</small>"]
-  n10["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/assignments' style='color:inherit'>assignments</a></b><br/><small>2 files · 63 lines</small>"]
-  n11["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/author' style='color:inherit'>author</a></b><br/><small>4 files · 230 lines</small>"]
-  n12["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/duels' style='color:inherit'>duels</a></b><br/><small>2 files · 100 lines</small>"]
-  n13["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/feedback' style='color:inherit'>feedback</a></b><br/><small>1 file · 180 lines</small>"]
-  n14["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/groups' style='color:inherit'>groups</a></b><br/><small>11 files · 760 lines</small>"]
-  n15["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/invites' style='color:inherit'>invites</a></b><br/><small>2 files · 100 lines</small>"]
-  n16["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/notifications' style='color:inherit'>notifications</a></b><br/><small>1 file · 65 lines</small>"]
-  n17["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/quiz' style='color:inherit'>quiz</a></b><br/><small>2 files · 160 lines</small>"]
-  n18["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/quiz-shares' style='color:inherit'>quiz-shares</a></b><br/><small>4 files · 130 lines</small>"]
-  n19["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/reports' style='color:inherit'>reports</a></b><br/><small>1 file · 83 lines</small>"]
-  n20["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/results' style='color:inherit'>results</a></b><br/><small>1 file · 250 lines</small>"]
-  n21["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/students/%5BstudentId%5D' style='color:inherit'>students/[studentId]</a></b><br/><small>1 file · 25 lines</small>"]
-  n22["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/auth' style='color:inherit'>auth</a></b><br/><small>2 files · 58 lines</small><br/><i>Email confirmation, social-login return</i>"]
-  n23["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/auth/callback' style='color:inherit'>callback</a></b><br/><small>1 file · 18 lines</small>"]
-  n24["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/auth/confirm' style='color:inherit'>confirm</a></b><br/><small>1 file · 40 lines</small>"]
-  n25["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components' style='color:inherit'>components</a></b><br/><small>94 files · 11k lines</small><br/><i>Shared UI pieces</i>"]
-  n26["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components/figma' style='color:inherit'>figma</a></b><br/><small>1 file · 29 lines</small><br/><i>Image helper (vendored, still in use)</i>"]
-  n27["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components/lesson-player' style='color:inherit'>lesson-player</a></b><br/><small>29 files · 3.1k lines</small><br/><i>The lesson player learners see</i>"]
-  n28["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components/ui' style='color:inherit'>ui</a></b><br/><small>46 files · 5.1k lines</small><br/><i>Basic building blocks (vendored)</i>"]
+  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app' style='color:inherit'>app</a></b><br/><i>Web pages and server endpoints (Next.js)</i>"]
+  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)' style='color:inherit'>(colloquiz)</a></b><br/><i>Quiz platform, served under /app</i>"]
+  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)/(auth)' style='color:inherit'>(auth)</a></b><br/><i>Log in, sign up, reset password</i>"]
+  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)/(legal)' style='color:inherit'>(legal)</a></b><br/><i>Terms, privacy, subprocessors</i>"]
+  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(colloquiz)/(main)' style='color:inherit'>(main)</a></b><br/><i>Signed-in pages, incl. admin and course editor</i>"]
+  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(english)' style='color:inherit'>(english)</a></b><br/><i>English course pages, open to everyone</i>"]
+  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/(english)/courses/%5BcourseSlug%5D' style='color:inherit'>courses/[courseSlug]</a></b>"]
+  n7["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api' style='color:inherit'>api</a></b><br/><i>Server endpoints the pages call</i>"]
+  n8["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/account' style='color:inherit'>account</a></b>"]
+  n9["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/admin' style='color:inherit'>admin</a></b>"]
+  n10["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/assignments' style='color:inherit'>assignments</a></b>"]
+  n11["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/author' style='color:inherit'>author</a></b>"]
+  n12["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/duels' style='color:inherit'>duels</a></b>"]
+  n13["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/feedback' style='color:inherit'>feedback</a></b>"]
+  n14["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/groups' style='color:inherit'>groups</a></b>"]
+  n15["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/invites' style='color:inherit'>invites</a></b>"]
+  n16["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/notifications' style='color:inherit'>notifications</a></b>"]
+  n17["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/quiz' style='color:inherit'>quiz</a></b>"]
+  n18["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/quiz-shares' style='color:inherit'>quiz-shares</a></b>"]
+  n19["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/reports' style='color:inherit'>reports</a></b>"]
+  n20["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/results' style='color:inherit'>results</a></b>"]
+  n21["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/api/students/%5BstudentId%5D' style='color:inherit'>students/[studentId]</a></b>"]
+  n22["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/auth' style='color:inherit'>auth</a></b><br/><i>Email confirmation, social-login return</i>"]
+  n23["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/auth/callback' style='color:inherit'>callback</a></b>"]
+  n24["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/auth/confirm' style='color:inherit'>confirm</a></b>"]
+  n25["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components' style='color:inherit'>components</a></b><br/><i>Shared UI pieces</i>"]
+  n26["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components/figma' style='color:inherit'>figma</a></b><br/><i>Image helper (vendored, still in use)</i>"]
+  n27["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components/lesson-player' style='color:inherit'>lesson-player</a></b><br/><i>The lesson player learners see</i>"]
+  n28["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/app/components/ui' style='color:inherit'>ui</a></b><br/><i>Basic building blocks (vendored)</i>"]
   n0 --> n1
   n1 --> n2
   n1 --> n3
@@ -147,17 +147,17 @@ flowchart LR
 </details>
 
 <details>
-<summary><b>docs/</b> — 81 files · 13k lines — Decisions, handoff notes, legal texts</summary>
+<summary><b>docs/</b> — Decisions, handoff notes, legal texts</summary>
 
 ```mermaid
 flowchart LR
-  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs' style='color:inherit'>docs</a></b><br/><small>81 files · 13k lines</small><br/><i>Decisions, handoff notes, legal texts</i>"]
-  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/adr' style='color:inherit'>adr</a></b><br/><small>2 files · 270 lines</small><br/><i>Larger architecture decisions</i>"]
-  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/decisions' style='color:inherit'>decisions</a></b><br/><small>59 files · 8.4k lines</small><br/><i>One file per decision made while building</i>"]
-  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release' style='color:inherit'>release</a></b><br/><small>14 files · 2.2k lines</small><br/><i>Launch checklist, handoffs, legal copy</i>"]
-  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release/handoff' style='color:inherit'>handoff</a></b><br/><small>5 files · 670 lines</small>"]
-  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release/legal' style='color:inherit'>legal</a></b><br/><small>3 files · 460 lines</small>"]
-  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release/prompts' style='color:inherit'>prompts</a></b><br/><small>1 file · 12 lines</small>"]
+  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs' style='color:inherit'>docs</a></b><br/><i>Decisions, handoff notes, legal texts</i>"]
+  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/adr' style='color:inherit'>adr</a></b><br/><i>Larger architecture decisions</i>"]
+  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/decisions' style='color:inherit'>decisions</a></b><br/><i>One file per decision made while building</i>"]
+  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release' style='color:inherit'>release</a></b><br/><i>Launch checklist, handoffs, legal copy</i>"]
+  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release/handoff' style='color:inherit'>handoff</a></b>"]
+  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release/legal' style='color:inherit'>legal</a></b>"]
+  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/docs/release/prompts' style='color:inherit'>prompts</a></b>"]
   n0 --> n1
   n0 --> n2
   n0 --> n3
@@ -171,19 +171,19 @@ flowchart LR
 </details>
 
 <details>
-<summary><b>lib/</b> — 129 files · 14k lines — Logic without UI, mostly unit-tested</summary>
+<summary><b>lib/</b> — Logic without UI, mostly unit-tested</summary>
 
 ```mermaid
 flowchart LR
-  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib' style='color:inherit'>lib</a></b><br/><small>129 files · 14k lines</small><br/><i>Logic without UI, mostly unit-tested</i>"]
-  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/alliengll' style='color:inherit'>alliengll</a></b><br/><small>1 file · 88 lines</small><br/><i>Russian interface text</i>"]
-  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/generator' style='color:inherit'>generator</a></b><br/><small>8 files · 430 lines</small><br/><i>AI question generator and critic</i>"]
-  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/items' style='color:inherit'>items</a></b><br/><small>23 files · 3.9k lines</small><br/><i>Exercise types: checking and scoring</i>"]
-  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/items/__fixtures__' style='color:inherit'>__fixtures__</a></b><br/><small>2 files · 260 lines</small>"]
-  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/items/__sketches__' style='color:inherit'>__sketches__</a></b><br/><small>1 file · 40 lines</small>"]
-  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/lessonPlayer' style='color:inherit'>lessonPlayer</a></b><br/><small>12 files · 1.3k lines</small><br/><i>Player state: answers and progress</i>"]
-  n7["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/lessons' style='color:inherit'>lessons</a></b><br/><small>10 files · 1.3k lines</small><br/><i>Lesson format: reading and validating</i>"]
-  n8["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/supabase' style='color:inherit'>supabase</a></b><br/><small>4 files · 120 lines</small><br/><i>Database clients</i>"]
+  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib' style='color:inherit'>lib</a></b><br/><i>Logic without UI, mostly unit-tested</i>"]
+  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/alliengll' style='color:inherit'>alliengll</a></b><br/><i>Russian interface text</i>"]
+  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/generator' style='color:inherit'>generator</a></b><br/><i>AI question generator and critic</i>"]
+  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/items' style='color:inherit'>items</a></b><br/><i>Exercise types: checking and scoring</i>"]
+  n4["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/items/__fixtures__' style='color:inherit'>__fixtures__</a></b>"]
+  n5["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/items/__sketches__' style='color:inherit'>__sketches__</a></b>"]
+  n6["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/lessonPlayer' style='color:inherit'>lessonPlayer</a></b><br/><i>Player state: answers and progress</i>"]
+  n7["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/lessons' style='color:inherit'>lessons</a></b><br/><i>Lesson format: reading and validating</i>"]
+  n8["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/lib/supabase' style='color:inherit'>supabase</a></b><br/><i>Database clients</i>"]
   n0 --> n1
   n0 --> n2
   n0 --> n3
@@ -201,14 +201,14 @@ flowchart LR
 </details>
 
 <details>
-<summary><b>scripts/</b> — 29 files · 6.4k lines — Command-line tools: import, checks, benchmarks</summary>
+<summary><b>scripts/</b> — Command-line tools: import, checks, benchmarks</summary>
 
 ```mermaid
 flowchart LR
-  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts' style='color:inherit'>scripts</a></b><br/><small>29 files · 6.4k lines</small><br/><i>Command-line tools: import, checks, benchmarks</i>"]
-  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts/board' style='color:inherit'>board</a></b><br/><small>8 files · 2.8k lines</small><br/><i>GitHub project board helpers</i>"]
-  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts/session' style='color:inherit'>session</a></b><br/><small>8 files · 700 lines</small><br/><i>AI coding-session guard</i>"]
-  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts/session/testdata' style='color:inherit'>testdata</a></b><br/><small>5 files · 60 lines</small>"]
+  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts' style='color:inherit'>scripts</a></b><br/><i>Command-line tools: import, checks, benchmarks</i>"]
+  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts/board' style='color:inherit'>board</a></b><br/><i>GitHub project board helpers</i>"]
+  n2["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts/session' style='color:inherit'>session</a></b><br/><i>AI coding-session guard</i>"]
+  n3["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/scripts/session/testdata' style='color:inherit'>testdata</a></b>"]
   n0 --> n1
   n0 --> n2
   n2 --> n3
@@ -217,12 +217,12 @@ flowchart LR
 </details>
 
 <details>
-<summary><b>supabase/</b> — 49 files · 9.9k lines — Database</summary>
+<summary><b>supabase/</b> — Database</summary>
 
 ```mermaid
 flowchart LR
-  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/supabase' style='color:inherit'>supabase</a></b><br/><small>49 files · 9.9k lines</small><br/><i>Database</i>"]
-  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/supabase/migrations' style='color:inherit'>migrations</a></b><br/><small>47 files · 9.4k lines</small><br/><i>Schema changes, numbered, applied by hand</i>"]
+  n0["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/supabase' style='color:inherit'>supabase</a></b><br/><i>Database</i>"]
+  n1["<b><a href='https://github.com/JumpLikeFLEA/colloquiz/tree/main/supabase/migrations' style='color:inherit'>migrations</a></b><br/><i>Schema changes, numbered, applied by hand</i>"]
   n0 --> n1
 ```
 
