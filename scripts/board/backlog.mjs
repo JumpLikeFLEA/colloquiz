@@ -1125,6 +1125,28 @@ export const CARDS = [
     ],
   },
   {
+    key: 'OPS-014',
+    title: 'Reconcile backlog.mjs with live board',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2091,
+    dependsOn: [],
+    goal:
+      'PLAY-011 (#116) found bootstrap-board.mjs --dry-run reporting a real ' +
+      'WOULD UPDATE for PLAY-007 (#96, already Done) — backlog.mjs and the ' +
+      'live issue have drifted (title/labels/milestone) outside any run this ' +
+      'session made. A --dry-run pass only prints a boolean per field ' +
+      '(title:true/false etc.), not what the actual difference is, so fixing ' +
+      'the drift means guessing at the diff by hand today.',
+    acceptance: [
+      'bootstrap-board.mjs gains a diff-only mode (e.g. --diff) that prints, per card, the field-level differences between backlog.mjs and the live issue (title/body/labels/milestone) without writing anything — a read-only counterpart to --dry-run\'s WOULD CREATE/UPDATE lines, showing the actual diff content, not just a boolean per field.',
+      'Run against the live board; the diff is non-empty and includes PLAY-007 (#96).',
+      'backlog.mjs is corrected so the diff drops to zero for every Done issue.',
+      'node scripts/board/bootstrap-board.mjs --dry-run reports 0 updates outside newly-added cards after the fix (print the run).',
+    ],
+  },
+  {
     key: 'SHELL-014',
     title: 'Colloquiz gets its own root layout',
     milestone: 'M2',
