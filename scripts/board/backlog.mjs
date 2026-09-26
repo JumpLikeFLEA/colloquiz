@@ -1424,9 +1424,11 @@ export const CARDS = [
     dependsOn: ['ANON-001'],
     goal: 'The client-side half of whatever ANON-001 decides.',
     acceptance: [
-      'A versioned schema, as decided in ANON-001.',
+      'A versioned schema, as decided in ANON-001 (0048).',
       'Keeps the best score and never lowers a visible number.',
       'Never throws: when storage is unavailable or full, it falls back to memory. Tested under lib/, including an unparseable and an old-version payload.',
+      'Each stored attempt carries a client-generated UUID, unique, for idempotent upload (0048 Decision 3).',
+      'Uploads local attempts through the ANON-003 record RPC whenever an authenticated Supabase session exists in the browser (0048 Decision 1 — the default path: covers OAuth, a same-browser email confirmation, and any later login on a browser still holding unsynced attempts), then clears local storage on success.',
     ],
   },
   {
@@ -1444,7 +1446,29 @@ export const CARDS = [
       'reading both, phase-1 audit.',
     acceptance: [
       'Migration written, not applied. The RPC is SECURITY DEFINER, checks can_read_lesson for each attempt, and caps earned at possible.',
+      'The RPC enforces the client-attempt-UUID uniqueness from ANON-002, so a duplicate upload is a no-op rather than a second row or an error.',
+      'The RPC is callable both from a live authenticated session\'s direct upload (ANON-002\'s default path) and from ANON-006\'s claim callback — it is the only writer of lesson_attempts either way; pending_claims never writes the table directly (0048 Decision 2).',
       'The table is added to account export and account deletion. Full protocol, on seeded rows: export contains them, and deletion removes/anonymises them per the existing docs/adr/0002 pattern.',
+    ],
+  },
+  {
+    key: 'ANON-006',
+    title: 'pending_claims: cross-browser claim mechanism',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2125,
+    dependsOn: ['ANON-003'],
+    goal:
+      'The cross-browser half of 0048\'s mechanism: the email-confirmation ' +
+      'link normally opens in the system browser, whose localStorage is ' +
+      'empty, so the local attempts have to travel through the server via a ' +
+      'claim token rather than through storage.',
+    acceptance: [
+      'pending_claims migration (written, not applied): hashed 128-bit random token, ~7-day expiry, a payload size cap, per-IP rate limit on creation.',
+      'Unauthenticated create endpoint, called at signup submission: writes the local attempts payload keyed by the token, and returns the token for emailRedirectTo. The create path deletes already-expired pending_claims rows before inserting (lazy sweep — 0048 Decision 7; no cron).',
+      'Authenticated claim endpoint, called from the confirmation callback: looks up the token, feeds its attempts through the ANON-003 record RPC (never writes lesson_attempts directly), and consumes the row so it cannot be claimed twice.',
+      'Full protocol, on seeded data: a valid claim succeeds once; a replayed token is a no-op; an expired token is refused; an oversized payload is refused; the rate limit trips; a claimed attempt for a lesson the account cannot read is rejected by the record RPC, not silently accepted. Every result printed.',
     ],
   },
   {
@@ -1454,12 +1478,12 @@ export const CARDS = [
     epic: 'ANON',
     type: 'task',
     rank: 2130,
-    dependsOn: ['ANON-002', 'ANON-003', 'PLAY-007', 'SHELL-012'],
+    dependsOn: ['ANON-002', 'ANON-003', 'ANON-006', 'PLAY-007', 'SHELL-012'],
     goal: 'The conversion moment — after value has been delivered, not before.',
     acceptance: [
       'Shown after a completed lesson, never before one.',
       'The signup form on the English surface is in Russian and returns to the lesson.',
-      'Local attempts reach the account via the mechanism ANON-001 chose. Demonstrated end to end in the cross-browser case, WITH EMAIL CONFIRMATION ON: play in browser A, confirm the email in browser B, and the attempts are visible in B. The hosted project has confirmations OFF today (temporary) — this test runs against a local build with `enable_confirmations = true` set in supabase/config.toml for the run, not the current hosted default.',
+      'At submission, calls ANON-006\'s create endpoint with the local attempts and threads the returned token through emailRedirectTo (0048 Decision 2); on the confirmation callback, calls ANON-006\'s claim endpoint. Demonstrated end to end in the cross-browser case, WITH EMAIL CONFIRMATION ON: play in browser A, confirm the email in browser B, and the attempts are visible in B. The hosted project has confirmations OFF today (temporary) — this test runs against a local build with `enable_confirmations = true` set in supabase/config.toml for the run, not the current hosted default.',
       'OAuth buttons are hidden, or come with a warning, inside in-app browsers. Google rejects OAuth in embedded webviews; this is verified on a device in OPS-007, not assumed.',
     ],
   },
