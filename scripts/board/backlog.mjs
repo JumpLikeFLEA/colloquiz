@@ -1072,6 +1072,52 @@ export const CARDS = [
     ],
   },
   {
+    key: 'OPS-012',
+    title: 'Remove Sentry',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2025,
+    dependsOn: [],
+    goal:
+      'docs/decisions/0046 (SHELL-006): Sentry has never been wired to a ' +
+      'monitored destination anyone acts on, so its ongoing cost — bundle ' +
+      'bytes on every route including every future English route, a CSP ' +
+      'connect-src allowance, and the lib/sentryScrub.ts PII-scrubbing ' +
+      'surface that has to be kept correct — is being paid for no realized ' +
+      'benefit. Owner-approved dependency removal.',
+    acceptance: [
+      'instrumentation-client.ts, the server/edge Sentry init (sentry.server.config.ts, sentry.edge.config.ts), instrumentation.ts\'s register() call into them, and next.config.ts\'s Sentry wrapper are removed.',
+      'Sentry calls in app/(main)/error.tsx and any other error boundary are removed; the boundaries keep their existing user-facing behavior otherwise.',
+      'lib/sentryScrub.ts and lib/sentryScrub.test.ts are deleted — nothing else imports it (confirmed with rg before deleting).',
+      'The CSP connect-src entry for Sentry ingest (next.config.ts headers()) is removed.',
+      'The @sentry/nextjs dependency is removed from package.json; NEXT_PUBLIC_SENTRY_DSN and any other Sentry env var references are removed from .env.example and deployment config notes.',
+      'docs/release/legal/subprocessors.md and privacy-policy.md are updated in the same commit to drop Sentry as a subprocessor/data recipient.',
+      'Evidence: `npm run budget` on /login before and after the removal, printed, showing the byte delta. `rg -i sentry` finds nothing outside git history. `npm run check && npm test` green.',
+    ],
+  },
+  {
+    key: 'SHELL-014',
+    title: 'Colloquiz gets its own root layout',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2030,
+    dependsOn: ['OPS-012'],
+    goal:
+      'docs/decisions/0046 (SHELL-006): the English surface gets its own ' +
+      'root layout, which means no shared app/layout.tsx can remain — ' +
+      'Colloquiz moves into its own root group ' +
+      '(e.g. app/(colloquiz)/layout.tsx wrapping (main), (auth), (legal)) ' +
+      'with zero behavior change. URLs are unchanged; this is a pure move.',
+    acceptance: [
+      'app/layout.tsx\'s content (ThemeProvider, Geist Sans + Geist Mono, Analytics, SpeedInsights, katex CSS, metadata) moves to a new Colloquiz root layout wrapping (main), (auth) and (legal). No top-level app/layout.tsx remains (per Next docs, layout.md: a top-level root layout is optional once multiple root layouts exist via route groups).',
+      'app/not-found.tsx becomes the Colloquiz root\'s not-found.tsx (or is moved accordingly per SHELL-006\'s not-found decision); app/global-error.tsx stays a single shared file per docs/decisions/0046.',
+      'app/icon.tsx, apple-icon.tsx and opengraph-image.tsx are confirmed still correct at their current location (per-route-segment, not tied to a root layout — docs/decisions/0046) or moved if the audit says otherwise.',
+      'Evidence: /login and /app budget within noise of their pre-move numbers (npm run budget, before and after, both printed). Manual smoke of /app, /login, /privacy and a duel page. Theme toggle still works.',
+    ],
+  },
+  {
     key: 'SHELL-005',
     title: 'English URL scheme and the public-path rule',
     milestone: 'M2',
@@ -1122,15 +1168,17 @@ export const CARDS = [
     epic: 'SHELL',
     type: 'task',
     rank: 2040,
-    dependsOn: ['SHELL-005', 'SHELL-006'],
+    dependsOn: ['SHELL-005', 'SHELL-006', 'SHELL-014'],
     goal:
       'The route group SHELL-005/SHELL-006 decided, built for real, with no ' +
       'Colloquiz weight riding along.',
     acceptance: [
-      'app/(english)/ exists with its own layout per SHELL-006\'s decision. proxy.ts lets its paths through anonymously per SHELL-005\'s prefix rule. It has an English-surface not-found page per SHELL-006\'s choice.',
+      'app/(english)/ exists with its own root layout per docs/decisions/0046: <html lang="ru">, Geist Sans, globals.css, <SpeedInsights/>. No ThemeProvider, Geist Mono, <Analytics/> or katex CSS. Dark mode via a small inline script reading prefers-color-scheme, no toggle.',
+      'experimental.globalNotFound is enabled and app/global-not-found.tsx is Russian-first with a link to `/`, per docs/decisions/0046. Each root layout also has its own in-segment not-found.tsx for notFound() calls.',
+      'proxy.ts lets its paths through anonymously per SHELL-005\'s prefix rule.',
       'All learner-facing chrome strings live in one module (e.g. lib/alliengll/copy.ts), in Russian — landing, catalogue, course page, player buttons, completion screen, signup offer (docs/handoff.md, Audience and language, 2026-09-24 delta). Nothing selects a locale.',
       'A route under it renders with no Supabase session and no @supabase/ssr in its client chunks — verified in the actual build output, not asserted.',
-      'Cold-load KB budget printed via `npm run budget` (OPS-006).',
+      'Cold-load KB budget printed via `npm run budget` (OPS-006), including <SpeedInsights/>\'s bytes — re-measured for real, not copied from SHELL-006\'s stub figure.',
     ],
   },
   {
