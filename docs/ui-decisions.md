@@ -563,3 +563,19 @@ Appended to in the same commit as the change it records. Referenced from
   focus with the now-removed buttons) — same token pairing already used in
   `SelectionRenderer`/`SlotsRenderer`/`ExplanationDisclosure`/`SubjectGrid`.
   Do not re-add the move buttons.
+- Matching: a placed answer moves to a full-width line below the left
+  content (2026-09-26, PLAY-010, docs/decisions/0055) -- superseding 0039
+  Decision 1's "row height never moves" claim, which is corrected rather
+  than defended: it held only for the empty slot, not a filled one (`w-28`
+  wraps a long answer onto multiple lines and grows the row regardless).
+  `SlotTarget` now renders inline (`w-28`, next to the left content) only
+  when the slot is empty; once filled, it renders full-width on its own line
+  below, for EVERY answer, not only long ones -- a character-length
+  threshold was considered and rejected, since the gap between the shortest
+  long-answer item (74 chars) and the longest short one (54 chars) is not a
+  rendering fact, and the box wrapping is. The bank stays stacked below the
+  rows (0039 Decision 5 unchanged); a side-by-side rows/bank layout (the
+  same issue's other partner-review note) was decided against for now --
+  phone-first traffic sees no benefit from it, and it would narrow the row
+  column further, working against this same fix. Do not put the placed
+  answer back in an inline fixed-width box.

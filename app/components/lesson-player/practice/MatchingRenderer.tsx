@@ -171,6 +171,29 @@ export function MatchingRenderer({
                 <div className="flex min-h-11 items-center gap-2">
                   <span className="shrink-0 text-sm text-muted-foreground">{index + 1}.</span>
                   <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
+                  {!pairedRightId && (
+                    <SlotTarget
+                      leftId={leftElement.id}
+                      pairedRightId={pairedRightId}
+                      pairedContent={pairedRight?.content}
+                      submitted={submitted}
+                      active={activeLeft === leftElement.id}
+                      onTapToggle={() => setActiveLeft((prev) => (prev === leftElement.id ? null : leftElement.id))}
+                      onClear={() => {
+                        setPairs((prev) => clearMatchingPair(prev, leftElement.id));
+                        setActiveLeft(null);
+                      }}
+                    />
+                  )}
+                  {submitted &&
+                    subResult &&
+                    (subResult.correct ? (
+                      <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+                    ) : (
+                      <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+                    ))}
+                </div>
+                {pairedRightId && (
                   <SlotTarget
                     leftId={leftElement.id}
                     pairedRightId={pairedRightId}
@@ -183,14 +206,7 @@ export function MatchingRenderer({
                       setActiveLeft(null);
                     }}
                   />
-                  {submitted &&
-                    subResult &&
-                    (subResult.correct ? (
-                      <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-                    ) : (
-                      <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-                    ))}
-                </div>
+                )}
                 {explanation && <ExplanationDisclosure explanation={explanation} />}
               </div>
             );
@@ -219,12 +235,18 @@ export function MatchingRenderer({
   );
 }
 
-/** A row's answer slot: a fixed-size droppable box, either an empty
- * placeholder button (tap to select, or a drag target) or the placed answer
- * (itself draggable as `slot:<leftId>`) plus a ✕ that clears it directly —
- * clearing never requires selecting the slot first. The box's own size does
- * not change between the two states, which is what keeps row height stable
- * (docs/decisions/0039). */
+/** A row's answer slot: a droppable box, either an empty placeholder button
+ * (tap to select, or a drag target), rendered inline (`w-28`) next to the
+ * left content, or the placed answer (itself draggable as `slot:<leftId>`)
+ * plus a ✕ that clears it directly — clearing never requires selecting the
+ * slot first — rendered full-width on its own line below the left content.
+ * The two states are two different call sites in the row JSX, not one box
+ * that resizes: `w-28` was found to still wrap a long placed answer onto
+ * multiple lines (docs/decisions/0055, correcting 0039 Decision 1's "row
+ * height never moves" claim, which held only for the empty state — the box
+ * was always `min-h-11`, not `h-11`). Every placed answer moves to the
+ * full-width line, not only long ones — a length threshold would need
+ * recalibrating as new courses are authored; this doesn't. */
 function SlotTarget({
   leftId,
   pairedRightId,
@@ -243,13 +265,14 @@ function SlotTarget({
   onClear: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: leftId, disabled: submitted });
+  const filled = Boolean(pairedRightId && pairedContent);
 
   return (
     <span
       ref={setNodeRef}
-      className={`flex min-h-11 w-28 shrink-0 items-center justify-between gap-1 rounded-md border px-2 py-1 text-sm transition-colors ${
-        !submitted && isOver ? "ring-2 ring-brand" : ""
-      } ${!submitted && active ? "border-brand bg-brand-subtle" : "border-border bg-background"}`}
+      className={`flex min-h-11 items-center justify-between gap-1 rounded-md border px-2 py-1 text-sm transition-colors ${
+        filled ? "w-full" : "w-28 shrink-0"
+      } ${!submitted && isOver ? "ring-2 ring-brand" : ""} ${!submitted && active ? "border-brand bg-brand-subtle" : "border-border bg-background"}`}
     >
       {pairedRightId && pairedContent ? (
         <>
