@@ -1333,6 +1333,48 @@ export const CARDS = [
     ],
   },
   {
+    key: 'PLAY-011a',
+    title: 'Matching presentation field, contract only',
+    milestone: 'M2',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2065,
+    dependsOn: ['PLAY-011'],
+    goal:
+      'docs/decisions/0060: an optional presentation: "pairs" | "sort" hint on matching\'s payload, ' +
+      'defaulting to "pairs", scoring untouched — the schema/pipeline half of the categorisation decision.',
+    acceptance: [
+      'MatchingPayloadSchema accepts an optional presentation: "pairs" | "sort" that defaults to "pairs". Tests: omitted -> "pairs", valid values parse, an invalid value is rejected, and "sort" with fewer than 2 right elements is rejected.',
+      'score() output is byte-identical for the same pairs under either presentation (test).',
+      'The field is carried through the validator, import-lesson.ts and PracticeItemForm. It round-trips through import -> stored JSON -> editor -> save (show the evidence).',
+      'The import/validate warning (a matching item with some right element reused by 2+ pairs and no presentation field) fires on f5-sort/g1-sort without the field, and stays silent once presentation is set to either value — an explicit "pairs" is how an author silences it on a legitimate many-to-one item (0013). Show a run where a reused-right item with "pairs" set emits no warning, and a run where it stays silent on all 8 ordinary matching items in future-imperfect.json (non-empty run printed).',
+      'f5-sort and g1-sort in future-imperfect.json carry "presentation": "sort".',
+      'No rendering change: MatchingRenderer ignores the field.',
+    ],
+  },
+  {
+    key: 'PLAY-011b',
+    title: 'Bucket renderer for presentation: "sort"',
+    milestone: 'M2',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2066,
+    dependsOn: ['PLAY-011a'],
+    goal:
+      'The rendering half of docs/decisions/0060: matching items authored with presentation: "sort" ' +
+      'look like sorting into visible groups, not "tap to match" (partner review note 5).',
+    acceptance: [
+      'Layout: category buckets are always visible and act as the drop targets, above or beside a pool of unplaced statements. A placed statement renders inside its bucket, grouped with the other statements there. Buckets grow with their contents rather than having a fixed height, since f5-sort puts 4 in one bucket. On narrow widths they stack vertically, with no horizontal scroll.',
+      'Interaction: a statement can be dragged into a bucket, moved to another bucket, or returned to the pool. The tap/keyboard flow is select a statement, then select a bucket; selecting a bucket first does nothing. This mirrors the existing row/bank tap fallback.',
+      'Topology (inverts 0039 Decision 2, cite it): categories never close, disable or filter, while statements are used up one placement at a time. Every placement, including the last statement, still offers every category, so elimination doesn\'t return.',
+      'Feedback: a per-statement correct/incorrect mark on the statement where the learner put it. In review, a wrong statement stays in the learner\'s bucket with a note naming the correct one. It is NOT moved, because moving it hides what the learner chose.',
+      'Stored answer shape unchanged: still the same left->right mapping score() consumes today, with identical subResults for the same placements (test).',
+      'No new npm dependency; npm run budget for the lesson player route stays within its budget (print before/after).',
+      'Components and classes come only from existing app/components/ and token colours, with no new hex values (npm run check hex guard). A docs/ui-decisions.md entry is added in the same commit.',
+      '"pairs" rendering is unchanged (show b-match-1 before and after).',
+    ],
+  },
+  {
     key: 'PLAY-012',
     title: 'Per-type code-splitting for practice renderers',
     milestone: 'M2',
