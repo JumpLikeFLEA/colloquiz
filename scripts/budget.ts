@@ -105,6 +105,16 @@ const ROUTES: RouteBudget[] = [
   // re-derive both from a real `npm run budget` run before changing it,
   // never guess.
   { path: "/courses/future-imperfect/applied-practice", budgetKB: 290, guardForbiddenSignatures: true },
+  // SHELL-008: the course page itself — `future-imperfect`'s catalogue-card
+  // target. Same local-seed dependency as the two routes above (requires
+  // `npm run seed:local`). Measured 173.3 KB after fixing a barrel-import
+  // leak (the page imported LESSON_HEADER_COLUMN_CLASS through
+  // @/app/components/lesson-player, which also pulls in LessonPlayer +
+  // practiceRenderer/dnd-kit — this route uses neither; see
+  // docs/decisions/0059). budgetKB below is that measurement plus ~4.5%
+  // headroom (the PLAY-012 precedent, docs/decisions/0057) — re-derive both
+  // from a real `npm run budget` run before raising it, never guess.
+  { path: "/courses/future-imperfect", budgetKB: 182, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

@@ -5,6 +5,12 @@ import type { NextConfig } from "next";
 // rather than hardcoding a project ref.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : undefined;
+// Derived, not hardcoded to "https", for the same reason the hostname above
+// is: a local `supabase start` stack serves over plain http, and SHELL-008's
+// course-cover images need next/image to load against it for
+// `npm run budget` to be runnable locally at all. The hosted project is
+// always https, so this changes nothing in production.
+const supabaseProtocol = supabaseUrl ? (new URL(supabaseUrl).protocol.replace(":", "") as "http" | "https") : undefined;
 
 // The build identifier stamped onto feedback submissions (see lib/appVersion.ts).
 // Resolved here, at build time, because `VERCEL_GIT_COMMIT_SHA` is a server-side
@@ -79,7 +85,7 @@ const nextConfig: NextConfig = {
     remotePatterns: supabaseHost
       ? [
           {
-            protocol: "https",
+            protocol: supabaseProtocol,
             hostname: supabaseHost,
             pathname: "/storage/v1/object/public/**",
           },

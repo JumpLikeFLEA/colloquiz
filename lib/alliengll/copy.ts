@@ -31,6 +31,13 @@ export const alliengllCopy = {
     startFirstFree: "Начать первый бесплатный урок",
     progressAttempted: "пройдено уроков",
     progressAverage: "средний результат",
+    itemCountLabel: "Заданий",
+    minutesLabel: "мин",
+    freeBadge: "Бесплатно",
+    bestScoreLabel: "Лучший результат",
+    noCover: "Без обложки",
+    noFreeLesson: "Скоро появятся бесплатные уроки",
+    noLessons: "Уроки скоро появятся — загляните позже.",
   },
 
   player: {

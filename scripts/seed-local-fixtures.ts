@@ -191,7 +191,13 @@ async function main() {
         subject: "english",
         status: "published",
         level: "A2",
-        cover_image_url: "https://example.com/cover.png",
+        // SHELL-008: must be a URL next/image's remotePatterns actually
+        // allows (the same host this script writes to), not a fake
+        // "https://example.com" placeholder — a course page that tries to
+        // render that 500s instead of rendering. The object itself need not
+        // exist; next/image only validates the URL shape server-side, the
+        // browser's own image fetch is a separate request.
+        cover_image_url: `${url}/storage/v1/object/public/lesson-images/fixture-cover.png`,
         author_id: editorId,
       },
       { onConflict: "slug" },
@@ -318,7 +324,7 @@ async function seedRealLessonFixture(editorId: string): Promise<void> {
         subject: "english",
         status: "published",
         level: file.level,
-        cover_image_url: "https://example.com/cover.png",
+        cover_image_url: `${url}/storage/v1/object/public/lesson-images/fixture-cover.png`,
         author_id: editorId,
       },
       { onConflict: "slug" },
