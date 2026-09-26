@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, X } from "lucide-react";
-import { scoreItem } from "@/lib/items";
+import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, MatchingItem } from "@/lib/items";
 import type { MatchingContent, MatchingElement } from "@/lib/items/matching";
 import { shuffleForItem } from "@/lib/items/shuffle";
@@ -22,6 +22,7 @@ import {
   moveMatchingPair,
   setMatchingPair,
 } from "@/lib/lessonPlayer/matchingResponse";
+import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { MatchingContentView } from "./MatchingContentView";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
@@ -48,6 +49,12 @@ import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
  * unreachable, and `pairs` is a Map keyed by left id so `duplicate_id` (two
  * answers for the same left) is unreachable too. Same "unreachable by
  * construction" discipline as PLAY-002's renderers.
+ *
+ * PLAY-008 — left rows are visibly numbered 1, 2, 3 … in display order. Safe
+ * because, like `selection_grid`, the left side is never shuffled: only
+ * `rightOptions` goes through `shuffleForItem` above — `item.payload.left`
+ * renders directly in authored order. Each wrong pair also gets a
+ * collapsed-by-default "Why?" (`ExplanationDisclosure`) beneath its row.
  */
 
 const BANK_DROPPABLE_ID = "__matching_bank__";
@@ -73,6 +80,9 @@ export function MatchingRenderer({
   const submitted = result !== null;
 
   const subResultByPairId = new Map(result?.subResults.map((r) => [r.id, r]));
+  const explanationByPairId = new Map(
+    result ? resolveExplanations(item, result).map((e) => [e.subResultId, e.explanation]) : [],
+  );
   const usedCountByRightId = new Map<string, number>();
   for (const rightId of pairs.values()) {
     usedCountByRightId.set(rightId, (usedCountByRightId.get(rightId) ?? 0) + 1);
@@ -142,34 +152,46 @@ export function MatchingRenderer({
         onDragCancel={() => setDraggingId(null)}
       >
         <div className="flex flex-col gap-2">
-          {item.payload.left.map((leftElement) => {
+          {item.payload.left.map((leftElement, index) => {
             const pairedRightId = pairs.get(leftElement.id);
             const pairedRight = pairedRightId ? rightById.get(pairedRightId) : undefined;
             const scoredPair = pairByLeftId.get(leftElement.id);
             const subResult = scoredPair ? subResultByPairId.get(scoredPair.id) : undefined;
+            const explanation =
+              subResult && !subResult.correct ? explanationByPairId.get(subResult.id) : undefined;
 
             return (
-              <div key={leftElement.id} className={rowClassName({ submitted, correct: subResult?.correct })}>
-                <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
-                <SlotTarget
-                  leftId={leftElement.id}
-                  pairedRightId={pairedRightId}
-                  pairedContent={pairedRight?.content}
-                  submitted={submitted}
-                  active={activeLeft === leftElement.id}
-                  onTapToggle={() => setActiveLeft((prev) => (prev === leftElement.id ? null : leftElement.id))}
-                  onClear={() => {
-                    setPairs((prev) => clearMatchingPair(prev, leftElement.id));
-                    setActiveLeft(null);
-                  }}
-                />
-                {submitted &&
-                  subResult &&
-                  (subResult.correct ? (
-                    <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-                  ) : (
-                    <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-                  ))}
+              <div
+                key={leftElement.id}
+                className={`flex flex-col gap-1 rounded-lg border px-3 py-2 transition-colors ${rowBorderClassName({
+                  submitted,
+                  correct: subResult?.correct,
+                })}`}
+              >
+                <div className="flex min-h-11 items-center gap-2">
+                  <span className="shrink-0 text-sm text-muted-foreground">{index + 1}.</span>
+                  <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
+                  <SlotTarget
+                    leftId={leftElement.id}
+                    pairedRightId={pairedRightId}
+                    pairedContent={pairedRight?.content}
+                    submitted={submitted}
+                    active={activeLeft === leftElement.id}
+                    onTapToggle={() => setActiveLeft((prev) => (prev === leftElement.id ? null : leftElement.id))}
+                    onClear={() => {
+                      setPairs((prev) => clearMatchingPair(prev, leftElement.id));
+                      setActiveLeft(null);
+                    }}
+                  />
+                  {submitted &&
+                    subResult &&
+                    (subResult.correct ? (
+                      <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+                    ) : (
+                      <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+                    ))}
+                </div>
+                {explanation && <ExplanationDisclosure explanation={explanation} />}
               </div>
             );
           })}
@@ -391,11 +413,11 @@ function ChipPreview({ content }: { content: MatchingContent }) {
   );
 }
 
-function rowClassName({ submitted, correct }: { submitted: boolean; correct: boolean | undefined }): string {
-  const base = "flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 transition-colors";
-  if (!submitted) return `${base} border-border bg-background`;
-  if (correct === undefined) return `${base} border-border bg-background opacity-70`;
-  return correct
-    ? `${base} border-success-border bg-success-subtle`
-    : `${base} border-destructive-border bg-destructive-subtle`;
+/** Border/background only — the row's outer container also holds the
+ * (optional) explanation disclosure beneath the flex row proper, so the
+ * `flex items-center` layout classes live on that inner row instead. */
+function rowBorderClassName({ submitted, correct }: { submitted: boolean; correct: boolean | undefined }): string {
+  if (!submitted) return "border-border bg-background";
+  if (correct === undefined) return "border-border bg-background opacity-70";
+  return correct ? "border-success-border bg-success-subtle" : "border-destructive-border bg-destructive-subtle";
 }

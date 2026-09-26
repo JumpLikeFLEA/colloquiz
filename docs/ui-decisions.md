@@ -513,3 +513,27 @@ Appended to in the same commit as the change it records. Referenced from
   classes already used elsewhere in this same file and in the lesson editor —
   same precedent as NotificationBell/Groups. Do not build a second image-
   upload component for the cover.
+- Practice renderers: explanations moved from a block-level list to a
+  per-sub-part "Why?" (2026-09-26, PLAY-008, docs/decisions/0053). The
+  `text-destructive-text` explanation list `LessonPlayer.tsx` used to render
+  below a whole practice block is GONE; each of the five renderers now
+  computes its own `resolveExplanations(item, result)` lookup and renders a
+  shared `ExplanationDisclosure` (`app/components/lesson-player/practice/
+  ExplanationDisclosure.tsx`) directly beneath the wrong row/pair/element/gap
+  — a real `<button aria-expanded>`, 44px target (0029 Decision 4 precedent),
+  collapsed by default, neutral `bg-muted`/`text-muted-foreground` tokens
+  (never `destructive-*` — the wrong state is already signalled by the row's
+  own tint and ✗ marker). Stays WRONG-ONLY on purpose: the issue's own
+  acceptance flagged extending `resolveExplanations` to correct sub-parts too
+  as a stop-and-ask, and the call (put to the user directly) was to leave
+  0017's resolver contract alone. `selection_grid` rows and `matching` left
+  rows are now visibly numbered 1, 2, 3 … — both confirmed unshuffled first
+  (`selection_grid`'s rows never went through `shuffleForItem`; `matching`'s
+  `left` doesn't either, only `right` does). `ordering` is NOT numbered here
+  (that's PLAY-009's line) and `slots` gaps — inline in a running sentence,
+  not a row of their own — get a small "Gap N: Why?" list below the sentence
+  instead of an inline expansion, so a multi-line explanation never breaks
+  mid-sentence. `selection` (one SubResult per item, 0009) gets exactly one
+  disclosure below the whole option list, not per-option. Do not restore the
+  block-level list, and do not make a gap's "Why?" expand inline without
+  redesigning `slots`' layout first.

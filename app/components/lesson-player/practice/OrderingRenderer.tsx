@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, Check, GripVertical, X } from "lucide-react";
-import { scoreItem } from "@/lib/items";
+import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, OrderingItem } from "@/lib/items";
 import { shuffleOrderingIndices } from "@/lib/items/shuffle";
 import {
@@ -19,6 +19,7 @@ import {
   moveOrderElement,
   moveOrderElementToIndex,
 } from "@/lib/lessonPlayer/orderingResponse";
+import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
 /**
@@ -62,6 +63,9 @@ export function OrderingRenderer({
   const [result, setResult] = useState<ItemScoreResult | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const submitted = result !== null;
+  const explanationByElementId = new Map(
+    result ? resolveExplanations(item, result).map((e) => [e.subResultId, e.explanation]) : [],
+  );
 
   // Shared sensor config (docs/decisions/0032, extracted to a hook by 0040)
   // — see useLessonPlayerSensors for what each constraint does and why.
@@ -108,6 +112,8 @@ export function OrderingRenderer({
             {order.map((id, position) => {
               const element = elementsById.get(id)!;
               const subResult = result?.subResults[position];
+              const explanation =
+                subResult && !subResult.correct ? explanationByElementId.get(subResult.id) : undefined;
               return (
                 <OrderingRow
                   key={id}
@@ -117,6 +123,7 @@ export function OrderingRenderer({
                   isLast={position === order.length - 1}
                   submitted={submitted}
                   correct={subResult?.correct}
+                  explanation={explanation}
                   onMove={(direction) => setOrder((prev) => moveOrderElement(prev, id, direction))}
                 />
               );
@@ -147,6 +154,7 @@ function OrderingRow({
   isLast,
   submitted,
   correct,
+  explanation,
   onMove,
 }: {
   id: string;
@@ -155,6 +163,7 @@ function OrderingRow({
   isLast: boolean;
   submitted: boolean;
   correct: boolean | undefined;
+  explanation: string | undefined;
   onMove: (direction: "up" | "down") => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -165,43 +174,46 @@ function OrderingRow({
 
   return (
     <div ref={setNodeRef} style={style} className={rowClassName({ submitted, correct, isDragging })}>
-      <button
-        type="button"
-        disabled={submitted}
-        aria-label={`Drag to reorder "${text}"`}
-        className={dragHandleClassName()}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-4" aria-hidden="true" />
-      </button>
-      <span className="min-h-6 flex-1 text-sm text-foreground">{text}</span>
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex min-h-11 items-center gap-2">
         <button
           type="button"
-          disabled={submitted || isFirst}
-          aria-label={`Move "${text}" up`}
-          onClick={() => onMove("up")}
-          className={moveButtonClassName()}
+          disabled={submitted}
+          aria-label={`Drag to reorder "${text}"`}
+          className={dragHandleClassName()}
+          {...attributes}
+          {...listeners}
         >
-          <ArrowUp className="size-4" aria-hidden="true" />
+          <GripVertical className="size-4" aria-hidden="true" />
         </button>
-        <button
-          type="button"
-          disabled={submitted || isLast}
-          aria-label={`Move "${text}" down`}
-          onClick={() => onMove("down")}
-          className={moveButtonClassName()}
-        >
-          <ArrowDown className="size-4" aria-hidden="true" />
-        </button>
-        {submitted &&
-          (correct ? (
-            <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-          ) : (
-            <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-          ))}
+        <span className="min-h-6 flex-1 text-sm text-foreground">{text}</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            disabled={submitted || isFirst}
+            aria-label={`Move "${text}" up`}
+            onClick={() => onMove("up")}
+            className={moveButtonClassName()}
+          >
+            <ArrowUp className="size-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            disabled={submitted || isLast}
+            aria-label={`Move "${text}" down`}
+            onClick={() => onMove("down")}
+            className={moveButtonClassName()}
+          >
+            <ArrowDown className="size-4" aria-hidden="true" />
+          </button>
+          {submitted &&
+            (correct ? (
+              <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+            ) : (
+              <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+            ))}
+        </div>
       </div>
+      {explanation && <ExplanationDisclosure explanation={explanation} />}
     </div>
   );
 }
@@ -228,7 +240,7 @@ function rowClassName({
   correct: boolean | undefined;
   isDragging: boolean;
 }): string {
-  const base = "flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 transition-colors";
+  const base = "flex flex-col gap-1 rounded-lg border px-3 py-2 transition-colors";
   if (isDragging) return `${base} border-brand/40 bg-brand-subtle/40 opacity-50`;
   if (!submitted) return `${base} border-border bg-background`;
   return correct

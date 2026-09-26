@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
-import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
+import { scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import { FIT_WIDTH_CLASS, HEADING_WIDTH_CLASS, LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
 import { LessonPlayerError } from "./LessonPlayerError";
@@ -67,9 +67,17 @@ export interface LessonPlayerProps {
  * block by block in authored order (docs/handoff.md: "structure inside a
  * lesson is short theory block, then a couple of exercises, repeated").
  * Holds per-item scores in local component state and rolls them into a
- * lesson-level result via `aggregateLessonScore`/`resolveExplanations`
- * (0016/0017, wrapped by lib/lessonPlayer/session.ts) — nothing here is
- * persisted; attempt storage is M2.
+ * lesson-level result via `aggregateLessonScore` (0016, wrapped by
+ * lib/lessonPlayer/session.ts) — nothing here is persisted; attempt storage
+ * is M2.
+ *
+ * PLAY-008 — per-sub-part explanations ("Why?", resolved via
+ * `resolveExplanations`/0017) are rendered by each per-type renderer
+ * directly beneath the wrong sub-part, not here. This shell no longer reads
+ * `explanationsForSession` at all; that function (lib/lessonPlayer/
+ * session.ts, still tested in session.test.ts) is what PLAY-007's
+ * end-of-lesson explanation review will call instead, over the full
+ * lesson's `results`.
  */
 export function LessonPlayer({ document, attemptId, practiceRenderer }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
@@ -107,7 +115,6 @@ function LessonPlayerBody({
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
   // the whole document rather than incremental updates.
   const lessonScore = scoreSession(document, results);
-  const explanations = explanationsForSession(document, results);
 
   return (
     <div className={LESSON_COLUMN_CLASS}>
@@ -127,11 +134,6 @@ function LessonPlayerBody({
             ) : (
               <PracticeBlockPlaceholder block={block} />
             )}
-            {explanations.get(block.id)?.map((resolved) => (
-              <p key={resolved.subResultId} className="mt-1 text-xs text-destructive-text">
-                {resolved.explanation}
-              </p>
-            ))}
           </div>
         ) : (
           <div key={block.id} className={widthClass}>

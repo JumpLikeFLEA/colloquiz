@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, X } from "lucide-react";
-import { scoreItem } from "@/lib/items";
+import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SlotsItem } from "@/lib/items";
 import { shuffleForItem } from "@/lib/items/shuffle";
 import {
@@ -25,6 +25,7 @@ import {
   setGapAnswer,
   splitPromptOnGaps,
 } from "@/lib/lessonPlayer/slotsResponse";
+import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
 type SubResultById = Map<string, ItemScoreResult["subResults"][number]>;
@@ -124,6 +125,44 @@ function GapLayout({
   );
 }
 
+/** PLAY-008 — a gap's sub-part is a few characters inline in a running
+ * sentence, not a row of its own, so its "Why?" can't expand directly inside
+ * the text without breaking the sentence's reading flow. Instead, every
+ * wrong gap gets its own numbered line in a small list directly beneath the
+ * whole prompt — as close to "beneath that sub-part" as an inline gap
+ * permits, and still one disclosure per gap rather than one for the whole
+ * item. */
+function GapExplanations({
+  gaps,
+  subResultById,
+  explanationByGapId,
+}: {
+  gaps: readonly { id: string }[];
+  subResultById: SubResultById;
+  explanationByGapId: ReadonlyMap<string, string>;
+}) {
+  const wrongGaps: Array<{ id: string; index: number; explanation: string }> = [];
+  gaps.forEach((gap, index) => {
+    const explanation = explanationByGapId.get(gap.id);
+    if (subResultById.get(gap.id)?.correct === false && explanation !== undefined) {
+      wrongGaps.push({ id: gap.id, index, explanation });
+    }
+  });
+
+  if (wrongGaps.length === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-col gap-1">
+      {wrongGaps.map(({ id, index, explanation }) => (
+        <div key={id} className="flex items-start gap-1 text-xs text-muted-foreground">
+          <span className="mt-2.5 shrink-0">Gap {index + 1}:</span>
+          <ExplanationDisclosure explanation={explanation} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function submitButtonClassName(): string {
   return "mt-1 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover cursor-pointer transition-colors";
 }
@@ -185,6 +224,9 @@ function TypedSlots({
   const [result, setResult] = useState<ItemScoreResult | null>(null);
   const submitted = result !== null;
   const subResultById: SubResultById = new Map(result?.subResults.map((r) => [r.id, r]));
+  const explanationByGapId = new Map(
+    result ? resolveExplanations(item, result).map((e) => [e.subResultId, e.explanation]) : [],
+  );
 
   function submit() {
     const scored = scoreItem(item, buildSlotsResponse(answers));
@@ -227,6 +269,9 @@ function TypedSlots({
           );
         }}
       />
+      {submitted && (
+        <GapExplanations gaps={gaps} subResultById={subResultById} explanationByGapId={explanationByGapId} />
+      )}
       {!submitted && (
         <button type="button" onClick={submit} className={submitButtonClassName()}>
           Submit
@@ -276,6 +321,9 @@ function DragSlots({
   const [result, setResult] = useState<ItemScoreResult | null>(null);
   const submitted = result !== null;
   const subResultById: SubResultById = new Map(result?.subResults.map((r) => [r.id, r]));
+  const explanationByGapId = new Map(
+    result ? resolveExplanations(item, result).map((e) => [e.subResultId, e.explanation]) : [],
+  );
   const usedChipIds = new Set(placedChip.values());
 
   // Shared sensor config (docs/decisions/0032, extracted to a hook by 0040)
@@ -364,6 +412,9 @@ function DragSlots({
           {draggingChipId ? <ChipPreview text={chipTextById.get(draggingChipId) ?? ""} /> : null}
         </DragOverlay>
       </DndContext>
+      {submitted && (
+        <GapExplanations gaps={gaps} subResultById={subResultById} explanationByGapId={explanationByGapId} />
+      )}
       {!submitted && (
         <button type="button" onClick={submit} className={submitButtonClassName()}>
           Submit

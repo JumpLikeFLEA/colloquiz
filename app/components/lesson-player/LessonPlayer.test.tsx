@@ -124,6 +124,102 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     expect(result.subResults.find((r) => r.id === "p1")?.correct).toBe(true);
   });
 
+  it("selection: a wrong answer shows a collapsed \"Why?\" that expands the item's explanation", () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: "She go to school every day." })); // wrong option
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    const why = screen.getByRole("button", { name: "Why?" });
+    expect(why.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText(/Third person singular/)).toBeNull();
+
+    fireEvent.click(why);
+    expect(why.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText(/Third person singular present tense takes an -s ending/)).toBeDefined();
+  });
+
+  it("selection_grid: numbers rows 1, 2, 3 and shows each wrong row's own explanation", () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection_grid — inline True/False"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    // Submitted with no row answered — every row scores incorrect (documented
+    // "unanswered" convention), so all three explanations are checkable at once.
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("1.")).toBeDefined();
+    expect(screen.getByText("2.")).toBeDefined();
+    expect(screen.getByText("3.")).toBeDefined();
+
+    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
+    expect(whyButtons).toHaveLength(3);
+
+    fireEvent.click(whyButtons[1]);
+    expect(screen.getByText(/needs the simple past/)).toBeDefined();
+  });
+
+  it("matching: numbers left rows 1, 2, 3 and shows each wrong pair's own explanation", () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("matching — word to definition"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    // Submitted with nothing paired — every pair scores incorrect.
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("1.")).toBeDefined();
+    expect(screen.getByText("2.")).toBeDefined();
+    expect(screen.getByText("3.")).toBeDefined();
+
+    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
+    expect(whyButtons).toHaveLength(3);
+
+    fireEvent.click(whyButtons[0]);
+    expect(screen.getByText(/"Ubiquitous" means present or found everywhere/)).toBeDefined();
+  });
+
+  it("ordering: the never-identity shuffle guarantees a wrong element, and its explanation is reachable", () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("ordering — word order"))}
+        attemptId="attempt-explain-ordering"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    // shuffleOrderingIndices never returns the identity permutation (lib/items/
+    // shuffle.ts), so submitting untouched always leaves at least one wrong row.
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    const result = onScore.mock.calls[0][0];
+    expect(result.subResults.some((r) => !r.correct)).toBe(true);
+
+    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
+    expect(whyButtons.length).toBeGreaterThan(0);
+    fireEvent.click(whyButtons[0]);
+    expect(
+      screen.getByText(/subject comes first|before the main verb|follows the frequency adverb|closes the sentence/),
+    ).toBeDefined();
+  });
+
   it("slots: renders and typed gap answers reach onScore/scoreItem", () => {
     const onScore = vi.fn<(result: ItemScoreResult) => void>();
     render(
@@ -144,5 +240,25 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     const result = onScore.mock.calls[0][0];
     expect(result.possible).toBe(2);
     expect(result.earned).toBe(2);
+  });
+
+  it("slots: an untouched (wrong) gap gets its own numbered \"Gap N:\" explanation line", () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("slots — cloze gaps"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    // Only Gap 1 is answered (correctly) — Gap 2 stays untouched, so it
+    // scores incorrect (documented "untouched" convention) and gets a "Why?".
+    fireEvent.change(screen.getByLabelText("Gap 1"), { target: { value: "go" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("Gap 2:")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
+    expect(screen.getByText(/take the preposition "on"/)).toBeDefined();
   });
 });

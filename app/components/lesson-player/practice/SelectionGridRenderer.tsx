@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Check, X } from "lucide-react";
-import { scoreItem } from "@/lib/items";
+import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SelectionGridItem } from "@/lib/items";
 import {
   buildSelectionGridResponse,
   setGridRowAnswer,
 } from "@/lib/lessonPlayer/selectionResponse";
+import { ExplanationDisclosure } from "./ExplanationDisclosure";
 
 /**
  * PLAY-002 — `selection_grid` renderer (inline True/False over N
@@ -21,6 +22,14 @@ import {
  * score` scores incorrect rather than excluding — see that module's header.
  * This renderer does not block Submit on every row being answered, matching
  * that "does not throw and does not score as unattempted" contract.
+ *
+ * PLAY-008 — rows are visibly numbered 1, 2, 3 … in display order. Safe
+ * because rows are never shuffled (previous paragraph): display order is
+ * always authored order, the same numbers authored content (e.g. a
+ * self_check referencing "items 1, 4 and 7") already assumes. Each wrong row
+ * also gets a collapsed-by-default "Why?" (`ExplanationDisclosure`) directly
+ * beneath it, replacing the block-level explanation list `LessonPlayer` used
+ * to render below the whole item.
  */
 export function SelectionGridRenderer({
   item,
@@ -34,6 +43,9 @@ export function SelectionGridRenderer({
   const submitted = result !== null;
 
   const correctByRow = new Map(result?.subResults.map((r) => [r.id, r.correct]));
+  const explanationByRowId = new Map(
+    result ? resolveExplanations(item, result).map((e) => [e.subResultId, e.explanation]) : [],
+  );
 
   function submit() {
     const scored = scoreItem(item, buildSelectionGridResponse(answers));
@@ -45,13 +57,14 @@ export function SelectionGridRenderer({
     <div className="rounded-lg border border-border bg-card p-3">
       <p className="mb-3 text-sm font-medium text-foreground">{item.payload.prompt}</p>
       <div className="flex flex-col gap-2">
-        {item.payload.rows.map((row) => {
+        {item.payload.rows.map((row, index) => {
           const answer = answers.get(row.id);
           const rowCorrect = correctByRow.get(row.id);
+          const explanation = !rowCorrect ? explanationByRowId.get(row.id) : undefined;
           return (
             <div
               key={row.id}
-              className={`flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center sm:justify-between ${
+              className={`flex flex-col gap-2 rounded-lg border px-3 py-2 ${
                 submitted
                   ? rowCorrect
                     ? "border-success-border bg-success-subtle"
@@ -59,33 +72,39 @@ export function SelectionGridRenderer({
                   : "border-border bg-background"
               }`}
             >
-              <span className="flex-1 text-sm text-foreground">{row.statement}</span>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  disabled={submitted}
-                  aria-pressed={answer === true}
-                  onClick={() => setAnswers((prev) => setGridRowAnswer(prev, row.id, true))}
-                  className={choiceClassName(answer === true)}
-                >
-                  True
-                </button>
-                <button
-                  type="button"
-                  disabled={submitted}
-                  aria-pressed={answer === false}
-                  onClick={() => setAnswers((prev) => setGridRowAnswer(prev, row.id, false))}
-                  className={choiceClassName(answer === false)}
-                >
-                  False
-                </button>
-                {submitted &&
-                  (rowCorrect ? (
-                    <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-                  ) : (
-                    <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-                  ))}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex-1 text-sm text-foreground">
+                  <span className="mr-1 text-muted-foreground">{index + 1}.</span>
+                  {row.statement}
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={submitted}
+                    aria-pressed={answer === true}
+                    onClick={() => setAnswers((prev) => setGridRowAnswer(prev, row.id, true))}
+                    className={choiceClassName(answer === true)}
+                  >
+                    True
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submitted}
+                    aria-pressed={answer === false}
+                    onClick={() => setAnswers((prev) => setGridRowAnswer(prev, row.id, false))}
+                    className={choiceClassName(answer === false)}
+                  >
+                    False
+                  </button>
+                  {submitted &&
+                    (rowCorrect ? (
+                      <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+                    ) : (
+                      <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+                    ))}
+                </div>
               </div>
+              {explanation && <ExplanationDisclosure explanation={explanation} />}
             </div>
           );
         })}

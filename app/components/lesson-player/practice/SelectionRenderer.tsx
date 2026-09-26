@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Check, X } from "lucide-react";
-import { scoreItem } from "@/lib/items";
+import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SelectionItem } from "@/lib/items";
 import { shuffleForItem } from "@/lib/items/shuffle";
 import {
@@ -10,6 +10,7 @@ import {
   selectionOptionFeedback,
   toggleSelectionOption,
 } from "@/lib/lessonPlayer/selectionResponse";
+import { ExplanationDisclosure } from "./ExplanationDisclosure";
 
 /**
  * PLAY-002 — `selection` renderer (MCQ single, MCQ multi, True/False; one
@@ -34,15 +35,24 @@ export function SelectionRenderer({
 }) {
   const options = useMemo(() => shuffleForItem(item.payload.options, attemptId, item.id), [item, attemptId]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [submitted, setSubmitted] = useState(false);
+  const [result, setResult] = useState<ItemScoreResult | null>(null);
+  const submitted = result !== null;
 
   const feedback = submitted ? selectionOptionFeedback(item, selected) : null;
   const feedbackById = new Map(feedback?.map((f) => [f.id, f]));
+  // 0009: `selection` scores as exactly one SubResult for the whole item, so
+  // there is one explanation to offer — never per-option, unlike the
+  // check/cross feedback above (0029 Decision 2, marked per-option on
+  // purpose since that's a visual affordance, not a scoring granularity).
+  const explanation =
+    result && !result.subResults[0].correct
+      ? resolveExplanations(item, result)[0]?.explanation
+      : undefined;
 
   function submit() {
-    const result = scoreItem(item, buildSelectionResponse(selected));
-    setSubmitted(true);
-    onScore(result);
+    const scored = scoreItem(item, buildSelectionResponse(selected));
+    setResult(scored);
+    onScore(scored);
   }
 
   return (
@@ -76,6 +86,7 @@ export function SelectionRenderer({
           );
         })}
       </div>
+      {explanation && <ExplanationDisclosure explanation={explanation} />}
       {!submitted && (
         <button
           type="button"
