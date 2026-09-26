@@ -11,6 +11,14 @@ needs both segments. This card is decision-only per the working agreement
 (`type:decision`: lay out options, owner calls it); no code changes ship
 from it.
 
+**Owner approval (2026-09-26):** Decisions 1–4 below were drafted during the
+CNT-010 session (commit `4f94314`) while auditing that card's dependency on
+this one, but issue #90 was never formally closed at the time — no owner
+sign-off was recorded. Approved as written, without change, before SHELL-007
+proceeds. Recorded here rather than silently treating the earlier draft as
+sufficient on its own, since a `type:decision` card is never decided
+unattended, even incidentally.
+
 ## Decision 1 — URL shape
 
 `/courses/[course-slug]/[lesson-slug]`.
