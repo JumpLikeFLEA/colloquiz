@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ItemScoreResult } from "@/lib/items";
 import { PLAYGROUND_EXAMPLES } from "@/lib/items/__fixtures__/playgroundExamples";
@@ -26,6 +26,15 @@ function exampleRaw(label: string): unknown {
   const example = PLAYGROUND_EXAMPLES.find((e) => e.label === label);
   if (!example) throw new Error(`no playground example labelled ${JSON.stringify(label)}`);
   return example.raw;
+}
+
+/** PLAY-007's completion screen shows the same wrong-sub-part explanation
+ * text a second time, in its own end-of-lesson review — see LessonCompletion
+ * and the `lesson-blocks` wrapper's doc comment in LessonPlayer.tsx. Tests
+ * that check an inline "Why?" panel's specific text (present/absent) scope
+ * their query to this wrapper so they aren't confused by that second copy. */
+function lessonBlocks() {
+  return within(screen.getByTestId("lesson-blocks"));
 }
 
 /** Wraps the real dispatcher so a test can assert on the `ItemScoreResult`
@@ -143,11 +152,11 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     const why = screen.getByRole("button", { name: "Why?" });
     expect(why.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByText(/Third person singular/)).toBeNull();
+    expect(lessonBlocks().queryByText(/Third person singular/)).toBeNull();
 
     fireEvent.click(why);
     expect(why.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByText(/Third person singular present tense takes an -s ending/)).toBeDefined();
+    expect(lessonBlocks().getByText(/Third person singular present tense takes an -s ending/)).toBeDefined();
   });
 
   it("selection_grid: numbers rows 1, 2, 3 and shows each wrong row's own explanation", async () => {
@@ -172,7 +181,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     expect(whyButtons).toHaveLength(3);
 
     fireEvent.click(whyButtons[1]);
-    expect(screen.getByText(/needs the simple past/)).toBeDefined();
+    expect(lessonBlocks().getByText(/needs the simple past/)).toBeDefined();
   });
 
   it("matching: numbers left rows 1, 2, 3 and shows each wrong pair's own explanation", async () => {
@@ -196,7 +205,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     expect(whyButtons).toHaveLength(3);
 
     fireEvent.click(whyButtons[0]);
-    expect(screen.getByText(/"Ubiquitous" means present or found everywhere/)).toBeDefined();
+    expect(lessonBlocks().getByText(/"Ubiquitous" means present or found everywhere/)).toBeDefined();
   });
 
   it("ordering: the never-identity shuffle guarantees a wrong element, and its explanation is reachable", async () => {
@@ -220,7 +229,9 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     expect(whyButtons.length).toBeGreaterThan(0);
     fireEvent.click(whyButtons[0]);
     expect(
-      screen.getByText(/subject comes first|before the main verb|follows the frequency adverb|closes the sentence/),
+      lessonBlocks().getByText(
+        /subject comes first|before the main verb|follows the frequency adverb|closes the sentence/,
+      ),
     ).toBeDefined();
   });
 
@@ -263,6 +274,80 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     expect(screen.getByText("Gap 2:")).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Why?" }));
-    expect(screen.getByText(/take the preposition "on"/)).toBeDefined();
+    expect(lessonBlocks().getByText(/take the preposition "on"/)).toBeDefined();
+  });
+});
+
+describe("LessonPlayer — completion screen (PLAY-007)", () => {
+  it("shows the Russian score line once an item is attempted, and no review section before any wrong answer", async () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    // The footer heading is always present (single-page player, no "reached
+    // the end" transition — see LessonCompletion's doc comment); only the
+    // score line depends on an attempt existing.
+    expect(screen.getByText("Урок завершён")).toBeDefined();
+    expect(screen.queryByText(/Ваш результат/)).toBeNull();
+
+    fireEvent.click(await screen.findByRole("radio", { name: "She goes to school every day." })); // correct
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("Урок завершён")).toBeDefined();
+    expect(screen.getByText(/Ваш результат: 100% \(1\/1\)/)).toBeDefined();
+    expect(screen.queryByText("Разбор ответов")).toBeNull(); // nothing wrong to review
+  });
+
+  it("lists the wrong item's explanation under the review heading, alongside the inline copy", async () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: "She go to school every day." })); // wrong option
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("Разбор ответов")).toBeDefined();
+    // Two copies now exist: the inline (still-collapsed) panel and this
+    // review section's own — see lessonBlocks()'s doc comment above.
+    expect(screen.getAllByText(/Third person singular present tense takes an -s ending/)).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
+    expect(screen.getAllByText(/Third person singular present tense takes an -s ending/)).toHaveLength(2);
+  });
+
+  it("links to the next lesson by course slug + slug, and omits the link when there is none", async () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    const { rerender } = render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+        courseSlug="future-imperfect"
+        nextLesson={{ slug: "true-or-false", title: "True or False" }}
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: /Следующий урок: True or False/ });
+    expect(link.getAttribute("href")).toBe("/courses/future-imperfect/true-or-false");
+
+    rerender(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={spiedRenderer(onScore)}
+        courseSlug="future-imperfect"
+        nextLesson={null}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /Следующий урок/ })).toBeNull();
   });
 });

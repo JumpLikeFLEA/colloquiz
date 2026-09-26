@@ -10,7 +10,7 @@ export type PublicLessonMeta = {
 export type PublicLesson =
   | { state: "not_found" }
   | ({ state: "not_available" } & PublicLessonMeta)
-  | ({ state: "ok"; document: unknown[] } & PublicLessonMeta);
+  | ({ state: "ok"; document: unknown[]; courseId: string; ordinal: number } & PublicLessonMeta);
 
 /**
  * The public read path for a lesson (PLAY-006) — the first place the English
@@ -44,7 +44,7 @@ export async function getPublicLesson(courseSlug: string, lessonSlug: string): P
 
   const { data: lesson, error: lessonErr } = await supabase
     .from("lessons")
-    .select("id, title, description, published_item_count, estimated_minutes, published_version_id")
+    .select("id, title, description, published_item_count, estimated_minutes, published_version_id, ordinal")
     .eq("course_id", course.id)
     .eq("slug", lessonSlug)
     .maybeSingle();
@@ -80,5 +80,44 @@ export async function getPublicLesson(courseSlug: string, lessonSlug: string): P
     throw new Error(`can_read_lesson(${lesson.id}) is true but its published_version_id has no readable row`);
   }
 
-  return { state: "ok", document: version.document as unknown[], ...meta };
+  return {
+    state: "ok",
+    document: version.document as unknown[],
+    courseId: course.id,
+    ordinal: lesson.ordinal,
+    ...meta,
+  };
+}
+
+export type NextLessonLink = { slug: string; title: string };
+
+/**
+ * PLAY-007 — the completion screen's "next lesson" link. Ordinals are
+ * display order only and neither unique nor gapless within a course
+ * (migration 041's comment on `lessons.ordinal`), so "next" is "the smallest
+ * ordinal greater than this lesson's," not `ordinal + 1`. Deliberately does
+ * NOT call `can_read_lesson` — entitlement is decided in exactly one place
+ * (docs/handoff.md), and that place is the destination lesson page itself
+ * when the learner actually taps through; this link is metadata-only, same
+ * as the title/description `getPublicLesson` already shows for a paid,
+ * not-yet-bought lesson in its "not_available" state. `published_version_id
+ * IS NOT NULL` is re-checked explicitly for the same reason it is in
+ * `getPublicLesson` above: an editor's own read policy would otherwise
+ * surface an unpublished draft as the "next" lesson on this public route.
+ */
+export async function getNextLesson(courseId: string, afterOrdinal: number): Promise<NextLessonLink | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("lessons")
+    .select("slug, title")
+    .eq("course_id", courseId)
+    .gt("ordinal", afterOrdinal)
+    .not("published_version_id", "is", null)
+    .order("ordinal", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  return data ? { slug: data.slug, title: data.title } : null;
 }

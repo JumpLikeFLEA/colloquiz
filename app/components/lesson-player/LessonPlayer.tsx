@@ -4,9 +4,11 @@ import { useMemo, useState, type ReactNode } from "react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
-import { scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
+import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
+import type { NextLessonLink } from "@/lib/publicLesson";
 import { FIT_WIDTH_CLASS, HEADING_WIDTH_CLASS, LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
+import { LessonCompletion } from "./LessonCompletion";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
 import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
@@ -60,6 +62,13 @@ export interface LessonPlayerProps {
    * placeholder — no item type has an interactive renderer until
    * PLAY-002..004 land. */
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
+  /** PLAY-007 — the completion screen's "next lesson" link needs the current
+   * course's slug to build the destination path; both default to values that
+   * render no completion footer content beyond the score/review, matching
+   * pre-PLAY-007 behaviour for callers (tests, the demo page) that don't pass
+   * them. */
+  courseSlug?: string;
+  nextLesson?: NextLessonLink | null;
 }
 
 /**
@@ -79,7 +88,13 @@ export interface LessonPlayerProps {
  * end-of-lesson explanation review will call instead, over the full
  * lesson's `results`.
  */
-export function LessonPlayer({ document, attemptId, practiceRenderer }: LessonPlayerProps) {
+export function LessonPlayer({
+  document,
+  attemptId,
+  practiceRenderer,
+  courseSlug = "",
+  nextLesson = null,
+}: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
   const [results, setResults] = useState<LessonSessionResults>({});
 
@@ -94,6 +109,8 @@ export function LessonPlayer({ document, attemptId, practiceRenderer }: LessonPl
       attemptId={attemptId}
       onScore={(itemId, result) => setResults((prev) => ({ ...prev, [itemId]: result }))}
       practiceRenderer={practiceRenderer}
+      courseSlug={courseSlug}
+      nextLesson={nextLesson}
     />
   );
 }
@@ -104,12 +121,16 @@ function LessonPlayerBody({
   attemptId,
   onScore,
   practiceRenderer,
+  courseSlug,
+  nextLesson,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
   attemptId: string;
   onScore: (itemId: string, result: ItemScoreResult) => void;
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
+  courseSlug: string;
+  nextLesson: NextLessonLink | null;
 }) {
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
@@ -125,22 +146,36 @@ function LessonPlayerBody({
           Progress: {lessonScore.percent}% ({lessonScore.earned}/{lessonScore.possible})
         </div>
       )}
-      {document.map((block) => {
-        const widthClass = widthClassFor(block);
-        return block.kind === "practice" ? (
-          <div key={block.id} className={widthClass}>
-            {practiceRenderer ? (
-              practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
-            ) : (
-              <PracticeBlockPlaceholder block={block} />
-            )}
-          </div>
-        ) : (
-          <div key={block.id} className={widthClass}>
-            <TheoryBlockRenderer block={block} />
-          </div>
-        );
-      })}
+      {/* `contents` keeps every block a direct flex child of LESSON_COLUMN_CLASS
+          (so `gap-4` still applies between blocks, not just around this
+          wrapper) — it exists only so tests can scope a query to "the
+          authored blocks" and distinguish an inline per-item explanation from
+          PLAY-007's own copy of the same text in LessonCompletion's review
+          section below. */}
+      <div data-testid="lesson-blocks" className="contents">
+        {document.map((block) => {
+          const widthClass = widthClassFor(block);
+          return block.kind === "practice" ? (
+            <div key={block.id} className={widthClass}>
+              {practiceRenderer ? (
+                practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
+              ) : (
+                <PracticeBlockPlaceholder block={block} />
+              )}
+            </div>
+          ) : (
+            <div key={block.id} className={widthClass}>
+              <TheoryBlockRenderer block={block} />
+            </div>
+          );
+        })}
+      </div>
+      <LessonCompletion
+        score={lessonScore}
+        explanations={explanationsForSession(document, results)}
+        courseSlug={courseSlug}
+        nextLesson={nextLesson}
+      />
     </div>
   );
 }

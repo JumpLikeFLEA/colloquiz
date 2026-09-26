@@ -579,3 +579,32 @@ Appended to in the same commit as the change it records. Referenced from
   phone-first traffic sees no benefit from it, and it would narrow the row
   column further, working against this same fix. Do not put the placed
   answer back in an inline fixed-width box.
+- Lesson completion screen added (2026-09-26, PLAY-007, docs/decisions/0058):
+  a new `LessonCompletion` section (`app/components/lesson-player/
+  LessonCompletion.tsx`) renders UNCONDITIONALLY after `LessonPlayer`'s last
+  authored block, inside a `bg-card`/`border-border` card matching the
+  `app/(english)/error.tsx` / `not-found.tsx` idiom (no new hex — see 0058
+  Decision 1 for why this is a footer, not a gated "lesson finished" state,
+  since the player is a single scrolling page with no such transition to
+  gate on). Contents: the Russian score line (`alliengllCopy.completion.
+  scoreLabel`, shown only once `scoreSession(...).status === "scored"`), a
+  consolidated "Разбор ответов" explanation review built from
+  `explanationsForSession` (0058 Decision 2 — this DELIBERATELY duplicates
+  the same wrong-sub-part text a per-item inline "Why?" already shows, per
+  0053; not a bug), a next-lesson `<Link>` when `getNextLesson` (lib/
+  publicLesson.ts) finds one by ordinal within the course, and an empty
+  `RegistrationOfferSlot()` reserved for ANON-004 (which depends on this
+  card, not the reverse — it isn't built yet, so the slot renders nothing).
+  A new `data-testid="lesson-blocks"` wrapper (`className="contents"`, so it
+  adds no extra flex child and doesn't disturb `LESSON_COLUMN_CLASS`'s
+  `gap-4`) was added around the authored-block map purely so
+  `LessonPlayer.test.tsx` can scope a query to "the inline copy" versus this
+  new review section's copy of the same text. Separately, each of the five
+  `next/dynamic()` renderers in `app/components/lesson-player/practice/
+  index.tsx` gained a text-free, height-reserving `loading` skeleton (0058
+  Decision 3) for the client-side-navigation chunk-flash gap 0057 had left
+  unaddressed — deliberately NOT `PracticeBlockPlaceholder`, whose English
+  "renderer not yet available" copy would be a language bug if it ever
+  flashed on this Russian-chrome surface. Do not remove either the
+  `lesson-blocks` wrapper or the per-renderer `loading` skeletons without
+  re-reading 0058.

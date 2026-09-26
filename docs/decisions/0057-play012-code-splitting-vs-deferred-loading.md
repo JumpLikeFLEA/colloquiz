@@ -202,6 +202,17 @@ test's first DOM query became a `findBy*` (async) instead of `getBy*`
 (sync). This is a mechanical consequence of the split, not a behavior
 change — the same assertions, now awaited.
 
+## Addendum (PLAY-007, 2026-09-26)
+
+The client-navigation gap flagged above ("A `loading: null` gap could only
+show on an in-app *client-side* navigation to a not-yet-cached chunk...") is
+exactly what PLAY-007's completion screen creates, via its own "next lesson"
+`<Link>`. **Resolved with option (a):** each of the five `dynamic()` calls in
+`practice/index.tsx` now passes a `loading` fallback (a plain height-reserving
+skeleton, no text). Full reasoning — including why the alternative
+(measuring `<Link>` prefetch under network throttling) was not attempted —
+is in `docs/decisions/0058-play007-lesson-completion-screen.md`, Decision 3.
+
 ## What would make us revisit it
 
 - If a future lesson shape puts practice content meaningfully below the
