@@ -54,6 +54,7 @@ export async function listAuthoredCourses(courseIds?: string[]): Promise<Authore
 export type AuthoredLesson = {
   id: string;
   slug: string;
+  slugFrozenAt: string | null;
   ordinal: number;
   title: string;
   description: string | null;
@@ -99,7 +100,7 @@ export async function getAuthoredCourseDetail(
   const { data: lessons, error: lessonsErr } = await supabase
     .from("lessons")
     .select(
-      "id, slug, ordinal, title, description, estimated_minutes, in_free_sample, archived_at, published_version_id, published_item_count",
+      "id, slug, slug_frozen_at, ordinal, title, description, estimated_minutes, in_free_sample, archived_at, published_version_id, published_item_count",
     )
     .eq("course_id", courseId)
     .order("ordinal");
@@ -132,6 +133,7 @@ export async function getAuthoredCourseDetail(
     lessons: (lessons ?? []).map((l) => ({
       id: l.id,
       slug: l.slug,
+      slugFrozenAt: l.slug_frozen_at,
       ordinal: l.ordinal,
       title: l.title,
       description: l.description,

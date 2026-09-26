@@ -15,6 +15,13 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   invalid_level: { status: 400, message: "Please choose a valid level." },
   invalid_estimated_minutes: { status: 400, message: "Estimated minutes must be a positive number." },
   slug_taken: { status: 409, message: "That slug is already in use by another course." },
+  // update_lesson_slug (046): scoped to the lesson's own course, so the
+  // message says "lesson" rather than reusing slug_taken's course-scoped copy.
+  lesson_slug_taken: { status: 409, message: "That slug is already used by another lesson in this course." },
+  // update_lesson_slug (046): the lesson has been published at least once —
+  // slug_frozen_at is set and update_lesson_slug refuses unconditionally,
+  // regardless of the lesson's current archived/published state.
+  slug_frozen: { status: 409, message: "This lesson's slug can't be changed once it has been published." },
   lesson_set_mismatch: { status: 409, message: "The lesson list changed elsewhere — reload and try again." },
   // save_lesson_version (041): p_base_version_id didn't match the true
   // latest version — someone else saved first. Same "reload, don't clobber"

@@ -33,6 +33,7 @@ import {
 import { Switch } from "@/app/components/ui/switch";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/courseLevels";
 import { pluralize } from "@/lib/format";
+import { isValidLessonSlugFormat } from "@/lib/lessonSlug";
 import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring";
 
 async function postJson(url: string, body: unknown, method: "POST" | "PATCH" | "DELETE" = "POST") {
@@ -347,7 +348,10 @@ function LessonsSection({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New lesson</DialogTitle>
-            <DialogDescription>The lesson&rsquo;s slug is generated from its title and can&rsquo;t change later.</DialogDescription>
+            <DialogDescription>
+              The lesson&rsquo;s slug starts from its title. You can edit it afterwards — it locks the
+              first time this lesson is published.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <input
@@ -442,14 +446,23 @@ function EditLessonDialog({
   const [title, setTitle] = useState(lesson.title);
   const [description, setDescription] = useState(lesson.description ?? "");
   const [estimatedMinutes, setEstimatedMinutes] = useState(lesson.estimatedMinutes?.toString() ?? "");
+  const [slug, setSlug] = useState(lesson.slug);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const frozen = lesson.slugFrozenAt !== null;
 
   async function save() {
     if (!title.trim()) return;
+    if (!frozen && !isValidLessonSlugFormat(slug)) {
+      setError("Slug must be lowercase letters, numbers and hyphens only.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
+      if (!frozen && slug !== lesson.slug) {
+        await postJson(`/api/admin/courses/${courseId}/lessons/${lesson.id}/slug`, { slug });
+      }
       const minutes = estimatedMinutes.trim() ? Number(estimatedMinutes) : undefined;
       await postJson(
         `/api/admin/courses/${courseId}/lessons/${lesson.id}`,
@@ -478,6 +491,20 @@ function EditLessonDialog({
             maxLength={120}
             className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
           />
+          <div className="flex flex-col gap-1">
+            <input
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="slug"
+              disabled={frozen}
+              className="px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono text-foreground outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+            />
+            <p className="text-xs text-muted-foreground">
+              {frozen
+                ? "Locked — this lesson has been published, so its URL can't change."
+                : "Lowercase letters, numbers and hyphens only. Locks the first time this lesson is published."}
+            </p>
+          </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { authoredString } from "../authoredString";
 import { CEFR_LEVELS } from "../courseLevels";
+import { LESSON_SLUG_RE } from "../lessonSlug";
 
 /**
  * The authored-file shape for one course plus every one of its lessons
@@ -20,8 +21,11 @@ import { CEFR_LEVELS } from "../courseLevels";
  * "shared with the drafting step" rationale without re-reading 0028 first.
  */
 
-const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-export const slugField = () => z.string().regex(SLUG_RE, "must be lowercase kebab-case (a-z, 0-9, single hyphens)");
+// Reuses lib/lessonSlug.ts's LESSON_SLUG_RE (CNT-010) rather than its own
+// copy, so the importer's format check and the create_lesson/update_lesson_slug
+// RPCs' format check can't silently drift apart.
+export const slugField = () =>
+  z.string().regex(LESSON_SLUG_RE, "must be lowercase kebab-case (a-z, 0-9, single hyphens)");
 
 export const LessonFileSchema = z.strictObject({
   slug: slugField(),
