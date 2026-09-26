@@ -49,21 +49,46 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
+  // The English course/lesson path prefix (SHELL-005, docs/decisions/0044
+  // Decision 2), admitted the same way as publicRoutes above — readable
+  // signed IN or OUT, since after SHELL-012 signed-in learners live on these
+  // routes day to day, not just anonymous visitors. The session refresh above
+  // still runs unconditionally (Decision 2: not skipped for this prefix).
+  if (pathname === '/courses' || pathname.startsWith('/courses/')) {
+    return supabaseResponse
+  }
+
   const authRoutes = ['/login', '/signup', '/auth/callback', '/auth/confirm']
   const isAuthRoute = authRoutes.includes(pathname)
 
-  if (!user && !isAuthRoute && request.nextUrl.searchParams.has('code')) {
+  // The unauthenticated bounce below only protects /app — the sole gated
+  // namespace since SHELL-001 moved every Colloquiz route under it. It used
+  // to apply to every non-public, non-auth path, which meant an anonymous
+  // request to ANY unmatched URL (a typo, a stale link) was 307'd to /login
+  // before Next's own router ever saw it — silently swallowing the 404
+  // (checked while building SHELL-007: /icon and /opengraph-image, which
+  // carry no auth requirement of their own, were already being bounced this
+  // way). Narrowing this to /app lets an anonymous request to anything else
+  // fall through to Next's routing, which serves the real page if one
+  // exists or app/global-not-found.tsx (docs/decisions/0046) if not — the
+  // only way that 404 is ever reachable by the anonymous visitors the
+  // English surface exists for (docs/decisions/0049).
+  const isProtectedRoute = pathname === '/app' || pathname.startsWith('/app/')
+
+  if (!user && !isAuthRoute && isProtectedRoute && request.nextUrl.searchParams.has('code')) {
     // A Supabase OAuth/PKCE code landed on a non-callback path (e.g. Supabase
     // fell back to the Site URL root because redirectTo wasn't allow-listed).
     // Forward it to the callback handler — keeping the query intact so
     // code/state/next survive — so the code is exchanged instead of lost to
-    // the /login bounce below.
+    // the /login bounce below. Site URL is / (SHELL-013 currently redirects
+    // it to /app, preserving the query string), so this still catches the
+    // real case despite the new isProtectedRoute guard.
     const url = request.nextUrl.clone()
     url.pathname = '/auth/callback'
     return NextResponse.redirect(url)
   }
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && isProtectedRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     // Preserve where the user was headed (e.g. an invite link) so they land

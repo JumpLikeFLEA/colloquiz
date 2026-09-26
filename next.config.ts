@@ -65,6 +65,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Drop the `X-Powered-By: Next.js` banner — no reason to advertise the stack.
   poweredByHeader: false,
+  // Required because app/(english)/ and app/(colloquiz)/ are now two root
+  // layouts with no single layout to compose a shared 404 from
+  // (docs/decisions/0046). Still experimental as of Next 16 — see that
+  // decision's "Experimental-flag risk, recorded".
+  experimental: {
+    globalNotFound: true,
+  },
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersion,
   },
@@ -91,13 +98,20 @@ const nextConfig: NextConfig = {
   // is what a stale bookmark or an old share link actually hits first; the
   // proxy's own legacy `/dashboard` → `/progress` shortcut had to be
   // re-keyed onto the new `/app/...` paths for the same reason.
+  //
+  // "courses" was dropped from this list (SHELL-007, docs/decisions/0049):
+  // it never had a target — `find "app/(colloquiz)/(main)/app" -iname
+  // courses` finds nothing, so the 308 pointed at a route that doesn't
+  // exist — and SHELL-005 (docs/decisions/0044) has since assigned
+  // `/courses/[course-slug]/[lesson-slug]` to the public English surface.
+  // Left in, this redirect would have run before proxy.ts and 308'd every
+  // English course/lesson request to a 404 under /app.
   async redirects() {
     const movedSegments = [
       "achievements",
       "admin",
       "advanced",
       "build",
-      "courses",
       "custom",
       "dashboard",
       "duels",

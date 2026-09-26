@@ -64,7 +64,16 @@ function killProcessTree(proc: ChildProcess): void {
 // route budget in a future M2 card starts from.
 type RouteBudget = { path: string; budgetKB: number };
 
-const ROUTES: RouteBudget[] = [{ path: "/login", budgetKB: 380 }];
+const ROUTES: RouteBudget[] = [
+  { path: "/login", budgetKB: 380 },
+  // SHELL-007: the placeholder at the URL shape SHELL-005 decided
+  // (/courses/[course-slug]/[lesson-slug]). 210 KB is docs/decisions/0046's
+  // addendum-corrected landing/course-page budget, reused here as a starting
+  // point since no lesson-specific content exists yet — PLAY-006 ("Public
+  // lesson page") re-measures this route for real once it reads actual
+  // lesson data and raises the number with a printed run if it needs to.
+  { path: "/courses/x/y", budgetKB: 210 },
+];
 
 // ── CLI ──────────────────────────────────────────────────────────────────
 function getArg(name: string): string | undefined {

@@ -478,3 +478,18 @@ Appended to in the same commit as the change it records. Referenced from
   PII-scrubbing surface were paid for no realized benefit — owner-approved,
   see docs/decisions/0046's "Sentry" section. Do not re-add error monitoring
   without picking a destination someone will actually watch first.
+- English surface (`app/(english)/**`) introduced (2026-09-26, SHELL-007,
+  docs/decisions/0049): its own root layout per docs/decisions/0046 —
+  `<html lang="ru">`, Geist Sans only (no Geist Mono, no ThemeProvider, no
+  katex CSS), a small inline script that adds `.dark` from
+  `prefers-color-scheme` with no toggle. Its in-segment `not-found.tsx` and
+  the app-root `global-not-found.tsx` (behind `experimental.globalNotFound`)
+  compose from the SAME token classes and layout as the Colloquiz
+  `(colloquiz)/not-found.tsx` precedent (`bg-background`,
+  `text-muted-foreground`, `bg-brand` — no new hex literals) rather than a
+  bespoke look; the two 404s read as the same page in two languages, not two
+  designs. All learner-facing strings on this surface come from
+  `lib/alliengll/copy.ts`, in Russian, with no locale-selection mechanism —
+  this is one surface written in one language (docs/handoff.md, "Audience
+  and language", 2026-09-24 delta), not an i18n layer. Do not add English
+  strings to English-surface chrome, and do not add a language switcher.
