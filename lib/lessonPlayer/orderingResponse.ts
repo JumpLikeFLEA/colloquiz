@@ -9,20 +9,20 @@ import type { OrderingResponse } from "../items/ordering";
  *
  * `order` is always a permutation of the ids the caller seeded it with
  * (lib/items/shuffle.ts's `shuffleOrderingIndices` output, mapped to element
- * ids via `initialOrder`) — `moveOrderElementToIndex` (and `moveOrderElement`,
- * which delegates to it) only ever moves an id already present in `order` to
- * another position already present in `order`, so it can never introduce a
- * duplicate or drop an element. That is what makes ordering's
- * `duplicate_id`/`missing_element` `ItemResponseError` unreachable from a
- * renderer built on top of this, the same "unreachable by construction"
- * discipline selectionResponse.ts documents.
+ * ids via `initialOrder`) — `moveOrderElementToIndex` only ever moves an id
+ * already present in `order` to another position already present in `order`,
+ * so it can never introduce a duplicate or drop an element. That is what
+ * makes ordering's `duplicate_id`/`missing_element` `ItemResponseError`
+ * unreachable from a renderer built on top of this, the same
+ * "unreachable by construction" discipline selectionResponse.ts documents.
  *
- * `moveOrderElementToIndex` is the SINGLE state-transition function both the
- * up/down buttons and drag-to-reorder (docs/decisions/0032) go through —
- * `moveOrderElement` is a thin "move by one position" wrapper over it, kept
- * only because the buttons express a direction, not a target index. Neither
- * the button click handler nor the drag `onDragEnd` handler computes a new
- * ordering itself; both call into here.
+ * `moveOrderElementToIndex` is the SINGLE state-transition function
+ * drag-to-reorder (docs/decisions/0032) goes through — the renderer's
+ * `onDragEnd` handler never computes a new ordering itself, it calls into
+ * here. The up/down move buttons this function originally also served
+ * (`moveOrderElement`, a thin "move by one position" wrapper) were removed
+ * by docs/decisions/0054 (PLAY-009): the grip handle is now the only pointer
+ * control, so the wrapper had no caller left and was deleted with it.
  */
 
 /** Maps `shuffleOrderingIndices`' index permutation to the element ids at
@@ -49,13 +49,6 @@ export function moveOrderElementToIndex(order: readonly string[], id: string, to
   const [moved] = next.splice(fromIndex, 1);
   next.splice(clampedIndex, 0, moved);
   return next;
-}
-
-export function moveOrderElement(order: readonly string[], id: string, direction: "up" | "down"): string[] {
-  const index = order.indexOf(id);
-  if (index === -1) return [...order];
-  const target = direction === "up" ? index - 1 : index + 1;
-  return moveOrderElementToIndex(order, id, target);
 }
 
 export function buildOrderingResponse(order: readonly string[]): OrderingResponse {

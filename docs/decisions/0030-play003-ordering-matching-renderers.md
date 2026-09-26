@@ -149,3 +149,12 @@ worried about). Decision 3 (the right side is a REUSABLE pool) is KEPT,
 unchanged in substance — 0039's bank is still non-consumable for the same
 0013 many-to-one reason, it is simply always visible instead of gated behind
 an expanded row. Decision 1 (`ordering`) is untouched by 0039.
+
+## Superseded in part by 0054
+
+**Decision 1's ▲/▼ move buttons are removed by docs/decisions/0054**
+(PLAY-009) — the buttons had already stopped being the sole keyboard path
+once 0032 wired dnd-kit's `KeyboardSensor` onto the same grip handle, so
+0054 removes them as a redundant control rather than reopening this
+decision's original reasoning. `matching` (Decision 2) and the reusable-pool
+answer to 0013 (Decision 3) are unaffected.

@@ -239,3 +239,16 @@ width, "Show touches"/touch emulation on), against `/app/admin/lesson-player-dem
 **Revisit when:** a session with browser-automation access (or this session
 gains hosted-admin credentials) runs the checklist above and either confirms
 Decisions 1/4/5's architectural claims or files concrete bugs against them.
+
+## Superseded in part by 0054
+
+**The part of this document that keeps `ordering`'s ▲/▼ move buttons as the
+keyboard/no-gesture fallback is superseded by docs/decisions/0054**
+(PLAY-009) — the fallback role moves to the grip handle itself, which this
+document's own Decision 1 already wired `KeyboardSensor` onto via
+`{...attributes} {...listeners}`; the buttons were redundant with it, not
+the only path to it. Decision 1's sensor configuration, `DragSlots`'
+always-visible bank (Decision 3), the typed-gap sizing (Decision 4), the
+compact touch-target technique (Decision 5) and the explicit `DndContext id`
+fix (Decision 6) are all unaffected — 0054 only touches `ordering`'s
+button-vs-handle question.

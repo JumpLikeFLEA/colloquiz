@@ -9,30 +9,27 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, Check, GripVertical, X } from "lucide-react";
+import { Check, GripVertical, X } from "lucide-react";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, OrderingItem } from "@/lib/items";
 import { shuffleOrderingIndices } from "@/lib/items/shuffle";
 import {
   buildOrderingResponse,
   initialOrder,
-  moveOrderElement,
   moveOrderElementToIndex,
 } from "@/lib/lessonPlayer/orderingResponse";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
 
 /**
- * PLAY-003/0032 — `ordering` renderer (permutation of N elements;
- * lib/items/ordering.ts). Drag-to-reorder was added on top of the up/down
- * buttons (docs/decisions/0032), reversing 0030 Decision 1's "no drag" call
- * now that @dnd-kit/sortable is an approved dependency and handles the
- * touch-scroll conflict 0030 could not verify a fix for — see 0032 for why
- * that reversal is safe and what changed. The buttons stay: they are the
- * keyboard/no-JS-gesture fallback 0030 already designed around, and now also
- * the thing `moveOrderElementToIndex` (lib/lessonPlayer/orderingResponse.ts)
- * proves drag and buttons agree on, since BOTH call it — no reorder math
- * lives in this component.
+ * PLAY-003/0032/0054 — `ordering` renderer (permutation of N elements;
+ * lib/items/ordering.ts). The grip handle is the ONLY pointer/touch control
+ * (docs/decisions/0054, PLAY-009) — the ▲/▼ move buttons 0030 designed and
+ * 0032 kept as a fallback are gone, superseded now that drag is verified via
+ * the same `useLessonPlayerSensors` KeyboardSensor path every other
+ * drag-capable renderer already relies on for its own accessible fallback.
+ * Each row shows its live position number (1, 2, 3 …) instead, so a learner
+ * without a pointer/touch drag still sees the effect of a keyboard reorder.
  *
  * State (`order`) only ever holds ids read off `item.payload.elements` —
  * `moveOrderElementToIndex` only ever moves an id already present in `order`,
@@ -94,7 +91,10 @@ export function OrderingRenderer({
 
   return (
     <div className="rounded-lg border border-border bg-card p-3">
-      <p className="mb-3 text-sm font-medium text-foreground">{item.payload.prompt}</p>
+      <p className="mb-1 text-sm font-medium text-foreground">{item.payload.prompt}</p>
+      {!submitted && (
+        <p className="mb-3 text-xs text-muted-foreground">Hold and drag the handle to reorder.</p>
+      )}
       <DndContext
         id={`ordering-${attemptId}:${item.id}`}
         sensors={sensors}
@@ -119,12 +119,10 @@ export function OrderingRenderer({
                   key={id}
                   id={id}
                   text={element.text}
-                  isFirst={position === 0}
-                  isLast={position === order.length - 1}
+                  position={position}
                   submitted={submitted}
                   correct={subResult?.correct}
                   explanation={explanation}
-                  onMove={(direction) => setOrder((prev) => moveOrderElement(prev, id, direction))}
                 />
               );
             })}
@@ -150,21 +148,17 @@ export function OrderingRenderer({
 function OrderingRow({
   id,
   text,
-  isFirst,
-  isLast,
+  position,
   submitted,
   correct,
   explanation,
-  onMove,
 }: {
   id: string;
   text: string;
-  isFirst: boolean;
-  isLast: boolean;
+  position: number;
   submitted: boolean;
   correct: boolean | undefined;
   explanation: string | undefined;
-  onMove: (direction: "up" | "down") => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -175,6 +169,7 @@ function OrderingRow({
   return (
     <div ref={setNodeRef} style={style} className={rowClassName({ submitted, correct, isDragging })}>
       <div className="flex min-h-11 items-center gap-2">
+        <span className="shrink-0 text-sm text-muted-foreground">{position + 1}.</span>
         <button
           type="button"
           disabled={submitted}
@@ -186,32 +181,12 @@ function OrderingRow({
           <GripVertical className="size-4" aria-hidden="true" />
         </button>
         <span className="min-h-6 flex-1 text-sm text-foreground">{text}</span>
-        <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            disabled={submitted || isFirst}
-            aria-label={`Move "${text}" up`}
-            onClick={() => onMove("up")}
-            className={moveButtonClassName()}
-          >
-            <ArrowUp className="size-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            disabled={submitted || isLast}
-            aria-label={`Move "${text}" down`}
-            onClick={() => onMove("down")}
-            className={moveButtonClassName()}
-          >
-            <ArrowDown className="size-4" aria-hidden="true" />
-          </button>
-          {submitted &&
-            (correct ? (
-              <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-            ) : (
-              <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-            ))}
-        </div>
+        {submitted &&
+          (correct ? (
+            <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+          ) : (
+            <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+          ))}
       </div>
       {explanation && <ExplanationDisclosure explanation={explanation} />}
     </div>
@@ -248,10 +223,6 @@ function rowClassName({
     : `${base} border-destructive-border bg-destructive-subtle`;
 }
 
-function moveButtonClassName(): string {
-  return "flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors cursor-pointer hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40";
-}
-
 function dragHandleClassName(): string {
-  return "flex size-11 shrink-0 touch-none items-center justify-center rounded-md text-muted-foreground transition-colors cursor-grab active:cursor-grabbing hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40";
+  return "flex size-11 shrink-0 touch-none items-center justify-center rounded-md text-muted-foreground transition-colors cursor-grab outline-none active:cursor-grabbing hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-40";
 }

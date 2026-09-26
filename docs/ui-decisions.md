@@ -537,3 +537,29 @@ Appended to in the same commit as the change it records. Referenced from
   disclosure below the whole option list, not per-option. Do not restore the
   block-level list, and do not make a gap's "Why?" expand inline without
   redesigning `slots`' layout first.
+- Ordering: grip handle is now the ONLY pointer/touch control (2026-09-26,
+  PLAY-009, docs/decisions/0054). The ▲/▼ move-button pair `OrderingRenderer`
+  carried alongside the grip handle since 0030/0032 is GONE — three controls
+  per row for one action was a partner review complaint. Keyboard reordering
+  is unaffected: it was never the buttons' feature alone, dnd-kit's
+  `KeyboardSensor` (`sortableKeyboardCoordinates`) was already spread onto
+  the SAME grip-handle button via `{...attributes} {...listeners}` (0032),
+  so removing the buttons removes a redundant path, not the only one — now
+  verified by an RTL test (`OrderingRenderer.test.tsx`) that drives Space →
+  ArrowDown → Space on the handle and asserts the rendered row order changes,
+  the first time this repo's dnd-kit keyboard path has been driven end to end
+  rather than only unit-tested at the pure-function layer. Each row now shows
+  its live position (`{position + 1}.`), reusing the exact numbering span
+  `docs/decisions/0053` (PLAY-008) already established for `matching`/
+  `selection_grid` rows, rather than a new style. `lib/lessonPlayer/
+  orderingResponse.ts`'s `moveOrderElement` wrapper (only the buttons' caller)
+  was deleted with it — `moveOrderElementToIndex` is unchanged and still the
+  one function both drag and (previously) the buttons went through. A
+  `text-xs text-muted-foreground` hint ("Hold and drag the handle to
+  reorder.") was added under the prompt because the buttons' own affordance
+  (a pressable-looking button) is gone and the 200ms touch press-and-hold has
+  none of its own. The handle also gained its own `focus-visible:ring-2
+  focus-visible:ring-brand` (it used to share the row's visible keyboard
+  focus with the now-removed buttons) — same token pairing already used in
+  `SelectionRenderer`/`SlotsRenderer`/`ExplanationDisclosure`/`SubjectGrid`.
+  Do not re-add the move buttons.

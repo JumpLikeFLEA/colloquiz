@@ -3,10 +3,10 @@ import { scoreItem } from "../items";
 import { orderingModule } from "../items/ordering";
 import type { OrderingItem } from "../items";
 import { shuffleOrderingIndices } from "../items/shuffle";
-import { buildOrderingResponse, initialOrder, moveOrderElement, moveOrderElementToIndex } from "./orderingResponse";
+import { buildOrderingResponse, initialOrder, moveOrderElementToIndex } from "./orderingResponse";
 
-/** Drives the same move/build helpers a renderer's up/down-button handlers
- * call, through to `scoreItem`, without any React/jsdom involved — see the
+/** Drives the same move/build helpers the renderer's drag `onDragEnd` handler
+ * calls, through to `scoreItem`, without any React/jsdom involved — see the
  * module header for why this is where PLAY-003's "drives the renderer to
  * submission and scores the result" acceptance line is satisfied for
  * `ordering`. */
@@ -20,27 +20,6 @@ function parsedOrdering(payload: unknown, id = "ord-1"): OrderingItem {
   if (!result.ok) throw new Error(`fixture did not parse: ${JSON.stringify(result.errors)}`);
   return result.item;
 }
-
-describe("moveOrderElement", () => {
-  it("swaps with the previous element on 'up', and is a no-op at the top", () => {
-    let order = moveOrderElement(["a", "b", "c"], "b", "up");
-    expect(order).toEqual(["b", "a", "c"]);
-    order = moveOrderElement(order, "b", "up");
-    expect(order).toEqual(["b", "a", "c"]);
-  });
-
-  it("swaps with the next element on 'down', and is a no-op at the bottom", () => {
-    let order = moveOrderElement(["a", "b", "c"], "b", "down");
-    expect(order).toEqual(["a", "c", "b"]);
-    order = moveOrderElement(order, "b", "down");
-    expect(order).toEqual(["a", "c", "b"]);
-  });
-
-  it("moving an id not present in the order is a no-op", () => {
-    const order = moveOrderElement(["a", "b"], "z", "up");
-    expect(order).toEqual(["a", "b"]);
-  });
-});
 
 describe("moveOrderElementToIndex", () => {
   it("moves an element forward across multiple positions in one call (a drag drop, not a single-step swap)", () => {
@@ -73,10 +52,10 @@ describe("moveOrderElementToIndex", () => {
     expect(order).toEqual(["a", "b"]);
   });
 
-  it("agrees with moveOrderElement's adjacent-swap result for an up/down move", () => {
+  it("adjacent moves (index -1/+1) reduce to a swap, same as the old up/down semantics", () => {
     const order = ["a", "b", "c"];
-    expect(moveOrderElementToIndex(order, "b", 0)).toEqual(moveOrderElement(order, "b", "up"));
-    expect(moveOrderElementToIndex(order, "b", 2)).toEqual(moveOrderElement(order, "b", "down"));
+    expect(moveOrderElementToIndex(order, "b", 0)).toEqual(["b", "a", "c"]);
+    expect(moveOrderElementToIndex(order, "b", 2)).toEqual(["a", "c", "b"]);
   });
 });
 
@@ -106,14 +85,12 @@ describe("ordering: arrange -> build -> score", () => {
     expect(result.subResults.map((r) => r.correct)).toEqual([false, false, true]);
   });
 
-  it("a sequence of up/down moves converges on the intended arrangement and scores it", () => {
+  it("a drag drop converges on the intended arrangement and scores it", () => {
     const item = parsedOrdering(THREE_WORD_ITEM);
 
-    // Displayed (shuffled) order: e3, e1, e2 -- move "e3" down twice to
-    // reach the correct e1, e2, e3.
-    let order = ["e3", "e1", "e2"];
-    order = moveOrderElement(order, "e3", "down");
-    order = moveOrderElement(order, "e3", "down");
+    // Displayed (shuffled) order: e3, e1, e2 -- a single drop of "e3" onto
+    // the last position reaches the correct e1, e2, e3.
+    const order = moveOrderElementToIndex(["e3", "e1", "e2"], "e3", 2);
     expect(order).toEqual(["e1", "e2", "e3"]);
 
     const result = scoreItem(item, buildOrderingResponse(order));
