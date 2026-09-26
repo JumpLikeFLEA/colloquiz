@@ -278,15 +278,26 @@ Total: 159.58 KB (163,406 B)
 | `/stub`, with Sentry (2026-09-23 spike, above) | own | 253.0 KB |
 | `/stub`, without Sentry (this addendum) | own | 159.6 KB |
 
-**159.6 KB is today's re-derived floor**, 93.4 KB below the original. This is
-larger than the 69.3 KB `/login` dropped by in the same OPS-012 commit
-(371.6 KB → 302.3 KB, issue #118) — expected, not a discrepancy to chase down:
-Sentry's client chunk is a fixed absolute weight, so it is a bigger fraction
-of a near-empty stub than of `/login`'s much larger bundle. Some of the 93.4
-KB may also be ordinary dependency drift between 2026-09-23 and today (a
-`package-lock.json` change unrelated to Sentry) rather than 100% attributable
-to Sentry alone — not chased further here since it doesn't change which
-number the budgets should now use, only how it's fully explained.
+**159.6 KB is today's re-derived floor.** The naive "93.4 KB below the
+original" comparison (253.0 → 159.6) is **wrong and was corrected on issue
+#118** rather than left standing: 253.0 KB doesn't reproduce today —
+rebuilding the identical with-Sentry stub scenario now gives **229.28 KB**,
+a 23.7 KB gap that has nothing to do with Sentry (ordinary dependency drift
+between 2026-09-23 and today, not chased further). Measured like-for-like —
+both sides built today, only Sentry differing — the real drop is
+**229.28 → 159.58 KB = 69.70 KB**, matching `/login`'s 69.33 KB
+(371.6 → 302.3 KB, issue #118) to within 0.37 KB. This was confirmed by
+content, not inferred from totals: `grep -l -i sentry .next/static/chunks/*.js`
+finds exactly one chunk on each with-Sentry build — 142.29 KB on `/login`,
+142.31 KB on `/stub` — so Sentry's own bundle is a fixed, route-independent
+blob, as expected for a globally-loaded instrumentation hook. That chunk is
+not 100% Sentry, though: after removal, a *new* ~72 KB chunk of ordinary
+Next.js/React runtime bootstrap code (confirmed by reading its contents)
+appears standalone on both routes (72.19 KB / 72.12 KB) where it didn't
+before — Turbopack had been co-bundling it with Sentry's init into one
+physical chunk. Sentry's real isolable cost is the difference,
+142.3 − 72.15 ≈ 70.1 KB, which is why both routes land at ~69.3–69.7 KB
+regardless of route size, not a fraction-of-bundle effect.
 
 **Per-route-kind budgets, corrected** (same headroom-over-floor this card
 originally stated, floor swapped in; still starting points per this card's
@@ -304,3 +315,14 @@ Until SHELL-007/SHELL-008/PLAY-006 land and re-measure their real routes,
 addendum's job is to correct the reference numbers those cards will read,
 not to add unbuilt routes to the guard early. A future session picking up
 one of those cards should cite 210/210/260 KB, not 300/300/350.
+
+**Side finding, not this card's to fix:** grepping the stub's own 10 script
+chunks for anything besides the React/Next runtime found one leak —
+`lucide-react`'s shared `Icon` base component (~5.17 KB compressed, no actual
+icon SVGs, confirmed by content) ships on `/stub` even though neither the
+stub page nor its layout imports anything from `lucide-react`. This isn't an
+explicit-import problem OPS-006's `no-restricted-imports` rule would catch —
+it's Turbopack's own commons-chunk splitting sharing a piece of a
+Colloquiz-heavy dependency across the whole build regardless of per-route
+need. Proposed as its own card (OPS-013, issue #118 comment) rather than
+folded in here.
