@@ -1097,6 +1097,34 @@ export const CARDS = [
     ],
   },
   {
+    key: 'OPS-013',
+    title: 'Guard against cross-route commons-chunk leaks into the English surface',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2041,
+    dependsOn: ['SHELL-007'],
+    goal:
+      'OPS-012 (issue #118) found that a throwaway English-shaped stub route ' +
+      'shipped ~5.17 KB of lucide-react\'s shared Icon base component despite ' +
+      'importing nothing from lucide-react — confirmed by grepping the built ' +
+      '.next/static/chunks/*.js, not inferred from size. Turbopack\'s own ' +
+      'commons-chunk splitting shares popular-enough pieces of a dependency ' +
+      'across the whole build regardless of per-route need, which is a leak ' +
+      'OPS-006\'s no-restricted-imports ESLint rule cannot see — that rule only ' +
+      'catches an explicit import statement in app/(english)/**, not a shared ' +
+      'chunk assembled by the bundler. Ranked after SHELL-007 because the real ' +
+      'chunk graph — and therefore what actually leaks — changes once the ' +
+      'English route group is built for real instead of measured against a ' +
+      'one-page stub.',
+    acceptance: [
+      'First check, before building anything: does app/components/lesson-player/** (or anything else a real English route renders) already import lucide-react? If yes, state that the base Icon component reaching English routes is then EXPECTED, not a leak, and narrow this card\'s remaining scope accordingly rather than treating it as still open.',
+      'npm run budget is extended to also scan each configured route\'s actual shipped chunks for forbidden-package content signatures (recharts, katex, framer-motion, @supabase/ssr — the same list OPS-006\'s no-restricted-imports rule names) and fail the run on a hit, catching commons-chunk leakage that rule cannot see. Demonstrated failing once on a deliberately reintroduced signature, then passing without it — both outputs printed.',
+      'The stub (or, once it exists, a real English route) is re-measured after SHELL-007 lands, and the run records whether unrelated Colloquiz-only commits still move the English floor — docs/decisions/0046\'s addendum (253.0 KB → 229.28 KB, drift unrelated to Sentry, issue #118) is the reference precedent for what "drift" looks like here.',
+      'Findings and any config change (e.g. tuning Turbopack\'s chunk-splitting for app/(english)/**, or accepting a small leak as noise) are recorded in a decision file — a type:decision card is opened instead if the right fix is not obvious from this card\'s own findings.',
+    ],
+  },
+  {
     key: 'SHELL-014',
     title: 'Colloquiz gets its own root layout',
     milestone: 'M2',
