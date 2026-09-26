@@ -1,0 +1,64 @@
+{
+  "exclude": [
+    ".agents",
+    ".claude",
+    ".design-sync",
+    "public",
+    "supabase/.temp",
+    "supabase/snippets"
+  ],
+  "groups": [
+    {
+      "name": "Alliengll (English courses)",
+      "paths": [
+        "app/(english)",
+        "app/components/lesson-player",
+        "lib/alliengll",
+        "lib/items",
+        "lib/lessons",
+        "lib/lessonPlayer",
+        "prompts"
+      ]
+    },
+    {
+      "name": "Colloquiz (quiz platform)",
+      "paths": ["app/(colloquiz)", "lib/generator", "data"]
+    }
+  ],
+  "describe": {
+    "app": "Web pages and server endpoints (Next.js)",
+    "app/(english)": "English course pages, open to everyone",
+    "app/(colloquiz)": "Quiz platform, served under /app",
+    "app/(colloquiz)/(main)": "Signed-in pages, incl. admin and course editor",
+    "app/(colloquiz)/(auth)": "Log in, sign up, reset password",
+    "app/(colloquiz)/(legal)": "Terms, privacy, subprocessors",
+    "app/api": "Server endpoints the pages call",
+    "app/auth": "Email confirmation, social-login return",
+    "app/components": "Shared UI pieces",
+    "app/components/lesson-player": "The lesson player learners see",
+    "app/components/ui": "Basic building blocks (vendored)",
+    "app/components/figma": "Image helper (vendored, still in use)",
+    "lib": "Logic without UI, mostly unit-tested",
+    "lib/items": "Exercise types: checking and scoring",
+    "lib/lessons": "Lesson format: reading and validating",
+    "lib/lessonPlayer": "Player state: answers and progress",
+    "lib/alliengll": "Russian interface text",
+    "lib/generator": "AI question generator and critic",
+    "lib/supabase": "Database clients",
+    "docs": "Decisions, handoff notes, legal texts",
+    "docs/decisions": "One file per decision made while building",
+    "docs/adr": "Larger architecture decisions",
+    "docs/release": "Launch checklist, handoffs, legal copy",
+    "supabase": "Database",
+    "supabase/migrations": "Schema changes, numbered, applied by hand",
+    "scripts": "Command-line tools: import, checks, benchmarks",
+    "scripts/board": "GitHub project board helpers",
+    "scripts/session": "AI coding-session guard",
+    "prompts": "Lesson-drafting prompt and backlogs",
+    "data": "Quiz subjects and example questions",
+    "types": "Shared TypeScript types",
+    ".github/workflows": "CI: type-check, lint, tests",
+    "proxy.ts": "Decides which pages need a login",
+    "CLAUDE.md": "Working rules for AI coding sessions"
+  }
+}
