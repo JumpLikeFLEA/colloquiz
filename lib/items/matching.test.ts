@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ItemResponseError } from "./errors";
-import { matchingModule } from "./matching";
+import { matchingModule, matchingPresentationWarning } from "./matching";
 import type { MatchingItem } from "./types";
 
 /**
@@ -248,6 +248,86 @@ describe("matching — parse rejects items that cannot be scored meaningfully", 
     if (!wrongType.ok) expect(wrongType.errors[0].message).toContain('expected "matching"');
     expect(matchingModule.parse(null).ok).toBe(false);
     expect(matchingModule.parse({ type: "matching", payload: {} }).ok).toBe(false);
+  });
+});
+
+describe("matching — presentation hint (docs/decisions/0060)", () => {
+  const base = {
+    prompt: "Match these.",
+    left: [textElement("l1"), textElement("l2")],
+    right: [textElement("r1"), textElement("r2")],
+    pairs: [
+      { id: "p1", left: "l1", right: "r1", explanationRef: "exp" },
+      { id: "p2", left: "l2", right: "r1", explanationRef: "exp" },
+    ],
+    explanations: {},
+    fallbackExplanation: "explanation",
+  };
+
+  it("defaults to \"pairs\" when omitted", () => {
+    const item = parsedItem(base);
+    expect(item.payload.presentation).toBe("pairs");
+  });
+
+  it("accepts an explicit \"pairs\" or \"sort\"", () => {
+    expect(parsedItem({ ...base, presentation: "pairs" }).payload.presentation).toBe("pairs");
+    expect(parsedItem({ ...base, presentation: "sort" }).payload.presentation).toBe("sort");
+  });
+
+  it("rejects an invalid presentation value", () => {
+    const result = matchingModule.parse({ id: "item-x", type: "matching", payload: { ...base, presentation: "categorise" } });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.presentation")).toBe(true);
+  });
+
+  it('rejects "sort" with fewer than 2 right elements', () => {
+    const result = matchingModule.parse({
+      id: "item-x",
+      type: "matching",
+      payload: {
+        ...base,
+        right: [textElement("r1")],
+        pairs: [{ id: "p1", left: "l1", right: "r1", explanationRef: "exp" }],
+        presentation: "sort",
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.right")).toBe(true);
+  });
+
+  it("score() is byte-identical for the same pairs under either presentation", () => {
+    const pairsItem = parsedItem({ ...base, presentation: "pairs" });
+    const sortItem = parsedItem({ ...base, presentation: "sort" });
+    const response = answer(["l1", "r1"], ["l2", "r1"]);
+    expect(matchingModule.score(sortItem, response)).toEqual(matchingModule.score(pairsItem, response));
+  });
+
+  it("warns when a right element is reused 2+ times and presentation is absent", () => {
+    const warning = matchingPresentationWarning(base);
+    expect(warning).toContain("reused by 2 pairs");
+  });
+
+  it("does not warn once presentation is explicitly set to either value", () => {
+    expect(matchingPresentationWarning({ ...base, presentation: "pairs" })).toBeNull();
+    expect(matchingPresentationWarning({ ...base, presentation: "sort" })).toBeNull();
+  });
+
+  it("does not warn on an ordinary 1:1 matching payload", () => {
+    expect(
+      matchingPresentationWarning({
+        ...base,
+        pairs: [
+          { id: "p1", left: "l1", right: "r1", explanationRef: "exp" },
+          { id: "p2", left: "l2", right: "r2", explanationRef: "exp" },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null for non-matching-shaped input", () => {
+    expect(matchingPresentationWarning(null)).toBeNull();
+    expect(matchingPresentationWarning(42)).toBeNull();
+    expect(matchingPresentationWarning({ prompt: "no pairs field" })).toBeNull();
   });
 });
 

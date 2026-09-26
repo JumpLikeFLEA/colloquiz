@@ -28,6 +28,7 @@
 import { readFileSync } from "fs";
 import { CourseFileSchema } from "../lib/lessons/courseFile";
 import { parseLessonDocument } from "../lib/lessons";
+import { matchingPresentationWarning } from "../lib/items/matching";
 
 function die(msg: string): never {
   console.error(msg);
@@ -102,6 +103,25 @@ function run(): void {
       for (const err of result.errors) {
         issueCount++;
         console.error(`lesson "${label}" [${err.field}]: ${err.message}`);
+      }
+    }
+
+    // Refinement 2 (docs/decisions/0060): advisory only — never contributes
+    // to issueCount / the non-zero exit. Walks the RAW document, same reason
+    // as import-lesson.ts's printMatchingPresentationWarnings: it needs to
+    // tell "presentation absent" apart from "presentation explicitly
+    // \"pairs\"", which parseLessonDocument's parsed output has already
+    // erased via zod's default.
+    const rawDocument = (lesson as { document: unknown }).document;
+    if (Array.isArray(rawDocument)) {
+      for (const raw of rawDocument) {
+        if (typeof raw !== "object" || raw === null) continue;
+        const block = raw as { kind?: unknown; type?: unknown; payload?: unknown; id?: unknown };
+        if (block.kind !== "practice" || block.type !== "matching") continue;
+        const warning = matchingPresentationWarning(block.payload);
+        if (warning) {
+          console.warn(`warning: lesson "${label}" matching item "${String(block.id)}": ${warning}`);
+        }
       }
     }
   });

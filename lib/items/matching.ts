@@ -62,6 +62,12 @@ const MatchingPayloadSchema = z
     pairs: z.array(MatchingPairSchema).min(1),
     explanations: ExplanationsSchema,
     fallbackExplanation: FallbackExplanationSchema,
+    // Authorial intent only (docs/decisions/0060) — `score` never reads this.
+    // "sort" (categorisation: visible groups, not "tap to match") vs the
+    // default "pairs" (ordinary word-to-meaning matching). Optional so every
+    // existing lesson_versions row and authored/ file with no such key still
+    // parses unchanged.
+    presentation: z.enum(["pairs", "sort"]).default("pairs"),
   })
   .superRefine((payload, ctx) => {
     const { missingRefs, unusedKeys } = checkExplanationCoverage(
@@ -81,6 +87,14 @@ const MatchingPayloadSchema = z
         code: "custom",
         path: ["explanations"],
         message: `explanations has key(s) no pair's explanationRef references: ${unusedKeys.join(", ")}`,
+      });
+    }
+
+    if (payload.presentation === "sort" && payload.right.length < 2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["right"],
+        message: `presentation "sort" requires at least 2 right elements (categories) to sort into, got ${payload.right.length}`,
       });
     }
 
@@ -274,6 +288,49 @@ function score(item: MatchingItem, response: unknown): ItemScoreResult {
     possible: subResults.reduce((sum, r) => sum + r.possible, 0),
     subResults,
   };
+}
+
+/**
+ * Refinement 2 (docs/decisions/0060): a NON-BLOCKING heuristic for the
+ * importer/validator, not a validation rule — `parse`/`score` never call
+ * this and it never affects them. Flags a matching item that looks like it
+ * wants an explicit `presentation` but doesn't have one.
+ *
+ * Operates on the RAW, unparsed payload (before `parse` applies
+ * `presentation`'s zod default) because the whole point is to tell "the
+ * field is absent" apart from "the field is explicitly \"pairs\"" — the
+ * latter is how an author silences this warning on a legitimate many-to-one
+ * item (docs/decisions/0013 Decision 2), and by the time a payload has gone
+ * through `parse` both cases read as `presentation: "pairs"`.
+ *
+ * Returns a human-readable reason naming the trigger, or `null` when no
+ * warning applies (not a matching-shaped payload, no `pairs` array, no
+ * right element reused by 2+ pairs, or a `presentation` key already present
+ * — valid or not; an invalid value is `parse`'s job to reject, not this
+ * heuristic's job to warn about).
+ */
+export function matchingPresentationWarning(rawPayload: unknown): string | null {
+  if (typeof rawPayload !== "object" || rawPayload === null) return null;
+  if ("presentation" in rawPayload) return null;
+
+  const pairs = (rawPayload as { pairs?: unknown }).pairs;
+  if (!Array.isArray(pairs)) return null;
+
+  const reuseCounts = new Map<string, number>();
+  for (const pair of pairs) {
+    if (typeof pair !== "object" || pair === null) continue;
+    const right = (pair as { right?: unknown }).right;
+    if (typeof right !== "string") continue;
+    reuseCounts.set(right, (reuseCounts.get(right) ?? 0) + 1);
+  }
+  const maxReuse = reuseCounts.size > 0 ? Math.max(...reuseCounts.values()) : 0;
+  if (maxReuse < 2) return null;
+
+  return (
+    `some right element is reused by ${maxReuse} pairs and no "presentation" field is set — ` +
+    `add "presentation": "pairs" to silence this if the reuse is intentional (many-to-one), ` +
+    `or "sort" if this is a categorisation item (docs/decisions/0060)`
+  );
 }
 
 export const matchingModule: ItemTypeModule<MatchingItem> = {

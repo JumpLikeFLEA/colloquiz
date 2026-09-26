@@ -82,6 +82,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { CourseFileSchema, type CourseFile, type LessonFile } from "../lib/lessons/courseFile";
 import { parseLessonDocument } from "../lib/lessons";
+import { matchingPresentationWarning } from "../lib/items/matching";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -168,6 +169,25 @@ function validateDocuments(course: CourseFile): void {
   }
 }
 
+// Refinement 2 (docs/decisions/0060): advisory only — never fails the run,
+// never touched by --dry-run's write gate. Walks the RAW (unparsed) document
+// blocks, since the warning needs to tell "presentation absent" apart from
+// "presentation explicitly \"pairs\"", a distinction `parseLessonDocument`'s
+// parsed output has already erased via zod's default.
+function printMatchingPresentationWarnings(course: CourseFile): void {
+  for (const lesson of course.lessons) {
+    for (const raw of lesson.document) {
+      if (typeof raw !== "object" || raw === null) continue;
+      const block = raw as { kind?: unknown; type?: unknown; payload?: unknown; id?: unknown };
+      if (block.kind !== "practice" || block.type !== "matching") continue;
+      const warning = matchingPresentationWarning(block.payload);
+      if (warning) {
+        console.warn(`warning: lesson "${lesson.slug}" matching item "${String(block.id)}": ${warning}`);
+      }
+    }
+  }
+}
+
 // ── Plan: what each lesson would do, computed against current DB state ──
 type LessonPlan =
   | { slug: string; action: "create"; lesson: LessonFile }
@@ -178,6 +198,7 @@ type LessonPlan =
 async function run() {
   const course = loadCourseFile(filePath!);
   validateDocuments(course);
+  printMatchingPresentationWarnings(course);
 
   const supabase = createClient(url!, key!);
 

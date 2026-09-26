@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseItem } from "@/lib/items";
 import type {
@@ -110,6 +110,34 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
     expect(screen.getByText("each left element may be the subject of at most one pair")).toBeDefined();
+  });
+
+  // PLAY-011a acceptance: "The field is carried through the validator,
+  // import-lesson.ts and PracticeItemForm. It round-trips through import ->
+  // stored JSON -> editor -> save." MatchingForm has no control for
+  // `presentation` (docs/decisions/0060 leaves that undecided) — this proves
+  // the field survives editing a DIFFERENT field regardless, per
+  // MatchingForm's own "every onChange spreads the existing payload first"
+  // rule (0060's "Round-trip evidence for the field" section).
+  it("matching: an unrelated edit (Prompt) carries an item-level \"presentation\" field through unchanged", () => {
+    const base = exampleFor("matching —") as MatchingItem;
+    const withPresentation: MatchingItem = { ...base, payload: { ...base.payload, presentation: "sort" } };
+
+    let latest: MatchingItem | undefined;
+    render(
+      <PracticeItemForm
+        item={withPresentation}
+        onChange={(next) => {
+          latest = next as MatchingItem;
+        }}
+        onUploadImage={noopUploadImage}
+      />,
+    );
+
+    fireEvent.change(screen.getByDisplayValue(base.payload.prompt), { target: { value: "Updated prompt" } });
+
+    expect(latest?.payload.prompt).toBe("Updated prompt");
+    expect(latest?.payload.presentation).toBe("sort");
   });
 
   it("slots: explanationRef with no explanation and no fallback (docs/decisions/0017)", () => {
