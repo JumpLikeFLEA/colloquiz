@@ -20,6 +20,28 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // OPS-006 / docs/handoff.md "Performance boundary": a visitor on the English
+  // surface must not download Colloquiz's heavy dependencies. The byte budget
+  // in scripts/budget.ts catches a regression after the fact; this catches the
+  // import that would cause one, at review time, on the two trees the English
+  // surface actually ships from (app/(english) is planned M2 and doesn't exist
+  // yet, but the override still applies once it does).
+  {
+    files: ['app/(english)/**/*.{ts,tsx}', 'app/components/lesson-player/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'recharts', message: 'Recharts is Colloquiz-only (Progress charts) — not for the English surface.' },
+            { name: 'katex', message: 'KaTeX is for Colloquiz quiz-question maths — not for the English surface.' },
+            { name: 'framer-motion', message: 'Framer Motion is Colloquiz-only unless the English surface itself needs it.' },
+            { name: '@supabase/ssr', message: 'The English landing and free lessons render without an authenticated session — no @supabase/ssr on this path.' },
+          ],
+        },
+      ],
+    },
+  },
   // Supplying globalIgnores overrides eslint-config-next's own defaults,
   // so its defaults have to be re-listed here by hand.
   globalIgnores([

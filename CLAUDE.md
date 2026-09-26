@@ -206,6 +206,8 @@ npm run check                      # tsc --noEmit && eslint .  — the static ga
 npm run lint / npm run lint:fix
 npm test                           # vitest, scoped to pure lib/ modules
 npm run dev
+npm run budget                     # cold-load JS byte budget per route (OPS-006), --url=<origin> to
+                                    # point at an already-running server; kept out of `check` (slow)
 
 node scripts/board/next-card.mjs
 node scripts/board/board-move.mjs <KEY> "In progress"

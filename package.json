@@ -12,7 +12,8 @@
     "check": "tsc --noEmit && eslint . && node scripts/check-hex-literals.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bench": "tsx --env-file=.env.local scripts/bench.ts"
+    "bench": "tsx --env-file=.env.local scripts/bench.ts",
+    "budget": "tsx --env-file=.env.local scripts/budget.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -75,6 +76,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
