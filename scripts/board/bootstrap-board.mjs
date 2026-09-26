@@ -40,7 +40,7 @@ import {
 
 const READY = STATUS_COLUMNS[0]; // "Ready" — first column in workflow order
 
-const HELP = `Usage: node scripts/board/bootstrap-board.mjs [--dry-run]
+const HELP = `Usage: node scripts/board/bootstrap-board.mjs [--dry-run|--diff]
 
 Creates/updates one GitHub issue per card in backlog.mjs's CARDS, ensures the
 "board" label, the epic:*/type:* labels and the M0-M4 milestones exist, and
@@ -51,6 +51,12 @@ title prefix on a board-labelled issue) instead of creating duplicates.
 Resumable: a partial run can simply be re-run.
 
   --dry-run   Print exactly what would be created/updated, touching nothing.
+  --diff      Read-only: print the actual field-level diff (title/body/
+              labels/milestone) between backlog.mjs and each existing live
+              issue — the diff content itself, not just a per-field
+              true/false. Creates nothing, edits nothing, adds nothing to
+              the project board. Cards with no issue yet are reported as
+              NEW and not diffed.
   --help      Show this message.
 `;
 
@@ -216,6 +222,135 @@ function fetchProjectItemsByIssueNumber() {
   return byNumber;
 }
 
+// Minimal line-level diff (LCS-based), good enough for the short bodies
+// this tool renders: returns an array of "- <line>" (only in `oldStr`) and
+// "+ <line>" (only in `newStr`) entries, in order, with unchanged lines
+// omitted. Not a unified diff (no context lines, no hunk headers) — there's
+// no need for one at this size, and it keeps the output focused on what
+// actually changed.
+function diffLines(oldStr, newStr) {
+  const a = oldStr.split('\n');
+  const b = newStr.split('\n');
+  const n = a.length;
+  const m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const out = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      out.push(`  - ${a[i]}`);
+      i++;
+    } else {
+      out.push(`  + ${b[j]}`);
+      j++;
+    }
+  }
+  while (i < n) {
+    out.push(`  - ${a[i]}`);
+    i++;
+  }
+  while (j < m) {
+    out.push(`  + ${b[j]}`);
+    j++;
+  }
+  return out;
+}
+
+// Read-only counterpart to the dry-run pass: prints, per card that already
+// has a live issue, the actual content that differs (not just a boolean per
+// field). Touches nothing — no issue create/edit, no label/milestone
+// creation, no project board membership change. A card with no issue yet is
+// reported as NEW rather than diffed, since there is nothing live to diff
+// against.
+function runDiff(log) {
+  log('=== DIFF — read-only, nothing is written ===\n');
+
+  const { byKey: existingByKey, conflictedKeys } = fetchExistingBoardIssues(log);
+  log(`Found ${existingByKey.size} existing board-labelled issue(s) matching a known card; ${conflictedKeys.size} conflicted key(s).`);
+
+  const numbersByKey = new Map();
+  for (const [key, issue] of existingByKey) numbersByKey.set(key, issue.number);
+
+  let diffCount = 0;
+  let cleanCount = 0;
+  let newCount = 0;
+
+  log('\n--- per-card diff ---');
+  for (const card of CARDS) {
+    if (conflictedKeys.has(card.key)) {
+      log(`${card.key}: SKIPPED — conflicted key, resolve by hand first.`);
+      continue;
+    }
+
+    const existing = existingByKey.get(card.key);
+    if (!existing) {
+      log(`${card.key}: NEW — not yet on GitHub, nothing to diff`);
+      newCount++;
+      continue;
+    }
+
+    const deps = card.dependsOn.map((depKey) => ({ key: depKey, ref: numbersByKey.get(depKey) }));
+    const unresolved = deps.filter((d) => d.ref === undefined);
+    if (unresolved.length > 0) {
+      log(`WARNING: ${card.key} depends on unresolved key(s) ${unresolved.map((d) => d.key).join(', ')} — its "Depends on" line can't be fully rendered for this diff.`);
+    }
+    const resolvedDeps = deps.filter((d) => d.ref !== undefined);
+
+    const checked = checkedAcceptanceLines(existing.body);
+    const desiredTitle = cardTitle(card);
+    const desiredBody = cardBody(card, resolvedDeps, checked);
+    const desiredMilestone = MILESTONE_TITLES[card.milestone];
+    const desiredLabels = cardLabels(card);
+
+    const lines = [];
+
+    if (existing.title !== desiredTitle) {
+      lines.push(`  title:`);
+      lines.push(`  - ${existing.title}`);
+      lines.push(`  + ${desiredTitle}`);
+    }
+
+    if (existing.body.trim() !== desiredBody.trim()) {
+      lines.push(`  body:`);
+      lines.push(...diffLines(existing.body.trim(), desiredBody.trim()));
+    }
+
+    const currentLabels = new Set(existing.labels);
+    const missingLabels = desiredLabels.filter((l) => !currentLabels.has(l));
+    if (missingLabels.length > 0) {
+      lines.push(`  labels: missing ${missingLabels.join(', ')} (current: ${[...currentLabels].join(', ') || '(none)'})`);
+    }
+
+    const existingMilestone = existing.milestoneTitle ?? undefined;
+    if (existingMilestone !== desiredMilestone) {
+      lines.push(`  milestone:`);
+      lines.push(`  - ${existingMilestone ?? '(none)'}`);
+      lines.push(`  + ${desiredMilestone ?? '(none)'}`);
+    }
+
+    if (lines.length === 0) {
+      log(`${card.key}: #${existing.number} clean — no diff`);
+      cleanCount++;
+    } else {
+      log(`${card.key}: #${existing.number} DIFFERS`);
+      for (const line of lines) log(line);
+      diffCount++;
+    }
+  }
+
+  log('\n=== summary ===');
+  log(`clean: ${cleanCount}  differs: ${diffCount}  new (not yet on GitHub): ${newCount}  conflicted: ${conflictedKeys.size}`);
+}
+
 function issueUrl(number) {
   const remote = gh(['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner']).trim();
   return `https://github.com/${remote}/issues/${number}`;
@@ -228,7 +363,13 @@ function main() {
     return;
   }
   const dryRun = argv.includes('--dry-run');
+  const diff = argv.includes('--diff');
   const log = (msg) => console.log(msg);
+
+  if (diff) {
+    runDiff(log);
+    return;
+  }
 
   log(`=== ${dryRun ? 'DRY RUN — nothing below is actually written' : 'LIVE RUN'} ===\n`);
 

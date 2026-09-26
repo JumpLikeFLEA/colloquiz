@@ -1453,6 +1453,7 @@ export const CARDS = [
       'Has a slot for the registration offer (ANON-004).',
       'Nothing on it blocks, and nothing says "failed".',
       'Russian chrome, from the shared strings module (SHELL-007).',
+      'The "next lesson" link is an in-app navigation, not a full page load — so a practice renderer whose chunk isn\'t loaded yet (PLAY-012/0057\'s per-type `next/dynamic`, all currently `ssr:true` with no `loading` fallback) could flash blank on arrival if its chunk isn\'t already fetched. Either (a) give the affected `dynamic()` calls a height-reserving `loading` fallback, or (b) verify — on a throttled network, with the result printed — that Next\'s `<Link>` prefetch already fetches the next lesson\'s renderer chunk(s) before the tap, so there is nothing to reserve space for. Record which option was taken, and why, in docs/decisions/0057.',
     ],
   },
   {
