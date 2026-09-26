@@ -7,9 +7,19 @@
  * (signed-in / entitled / editor — anon needs none), one course_entitlements
  * row and one course_editors grant.
  *
- * `scripts/budget.ts`'s `/courses/play-006-smoke/free-lesson` route entry
- * requires this seed to exist before that measurement resolves to anything
- * but a 404 — run this script first against a local stack.
+ * Also seeds a SECOND, separate course — the real `future-imperfect`
+ * (slug and all, read straight from `authored/courses/future-imperfect.json`,
+ * never hand-copied) with just its first lesson, `true-or-false`, published
+ * and in the free sample. This exists purely so `scripts/budget.ts` measures
+ * a realistic lesson instead of the synthetic `play-006-smoke` fixture's
+ * minimal one — PLAY-012's review note: "budget against realistic content,
+ * not a worst case" (docs/decisions/0057). If that course is ever actually
+ * imported and published for real (OPS-010), this fixture's slug already
+ * matches it, so budget.ts's route needs no further change at that point.
+ *
+ * `scripts/budget.ts`'s `/courses/future-imperfect/true-or-false` route
+ * entry requires this seed to exist before that measurement resolves to
+ * anything but a 404 — run this script first against a local stack.
  *
  * ANON-003/005/006 (attempt recording) are expected to reuse this same
  * fixture set rather than each growing their own throwaway seed — see
@@ -24,6 +34,9 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { countPracticeBlocks, parseLessonDocument } from "../lib/lessons";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -102,6 +115,60 @@ async function upsertUser(email: string): Promise<string> {
   return existing.id;
 }
 
+type LessonFixture = {
+  slug: string;
+  title: string;
+  description: string;
+  inFreeSample: boolean;
+  ordinal: number;
+  document: unknown[] | null;
+  archived: boolean;
+};
+
+async function upsertLessons(courseId: string, lessons: LessonFixture[]): Promise<void> {
+  for (const lesson of lessons) {
+    const { data: row, error: lessonErr } = await supabase
+      .from("lessons")
+      .upsert(
+        {
+          course_id: courseId,
+          slug: lesson.slug,
+          title: lesson.title,
+          description: lesson.description,
+          in_free_sample: lesson.inFreeSample,
+          ordinal: lesson.ordinal,
+          published_item_count: lesson.document ? countPracticeBlocks(lesson.document as never) : 0,
+        },
+        { onConflict: "course_id,slug" },
+      )
+      .select("id, published_version_id")
+      .single();
+    if (lessonErr) throw new Error(`lesson upsert failed (${lesson.slug}): ${lessonErr.message}`);
+
+    const lessonId = row.id as string;
+
+    // Append-only lesson_versions: only create one if this lesson has never
+    // been published, so re-running this script doesn't grow the version
+    // history or generate a new published_version_id on every run.
+    if (lesson.document && !row.published_version_id) {
+      const { data: version, error: versionErr } = await supabase
+        .from("lesson_versions")
+        .insert({ lesson_id: lessonId, document: lesson.document, source: "editor" })
+        .select("id")
+        .single();
+      if (versionErr) throw new Error(`lesson_versions insert failed (${lesson.slug}): ${versionErr.message}`);
+
+      const { error: publishErr } = await supabase
+        .from("lessons")
+        .update({ published_version_id: version.id, archived_at: lesson.archived ? new Date().toISOString() : null })
+        .eq("id", lessonId);
+      if (publishErr) throw new Error(`lesson publish update failed (${lesson.slug}): ${publishErr.message}`);
+    }
+
+    console.log(`Lesson: ${lesson.slug} -> ${lessonId}`);
+  }
+}
+
 async function main() {
   console.log(`Seeding PLAY-006 fixtures against ${url} ...`);
 
@@ -141,16 +208,6 @@ async function main() {
     .from("course_entitlements")
     .upsert({ user_id: entitledId, course_id: courseId, source: "grant" }, { onConflict: "user_id,course_id" });
   if (entitlementErr) throw new Error(`course_entitlements upsert failed: ${entitlementErr.message}`);
-
-  type LessonFixture = {
-    slug: string;
-    title: string;
-    description: string;
-    inFreeSample: boolean;
-    ordinal: number;
-    document: unknown[] | null;
-    archived: boolean;
-  };
 
   const lessons: LessonFixture[] = [
     {
@@ -200,49 +257,70 @@ async function main() {
     },
   ];
 
-  for (const lesson of lessons) {
-    const { data: row, error: lessonErr } = await supabase
-      .from("lessons")
-      .upsert(
-        {
-          course_id: courseId,
-          slug: lesson.slug,
-          title: lesson.title,
-          description: lesson.description,
-          in_free_sample: lesson.inFreeSample,
-          ordinal: lesson.ordinal,
-          published_item_count: lesson.document ? 1 : 0,
-        },
-        { onConflict: "course_id,slug" },
-      )
-      .select("id, published_version_id")
-      .single();
-    if (lessonErr) throw new Error(`lesson upsert failed (${lesson.slug}): ${lessonErr.message}`);
+  await upsertLessons(courseId, lessons);
 
-    const lessonId = row.id as string;
-
-    // Append-only lesson_versions: only create one if this lesson has never
-    // been published, so re-running this script doesn't grow the version
-    // history or generate a new published_version_id on every run.
-    if (lesson.document && !row.published_version_id) {
-      const { data: version, error: versionErr } = await supabase
-        .from("lesson_versions")
-        .insert({ lesson_id: lessonId, document: lesson.document, source: "editor" })
-        .select("id")
-        .single();
-      if (versionErr) throw new Error(`lesson_versions insert failed (${lesson.slug}): ${versionErr.message}`);
-
-      const { error: publishErr } = await supabase
-        .from("lessons")
-        .update({ published_version_id: version.id, archived_at: lesson.archived ? new Date().toISOString() : null })
-        .eq("id", lessonId);
-      if (publishErr) throw new Error(`lesson publish update failed (${lesson.slug}): ${publishErr.message}`);
-    }
-
-    console.log(`Lesson: ${lesson.slug} -> ${lessonId}`);
-  }
+  await seedRealLessonFixture(editorId);
 
   console.log("Done.");
+}
+
+// PLAY-012's review note: measure the budget against realistic authored
+// content, not the synthetic single-item fixture above. Reads straight from
+// the authored file rather than copying its content inline, so this fixture
+// can never drift from what CNT-004's importer would actually write.
+async function seedRealLessonFixture(editorId: string): Promise<void> {
+  const filePath = join(process.cwd(), "authored", "courses", "future-imperfect.json");
+  const file = JSON.parse(readFileSync(filePath, "utf8")) as {
+    slug: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    level: string;
+    lessons: Array<{ slug: string; title: string; description?: string; document: unknown[] }>;
+  };
+  const firstLesson = file.lessons[0];
+
+  const parsed = parseLessonDocument(firstLesson.document);
+  if (!parsed.ok) {
+    throw new Error(
+      `authored/courses/future-imperfect.json's first lesson ("${firstLesson.slug}") no longer validates: ` +
+        parsed.errors.map((e) => `${e.field}: ${e.message}`).join("; "),
+    );
+  }
+
+  const { data: course, error: courseErr } = await supabase
+    .from("courses")
+    .upsert(
+      {
+        slug: file.slug,
+        title: file.title,
+        subtitle: file.subtitle,
+        description: file.description,
+        subject: "english",
+        status: "published",
+        level: file.level,
+        cover_image_url: "https://example.com/cover.png",
+        author_id: editorId,
+      },
+      { onConflict: "slug" },
+    )
+    .select("id")
+    .single();
+  if (courseErr) throw new Error(`real-course upsert failed: ${courseErr.message}`);
+  const courseId = course.id as string;
+  console.log("Real course:", file.slug, "->", courseId);
+
+  await upsertLessons(courseId, [
+    {
+      slug: firstLesson.slug,
+      title: firstLesson.title,
+      description: firstLesson.description ?? "",
+      inFreeSample: true,
+      ordinal: 1,
+      document: firstLesson.document,
+      archived: false,
+    },
+  ]);
 }
 
 main().catch((e) => {

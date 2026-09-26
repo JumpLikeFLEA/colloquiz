@@ -82,21 +82,18 @@ type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: b
 
 const ROUTES: RouteBudget[] = [
   { path: "/login", budgetKB: 380, guardForbiddenSignatures: false },
-  // PLAY-006: a real free lesson, not SHELL-007's data-free placeholder.
-  // `play-006-smoke`/`free-lesson` are fixture slugs seeded only on a local
-  // Supabase stack (docs/decisions/0056) for exactly this measurement — this
-  // route will 404 (a hard FAIL below, never a silent 0 KB pass) against any
+  // PLAY-006/PLAY-012 (docs/decisions/0056, 0057): a REAL authored lesson —
+  // `future-imperfect`'s first lesson, `true-or-false` — not a synthetic
+  // single-item fixture. Seeded from authored/courses/future-imperfect.json
+  // by scripts/seed-local-fixtures.ts, on a local Supabase stack only; this
+  // route 404s (a hard FAIL below, never a silent 0 KB pass) against any
   // environment without that seed, including hosted today, which has no
-  // published course yet. That's accepted (docs/decisions/0056): re-derive
-  // this budget against the real launch course once OPS-010 publishes one.
-  // 260 KB is a TARGET, not today's number: 272.7 KB is what a real run
-  // against the local seed measures today, and this route is knowingly over
-  // budget until the per-type code-splitting proposed in docs/decisions/0056
-  // lands (measured saving: 22.1 KB, confirmed by rebuilding with
-  // Ordering/Matching/Slots and dnd-kit removed from practiceRenderer). Do
-  // not raise this to match whatever the guard currently prints — that
-  // defeats the point of a budget.
-  { path: "/courses/play-006-smoke/free-lesson", budgetKB: 260, guardForbiddenSignatures: true },
+  // published course yet. If future-imperfect is ever actually imported and
+  // published for real (OPS-010), this same slug already matches it. The
+  // budgetKB below is a TARGET, not necessarily today's number — see
+  // docs/decisions/0057 for the measured baseline and what would close any
+  // gap; do not raise it to match whatever the guard currently prints.
+  { path: "/courses/future-imperfect/true-or-false", budgetKB: 260, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────
