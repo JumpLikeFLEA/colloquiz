@@ -1333,6 +1333,27 @@ export const CARDS = [
     ],
   },
   {
+    key: 'PLAY-012',
+    title: 'Per-type code-splitting for practice renderers',
+    milestone: 'M2',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2062,
+    dependsOn: ['PLAY-006'],
+    goal:
+      'practiceRenderer (app/components/lesson-player/practice/index.tsx) statically imports all five ' +
+      'renderers unconditionally, so every lesson pays for dnd-kit and all five renderers regardless of ' +
+      'which item types its own document uses — found and measured while itemizing PLAY-006\'s budget ' +
+      '(docs/decisions/0056, 0057). Scope is settled by 0057: per-type code-splitting only, not ' +
+      'near-viewport deferral, which was prototyped and measured WORSE on the real free-sample lesson ' +
+      '(its practice block already sits above the fold).',
+    acceptance: [
+      'practiceRenderer dispatches to a lazy import per item type actually present in the parsed document — not a blanket next/dynamic on the whole practice slot (docs/decisions/0057 measured that backfiring).',
+      '/courses/future-imperfect/true-or-false clears the 260 KB budget target for real, proven with a printed `npm run budget` run — not raised to match wherever the unsplit code lands.',
+      'A second seeded lesson using a drag item type (e.g. future-imperfect\'s grammar-drilling or applied-practice, both mixing matching/ordering/slots) still renders and scores correctly with the split code loaded on demand.',
+    ],
+  },
+  {
     key: 'PLAY-006',
     title: 'Public lesson page',
     milestone: 'M2',
