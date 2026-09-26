@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
 
 // Avatars are served from the project's Supabase Storage host, which differs
 // per environment — derive it from the same env var the Supabase clients use
@@ -28,7 +27,6 @@ const isDev = process.env.NODE_ENV === "development";
 //
 // Origins allowed beyond 'self':
 //   • Supabase — REST + Realtime websocket (connect), avatar images (img)
-//   • Sentry — error/CSP ingest (connect)
 //   • Vercel — analytics script (script) + Web Vitals beacon (connect)
 const supabaseHttps = supabaseUrl ? new URL(supabaseUrl).origin : "";
 const supabaseWss = supabaseHost ? `wss://${supabaseHost}` : "";
@@ -40,7 +38,7 @@ const csp = [
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' blob: data: ${supabaseHttps}`.trim(),
   `font-src 'self' data:`,
-  `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com`.replace(/\s+/g, " ").trim(),
+  `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://vitals.vercel-insights.com https://va.vercel-scripts.com`.replace(/\s+/g, " ").trim(),
   // PLAY-001 lesson video facade: no iframe exists until the learner clicks
   // (see app/components/lesson-player/blocks/VideoBlock.tsx), so this only
   // ever permits an embed the learner opted into, never an eager one.
@@ -127,13 +125,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// withSentryConfig injects the client/server config and (when SENTRY_AUTH_TOKEN
-// + org/project are present, i.e. in CI/prod) uploads source maps. Without those
-// env vars it warns and skips upload — the build still succeeds, so local and CI
-// builds are unaffected.
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-});
+export default nextConfig;

@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.0 · Last updated 2026-09-01
+Version 1.0 · Last updated 2026-09-26
 
 > **Source of truth.** This file is the canonical text. `app/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -114,7 +114,7 @@ name or feedback.
 | Creating and running your account; providing quizzes, progress, groups and duels | **Contract** (Art. 6(1)(b)) — performance of our Terms of Service |
 | Sending account email: confirmation, password reset | **Contract** |
 | Keeping the Service secure, preventing abuse, moderating reported content | **Legitimate interests** (Art. 6(1)(f)) — running a safe service |
-| Aggregate, non-identifying analytics and error monitoring to keep the Service working | **Legitimate interests** — we use privacy-preserving, cookieless tools, which we consider a minimal intrusion |
+| Aggregate, non-identifying analytics to keep the Service working | **Legitimate interests** — we use privacy-preserving, cookieless tools, which we consider a minimal intrusion |
 | Complying with legal obligations | **Legal obligation** (Art. 6(1)(c)) |
 
 You may object to any processing based on legitimate interests — see section 8.

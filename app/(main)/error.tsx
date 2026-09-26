@@ -21,8 +21,6 @@ export default function MainError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surfaces in the browser console in dev and reaches Sentry in production
-    // (instrumentation captures unhandled errors; this logs the caught one).
     console.error(error);
   }, [error]);
 

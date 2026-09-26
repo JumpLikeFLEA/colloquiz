@@ -144,7 +144,7 @@ refactor.
   `shuffleOptions.ts`, `history.ts`, `historyFilters.ts`, `subjectStats.ts`,
   `difficultyFilter.ts`, `accountExport.ts`, `accountDelete.ts`,
   `notificationPrefs.ts`, `profileFields.ts`, `avatar.ts`, `site.ts`,
-  `legalDoc.tsx`, `sentryScrub.ts`, `supabase/` (incl. `admin.ts`, the
+  `legalDoc.tsx`, `supabase/` (incl. `admin.ts`, the
   service-role client — server-only, bypasses RLS, never reaches the browser).
   - `lib/items/` — the item-type registry: one module per type (`selection`,
     `selectionGrid`, `ordering`, `matching`, `slots`), each exporting `parse`,

@@ -63,13 +63,11 @@ finished until they are answered.
 
 ## 3. Accounts and services to create
 
-- ☐ **Sentry** — new project, **select the EU region** so the subprocessor entry stays
-  simple. Configure scrubbing of `sb-*` cookies and email before the first real event.
 - ☐ **Vercel Analytics + Speed Insights** — enable in the Vercel project. Confirm on the
   plan in use; both are cookieless, which is what keeps the no-cookie-banner position
   valid.
-- ☐ Add both to [`legal/subprocessors.md`](./legal/subprocessors.md) **before** they go
-  live, and move them out of the "not yet added" table.
+- ☐ Add it to [`legal/subprocessors.md`](./legal/subprocessors.md) **before** it goes
+  live, and move it out of the "not yet added" table.
 
 ---
 
@@ -111,8 +109,7 @@ finished until they are answered.
   *and* while signed in.
 - ☐ Confirm `https://colloquiz.app/robots.txt` returns a `noindex` policy rather than a
   redirect to `/login`.
-- ☐ Trigger a deliberate error and confirm the error boundary renders **and** Sentry
-  receives it.
+- ☐ Trigger a deliberate error and confirm the error boundary renders.
 - ☐ `npm run bench -- --target=prod` — record the 1.0 baseline in `.perf/`.
 
 ## 6. Go / no-go
@@ -120,7 +117,7 @@ finished until they are answered.
 Ship when: all §1 blockers cleared · both legal documents published and reachable ·
 account deletion works end-to-end on a throwaway account · no subject under 30 questions
 at any difficulty · `npm run check`, `npm test` and `next build` clean · error boundaries
-live and Sentry receiving.
+live.
 
 Do not ship on: unverified sending domain · a placeholder left in a legal document · a
 deletion path that errors · any subject still unplayable at a difficulty.

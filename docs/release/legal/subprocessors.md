@@ -1,6 +1,6 @@
 # Subprocessors
 
-**Colloquiz — https://colloquiz.app** · Version 1.0 · Last updated 2026-08-29
+**Colloquiz — https://colloquiz.app** · Version 1.0 · Last updated 2026-09-26
 
 These are the third parties that process personal data on our behalf. The
 [Privacy Policy](./privacy-policy.md) links here. Keep this file current — adding a
@@ -26,7 +26,6 @@ verified rather than trusted.
 
 | Provider | Role | Personal data processed | Location | Transfer basis | Status |
 | --- | --- | --- | --- | --- | --- |
-| **Sentry** (Functional Software Inc.) | Error monitoring | Technical error reports: stack trace, URL, browser. **`sb-*` cookies, Cookie/Authorization headers, email and IP are scrubbed before send** — `lib/sentryScrub.ts`, wired into `beforeSend` in `sentry.server.config.ts` / `sentry.edge.config.ts` / `instrumentation-client.ts`; `sendDefaultPii` is off | Select the EU region (`de`) when creating the project | EU region / SCCs | ☑ wired in code — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in prod (EU-region project) |
 | **Vercel Analytics + Speed Insights** | Aggregate page views and Web Vitals | None identifying. **Cookieless** — this is why the Service needs no cookie banner | EU | — | ☑ live — `<Analytics />` + `<SpeedInsights />` in `app/layout.tsx` (`@vercel/analytics`, `@vercel/speed-insights`) |
 
 ## Not a subprocessor of personal data

@@ -462,3 +462,19 @@ Appended to in the same commit as the change it records. Referenced from
   `lg` (1024px) nothing changes — every new class is `lg:`-prefixed. No new
   `overflow` was added on any ancestor between the matching bank and the page
   scroller (docs/decisions/0039 Decision 5 still holds).
+- Sentry removed entirely (2026-09-26, OPS-012, docs/decisions/0046 +
+  docs/decisions/0047). SUPERSEDES the Sentry bullet in the 2026-08-29 "Ops &
+  resilience surface" entry above — that bullet describes code that no longer
+  exists: `lib/sentryScrub.ts`, `sentry.server.config.ts`,
+  `sentry.edge.config.ts`, `instrumentation-client.ts` and `instrumentation.ts`
+  are all deleted, `next.config.ts` no longer wraps with `withSentryConfig`
+  and its CSP `connect-src` no longer allows the Sentry ingest origins, and
+  `@sentry/nextjs` is out of package.json. `app/(main)/error.tsx` (and the
+  other error boundaries) keep their existing user-facing behaviour — only the
+  "reaches Sentry in production" comment is gone, since nothing reads the
+  console.error call downstream now. Reason: never wired to a monitored
+  destination anyone acted on, so its bundle-byte cost on every route
+  (including every future English route), its CSP allowance and its
+  PII-scrubbing surface were paid for no realized benefit — owner-approved,
+  see docs/decisions/0046's "Sentry" section. Do not re-add error monitoring
+  without picking a destination someone will actually watch first.
