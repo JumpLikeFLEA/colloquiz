@@ -36,11 +36,39 @@ this card only — see "Method" below):
 surface doesn't need (next-themes' `ThemeProvider`, `Geist_Mono`,
 `<Analytics/>`, `<SpeedInsights/>`; katex CSS is a stylesheet, not counted in
 this script-only measurement, but it's dead weight on English routes either
-way — see "katex CSS" below). The stub deliberately omits `<SpeedInsights/>`
-too, even though the real English root keeps it (see below) — 253.0 KB is a
-floor, not the final number; the real English root's budget is this floor
-plus SpeedInsights' bytes, to be re-measured when SHELL-007 builds it for
-real.
+way — see "katex CSS" below).
+
+**`<SpeedInsights/>`'s bytes could not actually be measured, checked not
+assumed.** The stub was re-run with `<SpeedInsights/>` added
+(`@vercel/speed-insights/next`) and produced the *identical* 253.0 KB —
+tracing why (`node_modules/@vercel/speed-insights/dist/next/index.mjs:73-152`)
+shows it injects a `<script src="/_vercel/speed-insights/script.js">` tag
+client-side, a path served by Vercel's platform at deploy time, not by `next
+start`; the request 404s locally and no script bytes ever transfer. This is
+not a gap specific to this card's stub — the exact same is true of the
+already-accepted `/login` baseline (OPS-006), which also renders
+`<SpeedInsights/>` under the shared root and shows no sign of its cost either.
+So "include its bytes in the budget" can only be honored against a deployed
+URL (`npm run budget --url=<production>`, OPS-010's launch rehearsal), not
+against local `next start` — recorded here rather than fabricating a number.
+253.0 KB is therefore a floor measured against what local `npm run budget`
+can see at all, not specifically "everything except SpeedInsights".
+
+**Per-route-kind budgets, as measured stub + stated headroom** (per this
+card's acceptance; SHELL-007/PLAY-006/SHELL-008 re-measure each for real once
+built, since course/lesson data and images will change the actual figure):
+
+| route kind | basis | budget |
+|---|---|---|
+| landing (SHELL-010) | stub floor (253.0 KB) + a catalogue's worth of interactive cards | 300 KB |
+| course page (SHELL-008) | stub floor + a lesson list, no scoring logic | 300 KB |
+| lesson player (PLAY-006) | stub floor + the item-type renderers (`lib/items/` registry, all five types) | 350 KB |
+
+These are starting budgets to catch a regression, not a promise that the
+final figure lands there — each building card measures its real route and
+either fits under this number or raises it with a printed `npm run budget`
+run as justification, per OPS-006's "re-derive from a real run before
+raising it" rule.
 
 **Known cost, accepted:** navigating between two root layouts forces a full
 page reload instead of a client-side transition (`route-groups.md:30`). This
@@ -165,10 +193,12 @@ a unilateral call made inside this decision doc.
 A throwaway route group `app/(shell006-stub)/` with a minimal root layout
 (`<html lang="ru">`, Geist Sans, `globals.css`, no other imports) and a
 one-line `/stub` page was added, `/stub` was allow-listed in
-`proxy.ts`'s `publicRoutes` and in `scripts/budget.ts`'s `ROUTES` for a single
-`npm run budget` run, then all three changes were reverted (`git checkout --
-proxy.ts scripts/budget.ts` + deleting the stub directory) before this card's
-close — confirmed clean via `git status`. Nothing from the stub ships; the
+`proxy.ts`'s `publicRoutes` and in `scripts/budget.ts`'s `ROUTES`, and
+`npm run budget` was run twice — once without `<SpeedInsights/>` in the stub
+layout, once with it added, to isolate whether it contributes measurable
+script bytes locally (it doesn't; see above). All three changes were reverted
+each time (`git checkout -- proxy.ts scripts/budget.ts` + deleting the stub
+directory) before this card's close — confirmed clean via `git status`. Nothing from the stub ships; the
 real English root layout is SHELL-014/SHELL-007's job.
 
 ## What this card does not decide
