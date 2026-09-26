@@ -417,32 +417,48 @@ Appended to in the same commit as the change it records. Referenced from
   admin-only per docs/decisions/0025/0041.
 - Lesson player: adaptive content width on wide screens (2026-09-26, ad-hoc,
   docs/decisions/0043). `LessonPlayer.tsx`'s column grows from `max-w-xl`
-  (576px) to `lg:max-w-5xl`, and each block gets one of two widths, decided
+  (576px) to `lg:max-w-5xl`, and each block gets one of three widths, decided
   per block type by the pure `lessonBlockWidth()` (`lib/lessonPlayer/
-  blockWidth.ts`), never by the block component itself: WIDE (full column) —
-  `table`, `image`, `video`; READING (`w-full lg:max-w-2xl lg:mx-auto`,
-  centred) — every other theory block, EVERY PRACTICE BLOCK, the progress
-  banner and the per-block explanation lines. Practice blocks (incl.
+  blockWidth.ts`), never by the block component itself: WIDE (no wrapper
+  class, full column) — `image`, `video`; FIT (content-sized, clamped between
+  reading width and the column — `lg:mx-auto lg:w-fit lg:min-w-[42rem]
+  lg:max-w-full`) — `table` only, so a sparse table sits at reading width and
+  a wide one grows up to the column before its own `overflow-x-auto` takes
+  over; READING (`w-full lg:max-w-2xl lg:mx-auto`, centred) — every other
+  theory block, EVERY PRACTICE BLOCK, the progress banner and the per-block
+  explanation lines. `table` started as WIDE in the first pass of this
+  decision and was moved to its own FIT band on owner review — a wide table
+  always claiming the full column made even a small 2-column table stretch
+  edge-to-edge; DO NOT put it back on WIDE. Practice blocks (incl.
   `matching`) deliberately stay at reading width; giving them the wide column
-  without a layout redesign is PLAY-010's job, not this task's. A wide table
-  or image is therefore intentionally wider than the reading text on both
+  without a layout redesign is PLAY-010's job, not this task's. A wide image
+  or video is therefore intentionally wider than the reading text on both
   sides (a "breakout" look) — seen as intended, not a bug, pending a look in a
-  real browser. `HeadingBlockView` text gets `lg:text-center` (owner review,
-  2026-09-26): a left-aligned heading in its centred reading-width box read as
-  oddly offset next to an edge-to-edge wide table above/below it; centring
-  the TEXT was chosen over promoting `heading` to wide width. `next/image`'s
-  `sizes` on `ImageBlockView` moved from
-  `640px` to `1024px` to match. Class strings live in
-  `app/components/lesson-player/columnLayout.ts` as full literal strings
+  real browser; if that reads as broken too, the FIT treatment already given
+  to `table` is the precedent to reach for, not a bespoke fix.
+  `HeadingBlockView` itself carries NO width or alignment class — heading
+  centring lives at the wrapper level: a dedicated `HEADING_WIDTH_CLASS`
+  (`"w-full lg:max-w-2xl lg:mx-auto lg:text-center"`), applied only to
+  `heading` blocks by `LessonPlayer.tsx`'s own `widthClassFor()`, deliberately
+  distinct from `READING_WIDTH_CLASS` (owner review, 2026-09-26: a
+  left-aligned heading above/below a wide block read as hanging over its
+  first third, so heading centring is explicit policy, not a shrink-to-fit
+  side effect a future session might "fix" away — DO NOT move this back onto
+  the `<Tag>` inside `HeadingBlockView`). `next/image`'s `sizes` on
+  `ImageBlockView` moved from `640px` to `1024px` to match. Class strings live
+  in `app/components/lesson-player/columnLayout.ts` as full literal strings
   (`LESSON_COLUMN_CLASS`, `LESSON_HEADER_COLUMN_CLASS`, `READING_WIDTH_CLASS`,
-  `THEORY_BODY_TEXT_CLASS`); `PreviewClient.tsx` and
-  `lesson-player-demo/page.tsx` both import `LESSON_HEADER_COLUMN_CLASS`
-  (re-exported from the `lesson-player` barrel) for their own headers instead
-  of repeating `max-w-xl`, so the three surfaces cannot drift apart the way
-  they had. ALSO INCLUDES a `text-sm` → `text-sm lg:text-base` experiment on
-  every theory block's body text (not captions, not `self_check`'s
-  `<input>`/`<textarea>`), isolated to `THEORY_BODY_TEXT_CLASS` so it reverts
-  in one line if it reads wrong. Below `lg` (1024px) nothing changes — every
-  new class is `lg:`-prefixed. No new `overflow` was added on any ancestor
-  between the matching bank and the page scroller (docs/decisions/0039
-  Decision 5 still holds).
+  `HEADING_WIDTH_CLASS`, `FIT_WIDTH_CLASS`, `THEORY_BODY_TEXT_CLASS`);
+  `PreviewClient.tsx` and `lesson-player-demo/page.tsx` both import
+  `LESSON_HEADER_COLUMN_CLASS` (re-exported from the `lesson-player` barrel)
+  for their own headers instead of repeating `max-w-xl`, so the three surfaces
+  cannot drift apart the way they had. Was briefly named `layout.ts`; renamed
+  to `columnLayout.ts` because Next's App Router treats any file named
+  exactly `layout.{js,jsx,ts,tsx}` anywhere under `app/` as a route-layout
+  convention file — do not rename it back. ALSO INCLUDES a `text-sm` →
+  `text-sm lg:text-base` experiment on every theory block's body text (not
+  captions, not `self_check`'s `<input>`/`<textarea>`), isolated to
+  `THEORY_BODY_TEXT_CLASS` so it reverts in one line if it reads wrong. Below
+  `lg` (1024px) nothing changes — every new class is `lg:`-prefixed. No new
+  `overflow` was added on any ancestor between the matching bank and the page
+  scroller (docs/decisions/0039 Decision 5 still holds).

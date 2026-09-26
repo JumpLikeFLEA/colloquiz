@@ -19,6 +19,9 @@ const practiceBlock: LessonPracticeBlock = {
 
 describe("lessonBlockWidth", () => {
   it("puts every theory type except table/image/video at reading width", () => {
+    // "heading" is a reading-width block too — it gets its own centred
+    // wrapper class in LessonPlayer.tsx, but that's a class-selection detail
+    // above this function; lessonBlockWidth only reports the width band.
     const readingBlocks: LessonBlock[] = [
       theory({ id: "1", kind: "theory", type: "heading", level: 1, text }),
       theory({ id: "2", kind: "theory", type: "prose", text }),
@@ -40,9 +43,8 @@ describe("lessonBlockWidth", () => {
     }
   });
 
-  it("puts table, image and video at wide width", () => {
+  it("puts image and video at wide width", () => {
     const wideBlocks: LessonBlock[] = [
-      theory({ id: "7", kind: "theory", type: "table", header: [text], rows: [[text]] }),
       theory({ id: "8", kind: "theory", type: "image", url: "https://example.com/a.png", alt: "an image" }),
       theory({ id: "9", kind: "theory", type: "video", youtubeId: "dQw4w9WgXcQ" }),
     ];
@@ -50,6 +52,11 @@ describe("lessonBlockWidth", () => {
     for (const block of wideBlocks) {
       expect(lessonBlockWidth(block)).toBe("wide");
     }
+  });
+
+  it("puts table at fit width, not wide", () => {
+    const table = theory({ id: "7", kind: "theory", type: "table", header: [text], rows: [[text]] });
+    expect(lessonBlockWidth(table)).toBe("fit");
   });
 
   it("puts a practice block at reading width", () => {

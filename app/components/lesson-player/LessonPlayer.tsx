@@ -1,15 +1,33 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import type { LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
+import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
-import { LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
+import { FIT_WIDTH_CLASS, HEADING_WIDTH_CLASS, LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
 import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
+
+/** `heading` gets its own wrapper class (centred, not just reading-width) —
+ * see `HEADING_WIDTH_CLASS`'s doc comment for why this lives here rather
+ * than inside `HeadingBlockView`. Every other width comes straight off
+ * `lessonBlockWidth`. */
+function widthClassFor(block: LessonBlock): string {
+  if (block.kind === "theory" && block.type === "heading") {
+    return HEADING_WIDTH_CLASS;
+  }
+  switch (lessonBlockWidth(block)) {
+    case "reading":
+      return READING_WIDTH_CLASS;
+    case "fit":
+      return FIT_WIDTH_CLASS;
+    case "wide":
+      return "";
+  }
+}
 
 export interface PracticeRendererProps {
   block: LessonPracticeBlock;
@@ -101,7 +119,7 @@ function LessonPlayerBody({
         </div>
       )}
       {document.map((block) => {
-        const widthClass = lessonBlockWidth(block) === "reading" ? READING_WIDTH_CLASS : "";
+        const widthClass = widthClassFor(block);
         return block.kind === "practice" ? (
           <div key={block.id} className={widthClass}>
             {practiceRenderer ? (
