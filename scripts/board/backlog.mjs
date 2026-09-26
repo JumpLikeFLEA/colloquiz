@@ -1349,8 +1349,9 @@ export const CARDS = [
       '(its practice block already sits above the fold).',
     acceptance: [
       'practiceRenderer dispatches to a lazy import per item type actually present in the parsed document — not a blanket next/dynamic on the whole practice slot (docs/decisions/0057 measured that backfiring).',
-      '/courses/future-imperfect/true-or-false clears the 260 KB budget target for real, proven with a printed `npm run budget` run — not raised to match wherever the unsplit code lands.',
-      'A second seeded lesson using a drag item type (e.g. future-imperfect\'s grammar-drilling or applied-practice, both mixing matching/ordering/slots) still renders and scores correctly with the split code loaded on demand.',
+      'Evidence is a FRESH `npm run budget` run against /courses/future-imperfect/true-or-false taken AFTER the real code-split lands — not the renderer-stripping prototype 0057 used to estimate the saving. The printed number includes whatever dynamic-import loader overhead the real implementation adds, and clears the 260 KB target for real. The run also states which item type(s) this lesson contains (selection_grid only, per 0057 — confirm this still holds).',
+      '260 KB is scoped (docs/decisions/0057): it is the reel entry point\'s budget — a course\'s FIRST FREE lesson — not a budget for every lesson. A second scripts/budget.ts route is added for a drag-heavy seeded lesson (future-imperfect\'s applied-practice: matching + ordering + selection, 25 blocks) with its OWN regression budget, set to that lesson\'s measured POST-SPLIT size plus a stated headroom (not 260 KB, and not left unbudgeted) — so a future regression on the drag-heavy path is caught even though it will never clear 260 KB itself.',
+      'The drag-heavy seeded lesson (applied-practice) still renders and scores correctly with the split code loaded on demand — matching, ordering and selection items all exercised.',
     ],
   },
   {
