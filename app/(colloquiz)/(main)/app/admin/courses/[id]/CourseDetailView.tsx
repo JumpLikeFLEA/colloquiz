@@ -31,10 +31,20 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Switch } from "@/app/components/ui/switch";
+import Image from "next/image";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/courseLevels";
+import { COURSE_SUBTITLE_MAX_LENGTH } from "@/lib/courseCatalogue";
 import { pluralize } from "@/lib/format";
 import { isValidLessonSlugFormat } from "@/lib/lessonSlug";
+import {
+  LESSON_IMAGE_BUCKET,
+  lessonImageObjectPath,
+  lessonImagePathFromUrl,
+  validateLessonImageFile,
+} from "@/lib/lessonImages";
+import { createClient } from "@/lib/supabase/client";
 import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring";
+import { LessonImageUploadButton, type UploadLessonImage } from "./lessons/[lessonId]/LessonImageUploadButton";
 
 async function postJson(url: string, body: unknown, method: "POST" | "PATCH" | "DELETE" = "POST") {
   const res = await fetch(url, {
@@ -56,13 +66,56 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
   const [title, setTitle] = useState(course.title);
   const [description, setDescription] = useState(course.description ?? "");
   const [level, setLevel] = useState<CefrLevel>(course.level);
-  const dirty = title !== course.title || description !== (course.description ?? "") || level !== course.level;
+  // subtitle is the catalogue-card short summary (CNT-009/AUTH-008; see the
+  // AuthoredCourse comment in lib/courseAuthoring.ts for why the column is
+  // named subtitle rather than "summary").
+  const [subtitle, setSubtitle] = useState(course.subtitle ?? "");
+  const [coverImageUrl, setCoverImageUrl] = useState(course.coverImageUrl);
+  // The object a cover upload just replaced. Deletion is deferred to a
+  // successful metadata save, mirroring LessonContentEditor's
+  // pendingImageDeletions (AUTH-004/0037) — an unsaved cover swap must not
+  // delete an object the course's last SAVED row still points at.
+  const [pendingCoverDeletion, setPendingCoverDeletion] = useState<string | null>(null);
+  const dirty =
+    title !== course.title ||
+    description !== (course.description ?? "") ||
+    level !== course.level ||
+    subtitle !== (course.subtitle ?? "") ||
+    coverImageUrl !== course.coverImageUrl;
+
+  const uploadCover: UploadLessonImage = async (file, previousUrl) => {
+    const reason = validateLessonImageFile(file);
+    if (reason) return { error: reason };
+
+    const supabase = createClient();
+    const path = lessonImageObjectPath(course.id, file.type, crypto.randomUUID());
+    const { error: uploadError } = await supabase.storage
+      .from(LESSON_IMAGE_BUCKET)
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (uploadError) return { error: uploadError.message };
+
+    const { data: pub } = supabase.storage.from(LESSON_IMAGE_BUCKET).getPublicUrl(path);
+    const previousPath = lessonImagePathFromUrl(previousUrl);
+    if (previousPath) setPendingCoverDeletion(previousPath);
+    return { url: pub.publicUrl };
+  };
 
   async function saveMetadata() {
     setBusy(true);
     try {
-      await postJson(`/api/admin/courses/${course.id}`, { title, description, level }, "PATCH");
+      await postJson(
+        `/api/admin/courses/${course.id}`,
+        { title, description, level, subtitle: subtitle.trim() || null, coverImageUrl: coverImageUrl ?? null },
+        "PATCH",
+      );
       toast.success("Course updated.");
+      if (pendingCoverDeletion) {
+        // Best-effort, same as the lesson-image precedent: a failure here
+        // costs a stray file in the bucket, not correctness of the save.
+        const supabase = createClient();
+        await supabase.storage.from(LESSON_IMAGE_BUCKET).remove([pendingCoverDeletion]);
+        setPendingCoverDeletion(null);
+      }
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save.");
@@ -134,6 +187,26 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
           rows={3}
           className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none resize-none"
         />
+        <div className="flex flex-col gap-1">
+          <input
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            placeholder="Catalogue summary (required to publish)"
+            maxLength={COURSE_SUBTITLE_MAX_LENGTH}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
+          />
+          <p className="text-xs text-muted-foreground text-right">
+            {subtitle.length}/{COURSE_SUBTITLE_MAX_LENGTH}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <LessonImageUploadButton
+            currentUrl={coverImageUrl ?? undefined}
+            onUploaded={(url) => setCoverImageUrl(url)}
+            onUpload={uploadCover}
+          />
+          {!coverImageUrl && <span className="text-xs text-muted-foreground">No cover yet — required to publish</span>}
+        </div>
         <div className="flex justify-end">
           <button
             onClick={saveMetadata}
@@ -142,6 +215,32 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
           >
             Save
           </button>
+        </div>
+      </section>
+
+      {/* Catalogue-card preview (AUTH-008) — the shape docs/handoff.md
+       * "Catalogue shape" describes (cover, title, short description), not a
+       * final visual design: SHELL-010 builds the real card, this only lets
+       * the partner see whether her cover and summary work before she
+       * publishes. Composed from existing card classes, no new tokens. */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Catalogue card preview</h2>
+        <div className="max-w-sm rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="relative aspect-video bg-muted">
+            {coverImageUrl ? (
+              <Image src={coverImageUrl} alt="" fill className="object-cover" sizes="384px" />
+            ) : (
+              <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+                No cover
+              </div>
+            )}
+          </div>
+          <div className="p-4 space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">{title || "Untitled course"}</h3>
+            <p className="text-xs text-muted-foreground">
+              {subtitle || <span className="italic">No summary yet</span>}
+            </p>
+          </div>
         </div>
       </section>
 

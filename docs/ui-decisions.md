@@ -493,3 +493,23 @@ Appended to in the same commit as the change it records. Referenced from
   this is one surface written in one language (docs/handoff.md, "Audience
   and language", 2026-09-24 delta), not an i18n layer. Do not add English
   strings to English-surface chrome, and do not add a language switcher.
+- CourseDetailView (2026-09-26, AUTH-008): the "Course details" form gains a
+  catalogue-summary input (bound to `courses.subtitle` — see the
+  `AuthoredCourse` comment in `lib/courseAuthoring.ts` for why the field is
+  named `subtitle`, not `summary`) with a live `N/200` counter mirroring
+  `COURSE_SUBTITLE_MAX_LENGTH`, and a cover-image `LessonImageUploadButton`
+  reused as-is from the lesson-content editor (AUTH-004) — same bucket, same
+  limits hint, same client+bucket-enforced validation, same deferred-deletion
+  contract (the replaced object is only removed after `saveMetadata`
+  succeeds, never on upload). A new "Catalogue card preview" section below
+  the form — cover in an `aspect-video` box (the only precedent for an
+  authored image's aspect ratio, `ImageBlockView`), title, summary — lets the
+  partner see whether her cover and summary work BEFORE she publishes. This
+  is explicitly a preview, not the catalogue card's final design: no
+  catalogue-card component exists yet (SHELL-010 builds the real one), so
+  this composes from existing `bg-card`/`border`/`rounded-2xl` classes only
+  and should be revisited (not necessarily kept) once SHELL-010 lands a real
+  card to preview against instead. No Figma source; composed entirely from
+  classes already used elsewhere in this same file and in the lesson editor —
+  same precedent as NotificationBell/Groups. Do not build a second image-
+  upload component for the cover.

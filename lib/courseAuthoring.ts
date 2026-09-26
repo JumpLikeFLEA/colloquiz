@@ -20,6 +20,14 @@ export type AuthoredCourse = {
   slug: string;
   title: string;
   description: string | null;
+  // Catalogue-card fields (CNT-009, migration 047): `subtitle` is the
+  // catalogue-card short summary despite the column name (courses.subtitle
+  // predates the Alliengll schema — see docs/decisions/0050 Decision 1);
+  // `description` stays the long-form course-page text and is a separate
+  // field. Both nullable in draft, required by update_course/publish_course
+  // before a course can be published.
+  subtitle: string | null;
+  coverImageUrl: string | null;
   level: CefrLevel;
   status: "draft" | "published";
   lessonCount: number;
@@ -34,7 +42,7 @@ export async function listAuthoredCourses(courseIds?: string[]): Promise<Authore
   const supabase = await createClient();
   let query = supabase
     .from("courses")
-    .select("id, slug, title, description, level, status, lessons(count)")
+    .select("id, slug, title, description, subtitle, cover_image_url, level, status, lessons(count)")
     .order("title");
   if (courseIds !== undefined) query = query.in("id", courseIds);
   const { data, error } = await query;
@@ -45,6 +53,8 @@ export async function listAuthoredCourses(courseIds?: string[]): Promise<Authore
     slug: c.slug,
     title: c.title,
     description: c.description,
+    subtitle: c.subtitle,
+    coverImageUrl: c.cover_image_url,
     level: c.level as CefrLevel,
     status: c.status as "draft" | "published",
     lessonCount: (c.lessons as { count: number }[] | null)?.[0]?.count ?? 0,
@@ -91,7 +101,7 @@ export async function getAuthoredCourseDetail(
 
   const { data: course, error: courseErr } = await supabase
     .from("courses")
-    .select("id, slug, title, description, level, status")
+    .select("id, slug, title, description, subtitle, cover_image_url, level, status")
     .eq("id", courseId)
     .maybeSingle();
   if (courseErr) throw new Error(courseErr.message);
@@ -126,6 +136,8 @@ export async function getAuthoredCourseDetail(
       slug: course.slug,
       title: course.title,
       description: course.description,
+      subtitle: course.subtitle,
+      coverImageUrl: course.cover_image_url,
       level: course.level as CefrLevel,
       status: course.status as "draft" | "published",
       lessonCount: (lessons ?? []).length,
