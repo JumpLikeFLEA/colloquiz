@@ -32,6 +32,11 @@
  * e.g. OPS-010's launch rehearsal against the deployed production URL.
  * Without it, this script builds (if `.next` is missing or stale) and starts
  * its own local `next start` on an ephemeral port, then tears it down after.
+ *
+ * The `/courses/play-006-smoke/free-lesson` route below requires
+ * `npm run seed:local` (scripts/seed-local-fixtures.ts) to have been run
+ * against the target's Supabase project first, or it 404s (a hard FAIL, per
+ * this file's own rules — see docs/decisions/0056).
  */
 
 import { chromium, type CDPSession } from "@playwright/test";
@@ -84,11 +89,14 @@ const ROUTES: RouteBudget[] = [
   // environment without that seed, including hosted today, which has no
   // published course yet. That's accepted (docs/decisions/0056): re-derive
   // this budget against the real launch course once OPS-010 publishes one.
-  // 280 KB is re-derived from a real run against that local seed
-  // (2026-09-26): 272.7 KB measured, lucide-react's base Icon among it and
-  // now expected per OPS-013 (docs/decisions/0056) — not a guess raised from
-  // the 210 KB placeholder.
-  { path: "/courses/play-006-smoke/free-lesson", budgetKB: 280, guardForbiddenSignatures: true },
+  // 260 KB is a TARGET, not today's number: 272.7 KB is what a real run
+  // against the local seed measures today, and this route is knowingly over
+  // budget until the per-type code-splitting proposed in docs/decisions/0056
+  // lands (measured saving: 22.1 KB, confirmed by rebuilding with
+  // Ordering/Matching/Slots and dnd-kit removed from practiceRenderer). Do
+  // not raise this to match whatever the guard currently prints — that
+  // defeats the point of a budget.
+  { path: "/courses/play-006-smoke/free-lesson", budgetKB: 260, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

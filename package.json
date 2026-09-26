@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "tsx --env-file=.env.local scripts/bench.ts",
-    "budget": "tsx --env-file=.env.local scripts/budget.ts"
+    "budget": "tsx --env-file=.env.local scripts/budget.ts",
+    "seed:local": "tsx --env-file=.env.local scripts/seed-local-fixtures.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
