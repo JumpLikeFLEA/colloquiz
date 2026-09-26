@@ -22,6 +22,11 @@
  * lib/items/matching.ts):
  *   - a theory block: { kind: "theory", type: "image", url }
  *   - a matching item's left/right content: { kind: "image", src }
+ * A THIRD reference lives outside any document: `courses.cover_image_url`
+ * (CNT-009, migration 047) — a course cover shares this same bucket (041's
+ * "a lesson image belongs to the course" reasoning applies equally to a
+ * cover), so it must be counted as referenced too or this sweep would
+ * report every course's cover as an orphan the moment one is set.
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/sweep-lesson-images.ts
@@ -55,7 +60,7 @@ const PAGE_SIZE = 500;
 
 /** Every bucket path referenced by any lesson_versions.document, across the
  * whole table (paginated — there is no reason to assume the table fits one
- * page forever). */
+ * page forever), PLUS every course's cover_image_url (CNT-009). */
 async function referencedPaths(): Promise<{ paths: Set<string>; rows: number }> {
   const paths = new Set<string>();
   let rows = 0;
@@ -74,6 +79,22 @@ async function referencedPaths(): Promise<{ paths: Set<string>; rows: number }> 
         const path = lessonImagePathFromUrl(imageUrl);
         if (path) paths.add(path);
       }
+    }
+
+    if (data.length < PAGE_SIZE) break;
+  }
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("courses")
+      .select("cover_image_url")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) die(`courses read failed: ${error.message}`);
+    if (!data || data.length === 0) break;
+
+    for (const row of data) {
+      const path = lessonImagePathFromUrl((row as { cover_image_url: string | null }).cover_image_url);
+      if (path) paths.add(path);
     }
 
     if (data.length < PAGE_SIZE) break;

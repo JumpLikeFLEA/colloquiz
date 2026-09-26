@@ -13,6 +13,16 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   invalid_title: { status: 400, message: "Please enter a title." },
   invalid_slug: { status: 400, message: "Slug must be lowercase letters, numbers and hyphens only." },
   invalid_level: { status: 400, message: "Please choose a valid level." },
+  // update_course/publish_course (047): char_length(subtitle) > 200
+  // (courses_subtitle_length_check) — the RPC's own pre-check, so this code
+  // is what the caller actually sees instead of a raw CHECK-violation error.
+  subtitle_too_long: { status: 400, message: "Summary must be 200 characters or fewer." },
+  // update_course/publish_course (047): a published course needs both a
+  // cover and a subtitle (courses_published_requires_catalogue_fields) —
+  // fires whether the course is being published without one, or an
+  // already-published course's one is being cleared.
+  missing_cover: { status: 400, message: "Add a cover image before publishing." },
+  missing_subtitle: { status: 400, message: "Add a short summary before publishing." },
   invalid_estimated_minutes: { status: 400, message: "Estimated minutes must be a positive number." },
   slug_taken: { status: 409, message: "That slug is already in use by another course." },
   // update_lesson_slug (046): scoped to the lesson's own course, so the
