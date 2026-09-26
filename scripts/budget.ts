@@ -77,13 +77,18 @@ type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: b
 
 const ROUTES: RouteBudget[] = [
   { path: "/login", budgetKB: 380, guardForbiddenSignatures: false },
-  // SHELL-007: the placeholder at the URL shape SHELL-005 decided
-  // (/courses/[course-slug]/[lesson-slug]). 210 KB is docs/decisions/0046's
-  // addendum-corrected landing/course-page budget, reused here as a starting
-  // point since no lesson-specific content exists yet — PLAY-006 ("Public
-  // lesson page") re-measures this route for real once it reads actual
-  // lesson data and raises the number with a printed run if it needs to.
-  { path: "/courses/x/y", budgetKB: 210, guardForbiddenSignatures: true },
+  // PLAY-006: a real free lesson, not SHELL-007's data-free placeholder.
+  // `play-006-smoke`/`free-lesson` are fixture slugs seeded only on a local
+  // Supabase stack (docs/decisions/0056) for exactly this measurement — this
+  // route will 404 (a hard FAIL below, never a silent 0 KB pass) against any
+  // environment without that seed, including hosted today, which has no
+  // published course yet. That's accepted (docs/decisions/0056): re-derive
+  // this budget against the real launch course once OPS-010 publishes one.
+  // 280 KB is re-derived from a real run against that local seed
+  // (2026-09-26): 272.7 KB measured, lucide-react's base Icon among it and
+  // now expected per OPS-013 (docs/decisions/0056) — not a guess raised from
+  // the 210 KB placeholder.
+  { path: "/courses/play-006-smoke/free-lesson", budgetKB: 280, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

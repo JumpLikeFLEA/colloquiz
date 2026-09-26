@@ -55,13 +55,27 @@ export const alliengllCopy = {
     dismiss: "Не сейчас",
   },
 
-  comingSoon: {
-    lesson: "Урок скоро появится",
-  },
-
   notFound: {
     title: "Страница не найдена",
     body: "Такой страницы не существует или она была перемещена.",
+    backHome: "На главную",
+  },
+
+  // PLAY-006: a lesson whose metadata is visible (per docs/handoff.md,
+  // "preview, precisely") but whose content the caller isn't entitled to —
+  // paid, not bought. Plain state only; the real preview screen is M3.
+  notAvailable: {
+    body: "Этот урок открывается после покупки курса.",
+    itemCountLabel: "Заданий",
+  },
+
+  // PLAY-006's error boundary (app/(english)/error.tsx) — an invariant break
+  // or a failed read, not a learner mistake, so the copy stays generic and
+  // gives no internal detail.
+  error: {
+    title: "Что-то пошло не так",
+    body: "Попробуйте ещё раз — обычно это помогает.",
+    retry: "Повторить",
     backHome: "На главную",
   },
 } as const;
