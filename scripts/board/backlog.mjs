@@ -979,6 +979,37 @@ export const CARDS = [
       '`node scripts/board/bootstrap-board.mjs --dry-run` against the real INFRA-001 card (once it exists in CARDS) prints a WOULD CREATE line with no milestone, and board-status.mjs lists it without crashing.',
     ],
   },
+  {
+    key: 'CNT-010',
+    title: 'Transliterate lesson slugs; editable until first publish',
+    milestone: 'M1',
+    epic: 'CNT',
+    type: 'task',
+    rank: 147,
+    dependsOn: [],
+    goal:
+      'create_lesson\'s slug step (migration 044 line 229) and its client ' +
+      'mirror lib/lessonSlug.ts are both ASCII-only ([^a-zA-Z0-9]+ / ' +
+      '[^a-z0-9]+), so a Cyrillic-only title — the norm for this audience, ' +
+      'not the exception (docs/handoff.md) — collapses to the empty-title ' +
+      'fallback "lesson", deduped only by creation order into ' +
+      'lesson/lesson-2/lesson-3/…: the same "URL encodes position, not ' +
+      'content" failure docs/handoff.md names for ordinal-derived free ' +
+      'samples, reached through slug-collision suffixing instead. Separately, ' +
+      'EditLessonDialog lets a title be renamed freely with the slug ' +
+      'immutable underneath (0023) and never shown, so a placeholder working ' +
+      'title\'s slug can silently outlive the real title. Found during ' +
+      'SHELL-005 (docs/decisions/0044 addendum, 2026-09-26); this card is the ' +
+      'proposed fix, not done inline there.',
+    acceptance: [
+      'Slug generation (Cyrillic -> Latin transliteration table) lives in lib/ only, no new npm dependency. The RPC no longer slugifies a title itself — it validates the lib-generated slug against ^[a-z0-9]+(-[a-z0-9]+)*$ and does the within-course collision suffixing; it never derives a slug from p_title.',
+      'Test: the two titles from the 0044 finding ("Прошедшее время: вопросы" and "Прошедшее время 2: вопросы") produce meaningful, distinct, non-fallback slugs — printed in the test output, not just asserted non-equal.',
+      'The slug stays editable (subject to the existing per-course uniqueness check) until the lesson has EVER been published, and is enforced frozen in the RPC after — not only in the UI. Unpublishing or archiving a previously-published lesson does not unfreeze it.',
+      'EditLessonDialog shows the lesson\'s current slug: editable while unfrozen, read-only once frozen, so a rename\'s (mis)match with the URL is visible either way.',
+      'courses.slug checked for the same ASCII-stripping problem. (Preliminary read: create_course takes p_slug as author-supplied text — see CoursesListView.tsx\'s manual "slug-like-this" field — with no slugify step, so it looks unaffected; this card confirms that and fixes it too if the check finds otherwise, and says which either way.)',
+      'A migration (written, not applied) does a one-time re-slug of every existing lesson through the new transliteration step — safe because no lesson is publicly shared yet (SHELL-005) — and prints each row\'s slug before and after.',
+    ],
+  },
 
   // ------------------------------------------------------ M2 (Alliengll) ---
   {
@@ -1232,7 +1263,7 @@ export const CARDS = [
     epic: 'PLAY',
     type: 'task',
     rank: 2070,
-    dependsOn: ['SHELL-007'],
+    dependsOn: ['SHELL-007', 'CNT-010'],
     goal:
       'The first genuinely public read path — anonymous, no session, ' +
       'entitlement-gated by can_read_lesson (migration 041).',
