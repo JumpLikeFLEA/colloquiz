@@ -1610,6 +1610,33 @@ export const CARDS = [
     ],
   },
   {
+    key: 'SHELL-015',
+    title: 'Reset-password page requires a recovery session',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2205,
+    dependsOn: ['SHELL-007'],
+    goal:
+      'Discovered during SHELL-007\'s full-protocol audit of its proxy.ts ' +
+      'change (docs/decisions/0049): narrowing the unauthenticated bounce to ' +
+      '/app made /reset-password reachable anonymously, where before it was ' +
+      '307\'d to /login (it\'s in neither authRoutes nor /app). Not a ' +
+      'security hole — ResetPasswordScreen does no server-side read or ' +
+      'write of its own; its only action is a client-side ' +
+      'supabase.auth.updateUser({password}) call that fails outright without ' +
+      'a live recovery session — but it is a UX regression: an anonymous or ' +
+      'stale-link visitor now sees a form that will error instead of a clear ' +
+      'message. Low priority: no exploit path, not required for the M2 ' +
+      'launch bar (not in OPS-010\'s dependsOn).',
+    acceptance: [
+      'With no recovery session, the page shows an expired-link message and a link to request a new reset email, instead of the update-password form.',
+      'With a recovery session, the page behaves exactly as today — unchanged.',
+      'The distinction is NOT made via proxy.ts\'s authRoutes list. That list also bounces a SIGNED-IN user away from auth routes (proxy.ts: the `user && isAuthRoute` guard) — and a recovery session IS a signed-in session (Supabase issues it real access/refresh tokens), so adding /reset-password there would bounce a legitimate recovery visit straight to /app before the learner can set a new password. The check belongs in the component or a page-level server check, not the route gate.',
+      'Recorded in docs/ui-decisions.md if the resulting UI diverges from the existing AuthScreen error-box precedent it should reuse.',
+    ],
+  },
+  {
     key: 'OPS-010',
     title: 'Launch rehearsal (M2 exit)',
     milestone: 'M2',
