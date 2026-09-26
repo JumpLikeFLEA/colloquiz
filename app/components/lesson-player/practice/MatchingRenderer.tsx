@@ -22,6 +22,7 @@ import {
   moveMatchingPair,
   setMatchingPair,
 } from "@/lib/lessonPlayer/matchingResponse";
+import { BucketRenderer } from "./BucketRenderer";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { MatchingContentView } from "./MatchingContentView";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
@@ -55,11 +56,40 @@ import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
  * `rightOptions` goes through `shuffleForItem` above — `item.payload.left`
  * renders directly in authored order. Each wrong pair also gets a
  * collapsed-by-default "Why?" (`ExplanationDisclosure`) beneath its row.
+ *
+ * PLAY-011b/0060 — `presentation: "sort"` items dispatch to `BucketRenderer`
+ * instead: a categorisation item looks like sorting into visible groups, not
+ * "tap to match" rows (partner review note 5). See that file's header for
+ * the topology this inverts. This stays a plain `if`, not a new lazy chunk —
+ * `presentation` is a rendering variant of `matching`, not a new item type,
+ * so it shares this component's already-lazy chunk (0057).
  */
 
 const BANK_DROPPABLE_ID = "__matching_bank__";
 
+/**
+ * Thin dispatcher, deliberately holding no hooks of its own: the "sort"
+ * branch must return before `PairsMatchingRenderer`'s hooks ever run, and a
+ * conditional early return ahead of hooks in the SAME component would break
+ * the Rules of Hooks the moment an item's `presentation` differed across
+ * renders (e.g. swapping items without a remount).
+ */
 export function MatchingRenderer({
+  item,
+  attemptId,
+  onScore,
+}: {
+  item: MatchingItem;
+  attemptId: string;
+  onScore: (result: ItemScoreResult) => void;
+}) {
+  if (item.payload.presentation === "sort") {
+    return <BucketRenderer item={item} attemptId={attemptId} onScore={onScore} />;
+  }
+  return <PairsMatchingRenderer item={item} attemptId={attemptId} onScore={onScore} />;
+}
+
+function PairsMatchingRenderer({
   item,
   attemptId,
   onScore,

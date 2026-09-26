@@ -608,3 +608,56 @@ Appended to in the same commit as the change it records. Referenced from
   flashed on this Russian-chrome surface. Do not remove either the
   `lesson-blocks` wrapper or the per-renderer `loading` skeletons without
   re-reading 0058.
+- Matching, `presentation: "sort"`: a new bucket renderer (2026-09-26,
+  PLAY-011b, docs/decisions/0060) replaces the row/bank "tap to match" layout
+  for categorisation items — visible category buckets the learner sorts
+  statements INTO, not rows with answer slots (partner review note 5).
+  `app/components/lesson-player/practice/BucketRenderer.tsx` is dispatched
+  from `MatchingRenderer.tsx` by a one-line `if (item.payload.presentation ===
+  "sort")` — NOT a new lazy chunk, since a presentation is a rendering variant
+  of `matching`, not a new item type (0057's "one chunk per type" boundary
+  still holds). That `if` had to move ABOVE `MatchingRenderer`'s own hooks
+  into a hookless wrapper (`PairsMatchingRenderer` now holds the original
+  body) — an early return before `useMemo`/`useState` in the same component
+  breaks the Rules of Hooks the moment `presentation` differs across renders.
+  TOPOLOGY DELIBERATELY INVERTS docs/decisions/0039 Decision 2: there, the
+  risk was a shrinking BANK (drag-from pool) making the last row solvable by
+  elimination, so the right/bank side was made non-consumable and only the
+  left/row side filled up. Here the pool learners drag FROM is the
+  statements (`left`) and they genuinely ARE consumed one placement at a
+  time — a statement renders in exactly one place (the pool, or its bucket),
+  a single draggable node, the same "consumed, not dual-noded" shape
+  `slots.ts`'s `DragSlots` already uses (0032 Decision 3) rather than
+  matching's reusable-bank shape. What must NOT shrink or disable here is the
+  TARGET side instead: every bucket (`right`) stays a valid drop target for
+  every remaining statement regardless of what it already holds, so
+  elimination-by-"only one bucket is still open" can't return. Buckets
+  render in AUTHORED order (never shuffled — they're column headers, not
+  answer options, same reason `left` is never shuffled in the pairs
+  renderer); the statement pool IS shuffled (`shuffleForItem`), for the same
+  reason the old bank was — unshuffled statement order could leak grouping.
+  State reuses the EXACT SAME `Map<leftId, rightId>` shape and the already-
+  generic `setMatchingPair`/`clearMatchingPair`/`buildMatchingResponse`
+  helpers in `lib/lessonPlayer/matchingResponse.ts`, unchanged — no new pure
+  functions exist behind this renderer, since "statement maps to bucket" is
+  exactly the left->right pairing `score()` already consumes.
+  `moveMatchingPair`/`firstEmptyLeftId` are unused here: a bucket has no
+  "empty slot" to auto-fill, and moving a statement between buckets is just
+  overwriting its one map entry. Layout: `grid grid-cols-1 sm:grid-cols-2`
+  (a literal, non-dynamic Tailwind class — bucket count varies per item and
+  Tailwind only sees complete class strings in source, the Progress > History
+  precedent) so narrow widths stack vertically with no horizontal scroll, and
+  no bucket carries a height cap, so it grows with its placed statements
+  (`f5-sort` puts 4 in one bucket). Feedback on submit: a wrong statement
+  stays exactly where the learner put it (never moved) with a "Correct:
+  <bucket>" note plus the standard PLAY-008 `ExplanationDisclosure` "Why?";
+  an unplaced statement is marked wrong in the pool. Verified in a real
+  browser (Edge via Playwright, temp admin test user, cleaned up after) at
+  both 1280px and 375px viewports against `f5-sort`-shaped fixture data —
+  buckets side-by-side and growing at desktop width, stacked at mobile width,
+  tap-to-place moving a statement from pool into a bucket. `npm run budget`
+  FAILs on `/courses/future-imperfect/*` before AND after this change
+  (confirmed via `git stash`) — a pre-existing prod-build data gap unrelated
+  to this card; `/login`'s budget (284.0 KB / 380 KB) is unchanged, and this
+  card added no code to any English-surface route. Do not add height caps to
+  `Bucket`, and do not make buckets draggable/shuffled.
