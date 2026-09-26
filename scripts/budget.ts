@@ -17,8 +17,13 @@
  *
  * A route is a hard failure — not a 0 KB pass — if:
  *   - navigation returns a non-2xx status,
- *   - navigation times out, or
- *   - the page raises an uncaught error (`page.on("pageerror")`).
+ *   - navigation times out,
+ *   - the page raises an uncaught error (`page.on("pageerror")`), or
+ *   - any downloaded script chunk's content contains a forbidden-package
+ *     signature (OPS-013) — see FORBIDDEN_SIGNATURES below. This catches a
+ *     Turbopack commons-chunk leak that no explicit import statement causes,
+ *     which is what the ESLint no-restricted-imports rule (eslint.config.mjs)
+ *     cannot see.
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/budget.ts [--url=<origin>]
@@ -62,17 +67,23 @@ function killProcessTree(proc: ChildProcess): void {
 // route that exists today (no English route exists yet; see docs/handoff.md
 // "Performance boundary") and its measured KB is the floor every English
 // route budget in a future M2 card starts from.
-type RouteBudget = { path: string; budgetKB: number };
+//
+// `guardForbiddenSignatures` (OPS-013) mirrors the ESLint no-restricted-imports
+// rule's own file scope (eslint.config.mjs: app/(english)/**, lesson-player):
+// only English-surface routes are checked for FORBIDDEN_SIGNATURES. A
+// Colloquiz route like /login legitimately ships @supabase/ssr — flagging it
+// there would be a false positive, not a leak.
+type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: boolean };
 
 const ROUTES: RouteBudget[] = [
-  { path: "/login", budgetKB: 380 },
+  { path: "/login", budgetKB: 380, guardForbiddenSignatures: false },
   // SHELL-007: the placeholder at the URL shape SHELL-005 decided
   // (/courses/[course-slug]/[lesson-slug]). 210 KB is docs/decisions/0046's
   // addendum-corrected landing/course-page budget, reused here as a starting
   // point since no lesson-specific content exists yet — PLAY-006 ("Public
   // lesson page") re-measures this route for real once it reads actual
   // lesson data and raises the number with a printed run if it needs to.
-  { path: "/courses/x/y", budgetKB: 210 },
+  { path: "/courses/x/y", budgetKB: 210, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────
@@ -140,10 +151,30 @@ async function startLocalServer(): Promise<{ origin: string; proc: ChildProcess 
   return { origin, proc };
 }
 
-// ── Per-route cold-load measurement ─────────────────────────────────────
-type RouteResult = { path: string; ok: true; scriptKB: number } | { path: string; ok: false; reason: string };
+// ── Commons-chunk content-signature guard (OPS-013) ─────────────────────
+// no-restricted-imports (eslint.config.mjs) catches an explicit import
+// statement in app/(english)/** or app/components/lesson-player/**. It
+// cannot see a package Turbopack's own commons-chunk splitting pulls into a
+// *shared* chunk that an English route downloads regardless of whether that
+// route's own code imports it — that's exactly how OPS-012 found lucide-react's
+// Icon base leaking into the SHELL-006 stub. This scans the actual downloaded
+// chunk bytes for each forbidden package's name, the same content-based method
+// decision 0046's addendum used to isolate Sentry's chunk
+// (`grep -l -i sentry .next/static/chunks/*.js`), rather than inferring a leak
+// from a KB delta.
+const FORBIDDEN_SIGNATURES = ["recharts", "katex", "framer-motion", "@supabase/ssr"];
 
-async function measureRoute(browser: import("@playwright/test").Browser, origin: string, path: string): Promise<RouteResult> {
+// ── Per-route cold-load measurement ─────────────────────────────────────
+type RouteResult =
+  | { path: string; ok: true; scriptKB: number; leaks: string[] }
+  | { path: string; ok: false; reason: string };
+
+async function measureRoute(
+  browser: import("@playwright/test").Browser,
+  origin: string,
+  path: string,
+  guardForbiddenSignatures: boolean,
+): Promise<RouteResult> {
   // A fresh, cache-disabled context per route: no cookies, no storage, no
   // cache carried over from a previous route or a previous run.
   const context = await browser.newContext();
@@ -158,15 +189,30 @@ async function measureRoute(browser: import("@playwright/test").Browser, origin:
   await client.send("Network.enable");
 
   const resourceTypeByRequestId = new Map<string, string>();
+  const scriptUrlByRequestId = new Map<string, string>();
   let scriptBytes = 0;
+  const bodyFetches: Promise<{ url: string; body: string } | undefined>[] = [];
 
   client.on("Network.responseReceived", (event) => {
     resourceTypeByRequestId.set(event.requestId, event.type);
+    if (event.type === "Script") {
+      scriptUrlByRequestId.set(event.requestId, event.response.url);
+    }
   });
   client.on("Network.loadingFinished", (event) => {
-    if (resourceTypeByRequestId.get(event.requestId) === "Script") {
-      scriptBytes += event.encodedDataLength;
-    }
+    if (resourceTypeByRequestId.get(event.requestId) !== "Script") return;
+    scriptBytes += event.encodedDataLength;
+    if (!guardForbiddenSignatures) return;
+    const url = scriptUrlByRequestId.get(event.requestId);
+    if (!url) return;
+    // Fetched while the response is still buffered by the CDP session (i.e.
+    // before context.close() below), not re-requested over the network.
+    bodyFetches.push(
+      client
+        .send("Network.getResponseBody", { requestId: event.requestId })
+        .then((res) => ({ url, body: res.body }))
+        .catch(() => undefined),
+    );
   });
 
   try {
@@ -180,7 +226,18 @@ async function measureRoute(browser: import("@playwright/test").Browser, origin:
     if (pageError) {
       return { path, ok: false, reason: `page error: ${pageError}` };
     }
-    return { path, ok: true, scriptKB: scriptBytes / 1024 };
+
+    const bodies = (await Promise.all(bodyFetches)).filter((b): b is { url: string; body: string } => b != null);
+    const leaks: string[] = [];
+    for (const { url, body } of bodies) {
+      for (const signature of FORBIDDEN_SIGNATURES) {
+        if (body.toLowerCase().includes(signature.toLowerCase())) {
+          leaks.push(`${url} contains "${signature}"`);
+        }
+      }
+    }
+
+    return { path, ok: true, scriptKB: scriptBytes / 1024, leaks };
   } catch (e) {
     return { path, ok: false, reason: (e as Error).message };
   } finally {
@@ -209,7 +266,7 @@ async function main() {
     console.log("\nroute | KB | budget");
     console.log("-".repeat(40));
     for (const route of ROUTES) {
-      const result = await measureRoute(browser, origin, route.path);
+      const result = await measureRoute(browser, origin, route.path, route.guardForbiddenSignatures);
       if (!result.ok) {
         anyFailed = true;
         console.log(`${route.path} | FAIL (${result.reason}) | ${route.budgetKB}`);
@@ -221,6 +278,11 @@ async function main() {
       console.log(
         `${route.path} | ${kb.toFixed(1)} KB | ${route.budgetKB} KB${overBudget ? "  ⚠ OVER BUDGET" : ""}`,
       );
+      if (result.leaks.length > 0) {
+        anyFailed = true;
+        console.log(`  ⚠ FORBIDDEN-PACKAGE SIGNATURE${result.leaks.length > 1 ? "S" : ""} FOUND:`);
+        for (const leak of result.leaks) console.log(`    - ${leak}`);
+      }
     }
   } finally {
     await browser.close();
