@@ -13,7 +13,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
  *
  * This must render high enough in <body> that the inline script next-themes
  * emits (its first child, before `children`) runs before anything paints —
- * see the note in app/layout.tsx.
+ * see the note in app/(colloquiz)/layout.tsx.
  *
  * `disableTransitionOnChange` suppresses transitions for one frame while the
  * class swaps. The app uses `transition-colors` widely, so without it every

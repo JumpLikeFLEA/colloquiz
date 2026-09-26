@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "./components/ThemeProvider";
+import { ThemeProvider } from "../components/ThemeProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import "katex/dist/katex.min.css";
-import "./globals.css";
+import "../globals.css";
 
 // `subsets` is deliberately just ["latin"], unchanged from before SHELL-002 —
 // see docs/decisions/0021. Google's css2 response for "Geist" always returns

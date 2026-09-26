@@ -85,7 +85,8 @@ const nextConfig: NextConfig = {
   // SHELL-001: Colloquiz moved wholesale under /app so the English surface
   // (planned M2) can own the clean top-level URLs. Every route that used to
   // live directly under (main) gets a 308 here — enumerated from the route
-  // tree (see `find app/(main)/app -name page.tsx`), not from memory.
+  // tree (see `find "app/(colloquiz)/(main)/app" -name page.tsx`), not from
+  // memory.
   // `redirects` run BEFORE proxy.ts (Next.js redirecting guide), so this list
   // is what a stale bookmark or an old share link actually hits first; the
   // proxy's own legacy `/dashboard` → `/progress` shortcut had to be
