@@ -60,6 +60,23 @@ export const alliengllCopy = {
     body: "Зарегистрируйтесь, чтобы результаты не потерялись.",
     cta: "Зарегистрироваться",
     dismiss: "Не сейчас",
+    emailLabel: "Email",
+    passwordLabel: "Пароль",
+    submit: "Создать аккаунт",
+    submitting: "Создаём аккаунт…",
+    orDivider: "или",
+    oauthGoogle: "Google",
+    oauthDiscord: "Discord",
+    inAppBrowserNotice:
+      "Вход через Google и Discord не работает во встроенном браузере Instagram или Telegram — зарегистрируйтесь по email или откройте страницу в обычном браузере.",
+    consentPrefix: "Мне есть 13 лет, я согласен(на) с",
+    consentJoiner: "и",
+    termsLink: "Условиями использования",
+    privacyLink: "Политикой конфиденциальности",
+    consentRequired: "Подтвердите, что вам есть 13 лет, и согласие с условиями.",
+    checkEmailTitle: "Проверьте почту",
+    checkEmailBody: "Мы отправили ссылку для подтверждения. Перейдите по ней, чтобы завершить регистрацию.",
+    genericError: "Что-то пошло не так. Попробуйте ещё раз.",
   },
 
   notFound: {

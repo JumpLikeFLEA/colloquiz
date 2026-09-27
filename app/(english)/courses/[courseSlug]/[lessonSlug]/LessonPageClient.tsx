@@ -20,6 +20,9 @@ import type { NextLessonLink } from "@/lib/publicLesson";
  * `LessonPlayer` so it can record a signed-in learner's attempts — see that
  * component for why the recording code is dynamically imported rather than
  * a static import here.
+ *
+ * ANON-004 adds `lessonPath`, forwarded straight to `LessonPlayer` for its
+ * completion screen's registration offer (docs/decisions/0068).
  */
 export function LessonPageClient({
   title,
@@ -29,6 +32,7 @@ export function LessonPageClient({
   nextLesson,
   lessonVersionId,
   isSignedIn,
+  lessonPath,
 }: {
   title: string;
   document: unknown[];
@@ -37,6 +41,7 @@ export function LessonPageClient({
   nextLesson: NextLessonLink | null;
   lessonVersionId: string;
   isSignedIn: boolean;
+  lessonPath: string;
 }) {
   return (
     <div className="py-8">
@@ -51,6 +56,7 @@ export function LessonPageClient({
         nextLesson={nextLesson}
         lessonVersionId={lessonVersionId}
         isSignedIn={isSignedIn}
+        lessonPath={lessonPath}
       />
     </div>
   );

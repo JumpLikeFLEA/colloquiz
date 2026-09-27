@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ATTEMPT_STORAGE_KEY,
   createAttemptStore,
+  toRecordAttemptPayload,
   uploadPendingAttempts,
   type AttemptStorageBackend,
 } from "./attemptStore";
@@ -131,6 +132,19 @@ describe("createAttemptStore", () => {
     store.clear();
     expect(store.getAll()).toEqual([]);
     expect(JSON.parse(backend.store[ATTEMPT_STORAGE_KEY]).attempts).toEqual([]);
+  });
+});
+
+describe("toRecordAttemptPayload", () => {
+  it("maps stored attempts to record_lesson_attempts's own snake_case field names", () => {
+    expect(toRecordAttemptPayload([attempt1, attempt2])).toEqual([
+      { attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 2 },
+      { attempt_id: "a2", lesson_version_id: "v1", block_id: "b1", earned: 2, possible: 2 },
+    ]);
+  });
+
+  it("maps an empty list to an empty list", () => {
+    expect(toRecordAttemptPayload([])).toEqual([]);
   });
 });
 

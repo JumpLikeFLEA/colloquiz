@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PLAYGROUND_EXAMPLES } from "@/lib/items/__fixtures__/playgroundExamples";
+import { ATTEMPT_STORAGE_KEY } from "@/lib/lessonPlayer/attemptStore";
 import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 
 /**
@@ -34,6 +35,7 @@ function exampleRaw(label: string): unknown {
 afterEach(() => {
   cleanup();
   rpc.mockClear();
+  window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
 });
 
 async function scoreTheSelectionItem() {
@@ -85,6 +87,40 @@ describe("LessonPlayer — ANON-005 attempt recording", () => {
     // Give any stray microtask a chance to run before asserting the negative.
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("ANON-004: flushes a pre-existing local attempt on mount, not only from a new score", async () => {
+    window.localStorage.setItem(
+      ATTEMPT_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        attempts: [
+          {
+            attemptId: "pre-existing",
+            lessonVersionId: "v1",
+            blockId: "some-other-block",
+            earned: 1,
+            possible: 1,
+            recordedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v1"
+        isSignedIn
+      />,
+    );
+
+    await vi.waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+    expect(rpc).toHaveBeenCalledWith("record_lesson_attempts", {
+      p_attempts: [expect.objectContaining({ attempt_id: "pre-existing", block_id: "some-other-block" })],
+    });
   });
 
   it("does not record when isSignedIn is true but no lessonVersionId is supplied (preview/demo callers)", async () => {

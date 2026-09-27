@@ -76,6 +76,7 @@ export default async function LessonPage({
       nextLesson={nextLesson}
       lessonVersionId={lesson.lessonVersionId}
       isSignedIn={lesson.isSignedIn}
+      lessonPath={`/courses/${courseSlug}/${lessonSlug}`}
     />
   );
 }

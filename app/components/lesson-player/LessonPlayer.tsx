@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
@@ -84,6 +84,11 @@ export interface LessonPlayerProps {
    * Recording never happens unless this is true AND `lessonVersionId` is set,
    * so passing one without the other is inert, not a half-broken state. */
   isSignedIn?: boolean;
+  /** ANON-004 — this lesson's own path (`/courses/<courseSlug>/<lessonSlug>`),
+   * threaded straight to the completion screen's registration offer so a
+   * same-browser email confirmation or OAuth round trip returns here.
+   * Defaults to "" (offer still renders, just returns to "/" on confirm). */
+  lessonPath?: string;
 }
 
 /**
@@ -118,6 +123,14 @@ export interface LessonPlayerProps {
  * bundle, but the chunk behind it doesn't ship unless `isSignedIn` is true
  * (docs/handoff.md's performance boundary: "no `@supabase/ssr` client JS on
  * the critical path" for an anonymous learner).
+ *
+ * ANON-004 — the same upload path also runs once on mount, not only from
+ * `handleScore`, so a learner who finished a lesson anonymously and only
+ * *then* gets a session (OAuth completing in this same browser, or a
+ * same-browser email-confirmation click) has their already-scored local
+ * attempts flushed too — see docs/decisions/0068 Decision 6. Idempotent on
+ * `attemptId` either way, so this can never double-count against a
+ * `handleScore`-triggered upload.
  */
 export function LessonPlayer({
   document,
@@ -127,10 +140,16 @@ export function LessonPlayer({
   nextLesson = null,
   lessonVersionId = "",
   isSignedIn = false,
+  lessonPath = "",
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
   const [results, setResults] = useState<LessonSessionResults>({});
   const [attemptStore] = useState<AttemptStore>(() => createAttemptStore());
+
+  useEffect(() => {
+    if (!isSignedIn || !lessonVersionId) return;
+    void recordSignedInAttempt(attemptStore);
+  }, [isSignedIn, lessonVersionId, attemptStore]);
 
   if (!parsed.ok) {
     return <LessonPlayerError errors={parsed.errors} />;
@@ -159,6 +178,8 @@ export function LessonPlayer({
       practiceRenderer={practiceRenderer}
       courseSlug={courseSlug}
       nextLesson={nextLesson}
+      lessonPath={lessonPath}
+      isSignedIn={isSignedIn}
     />
   );
 }
@@ -185,6 +206,8 @@ function LessonPlayerBody({
   practiceRenderer,
   courseSlug,
   nextLesson,
+  lessonPath,
+  isSignedIn,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
@@ -193,6 +216,8 @@ function LessonPlayerBody({
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
+  lessonPath: string;
+  isSignedIn: boolean;
 }) {
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
@@ -237,6 +262,8 @@ function LessonPlayerBody({
         explanations={explanationsForSession(document, results)}
         courseSlug={courseSlug}
         nextLesson={nextLesson}
+        lessonPath={lessonPath}
+        isSignedIn={isSignedIn}
       />
     </div>
   );

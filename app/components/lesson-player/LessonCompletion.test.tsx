@@ -1,0 +1,46 @@
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import type { LessonScoreResult } from "@/lib/items";
+import { alliengllCopy } from "@/lib/alliengll/copy";
+import { LessonCompletion } from "./LessonCompletion";
+
+/**
+ * ANON-004 — the registration offer only ever mounts after a completed
+ * lesson and only for a learner who isn't already signed in (docs/decisions/
+ * 0068 Decisions 1-2). The offer's own behaviour is covered by
+ * RegistrationOffer.test.tsx; this file only proves LessonCompletion gates
+ * it on the right two signals.
+ */
+
+const unscored: LessonScoreResult = { status: "unscored", earned: 0, possible: 0, percent: null, items: [] };
+const scored: LessonScoreResult = { status: "scored", earned: 1, possible: 2, percent: 50, items: [] };
+
+afterEach(cleanup);
+
+describe("LessonCompletion — registration offer gating", () => {
+  it("shows no offer before any item has been attempted, even for an anonymous learner", () => {
+    render(
+      <LessonCompletion score={unscored} explanations={new Map()} courseSlug="c" nextLesson={null} isSignedIn={false} />,
+    );
+    expect(screen.queryByText(alliengllCopy.signupOffer.title)).toBeNull();
+  });
+
+  it("shows the offer after a completed lesson for an anonymous learner", () => {
+    render(
+      <LessonCompletion score={scored} explanations={new Map()} courseSlug="c" nextLesson={null} isSignedIn={false} />,
+    );
+    expect(screen.getByText(alliengllCopy.signupOffer.title)).toBeDefined();
+  });
+
+  it("shows no offer for a signed-in learner, even after a completed lesson", () => {
+    render(
+      <LessonCompletion score={scored} explanations={new Map()} courseSlug="c" nextLesson={null} isSignedIn={true} />,
+    );
+    expect(screen.queryByText(alliengllCopy.signupOffer.title)).toBeNull();
+  });
+
+  it("defaults to no offer when isSignedIn is not passed (pre-ANON-004 callers)", () => {
+    render(<LessonCompletion score={scored} explanations={new Map()} courseSlug="c" nextLesson={null} />);
+    expect(screen.queryByText(alliengllCopy.signupOffer.title)).toBeNull();
+  });
+});

@@ -155,6 +155,24 @@ export function createAttemptStore(backend?: AttemptStorageBackend): AttemptStor
   };
 }
 
+/** The `record_lesson_attempts` RPC's own field names, shared by the
+ * default-path upload below and ANON-004's cross-browser `pending_claims`
+ * create call — both send the same shape, just through different transports
+ * (a direct RPC call vs. a JSON body forwarded to the create endpoint, which
+ * hands it unchanged to `claim_pending_claim` -> `record_lesson_attempts`
+ * once claimed). */
+export function toRecordAttemptPayload(
+  attempts: readonly Pick<StoredAttempt, "attemptId" | "lessonVersionId" | "blockId" | "earned" | "possible">[],
+) {
+  return attempts.map((a) => ({
+    attempt_id: a.attemptId,
+    lesson_version_id: a.lessonVersionId,
+    block_id: a.blockId,
+    earned: a.earned,
+    possible: a.possible,
+  }));
+}
+
 export type UploadResult = "uploaded" | "no-session" | "empty";
 
 /**
@@ -183,13 +201,7 @@ export async function uploadPendingAttempts(
   if (!session) return "no-session";
 
   const { error } = await supabase.rpc("record_lesson_attempts", {
-    p_attempts: attempts.map((a) => ({
-      attempt_id: a.attemptId,
-      lesson_version_id: a.lessonVersionId,
-      block_id: a.blockId,
-      earned: a.earned,
-      possible: a.possible,
-    })),
+    p_attempts: toRecordAttemptPayload(attempts),
   });
   if (error) throw new Error(error.message);
 

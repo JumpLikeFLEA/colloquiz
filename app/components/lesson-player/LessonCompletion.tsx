@@ -3,6 +3,7 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
 import type { LessonScoreResult, ResolvedExplanation } from "@/lib/items";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import { READING_WIDTH_CLASS } from "./columnLayout";
+import { RegistrationOffer } from "./RegistrationOffer";
 
 /**
  * PLAY-007 — closes the loop after a lesson without ever reading as a
@@ -24,11 +25,22 @@ export function LessonCompletion({
   explanations,
   courseSlug,
   nextLesson,
+  lessonPath = "",
+  isSignedIn = true,
 }: {
   score: LessonScoreResult;
   explanations: ReadonlyMap<string, ResolvedExplanation[]>;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
+  /** ANON-004 — the current lesson's own path (`/courses/<slug>/<slug>`), for
+   * the registration offer's `emailRedirectTo`/OAuth `next=` so a same-
+   * browser confirmation returns here. Defaults to "" (offer still renders,
+   * just returns to "/" on confirm) for callers that don't pass it. */
+  lessonPath?: string;
+  /** ANON-004 — the offer only makes sense for a learner who isn't already
+   * signed in. Defaults to true (no offer) so pre-ANON-004 callers — tests,
+   * the demo page — see no behavior change. */
+  isSignedIn?: boolean;
 }) {
   const reviewEntries = [...explanations.entries()].filter(([, list]) => list.length > 0);
 
@@ -69,18 +81,7 @@ export function LessonCompletion({
         </Link>
       )}
 
-      <RegistrationOfferSlot />
+      {score.status === "scored" && !isSignedIn && <RegistrationOffer lessonPath={lessonPath} />}
     </div>
   );
-}
-
-/**
- * Reserved mount point for ANON-004 ("Registration offer and progress
- * migration") — that card's own acceptance requires the offer to show "after
- * a completed lesson, never before one," and depends ON this card
- * (PLAY-007), not the other way round. Intentionally renders nothing: the
- * UI it will hold does not exist yet.
- */
-function RegistrationOfferSlot() {
-  return null;
 }
