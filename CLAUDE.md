@@ -154,10 +154,11 @@ refactor.
   - `lib/entitlement.ts` — the client-side MIRROR of the entitlement SQL
     function. Mirror only; the function is the authority. **Planned (M3).**
 - `supabase/migrations/NNN_*.sql` — schema. Numbered, applied by me, never by
-  a session. Latest applied: 045 (confirmed with the owner 2026-09-24, AUTH-007
-  — this line was stale: it still read 043/"044 not yet applied" after 044 and
-  045 had both gone in. Re-derive by probing PostgREST or ask, never carry this
-  number forward by assumption).
+  a session. Latest applied: 049 (owner-applied to the hosted project
+  2026-09-27, confirmed by the anon/authenticated denial checks in #121's
+  closing comment — this line was stale before: it still read 045 after 046
+  through 049 had gone in. Re-derive by probing PostgREST or ask, never carry
+  this number forward by assumption).
 - `scripts/`
   - `scripts/board/` — `backlog.mjs` (board data, incl. `rankOf()`),
     `bootstrap-board.mjs` (backlog → GitHub issues/board), `board-move.mjs`,
