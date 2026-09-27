@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 1;
+export const EXPORT_FORMAT_VERSION = 2;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -19,6 +19,7 @@ export const EXPORT_CONTENTS = [
   "Achievements — what you unlocked and when",
   "Group memberships — the groups you belong to and your role",
   "Duel history — opponents, outcomes and scores",
+  "Lesson attempts — every English-course practice-block attempt and score",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -27,6 +28,14 @@ type MembershipRow = {
   role: string;
   created_at: string;
   groups: unknown;
+};
+export type LessonAttemptRow = {
+  id: string;
+  lesson_version_id: string;
+  block_id: string;
+  earned: number;
+  possible: number;
+  created_at: string;
 };
 
 export type ExportSources = {
@@ -38,6 +47,7 @@ export type ExportSources = {
   achievements: AchievementRow[];
   memberships: MembershipRow[];
   duels: unknown[];
+  lessonAttempts: LessonAttemptRow[];
 };
 
 /**
@@ -113,6 +123,20 @@ export function buildExportPayload(
     // never a rating number — player_ratings is unreadable even by its owner by
     // design (017), so no rating can appear here.
     duel_history: src.duels,
+
+    // English-course practice attempts (ANON-003). Keyed the same way the
+    // player stores them locally before an account exists (0018/0063):
+    // lesson_version_id + block_id, not a course/lesson name — the reader's
+    // own record of what they attempted and scored, not a human-readable
+    // course catalogue.
+    lesson_attempts: src.lessonAttempts.map(row => ({
+      attempt_id: row.id,
+      lesson_version_id: row.lesson_version_id,
+      block_id: row.block_id,
+      earned: row.earned,
+      possible: row.possible,
+      recorded_at: row.created_at,
+    })),
   };
 }
 
