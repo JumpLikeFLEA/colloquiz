@@ -82,6 +82,14 @@ type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: b
 
 const ROUTES: RouteBudget[] = [
   { path: "/login", budgetKB: 380, guardForbiddenSignatures: false },
+  // SHELL-010: the English landing page — the reel-to-lesson entry point
+  // docs/handoff.md's performance boundary is written for. Measured against
+  // the hosted project (no local-seed dependency: it lists whatever is
+  // actually published there, same as /login needs no seed) at 172.0 KB.
+  // budgetKB is that measurement plus ~4.5% headroom (the PLAY-012/SHELL-008
+  // precedent, docs/decisions/0057/0059) — re-derive both from a real
+  // `npm run budget` run before raising it, never guess.
+  { path: "/", budgetKB: 180, guardForbiddenSignatures: true },
   // PLAY-006/PLAY-012 (docs/decisions/0056, 0057): a REAL authored lesson —
   // `future-imperfect`'s first lesson, `true-or-false` — not a synthetic
   // single-item fixture. Seeded from authored/courses/future-imperfect.json

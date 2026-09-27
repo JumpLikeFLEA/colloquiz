@@ -675,3 +675,25 @@ Appended to in the same commit as the change it records. Referenced from
   was re-verified via `git stash -u` on this same change. Do not add a
   second path to `/app` (a header nav entry, a toggle) without re-confirming
   with the owner first.
+- `/` gets a real landing page (2026-09-27, SHELL-010, docs/decisions/0070):
+  `app/(english)/page.tsx` — hero (`alliengllCopy.landing`), then a course
+  catalogue grid (`CourseCard.tsx`, cover/level-badge/title/subtitle, mirrors
+  the `/courses/[courseSlug]` page's own cover-block styling so a tap into a
+  course reads as the same object growing). SHELL-013's temporary `/` →
+  `/app` 307 is REMOVED from `next.config.ts` entirely — `curl -I /` returns
+  200 straight from this route now. The hero's primary CTA deliberately
+  skips the catalogue and links straight to the first published course's
+  first free-sample lesson (SHELL-008's `firstFreeLesson()`, reused, not
+  reimplemented) so the reel-to-lesson path is genuinely one tap from `/`,
+  per the acceptance line — the catalogue link next to it is the secondary,
+  browse-instead-of-jump-in path. `lib/publicCatalogue.ts` (new file, not
+  added to the pre-existing `lib/courseCatalogue.ts`) holds the listing
+  query: `courseCatalogue.ts` is imported into a Client Component
+  (`CourseDetailView.tsx`) for its `COURSE_SUBTITLE_MAX_LENGTH` constant, and
+  putting a `@/lib/supabase/server` import in the same file broke `next
+  build` outright (confirmed by a real build failure, not assumed) — keep
+  the split. Measured `npm run budget`: `/` is 172.0 KB against a 180 KB
+  target (new ROUTES entry); `/login` unaffected; the pre-existing
+  `/courses/future-imperfect/*` FAILs (0060/0062, no local Supabase stack in
+  this environment) are unrelated and unaffected. Do not fold
+  `getPublishedCourses()` back into `courseCatalogue.ts`.

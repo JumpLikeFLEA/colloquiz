@@ -133,10 +133,9 @@ const nextConfig: NextConfig = {
       "students",
     ];
     return [
-      // SHELL-013: temporary (307) — `/` will serve the English landing once
-      // M2 lands, and a 308 here would be cached by browsers past the point
-      // the entry is removed. SHELL-010 removes this redirect entirely.
-      { source: "/", destination: "/app", permanent: false },
+      // SHELL-013's temporary `/` → `/app` 307 is REMOVED here: SHELL-010
+      // gave `/` a real page (app/(english)/page.tsx), so it no longer needs
+      // a redirect at all — `curl -I /` returns 200 straight from that route.
       ...movedSegments.map((segment) => ({
         source: `/${segment}/:path*`,
         destination: `/app/${segment}/:path*`,

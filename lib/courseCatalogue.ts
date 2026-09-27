@@ -1,3 +1,5 @@
+import type { CefrLevel } from "@/lib/courseLevels";
+
 /**
  * `courses.subtitle`'s max length (CNT-009, migration 047's
  * `courses_subtitle_length_check`). Mirrors the DB constraint the same way
@@ -6,3 +8,11 @@
  * it only needs to agree with it.
  */
 export const COURSE_SUBTITLE_MAX_LENGTH = 200;
+
+export type CatalogueCourse = {
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  coverImageUrl: string | null;
+  level: CefrLevel;
+};
