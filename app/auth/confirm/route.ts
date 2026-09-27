@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { hashClaimToken } from '@/lib/pendingClaims'
+import { safeNext } from '@/lib/safeNext'
 
 /**
  * ANON-004 — after a successful verification establishes a session, claim
@@ -52,7 +53,12 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
   const code = searchParams.get('code')
-  const { next, claim } = unwrapNext(searchParams.get('next') ?? '/', searchParams.get('claim'))
+  const unwrapped = unwrapNext(searchParams.get('next') ?? '/', searchParams.get('claim'))
+  // safeNext, not the raw unwrapped value: pre-push review (ANON-004) found
+  // next="@evil.com" makes `${origin}${next}` parse as host "evil.com" (the
+  // WHATWG URL parser reads it as userinfo before the @) — see lib/safeNext.ts.
+  const next = safeNext(unwrapped.next, origin)
+  const claim = unwrapped.claim
 
   // Default-template links: Supabase's /auth/v1/verify confirms the email
   // server-side, then redirects here with ?code=. The exchange only succeeds

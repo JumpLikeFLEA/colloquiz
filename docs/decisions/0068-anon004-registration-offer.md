@@ -142,6 +142,36 @@ Terms/Privacy pages themselves stay English (0018 Decision 5 exempts legal
 chrome), but the surrounding consent copy is Russian like the rest of this
 surface's chrome.
 
+**10. Open redirect at `/auth/confirm` and `/auth/callback`, found in
+pre-push review, fixed with `safeNext()` (`lib/safeNext.ts`), not a
+pattern-match sanitiser.** Both routes built their post-auth redirect as
+`` `${origin}${next}` `` with `next` read straight off the request (or, after
+this card, unwrapped from inside `emailRedirectTo` — Decision 3). This is
+exploitable: `next = "@evil.com"` turns that concatenation into
+`"http://site.com@evil.com"`, which the WHATWG URL parser reads as userinfo
+`site.com` followed by host **`evil.com`** — confirmed by actually parsing
+the resulting string, not asserted from reading the code. The direct case
+(a bare `next` query param with no validation) predates this card entirely —
+the original `/auth/confirm` and `/auth/callback` already did this before
+ANON-004 touched either file. This card's own `unwrapNext()` (Decision 3)
+added a *second* route to the same unvalidated sink: an attacker's own
+`emailRedirectTo` can carry `next=%40evil.com` as ITS embedded `next=`,
+which passes Supabase's `additional_redirect_urls` allow-list (that check
+only matches the outer origin+path pattern, never the query content) and
+comes out the other end of `unwrapNext()` unchanged.
+
+The fix, `lib/safeNext.ts`, resolves with `new URL(next, origin)` and keeps
+only `pathname + search + hash` when the resolved `.origin` matches, falling
+back to `/` otherwise (parse failure included). This was chosen over
+pattern-matching the string for `//`, `@`, backslashes, control characters,
+etc. because a blocklist of shapes is always incomplete — that incompleteness
+*is* the bug being fixed. Handing the string to the same parser a browser
+uses and checking what it actually resolves to answers "where would this
+navigate," not "does this string look suspicious." Applied at all three
+`` `${origin}${next}` `` sinks the codebase has (confirmed by `rg -n
+'\$\{origin\}\$\{' app lib`): both branches of `/auth/confirm` (after
+`unwrapNext`) and `/auth/callback`.
+
 ## What would make us revisit this
 
 - **Owner confirmation (or update) of the hosted project's actual "Confirm
