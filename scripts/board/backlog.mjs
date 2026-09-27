@@ -36,6 +36,13 @@ export const EPICS = [
   { key: 'PROG', title: 'Progression', desc: 'English progression, separate from Colloquiz XP.' },
   { key: 'OPS', title: 'Ops', desc: 'Board tooling, session harness, test infrastructure.' },
   { key: 'INFRA', title: 'Infrastructure', desc: 'Storage, egress and hosting plan — outside the milestones.' },
+  {
+    key: 'VIS',
+    title: 'Visual design',
+    desc:
+      'Visual and interaction design on the English surface and its authoring UI. ' +
+      'Distinct from SHELL (routing/layouts) and from SHELL-011 (the end-of-M2 polish pass).',
+  },
 ];
 
 export const CARDS = [
@@ -1910,6 +1917,36 @@ export const CARDS = [
       'Self-hosting costs rebuilding auth, RLS roles (auth.uid(), anon, authenticated), PostgREST and Storage. That cost is stated with evidence.',
       'Local Docker Postgres already exists through the Supabase CLI (supabase start), so "easier local testing" is not an argument for it.',
     ],
+  },
+  // ----- VIS ---
+  {
+    key: 'VIS-001',
+    title: 'Course cover: crop to 16:9 on upload',
+    milestone: 'M2',
+    epic: 'VIS',
+    type: 'task',
+    rank: 2185,
+    dependsOn: [],
+    goal:
+      'Covers render at 16:9 in four places (admin preview, CourseCard, ' +
+      '/courses/[slug], OG 1200×630), all object-cover, but the upload stores ' +
+      'whatever the author picked — any other ratio is silently center-cropped ' +
+      'and small sources upscale blurry. Let the author choose the framing at ' +
+      'upload and store an image that already has the right shape and resolution.',
+    acceptance: [
+      'Picking a cover opens a crop dialog locked to 16:9 with drag and zoom (mouse and touch). Confirm uploads the cropped image; Cancel uploads nothing.',
+      'Stored output is 16:9, width = min(crop width, 1920), never upscaled; WebP, JPEG where the browser cannot encode WebP. Evidence: printed content-type and pixel dimensions of an uploaded object.',
+      'A crop area below 960×540 source px is blocked with a message; below 1600 px wide shows a non-blocking warning.',
+      'Source files up to 20 MB (PNG/JPEG/WebP) are accepted; the uploaded output still passes validateLessonImageFile (5 MB). Bucket limits are unchanged.',
+      'A portrait phone photo carrying EXIF rotation crops upright.',
+      'The crop library loads only when the dialog opens and appears in no English route: `npm run budget` before/after printed, every English route unchanged.',
+      'Deferred cover deletion (pendingCoverDeletion) is unchanged: an unsaved or cancelled swap deletes nothing.',
+      'Crop math lives in lib/courseCover.ts under vitest; `npm run check` exits 0.',
+      'Decision doc records destructive crop vs stored crop rect, 16:9 as the single cover ratio (OG trim), output size and minimums.',
+    ],
+    notes:
+      'Lesson images (theory image block, image matching) are out of scope — they render at natural aspect. ' +
+      'Existing covers are not migrated; the author re-uploads to reframe.',
   },
 ];
 
