@@ -1605,6 +1605,48 @@ export const CARDS = [
     ],
   },
   {
+    key: 'SHELL-016',
+    title: 'Exempt TelegramBot from robots.txt\'s blanket disallow',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2152,
+    dependsOn: ['SHELL-009'],
+    goal:
+      'SHELL-009 confirmed (docs/decisions/0065; third-party documentation of ' +
+      'TelegramBot\'s crawler behaviour, not a first-party Telegram statement ' +
+      'or a live-deployment observation) that app/robots.ts\'s blanket ' +
+      '`User-agent: * / Disallow: /` blocks Telegram\'s own link-preview ' +
+      'fetcher, not just search engines — so no course or lesson URL shared ' +
+      'in Telegram gets a rich preview today.',
+    acceptance: [
+      'app/robots.ts serves an additional `User-agent: TelegramBot` / `Disallow:` rule block alongside the existing `User-agent: * / Disallow: /` rule — the documented syntax for exempting one named agent from a blanket disallow.',
+      'The site-wide "public but unlisted, not indexed" 1.0 decision (DoR) stays intact for every other crawler: no other User-agent gets an exemption, and /robots.txt output is pasted showing both rule blocks.',
+    ],
+  },
+  {
+    key: 'SHELL-017',
+    title: 'Verify OG previews in Telegram on production',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2154,
+    dependsOn: ['SHELL-016'],
+    goal:
+      'SHELL-009 (docs/decisions/0065) implemented and locally verified ' +
+      'per-page OG metadata for course/lesson pages, but its own acceptance ' +
+      'line 2 — a real Telegram post showing a rich preview, screenshot ' +
+      'attached — could not be closed from that session: it needs a ' +
+      'publicly reachable URL, which needs a deployed build containing ' +
+      'commit e62f10d, and at least one published course (neither existed ' +
+      'at the time). This card is that deferred verification, once both ' +
+      'preconditions are real, run against production, not a preview URL.',
+    acceptance: [
+      'A real Telegram post of each URL type shows a rich preview (screenshot attached).',
+      'og:image fetched over https from the production origin (screenshot of the Telegram preview for one course URL and one lesson URL).',
+    ],
+  },
+  {
     key: 'OPS-007',
     title: 'Spike: devices inside the Instagram and Telegram in-app browsers',
     milestone: 'M2',
