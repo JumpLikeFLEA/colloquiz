@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Play } from "lucide-react";
 import type { z } from "zod";
 import type { VideoBlockSchema } from "@/lib/lessons";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { buildYouTubeEmbedUrl } from "@/lib/lessonPlayer/session";
 import { InlineContentView } from "../InlineContent";
 
@@ -22,7 +23,7 @@ export function VideoBlockView({ block }: { block: z.infer<typeof VideoBlockSche
         {loaded ? (
           <iframe
             src={buildYouTubeEmbedUrl(block.youtubeId)}
-            title="Lesson video"
+            title={alliengllCopy.theory.videoTitle}
             className="absolute inset-0 size-full"
             allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -32,12 +33,12 @@ export function VideoBlockView({ block }: { block: z.infer<typeof VideoBlockSche
             type="button"
             onClick={() => setLoaded(true)}
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-brand-text cursor-pointer"
-            aria-label="Play video"
+            aria-label={alliengllCopy.theory.videoPlayAriaLabel}
           >
             <span className="flex size-12 items-center justify-center rounded-full bg-brand text-primary-foreground">
               <Play className="size-6" fill="currentColor" aria-hidden="true" />
             </span>
-            <span className="text-xs font-medium">Click to play video</span>
+            <span className="text-xs font-medium">{alliengllCopy.theory.videoClickToPlay}</span>
           </button>
         )}
       </div>

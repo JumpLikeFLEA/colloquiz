@@ -8,8 +8,10 @@
  * pair keeps its mobile half identical to pre-change `max-w-xl`.
  */
 
-/** The player's own root column. Grows from 576px to ~1024px at `lg`. */
-export const LESSON_COLUMN_CLASS = "mx-auto flex w-full max-w-xl lg:max-w-5xl flex-col gap-4 px-4 py-4";
+/** The player's own root column. Grows from 576px to ~1024px at `lg`. The
+ * inter-block gap widens at `lg` too (SHELL-011) — `gap-4` alone reads as
+ * cramped once the column is 5x wider; unchanged below `lg`. */
+export const LESSON_COLUMN_CLASS = "mx-auto flex w-full max-w-xl lg:max-w-5xl flex-col gap-4 lg:gap-6 px-4 py-4";
 
 /** Same column width, for the headers above the player (PreviewClient, the
  * lesson-player-demo page) that don't share LessonPlayer's flex/gap. */

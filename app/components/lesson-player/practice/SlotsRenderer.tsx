@@ -11,6 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, X } from "lucide-react";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SlotsItem } from "@/lib/items";
 import { shuffleForItem } from "@/lib/items/shuffle";
@@ -116,7 +117,9 @@ function GapLayout({
       <div className="mb-3 flex flex-col gap-2">
         {Array.from({ length: gapCount }, (_, index) => (
           <div key={index} className="flex items-center gap-2">
-            <span className="w-16 shrink-0 text-xs text-muted-foreground">Gap {index + 1}</span>
+            <span className="w-16 shrink-0 text-xs text-muted-foreground">
+              {alliengllCopy.player.gapLabel} {index + 1}
+            </span>
             {renderGap(index)}
           </div>
         ))}
@@ -155,7 +158,9 @@ function GapExplanations({
     <div className="mb-3 flex flex-col gap-1">
       {wrongGaps.map(({ id, index, explanation }) => (
         <div key={id} className="flex items-start gap-1 text-xs text-muted-foreground">
-          <span className="mt-2.5 shrink-0">Gap {index + 1}:</span>
+          <span className="mt-2.5 shrink-0">
+            {alliengllCopy.player.gapLabel} {index + 1}:
+          </span>
           <ExplanationDisclosure explanation={explanation} />
         </div>
       ))}
@@ -274,7 +279,7 @@ function TypedSlots({
       )}
       {!submitted && (
         <button type="button" onClick={submit} className={submitButtonClassName()}>
-          Submit
+          {alliengllCopy.player.submit}
         </button>
       )}
     </div>
@@ -405,7 +410,7 @@ function DragSlots({
             }}
             className="mb-3 min-h-11 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors cursor-pointer hover:border-destructive-border"
           >
-            Clear
+            {alliengllCopy.player.clear}
           </button>
         )}
         <DragOverlay>
@@ -417,7 +422,7 @@ function DragSlots({
       )}
       {!submitted && (
         <button type="button" onClick={submit} className={submitButtonClassName()}>
-          Submit
+          {alliengllCopy.player.submit}
         </button>
       )}
     </div>
@@ -537,7 +542,7 @@ function ChipBank({
       }`}
     >
       {available.length === 0 && submitted === false && (
-        <span className="px-1 text-xs text-muted-foreground">All words placed</span>
+        <span className="px-1 text-xs text-muted-foreground">{alliengllCopy.player.allWordsPlaced}</span>
       )}
       {available.map((chip) => (
         <BankChip key={chip.id} id={chip.id} text={chip.text} submitted={submitted} onTap={() => onTapChip(chip.id)} />

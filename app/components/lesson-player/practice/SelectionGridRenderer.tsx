@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, X } from "lucide-react";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SelectionGridItem } from "@/lib/items";
 import {
@@ -85,7 +86,7 @@ export function SelectionGridRenderer({
                     onClick={() => setAnswers((prev) => setGridRowAnswer(prev, row.id, true))}
                     className={choiceClassName(answer === true)}
                   >
-                    True
+                    {alliengllCopy.player.true}
                   </button>
                   <button
                     type="button"
@@ -94,7 +95,7 @@ export function SelectionGridRenderer({
                     onClick={() => setAnswers((prev) => setGridRowAnswer(prev, row.id, false))}
                     className={choiceClassName(answer === false)}
                   >
-                    False
+                    {alliengllCopy.player.false}
                   </button>
                   {submitted &&
                     (rowCorrect ? (
@@ -115,7 +116,7 @@ export function SelectionGridRenderer({
           onClick={submit}
           className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover cursor-pointer transition-colors"
         >
-          Submit
+          {alliengllCopy.player.submit}
         </button>
       )}
     </div>

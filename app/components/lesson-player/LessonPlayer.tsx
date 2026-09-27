@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
 import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
 import { fireFunnelEvent } from "@/lib/funnelSource";
@@ -252,7 +253,7 @@ function LessonPlayerBody({
         <div
           className={`rounded-lg border border-brand-border bg-brand-subtle px-3 py-2 text-sm text-brand-text ${READING_WIDTH_CLASS}`}
         >
-          Progress: {lessonScore.percent}% ({lessonScore.earned}/{lessonScore.possible})
+          {alliengllCopy.completion.scoreLabel}: {lessonScore.percent}% ({lessonScore.earned}/{lessonScore.possible})
         </div>
       )}
       {/* `contents` keeps every block a direct flex child of LESSON_COLUMN_CLASS

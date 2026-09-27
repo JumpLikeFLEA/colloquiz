@@ -99,7 +99,7 @@ describe("MatchingRenderer", () => {
     fireEvent.click(screen.getByLabelText("Empty answer slot — tap to select"));
     fireEvent.click(screen.getByText("a loyal pet that barks")); // dog -> r2, incorrect (authored: r1)
 
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { z } from "zod";
 import type { SelfCheckBlockSchema } from "@/lib/lessons";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { THEORY_BODY_TEXT_CLASS } from "../columnLayout";
 import { InlineContentView } from "../InlineContent";
 
@@ -28,7 +29,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
           type="text"
           value={response}
           onChange={(e) => setResponse(e.target.value)}
-          placeholder="Your answer"
+          placeholder={alliengllCopy.theory.selfCheckPlaceholder}
           className="w-full rounded-md border border-input-background bg-background px-3 py-2 text-sm"
         />
       )}
@@ -36,7 +37,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
         <textarea
           value={response}
           onChange={(e) => setResponse(e.target.value)}
-          placeholder="Your answer"
+          placeholder={alliengllCopy.theory.selfCheckPlaceholder}
           rows={4}
           className="w-full rounded-md border border-input-background bg-background px-3 py-2 text-sm"
         />
@@ -65,7 +66,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
 
       {revealed ? (
         <div className={`rounded-md border border-border bg-background px-3 py-2 text-foreground ${THEORY_BODY_TEXT_CLASS}`}>
-          <p className="text-xs font-medium text-muted-foreground mb-1">Model answer</p>
+          <p className="text-xs font-medium text-muted-foreground mb-1">{alliengllCopy.theory.selfCheckModelAnswerLabel}</p>
           <InlineContentView content={block.modelAnswer} />
         </div>
       ) : (
@@ -74,7 +75,7 @@ export function SelfCheckBlockView({ block }: { block: z.infer<typeof SelfCheckB
           onClick={() => setRevealed(true)}
           className="text-sm font-medium text-brand-text underline cursor-pointer"
         >
-          Show model answer
+          {alliengllCopy.theory.selfCheckShowModelAnswer}
         </button>
       )}
     </div>

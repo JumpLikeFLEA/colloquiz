@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Check, X } from "lucide-react";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SelectionItem } from "@/lib/items";
 import { shuffleForItem } from "@/lib/items/shuffle";
@@ -94,7 +95,7 @@ export function SelectionRenderer({
           onClick={submit}
           className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand transition-colors"
         >
-          Submit
+          {alliengllCopy.player.submit}
         </button>
       )}
     </div>

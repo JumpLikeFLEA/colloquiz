@@ -46,6 +46,27 @@ export const alliengllCopy = {
     retry: "Пройти ещё раз",
     backToCourse: "Назад к курсу",
     why: "Почему?",
+    hide: "Скрыть",
+    true: "Верно",
+    false: "Неверно",
+    dragReorderHint: "Удерживайте и перетаскивайте, чтобы изменить порядок.",
+    tapToMatch: "Нажмите, чтобы сопоставить",
+    returnToPool: "Вернуть в список",
+    allStatementsSorted: "Все утверждения распределены",
+    correctAnswerPrefix: "Правильно",
+    gapLabel: "Пропуск",
+    clear: "Очистить",
+    allWordsPlaced: "Все слова расставлены",
+  },
+
+  theory: {
+    exampleLabel: "Пример",
+    selfCheckPlaceholder: "Ваш ответ",
+    selfCheckModelAnswerLabel: "Пример ответа",
+    selfCheckShowModelAnswer: "Показать пример ответа",
+    videoTitle: "Видео к уроку",
+    videoPlayAriaLabel: "Воспроизвести видео",
+    videoClickToPlay: "Нажмите, чтобы посмотреть видео",
   },
 
   completion: {

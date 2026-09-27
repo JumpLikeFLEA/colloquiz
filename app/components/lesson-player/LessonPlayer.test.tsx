@@ -66,7 +66,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
 
     fireEvent.click(screen.getByRole("radio", { name: "She goes to school every day." }));
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -86,8 +86,8 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     expect(await screen.findByText("True or False?")).toBeDefined();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "True" })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Верно" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -107,7 +107,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     expect(await screen.findByText("Put the words in the correct order.")).toBeDefined();
 
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -129,7 +129,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     fireEvent.click(screen.getAllByLabelText("Empty answer slot — tap to select")[0]); // ubiquitous's slot
     fireEvent.click(screen.getByText("present everywhere")); // correct pair (p1: l1 -> r2)
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -148,9 +148,9 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     );
 
     fireEvent.click(await screen.findByRole("radio", { name: "She go to school every day." })); // wrong option
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
-    const why = screen.getByRole("button", { name: "Why?" });
+    const why = screen.getByRole("button", { name: "Почему?" });
     expect(why.getAttribute("aria-expanded")).toBe("false");
     expect(lessonBlocks().queryByText(/Third person singular/)).toBeNull();
 
@@ -171,13 +171,13 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     // Submitted with no row answered — every row scores incorrect (documented
     // "unanswered" convention), so all three explanations are checkable at once.
-    fireEvent.click(await screen.findByRole("button", { name: "Submit" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Проверить" }));
 
     expect(screen.getByText("1.")).toBeDefined();
     expect(screen.getByText("2.")).toBeDefined();
     expect(screen.getByText("3.")).toBeDefined();
 
-    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
+    const whyButtons = screen.getAllByRole("button", { name: "Почему?" });
     expect(whyButtons).toHaveLength(3);
 
     fireEvent.click(whyButtons[1]);
@@ -195,13 +195,13 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     );
 
     // Submitted with nothing paired — every pair scores incorrect.
-    fireEvent.click(await screen.findByRole("button", { name: "Submit" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Проверить" }));
 
     expect(screen.getByText("1.")).toBeDefined();
     expect(screen.getByText("2.")).toBeDefined();
     expect(screen.getByText("3.")).toBeDefined();
 
-    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
+    const whyButtons = screen.getAllByRole("button", { name: "Почему?" });
     expect(whyButtons).toHaveLength(3);
 
     fireEvent.click(whyButtons[0]);
@@ -220,12 +220,12 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     // shuffleOrderingIndices never returns the identity permutation (lib/items/
     // shuffle.ts), so submitting untouched always leaves at least one wrong row.
-    fireEvent.click(await screen.findByRole("button", { name: "Submit" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Проверить" }));
 
     const result = onScore.mock.calls[0][0];
     expect(result.subResults.some((r) => !r.correct)).toBe(true);
 
-    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
+    const whyButtons = screen.getAllByRole("button", { name: "Почему?" });
     expect(whyButtons.length).toBeGreaterThan(0);
     fireEvent.click(whyButtons[0]);
     expect(
@@ -249,7 +249,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     fireEvent.change(screen.getByLabelText("Gap 1"), { target: { value: "go" } });
     fireEvent.change(screen.getByLabelText("Gap 2"), { target: { value: "on" } });
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -270,10 +270,10 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     // Only Gap 1 is answered (correctly) — Gap 2 stays untouched, so it
     // scores incorrect (documented "untouched" convention) and gets a "Why?".
     fireEvent.change(await screen.findByLabelText("Gap 1"), { target: { value: "go" } });
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
-    expect(screen.getByText("Gap 2:")).toBeDefined();
-    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
+    expect(screen.getByText("Пропуск 2:")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Почему?" }));
     expect(lessonBlocks().getByText(/take the preposition "on"/)).toBeDefined();
   });
 });
@@ -296,10 +296,14 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
     expect(screen.queryByText(/Ваш результат/)).toBeNull();
 
     fireEvent.click(await screen.findByRole("radio", { name: "She goes to school every day." })); // correct
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(screen.getByText("Урок завершён")).toBeDefined();
-    expect(screen.getByText(/Ваш результат: 100% \(1\/1\)/)).toBeDefined();
+    // Two elements now carry this line: the always-scrolled-to-top progress
+    // banner (docs/decisions/0058's "proposed new card", fixed by SHELL-011 —
+    // it reused this same Russian copy instead of its old hardcoded English)
+    // and LessonCompletion's own score line, further down the page.
+    expect(screen.getAllByText(/Ваш результат: 100% \(1\/1\)/).length).toBe(2);
     expect(screen.queryByText("Разбор ответов")).toBeNull(); // nothing wrong to review
   });
 
@@ -314,13 +318,13 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
     );
 
     fireEvent.click(await screen.findByRole("radio", { name: "She go to school every day." })); // wrong option
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(screen.getByText("Разбор ответов")).toBeDefined();
     // Two copies now exist: the inline (still-collapsed) panel and this
     // review section's own — see lessonBlocks()'s doc comment above.
     expect(screen.getAllByText(/Third person singular present tense takes an -s ending/)).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
+    fireEvent.click(screen.getByRole("button", { name: "Почему?" }));
     expect(screen.getAllByText(/Third person singular present tense takes an -s ending/)).toHaveLength(2);
   });
 

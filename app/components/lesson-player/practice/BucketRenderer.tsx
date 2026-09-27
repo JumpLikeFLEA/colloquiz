@@ -11,6 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, X } from "lucide-react";
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, MatchingItem } from "@/lib/items";
 import type { MatchingContent, MatchingElement } from "@/lib/items/matching";
@@ -185,7 +186,7 @@ export function BucketRenderer({
             }}
             className="mt-3 min-h-11 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors cursor-pointer hover:border-destructive-border"
           >
-            Return to pool
+            {alliengllCopy.player.returnToPool}
           </button>
         )}
         <DragOverlay>
@@ -198,7 +199,7 @@ export function BucketRenderer({
           onClick={submit}
           className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover cursor-pointer transition-colors"
         >
-          Submit
+          {alliengllCopy.player.submit}
         </button>
       )}
     </div>
@@ -297,7 +298,7 @@ function Pool({
       }`}
     >
       {statementIds.length === 0 && submitted === false && (
-        <span className="px-1 text-xs text-muted-foreground">All statements sorted</span>
+        <span className="px-1 text-xs text-muted-foreground">{alliengllCopy.player.allStatementsSorted}</span>
       )}
       {statementIds.map((id) => {
         const statement = statementById.get(id);
@@ -369,7 +370,11 @@ function StatementChip({
       </button>
       {submitted && feedback && !feedback.correct && (
         <div className="flex flex-col gap-0.5 pl-1">
-          {feedback.note && <span className="text-xs text-muted-foreground">Correct: {feedback.note}</span>}
+          {feedback.note && (
+            <span className="text-xs text-muted-foreground">
+              {alliengllCopy.player.correctAnswerPrefix}: {feedback.note}
+            </span>
+          )}
           {feedback.explanation && <ExplanationDisclosure explanation={feedback.explanation} />}
         </div>
       )}

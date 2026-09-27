@@ -697,3 +697,30 @@ Appended to in the same commit as the change it records. Referenced from
   `/courses/future-imperfect/*` FAILs (0060/0062, no local Supabase stack in
   this environment) are unrelated and unaffected. Do not fold
   `getPublishedCourses()` back into `courseCatalogue.ts`.
+- Lesson player chrome, fully wired to `lib/alliengll/copy.ts` (2026-09-27,
+  SHELL-011, docs/decisions/0071): every practice renderer's "Submit" button
+  and a long tail of other player chrome (True/False, "Tap to match", "Return
+  to pool", "All words placed"/"All statements sorted", the "Gap N"/"Gap N:"
+  labels, "Clear", the "Correct: <bucket>" note, the shared
+  `ExplanationDisclosure`'s "Why?"/"Hide", `ExampleBlock`'s default "Example"
+  label, `SelfCheckBlock`'s placeholder/"Model answer"/"Show model answer",
+  `VideoBlock`'s title/play label/"Click to play video") were hardcoded
+  English on this Russian-only surface (docs/handoff.md, "Audience and
+  language") — some ignoring `alliengllCopy.player.submit`/`.why`, which
+  already existed in Russian and were simply never imported. `LessonPlayer.tsx`'s
+  own progress banner (previously "Progress: X% (...)", flagged but
+  deliberately left unfixed by 0058) now reuses
+  `alliengllCopy.completion.scoreLabel` — the same string `LessonCompletion`
+  renders — so the banner and the completion box read identically once a
+  lesson is scored; THIS DUPLICATION IS NOT NEW (the banner predates
+  PLAY-007's completion box per 0058) and was not removed here — only its
+  language was fixed. Screen-reader-only `aria-label`s that interpolate
+  authored text (drag/gap descriptions) were deliberately left in English —
+  deferred, not judged unimportant; see 0071. Also: lesson headings
+  (`HeadingBlockView`) gained an `lg:` size step (`lg:text-xl`/`lg:text-lg`)
+  and `LESSON_COLUMN_CLASS`'s block gap grew `lg:gap-6`, matching the `lg:`
+  body-text precedent decision 0043 already set — the column grew to
+  `max-w-5xl` at `lg` in that card but headings/spacing never scaled with it.
+  Nothing changes below 1024px. Do not add a locale-selection mechanism to
+  satisfy this — copy stays a flat, Russian-only object per the standing
+  "one surface, one language" rule.

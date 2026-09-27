@@ -97,7 +97,7 @@ describe("OrderingRenderer", () => {
 
   it("shows a hold-and-drag hint before submission", () => {
     render(<OrderingRenderer item={parsedOrdering()} attemptId="attempt-1" onScore={() => {}} />);
-    expect(screen.getByText("Hold and drag the handle to reorder.")).toBeDefined();
+    expect(screen.getByText("Удерживайте и перетаскивайте, чтобы изменить порядок.")).toBeDefined();
   });
 
   it("keyboard: Space to pick up, ArrowDown to move, Space to drop reorders the row and renumbers it", async () => {
@@ -122,7 +122,7 @@ describe("OrderingRenderer", () => {
     const onScore = vi.fn<(result: ItemScoreResult) => void>();
     render(<OrderingRenderer item={parsedOrdering()} attemptId="attempt-1" onScore={onScore} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
