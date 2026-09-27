@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
+import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
 import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
@@ -39,8 +40,10 @@ export interface PracticeRendererProps {
    * generate this itself. */
   attemptId: string;
   /** Called by a real per-type renderer (PLAY-002..004) once the learner
-   * submits a response. Recorded in local session state only — attempt
-   * storage is M2, so nothing here reaches the network. */
+   * submits a response. Always updates local session state; ANON-005 adds a
+   * best-effort record of the attempt for a signed-in learner (see
+   * `LessonPlayer`'s own doc comment) — nothing here awaits or surfaces that
+   * network call. */
   onScore: (result: ItemScoreResult) => void;
 }
 
@@ -55,8 +58,9 @@ export interface LessonPlayerProps {
    * `useId()`, which is tree-position-derived, not random: every fresh
    * server-rendered load produced the SAME id for every visitor, making the
    * "shuffle" fixed per lesson rather than per attempt). The caller supplies
-   * it — `crypto.randomUUID()` today (no attempt storage exists yet, M2), the
-   * real server-issued attempt id once M2 lands. */
+   * a fresh `crypto.randomUUID()` per page load — a shuffle seed only, never
+   * the per-block `attempt_id` ANON-005's recording path generates
+   * separately for `lesson_attempts`' own idempotency key. */
   attemptId: string;
   /** Renders one practice block and reports its score back. Defaults to a
    * placeholder — no item type has an interactive renderer until
@@ -69,6 +73,17 @@ export interface LessonPlayerProps {
    * them. */
   courseSlug?: string;
   nextLesson?: NextLessonLink | null;
+  /** ANON-005 — the currently played lesson_versions.id, what a recorded
+   * attempt is keyed against server-side. Defaults to "" (no recording),
+   * matching pre-ANON-005 behaviour for callers (tests, the demo page, the
+   * author preview) that don't pass it — none of those are a real learner
+   * attempt worth persisting. */
+  lessonVersionId?: string;
+  /** ANON-005 — whether the caller already resolved an authenticated session
+   * server-side (`lib/publicLesson.ts`'s `authUserFrom`). Defaults to false.
+   * Recording never happens unless this is true AND `lessonVersionId` is set,
+   * so passing one without the other is inert, not a half-broken state. */
+  isSignedIn?: boolean;
 }
 
 /**
@@ -77,8 +92,9 @@ export interface LessonPlayerProps {
  * lesson is short theory block, then a couple of exercises, repeated").
  * Holds per-item scores in local component state and rolls them into a
  * lesson-level result via `aggregateLessonScore` (0016, wrapped by
- * lib/lessonPlayer/session.ts) — nothing here is persisted; attempt storage
- * is M2.
+ * lib/lessonPlayer/session.ts). ANON-005 (below) adds persistence for a
+ * signed-in learner; local state stays the source of truth for what's
+ * rendered on this page load either way.
  *
  * PLAY-008 — per-sub-part explanations ("Why?", resolved via
  * `resolveExplanations`/0017) are rendered by each per-type renderer
@@ -87,6 +103,21 @@ export interface LessonPlayerProps {
  * session.ts, still tested in session.test.ts) is what PLAY-007's
  * end-of-lesson explanation review will call instead, over the full
  * lesson's `results`.
+ *
+ * ANON-005 — a signed-in learner's score is also handed to
+ * `lib/lessonPlayer/attemptStore.ts`'s already-built, already-tested store +
+ * upload path (ANON-002/003): recorded locally, then immediately uploaded
+ * through `record_lesson_attempts`. Reusing that path (rather than calling
+ * the RPC straight from here) gets idempotent retry for free — a failed
+ * upload simply leaves the attempt sitting in local storage, and the next
+ * scored block's upload call retries the whole pending batch, not just the
+ * new item (0063 Decision 4's "per-call failure handling", not a permanent
+ * give-up flag). The Supabase browser client (`@supabase/ssr`) is imported
+ * dynamically, only inside that upload call, so an anonymous visitor who
+ * never triggers it never downloads it — the code path exists in this
+ * bundle, but the chunk behind it doesn't ship unless `isSignedIn` is true
+ * (docs/handoff.md's performance boundary: "no `@supabase/ssr` client JS on
+ * the critical path" for an anonymous learner).
  */
 export function LessonPlayer({
   document,
@@ -94,12 +125,29 @@ export function LessonPlayer({
   practiceRenderer,
   courseSlug = "",
   nextLesson = null,
+  lessonVersionId = "",
+  isSignedIn = false,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
   const [results, setResults] = useState<LessonSessionResults>({});
+  const [attemptStore] = useState<AttemptStore>(() => createAttemptStore());
 
   if (!parsed.ok) {
     return <LessonPlayerError errors={parsed.errors} />;
+  }
+
+  function handleScore(blockId: string, result: ItemScoreResult) {
+    setResults((prev) => ({ ...prev, [blockId]: result }));
+
+    if (!isSignedIn || !lessonVersionId) return;
+    attemptStore.record({
+      attemptId: crypto.randomUUID(),
+      lessonVersionId,
+      blockId,
+      earned: result.earned,
+      possible: result.possible,
+    });
+    void recordSignedInAttempt(attemptStore);
   }
 
   return (
@@ -107,12 +155,26 @@ export function LessonPlayer({
       document={parsed.document}
       results={results}
       attemptId={attemptId}
-      onScore={(itemId, result) => setResults((prev) => ({ ...prev, [itemId]: result }))}
+      onScore={handleScore}
       practiceRenderer={practiceRenderer}
       courseSlug={courseSlug}
       nextLesson={nextLesson}
     />
   );
+}
+
+/** Dynamically imports the browser Supabase client so its `@supabase/ssr`
+ * bundle only ships to a learner who actually reaches this call (see
+ * `LessonPlayer`'s own doc comment). A failed upload is swallowed, not
+ * surfaced to the learner — nothing here blocks or interrupts play, and the
+ * attempt stays in `store` for the next scored block to retry. */
+async function recordSignedInAttempt(store: AttemptStore): Promise<void> {
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    await uploadPendingAttempts(store, createClient());
+  } catch (err) {
+    console.error("failed to record lesson attempt", err);
+  }
 }
 
 function LessonPlayerBody({

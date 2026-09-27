@@ -74,6 +74,8 @@ export default async function LessonPage({
       attemptId={attemptId}
       courseSlug={courseSlug}
       nextLesson={nextLesson}
+      lessonVersionId={lesson.lessonVersionId}
+      isSignedIn={lesson.isSignedIn}
     />
   );
 }

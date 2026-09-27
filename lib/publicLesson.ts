@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type PublicLessonMeta = {
@@ -11,7 +12,14 @@ export type PublicLessonMeta = {
 export type PublicLesson =
   | { state: "not_found" }
   | ({ state: "not_available" } & PublicLessonMeta)
-  | ({ state: "ok"; document: unknown[]; courseId: string; ordinal: number } & PublicLessonMeta);
+  | ({
+      state: "ok";
+      document: unknown[];
+      courseId: string;
+      ordinal: number;
+      lessonVersionId: string;
+      isSignedIn: boolean;
+    } & PublicLessonMeta);
 
 /**
  * The public read path for a lesson (PLAY-006) — the first place the English
@@ -31,6 +39,14 @@ export type PublicLesson =
  * otherwise surface an unpublished draft on this public URL too. This route
  * only ever serves published content, editors included — the author path
  * for a draft is the preview screen (AUTH-005), not this one.
+ *
+ * ANON-005 — `lessonVersionId` and `isSignedIn` are what `LessonPlayer`
+ * needs to record attempts directly for a signed-in learner (lib/
+ * lessonPlayer/attemptStore.ts's upload path). `isSignedIn` uses
+ * `authUserFrom` (lib/auth.ts), not `getUser()`, for the same signature-only,
+ * no-auth-server-round-trip reason every other server-side identity check in
+ * this app does — this route in particular must stay fast for an anonymous
+ * visitor.
  */
 // cache(): SHELL-009's generateMetadata and the page component both call
 // this for the same slugs within one request; React dedupes it to a single
@@ -84,11 +100,15 @@ export const getPublicLesson = cache(async (courseSlug: string, lessonSlug: stri
     throw new Error(`can_read_lesson(${lesson.id}) is true but its published_version_id has no readable row`);
   }
 
+  const user = await authUserFrom(supabase);
+
   return {
     state: "ok",
     document: version.document as unknown[],
     courseId: course.id,
     ordinal: lesson.ordinal,
+    lessonVersionId: lesson.published_version_id,
+    isSignedIn: user !== null,
     ...meta,
   };
 });

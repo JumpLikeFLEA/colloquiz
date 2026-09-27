@@ -15,6 +15,11 @@ import type { NextLessonLink } from "@/lib/publicLesson";
  * PLAY-007 adds `courseSlug`/`nextLesson`, forwarded straight to `LessonPlayer`
  * for its completion screen — see that component for why the "next lesson"
  * link is resolved server-side rather than here.
+ *
+ * ANON-005 adds `lessonVersionId`/`isSignedIn`, forwarded straight to
+ * `LessonPlayer` so it can record a signed-in learner's attempts — see that
+ * component for why the recording code is dynamically imported rather than
+ * a static import here.
  */
 export function LessonPageClient({
   title,
@@ -22,12 +27,16 @@ export function LessonPageClient({
   attemptId,
   courseSlug,
   nextLesson,
+  lessonVersionId,
+  isSignedIn,
 }: {
   title: string;
   document: unknown[];
   attemptId: string;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
+  lessonVersionId: string;
+  isSignedIn: boolean;
 }) {
   return (
     <div className="py-8">
@@ -40,6 +49,8 @@ export function LessonPageClient({
         practiceRenderer={practiceRenderer}
         courseSlug={courseSlug}
         nextLesson={nextLesson}
+        lessonVersionId={lessonVersionId}
+        isSignedIn={isSignedIn}
       />
     </div>
   );

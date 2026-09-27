@@ -29,6 +29,7 @@ export type PublicCourse =
   | { state: "not_found" }
   | {
       state: "ok";
+      id: string;
       title: string;
       description: string | null;
       subtitle: string | null;
@@ -60,6 +61,7 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
 
   return {
     state: "ok",
+    id: course.id,
     title: course.title,
     description: course.description,
     subtitle: course.subtitle,

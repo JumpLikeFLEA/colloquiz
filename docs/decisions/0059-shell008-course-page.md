@@ -93,11 +93,13 @@ All routes within budget.
 
 ## What would make us revisit it
 
-- The moment either ANON-002 or ANON-003 lands, this page needs one change:
-  build a real `AttemptsByLessonSlug` map and pass it to `courseProgress()`/
-  `bestScoreForLesson()` instead of `{}`. If that turns out to need more than
-  a call-site change, Decision 1's "pure function over an explicit map" shape
-  was wrong and should be revisited then, not patched around.
+- **Done (ANON-005, docs/decisions/0067):** the page now passes a real
+  `AttemptsByLessonSlug` map (`lib/courseAttempts.ts`'s
+  `getCourseAttemptSummary`) instead of `{}`. It needed one call-site change
+  plus a new server-side aggregation function (0067 Decision 5) — the
+  cross-version join RLS wouldn't allow as a plain embed — not a change to
+  `courseProgress()`/`bestScoreForLesson()` themselves, so Decision 1's "pure
+  function over an explicit map" shape held.
 - If `lesson-player-demo/page.tsx` (Decision 4) is ever touched for an
   unrelated reason, fix its barrel import too rather than leaving two
   instances of the same latent leak.

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { getPublicCourse } from "@/lib/coursePage";
 import { bestScoreForLesson, courseProgress, firstFreeLesson } from "@/lib/coursePageProgress";
 // Direct path, not the `@/app/components/lesson-player` barrel: that barrel
@@ -21,9 +22,10 @@ import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/colum
  * shape as PLAY-006's lesson page (lib/coursePage.ts reads via
  * lib/supabase/server.ts).
  *
- * No `attempts` argument is passed to `courseProgress`/lesson best-score yet
- * — see lib/coursePageProgress.ts's header comment: ANON-002/003 don't
- * exist, so an empty map is the true current state, not a stub.
+ * ANON-005 — `attempts` is now a real map built by
+ * lib/courseAttempts.ts's getCourseAttemptSummary() (empty for a signed-out
+ * visitor, per that module's own header), superseding 0059's "called with an
+ * empty map until ANON-002/003 land" note.
  */
 // SHELL-009 — og:title/og:description come from these (Next's Metadata API
 // fallback), the og:image from the co-located opengraph-image.tsx, which
@@ -50,7 +52,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
   if (course.state === "not_found") notFound();
 
-  const progress = courseProgress(course.lessons, {});
+  const attempts = await getCourseAttemptSummary(course.id);
+  const progress = courseProgress(course.lessons, attempts);
   const firstFree = firstFreeLesson(course.lessons);
 
   return (
@@ -101,7 +104,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
         <ul className="flex flex-col gap-3">
           {course.lessons.map((lesson) => {
-            const bestPercent = bestScoreForLesson(lesson.slug, {});
+            const bestPercent = bestScoreForLesson(lesson.slug, attempts);
             return (
               <li key={lesson.slug}>
                 <Link
