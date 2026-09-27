@@ -1600,6 +1600,27 @@ export const CARDS = [
     ],
   },
   {
+    key: 'ANON-007',
+    title: 'Remove unused /api/pending-claims/claim route',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2135,
+    dependsOn: ['ANON-004'],
+    goal:
+      'ANON-004\'s pre-push review (docs/decisions/0068 Decision 4) found ' +
+      'the confirmation callback calls claim_pending_claim directly rather ' +
+      'than round-tripping through ANON-006\'s authenticated claim endpoint ' +
+      '(app/api/pending-claims/claim/route.ts) — the only caller that route ' +
+      'was ever built for. `rg -n "pending-claims/claim|pending_claims/claim"` ' +
+      'finds nothing but the route\'s own doc comment referencing itself.',
+    acceptance: [
+      'app/api/pending-claims/claim/route.ts is deleted.',
+      '`rg -n "pending-claims/claim|pending_claims/claim"` shows no references anywhere in the repo.',
+      '`npm run check && npm test` both green.',
+    ],
+  },
+  {
     key: 'ANON-005',
     title: 'Signed-in learners record attempts directly',
     milestone: 'M2',
