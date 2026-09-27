@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -24,6 +25,25 @@ import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/colum
  * — see lib/coursePageProgress.ts's header comment: ANON-002/003 don't
  * exist, so an empty map is the true current state, not a stub.
  */
+// SHELL-009 — og:title/og:description come from these (Next's Metadata API
+// fallback), the og:image from the co-located opengraph-image.tsx, which
+// does its own getPublicCourse call — cache() (lib/coursePage.ts) dedupes
+// the two calls this function and the page component both make.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ courseSlug: string }>;
+}): Promise<Metadata> {
+  const { courseSlug } = await params;
+  const course = await getPublicCourse(courseSlug);
+  if (course.state === "not_found") return {};
+
+  return {
+    title: course.title,
+    description: course.description ?? undefined,
+  };
+}
+
 export default async function CoursePage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;
   const course = await getPublicCourse(courseSlug);

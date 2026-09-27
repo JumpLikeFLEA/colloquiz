@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { CefrLevel } from "@/lib/courseLevels";
 import type { PublicCourseLesson } from "@/lib/coursePageProgress";
@@ -36,7 +37,10 @@ export type PublicCourse =
       lessons: PublicCourseLesson[];
     };
 
-export async function getPublicCourse(courseSlug: string): Promise<PublicCourse> {
+// cache(): SHELL-009's generateMetadata and the page component both call
+// this for the same courseSlug within one request; React dedupes it to a
+// single query (lib/leaderboard.ts / lib/supabase/queries.ts precedent).
+export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicCourse> => {
   const supabase = await createClient();
 
   const { data: course, error: courseErr } = await supabase
@@ -71,4 +75,4 @@ export async function getPublicCourse(courseSlug: string): Promise<PublicCourse>
       ordinal: l.ordinal,
     })),
   };
-}
+});

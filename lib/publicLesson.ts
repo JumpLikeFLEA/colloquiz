@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type PublicLessonMeta = {
@@ -31,7 +32,10 @@ export type PublicLesson =
  * only ever serves published content, editors included — the author path
  * for a draft is the preview screen (AUTH-005), not this one.
  */
-export async function getPublicLesson(courseSlug: string, lessonSlug: string): Promise<PublicLesson> {
+// cache(): SHELL-009's generateMetadata and the page component both call
+// this for the same slugs within one request; React dedupes it to a single
+// query (same precedent as lib/coursePage.ts's getPublicCourse).
+export const getPublicLesson = cache(async (courseSlug: string, lessonSlug: string): Promise<PublicLesson> => {
   const supabase = await createClient();
 
   const { data: course, error: courseErr } = await supabase
@@ -87,7 +91,7 @@ export async function getPublicLesson(courseSlug: string, lessonSlug: string): P
     ordinal: lesson.ordinal,
     ...meta,
   };
-}
+});
 
 export type NextLessonLink = { slug: string; title: string };
 

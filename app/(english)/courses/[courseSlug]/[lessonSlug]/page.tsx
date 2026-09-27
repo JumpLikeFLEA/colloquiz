@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getNextLesson, getPublicLesson } from "@/lib/publicLesson";
@@ -17,6 +18,27 @@ import { LessonPageClient } from "./LessonPageClient";
  * attemptId is generated here, per request, server-side (docs/decisions/0029
  * Decision 1) — never derived from anything the client sends.
  */
+// SHELL-009 — title/description visible for every lesson regardless of
+// entitlement (docs/handoff.md, "Preview, precisely"), so this reads the
+// same "not_available" (paid) state as the page and still returns real
+// metadata for it, not a placeholder. og:image comes from the co-located
+// opengraph-image.tsx; cache() (lib/publicLesson.ts) dedupes the repeat
+// getPublicLesson call between this function and the page component.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ courseSlug: string; lessonSlug: string }>;
+}): Promise<Metadata> {
+  const { courseSlug, lessonSlug } = await params;
+  const lesson = await getPublicLesson(courseSlug, lessonSlug);
+  if (lesson.state === "not_found") return {};
+
+  return {
+    title: lesson.title,
+    description: lesson.description ?? undefined,
+  };
+}
+
 export default async function LessonPage({
   params,
 }: {

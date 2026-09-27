@@ -6,6 +6,7 @@
   "app/(colloquiz)/(main)/app/quiz/[id]/QuizSession.tsx": 9,
   "app/(colloquiz)/(main)/app/results/[id]/page.tsx": 5,
   "app/(colloquiz)/(main)/app/students/review/[assignmentId]/page.tsx": 5,
+  "app/(english)/courses/ogImageCard.tsx": 2,
   "app/apple-icon.tsx": 1,
   "app/components/ProviderIcons.tsx": 5,
   "app/icon.tsx": 1,
