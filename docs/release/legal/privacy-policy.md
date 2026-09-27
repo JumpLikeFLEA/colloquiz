@@ -64,6 +64,7 @@ that produces legal or similarly significant effects.
 | Duel records — opponent, outcome, scores — and an internal skill rating | To run 1-v-1 duels and show a skill tier |
 | Notifications and your notification preferences | To tell you about things that concern you inside the app |
 | Quizzes you create or share, and share links you generate | To provide those features |
+| English lesson practice-item attempts — each item you complete, its score, and which lesson block it belongs to | To score your lesson and show your progress, and, if you started before signing in, to carry that progress onto your account once you do |
 
 **Your numeric skill rating is never shown to anyone, including you.** It is stored with
 database permissions that make it unreadable outside the duel calculation itself; only a
@@ -109,8 +110,20 @@ they are exempt from the consent requirement under the ePrivacy Directive and it
 implementations. **We therefore do not show a cookie banner.** We set no advertising,
 tracking or analytics cookies. If that ever changes, we will ask for your consent first.
 
-Your browser's local storage is also used for small interface conveniences (for example a
-remembered tab). That data never leaves your device.
+Your browser's local storage is used for small interface conveniences (for example a
+remembered tab), which never leave your device. For the English course platform
+specifically, it also holds the scores of practice items you complete before you have an
+account. Once you sign in, those scores are uploaded to your account and then cleared
+from the browser.
+
+When you sign up by email, those scores are also held briefly on our server, so they
+reach your account even if you open the confirmation link on a different device or
+browser. They are stored against a one-time code carried in your confirmation link; we
+keep only a hashed form of that code. The stash is used up the first time the link is
+opened. If the link is never opened, it stops working after 7 days and is deleted the
+next time anyone signs up — not on a fixed schedule. The IP address of the request that
+creates it is logged separately, only to prevent abuse, and deleted automatically after
+one hour.
 
 ### 3.5 What we do not collect
 
@@ -123,8 +136,9 @@ name or feedback.
 
 | Purpose | Legal basis |
 | --- | --- |
-| Creating and running your account; providing quizzes, progress, groups and duels | **Contract** (Art. 6(1)(b)) — performance of our Terms of Service |
+| Creating and running your account; providing quizzes, progress, groups, duels and English lesson attempts | **Contract** (Art. 6(1)(b)) — performance of our Terms of Service |
 | Sending account email: confirmation, password reset | **Contract** |
+| Temporarily linking English lesson scores you earned before signing up to your account, via the confirmation link you request at sign-up | **Contract** (Art. 6(1)(b)) — a step you request in order to enter into the contract |
 | Keeping the Service secure, preventing abuse, moderating reported content | **Legitimate interests** (Art. 6(1)(f)) — running a safe service |
 | Aggregate, non-identifying analytics to keep the Service working | **Legitimate interests** — we use privacy-preserving, cookieless tools, which we consider a minimal intrusion |
 | Complying with legal obligations | **Legal obligation** (Art. 6(1)(c)) |
@@ -174,6 +188,9 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | Feedback and question reports | Up to 24 months, so we can track recurring problems |
 | Provider server logs | Per the provider's own policy, typically days to a few weeks |
 | Error reports | Per the monitoring provider's retention, typically 30–90 days |
+| English lesson practice attempts | Until you close your account; then **deleted outright**, not anonymised — see section 9 |
+| Cross-device claim stash (pre-signup lesson scores held server-side) | Deleted when the confirmation link is first used; if never used, unusable after 7 days and deleted at the next sign-up after that |
+| IP address logged when creating a cross-device claim stash | 1 hour |
 
 ## 8. Your rights
 
@@ -181,7 +198,8 @@ Under the GDPR / UK GDPR you have the right to:
 
 - **Access** your data, and to receive a **portable copy**. You can do this yourself,
   immediately: **Settings › Data and privacy › Export my data** produces a complete JSON
-  file of your profile, results, achievements, group memberships and duel history.
+  file of your profile, results, achievements, group memberships, duel history and
+  English lesson practice attempts.
 - **Rectify** inaccurate data — Settings › Account.
 - **Erase** your data ("right to be forgotten") — **Settings › Data and privacy › Delete
   my account**. See section 9 for exactly what this does.
@@ -202,6 +220,7 @@ When you delete your account we, immediately and irreversibly:
 - erase your name, public name, city and profile picture;
 - remove your notifications, notification preferences and any in-progress quiz;
 - remove you from all leaderboards;
+- erase your English lesson practice attempts outright — see the contrast below;
 - close your sign-in — you can no longer access the account, and neither can anyone else.
 
 We **retain your quiz results and any questions or quizzes you contributed, in
@@ -209,7 +228,9 @@ anonymised form**, with no link back to you. We do this because other people's d
 depends on it: group members' quiz histories, shared questions other learners are
 answering, and aggregate subject statistics would otherwise be destroyed or corrupted.
 This is permitted under Art. 17(3) and Art. 89 — anonymised data is no longer personal
-data.
+data. Your English lesson practice attempts are different: nothing else in the Service
+reads another learner's attempts, so there is no one else's data at stake, and they are
+deleted outright rather than kept anonymised.
 
 If you would prefer a different outcome, email privacy@colloquiz.app and we will discuss what
 is possible.
