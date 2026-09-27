@@ -1163,13 +1163,23 @@ export const CARDS = [
       'found the same gap in both — this is not new to ANON-006, it is a ' +
       'shape all three tables share and none of them has a sweep for. ' +
       '(`pending_claims` itself is separately lazy-swept by 049\'s own ' +
-      'create RPC; only the three *_log tables are unaddressed.)',
+      'create RPC; only the three *_log tables are unaddressed.) ' +
+      'OPS-008 (migration 051, docs/decisions/0069) added a fourth: ' +
+      '`funnel_events_creation_log`. Unlike the other three, its writer ' +
+      '(record_funnel_event) already prunes rows past the 1-hour window on ' +
+      'every call — the IP address it holds must never outlive the ' +
+      'rate-limit window it serves (0069 Decision 4), so this one can\'t ' +
+      'wait for a scheduled sweep the way the other three do. It belongs in ' +
+      'this card\'s report anyway, as a check that the inline prune is ' +
+      'actually holding steady near zero over time, not as a table that ' +
+      'needs the same deletion step the other three are missing.',
     acceptance: [
       'A script (or scheduled job), modelled on AUTH-006\'s report-first shape, prints per-table row counts and age distribution for `pending_claims_creation_log`, and the feedback/account-export rate-limit log tables\' rows past their own rate-limit window (1 hour in all three).',
-      'Deletion is a separate, explicit step from the report — the first run is read-only, printed output only, so real row counts can be sanity-checked before anything is deleted.',
+      'The same report also covers `funnel_events_creation_log` — expected near-zero at all times given its inline prune (051); a nonzero steady count is a signal that prune is broken, not something this card\'s own deletion step needs to fix.',
+      'Deletion is a separate, explicit step from the report — the first run is read-only, printed output only, so real row counts can be sanity-checked before anything is deleted. Applies to the three tables with no existing cleanup; funnel_events_creation_log needs no deletion step of its own.',
       'Run manually first against real data with output printed; only scheduled once that output looks correct.',
     ],
-    notes: 'priority:low. Proposed 2026-09-27 during ANON-006 (#121) privilege review, not blocking any open card.',
+    notes: 'priority:low. Proposed 2026-09-27 during ANON-006 (#121) privilege review, not blocking any open card. Scope widened 2026-09-27 during OPS-008 to also report on funnel_events_creation_log (docs/decisions/0069).',
   },
   {
     key: 'SHELL-014',

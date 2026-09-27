@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-import { hashClaimToken } from '@/lib/pendingClaims'
+import { extractClientIp, hashClaimToken } from '@/lib/pendingClaims'
 import { safeNext } from '@/lib/safeNext'
+import { recordServerFunnelEvent } from '@/lib/funnelEventServer'
+import { isFunnelSource } from '@/lib/funnelSource'
 
 /**
  * ANON-004 — after a successful verification establishes a session, claim
@@ -38,13 +40,21 @@ async function claimPendingAttempts(supabase: SupabaseClient, claim: string | nu
  * throws on a bare path (not absolute), which is exactly the signal used to
  * tell the two shapes apart without a flag.
  */
-export function unwrapNext(rawNext: string, rawClaim: string | null): { next: string; claim: string | null } {
+export function unwrapNext(
+  rawNext: string,
+  rawClaim: string | null,
+  rawSource: string | null = null,
+): { next: string; claim: string | null; source: string | null } {
   try {
     const parsed = new URL(rawNext)
     const innerNext = parsed.searchParams.get('next')
-    return { next: innerNext ?? rawNext, claim: rawClaim ?? parsed.searchParams.get('claim') }
+    return {
+      next: innerNext ?? rawNext,
+      claim: rawClaim ?? parsed.searchParams.get('claim'),
+      source: rawSource ?? parsed.searchParams.get('source'),
+    }
   } catch {
-    return { next: rawNext, claim: rawClaim }
+    return { next: rawNext, claim: rawClaim, source: rawSource }
   }
 }
 
@@ -53,12 +63,13 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
   const code = searchParams.get('code')
-  const unwrapped = unwrapNext(searchParams.get('next') ?? '/', searchParams.get('claim'))
+  const unwrapped = unwrapNext(searchParams.get('next') ?? '/', searchParams.get('claim'), searchParams.get('source'))
   // safeNext, not the raw unwrapped value: pre-push review (ANON-004) found
   // next="@evil.com" makes `${origin}${next}` parse as host "evil.com" (the
   // WHATWG URL parser reads it as userinfo before the @) — see lib/safeNext.ts.
   const next = safeNext(unwrapped.next, origin)
   const claim = unwrapped.claim
+  const source = unwrapped.source && isFunnelSource(unwrapped.source) ? unwrapped.source : null
 
   // Default-template links: Supabase's /auth/v1/verify confirms the email
   // server-side, then redirects here with ?code=. The exchange only succeeds
@@ -83,6 +94,17 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash })
     if (!error) {
       await claimPendingAttempts(supabase, claim)
+      // OPS-008 (docs/decisions/0069) — this branch is only ever reached via
+      // this project's own custom confirmation.html template (type=email),
+      // which is issued exclusively for new-account signup confirmation, so
+      // every success here is a genuine signup, not a login. The default-
+      // template `code` branch above is a different flow (recovery, or an
+      // existing user confirming on a second device) and does NOT fire this.
+      void recordServerFunnelEvent('signup', {
+        source,
+        path: next,
+        ip: extractClientIp(request.headers) ?? '127.0.0.1',
+      })
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

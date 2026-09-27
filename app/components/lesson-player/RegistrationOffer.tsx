@@ -6,6 +6,7 @@ import { Mail, Lock } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { isInAppBrowser } from "@/lib/inAppBrowser";
 import { createAttemptStore, toRecordAttemptPayload } from "@/lib/lessonPlayer/attemptStore";
+import { getCurrentFunnelSource } from "@/lib/funnelSource";
 import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
 
 /**
@@ -62,6 +63,12 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
   function buildEmailRedirectTo(claimToken: string | null): string {
     const params = new URLSearchParams({ next: lessonPath });
     if (claimToken) params.set("claim", claimToken);
+    // OPS-008 — the classified source travels through the redirect the same
+    // way `claim` does: /auth/confirm fires the signup funnel event
+    // server-side (docs/decisions/0069) and has no sessionStorage of its own
+    // to read it from otherwise.
+    const source = getCurrentFunnelSource();
+    if (source) params.set("source", source);
     return `${window.location.origin}/auth/confirm?${params.toString()}`;
   }
 
@@ -105,9 +112,12 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
       // this page reloads signed in.
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
+      const callbackParams = new URLSearchParams({ next: lessonPath });
+      const oauthSource = getCurrentFunnelSource();
+      if (oauthSource) callbackParams.set("source", oauthSource);
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(lessonPath)}` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?${callbackParams.toString()}` },
       });
       if (oauthError) {
         setError(oauthError.message);

@@ -79,6 +79,18 @@ We use a privacy-focused, **cookieless** analytics service that records aggregat
 views and page-performance measurements. It does not use cookies, does not track you
 across sites, and does not identify you.
 
+For the English course platform, we also record a small number of usage events in our
+own database: when someone opens the first page of a visit, starts or completes a
+lesson, or signs up. Each event is tagged only with a coarse indication of how the
+visitor arrived (for example, from an Instagram or Telegram post, or directly), and its
+time is recorded only to the hour. These events are not linked to your account and carry
+no cookie, fingerprint or other identifier. To remember the arrival channel for the rest
+of a visit, your browser stores that single value in session storage, which is cleared
+when you close the tab. If your browser sends a Global Privacy Control or Do Not Track
+signal, we do not store it and record no arrival channel. To prevent abuse, your IP
+address is briefly logged separately from the events, never stored with them, and
+deleted automatically once it is no longer needed for that purpose.
+
 We use an error-monitoring service that receives a technical report when something breaks
 — a stack trace, the page you were on, and browser details. Session cookies and your
 email address are stripped from these reports before they are sent.

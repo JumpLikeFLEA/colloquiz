@@ -6,6 +6,7 @@ import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
 import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
+import { fireFunnelEvent } from "@/lib/funnelSource";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import { FIT_WIDTH_CLASS, HEADING_WIDTH_CLASS, LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
@@ -151,6 +152,16 @@ export function LessonPlayer({
     void recordSignedInAttempt(attemptStore);
   }, [isSignedIn, lessonVersionId, attemptStore]);
 
+  // OPS-008 — lesson_start fires the moment the player opens (the attempt
+  // is created), for EVERY learner including a fully anonymous one. Its own
+  // effect, deliberately NOT folded into the recording effect above: that
+  // one returns early when `!isSignedIn`, which would silently drop every
+  // anonymous lesson_start — most of this surface's traffic.
+  useEffect(() => {
+    fireFunnelEvent("lesson_start", lessonPath);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attemptId]);
+
   if (!parsed.ok) {
     return <LessonPlayerError errors={parsed.errors} />;
   }
@@ -223,6 +234,17 @@ function LessonPlayerBody({
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
   // the whole document rather than incremental updates.
   const lessonScore = scoreSession(document, results);
+
+  // OPS-008 — lesson_complete fires exactly once, on the transition into
+  // "scored". Keyed on `lessonScore.status` rather than `results` itself, so
+  // it does not re-fire on every subsequent answer once a lesson is already
+  // fully scored (a lesson with no retake requirement can still re-render
+  // this component many times after completion).
+  useEffect(() => {
+    if (lessonScore.status !== "scored") return;
+    fireFunnelEvent("lesson_complete", lessonPath);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonScore.status]);
 
   return (
     <div className={LESSON_COLUMN_CLASS}>

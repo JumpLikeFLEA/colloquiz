@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { EnglishFooter } from "./EnglishFooter";
+import { EntryViewBeacon } from "./EntryViewBeacon";
 import "../globals.css";
 
 // Same font, same rationale as the Colloquiz root (docs/decisions/0021):
@@ -46,13 +47,17 @@ export default function EnglishRootLayout({
     <html lang="ru" suppressHydrationWarning className={`${geistSans.variable} h-full antialiased`}>
       <body className="h-full">
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
+        <EntryViewBeacon />
         {children}
         <EnglishFooter />
         {/* Kept per docs/decisions/0046: the only source of field Web
             Vitals, which is the evidence the Performance boundary's own
             budget requirement asks for. Cookieless, same as the Colloquiz
-            root — see app/(colloquiz)/layout.tsx. <Analytics/> is a separate,
-            still-open decision (OPS-008) and is NOT added here. */}
+            root — see app/(colloquiz)/layout.tsx. <Analytics/> (Vercel Web
+            Analytics pageviews) is deliberately NOT added here — OPS-008
+            (docs/decisions/0069) chose a first-party funnel_events table
+            instead, since custom events require a Pro/Enterprise plan this
+            project isn't on. */}
         <SpeedInsights />
       </body>
     </html>

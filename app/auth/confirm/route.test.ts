@@ -9,33 +9,46 @@ import { unwrapNext } from "./route";
  * `RegistrationOffer` passes, which this project's custom "confirmation"
  * template (supabase/templates/confirmation.html) wraps verbatim inside its
  * own `next={{ .RedirectTo }}`.
+ *
+ * OPS-008 (docs/decisions/0069) added a third param, `source`, threaded the
+ * same way `claim` already was — outer wins over inner, defaults to null.
  */
 describe("unwrapNext", () => {
   it("passes a bare path through unchanged (existing recovery/default flow)", () => {
-    expect(unwrapNext("/reset-password", null)).toEqual({ next: "/reset-password", claim: null });
+    expect(unwrapNext("/reset-password", null)).toEqual({ next: "/reset-password", claim: null, source: null });
   });
 
-  it("defaults to itself with no claim when given the root path", () => {
-    expect(unwrapNext("/", null)).toEqual({ next: "/", claim: null });
+  it("defaults to itself with no claim or source when given the root path", () => {
+    expect(unwrapNext("/", null)).toEqual({ next: "/", claim: null, source: null });
   });
 
   it("unwraps a full confirm URL, recovering its own next and claim params", () => {
     const wrapped = "http://localhost:3000/auth/confirm?next=%2Fcourses%2Fc%2Fl&claim=TESTCLAIM123";
-    expect(unwrapNext(wrapped, null)).toEqual({ next: "/courses/c/l", claim: "TESTCLAIM123" });
+    expect(unwrapNext(wrapped, null)).toEqual({ next: "/courses/c/l", claim: "TESTCLAIM123", source: null });
   });
 
   it("unwraps a full confirm URL with no claim in it", () => {
     const wrapped = "http://localhost:3000/auth/confirm?next=%2Fcourses%2Fc%2Fl";
-    expect(unwrapNext(wrapped, null)).toEqual({ next: "/courses/c/l", claim: null });
+    expect(unwrapNext(wrapped, null)).toEqual({ next: "/courses/c/l", claim: null, source: null });
   });
 
   it("prefers a top-level claim over one nested inside the wrapped URL", () => {
     const wrapped = "http://localhost:3000/auth/confirm?next=%2Fcourses%2Fc%2Fl&claim=inner";
-    expect(unwrapNext(wrapped, "outer")).toEqual({ next: "/courses/c/l", claim: "outer" });
+    expect(unwrapNext(wrapped, "outer")).toEqual({ next: "/courses/c/l", claim: "outer", source: null });
   });
 
   it("falls back to the wrapped URL itself if it has no inner next param", () => {
     const wrapped = "http://localhost:3000/auth/confirm";
-    expect(unwrapNext(wrapped, null)).toEqual({ next: wrapped, claim: null });
+    expect(unwrapNext(wrapped, null)).toEqual({ next: wrapped, claim: null, source: null });
+  });
+
+  it("recovers a source nested inside the wrapped URL", () => {
+    const wrapped = "http://localhost:3000/auth/confirm?next=%2Fcourses%2Fc%2Fl&source=instagram";
+    expect(unwrapNext(wrapped, null)).toEqual({ next: "/courses/c/l", claim: null, source: "instagram" });
+  });
+
+  it("prefers a top-level source over one nested inside the wrapped URL", () => {
+    const wrapped = "http://localhost:3000/auth/confirm?next=%2Fcourses%2Fc%2Fl&source=inner";
+    expect(unwrapNext(wrapped, null, "outer")).toEqual({ next: "/courses/c/l", claim: null, source: "outer" });
   });
 });
