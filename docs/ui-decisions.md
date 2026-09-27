@@ -724,3 +724,32 @@ Appended to in the same commit as the change it records. Referenced from
   Nothing changes below 1024px. Do not add a locale-selection mechanism to
   satisfy this — copy stays a flat, Russian-only object per the standing
   "one surface, one language" rule.
+- ResetPasswordScreen: an "expired link" view added (2026-09-27, SHELL-015,
+  docs/decisions/0073) for a visitor with no live session — an anonymous curl,
+  a reused link, or a stale bookmark. `page.tsx` became an async Server
+  Component that checks `supabase.auth.getUser()` and passes `hasSession` to
+  `ResetPasswordScreen`; the component also flips to this view mid-flow if
+  `updateUser` itself fails with `AuthSessionMissingError` (a session valid at
+  page load can still be gone by submit time). The view reuses the exact
+  `AuthLeftPanel` shell and the destructive-box styling already established by
+  the login page's error banner, and its "Back to sign in" link points at
+  `/login?error=recovery_expired` — the same URL and copy
+  (`RECOVERY_EXPIRED_MESSAGE`, now exported from `login/page.tsx` instead of
+  duplicated) that `/auth/confirm`'s own expired-token branches already use.
+  `hasSession` is deliberately named for what it actually checks — ANY live
+  session, not a recovery-specific one, since Supabase gives no way to tell
+  the two apart. A signed-in (non-recovery) user who navigates here still sees
+  the update-password form, unchanged from before this card; that a password
+  change here needs no reauthentication is a separate, pre-existing gap this
+  card does not fix (proposed as a follow-up card in #122's closing comment).
+  Verified against the real recovery flow, not just curl: a `token_hash`
+  minted via the Admin API and passed through `/auth/confirm` exactly as
+  `docs/release/launch-checklist.md`'s configured email template does (`?
+  token_hash=...&type=recovery&next=/reset-password`) lands on
+  `/reset-password` showing the form — Supabase Admin API's own
+  `generateLink()` `action_link` was tried first and does NOT match
+  production: it uses Supabase's hosted `/verify` redirect, which delivers
+  tokens in a URL fragment `/auth/confirm` never sees, landing on
+  `/login?error=confirm_expired` instead. Do not use `generateLink()`'s
+  `action_link` directly to test this flow again — build the `token_hash` URL
+  by hand as this card's verification script did.
