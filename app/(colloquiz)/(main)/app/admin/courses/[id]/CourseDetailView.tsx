@@ -44,7 +44,8 @@ import {
 } from "@/lib/lessonImages";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring";
-import { LessonImageUploadButton, type UploadLessonImage } from "./lessons/[lessonId]/LessonImageUploadButton";
+import { type UploadLessonImage } from "./lessons/[lessonId]/LessonImageUploadButton";
+import { CoverImagePicker } from "./CoverImagePicker";
 
 async function postJson(url: string, body: unknown, method: "POST" | "PATCH" | "DELETE" = "POST") {
   const res = await fetch(url, {
@@ -200,7 +201,7 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <LessonImageUploadButton
+          <CoverImagePicker
             currentUrl={coverImageUrl ?? undefined}
             onUploaded={(url) => setCoverImageUrl(url)}
             onUpload={uploadCover}

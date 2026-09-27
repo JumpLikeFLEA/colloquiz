@@ -1,4 +1,5 @@
 import { BRAND, BRAND_ACCENT } from "@/lib/site";
+import { isOgDecodableCoverUrl } from "@/lib/courseCover";
 
 /**
  * SHELL-009 — shared JSX for the two course-scoped opengraph-image.tsx route
@@ -9,6 +10,11 @@ import { BRAND, BRAND_ACCENT } from "@/lib/site";
  *
  * Satori (the ImageResponse renderer) only supports a subset of CSS —
  * flexbox and absolute positioning, no grid — see next/og docs.
+ *
+ * Never pass an explicit `undefined` as a style value here — Satori throws
+ * "Cannot read properties of undefined (reading 'toString')" on it instead
+ * of treating it as absent. Use a conditional spread. See
+ * docs/decisions/0074-vis001-cover-crop.md §7.
  */
 export function OgImageCard({
   title,
@@ -21,6 +27,11 @@ export function OgImageCard({
   level: string | null;
   coverImageUrl: string | null;
 }) {
+  // Satori (this component's own renderer) can't decode WebP — VIS-001 step
+  // 4c. A cover URL it can't decode is treated as absent, falling back to
+  // the branded gradient card, rather than letting ImageResponse 500.
+  const cover = isOgDecodableCoverUrl(coverImageUrl) ? coverImageUrl : null;
+
   return (
     <div
       style={{
@@ -30,20 +41,20 @@ export function OgImageCard({
         position: "relative",
         fontFamily: "sans-serif",
         color: "#ffffff",
-        background: coverImageUrl ? "#000000" : `linear-gradient(135deg, ${BRAND}, ${BRAND_ACCENT})`,
+        background: cover ? "#000000" : `linear-gradient(135deg, ${BRAND}, ${BRAND_ACCENT})`,
       }}
     >
-      {coverImageUrl && (
+      {cover && (
         // eslint-disable-next-line @next/next/no-img-element -- Satori's own <img>, not a browser render
         <img
-          src={coverImageUrl}
+          src={cover}
           alt=""
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
         />
       )}
       <div
         style={{
-          position: coverImageUrl ? "absolute" : "static",
+          position: cover ? "absolute" : "static",
           inset: 0,
           width: "100%",
           height: "100%",
@@ -52,9 +63,9 @@ export function OgImageCard({
           justifyContent: "flex-end",
           gap: 16,
           padding: 64,
-          background: coverImageUrl
-            ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)"
-            : undefined,
+          ...(cover
+            ? { background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)" }
+            : {}),
         }}
       >
         {level && (
