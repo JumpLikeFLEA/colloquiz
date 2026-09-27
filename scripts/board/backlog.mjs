@@ -1631,6 +1631,27 @@ export const CARDS = [
     ],
   },
   {
+    key: 'ANON-008',
+    title: 'Sweep pending_claims_creation_log IPs after the rate-limit window',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2137,
+    dependsOn: [],
+    goal:
+      '049 inserts caller IPs into pending_claims_creation_log for ' +
+      'rate-limiting, but no migration ever deletes from it (`rg "DELETE ' +
+      'FROM pending_claims_creation_log" supabase/migrations` — no hits). ' +
+      '051:217 sweeps its equivalent log (funnel_events_creation_log) after ' +
+      'a 1-hour window on every call to record_funnel_event; 049 never did ' +
+      'the same for create_pending_claim.',
+    acceptance: [
+      'New migration 052_* re-emits create_pending_claim with `DELETE FROM pending_claims_creation_log WHERE created_at <= NOW() - INTERVAL \'1 hour\';` alongside the existing lazy sweep of pending_claims itself, mirroring 051:217, plus a one-off purge of rows already older than 1 hour.',
+      'Migration written and handed over with the SQL to run; not applied.',
+    ],
+    notes: 'Proposed 2026-09-27 during OPS-009 (legal copy review). Narrower and faster than OPS-015 (which reports on this same table\'s cleanup gap as part of a generic scheduled sweep across all four rate-limit log tables) — this fixes only pending_claims_creation_log inline, the same way 051 already fixes funnel_events_creation_log; OPS-015 still stands for the other two (feedback, account_export_log).',
+  },
+  {
     key: 'ANON-005',
     title: 'Signed-in learners record attempts directly',
     milestone: 'M2',
