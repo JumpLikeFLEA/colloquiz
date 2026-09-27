@@ -661,3 +661,17 @@ Appended to in the same commit as the change it records. Referenced from
   to this card; `/login`'s budget (284.0 KB / 380 KB) is unchanged, and this
   card added no code to any English-surface route. Do not add height caps to
   `Bucket`, and do not make buckets draggable/shuffled.
+- `app/(english)/EnglishFooter.tsx` added (2026-09-27, SHELL-012,
+  docs/decisions/0062): a single centred footer line, rendered from
+  `app/(english)/layout.tsx` below `{children}` so it appears on every page
+  under the English root layout — `border-t border-border`, a
+  `text-muted-foreground` link to `/app` (`hover:text-foreground`, existing
+  token pairing). This is the ONLY link off the English surface to Colloquiz,
+  per docs/handoff.md's settled "footer link only" answer — no header, no
+  sidebar, no toggle. Copy lives in `lib/alliengll/copy.ts`
+  (`footer.colloquizLink`), Russian, same rule as the rest of that module.
+  `npm run budget` re-confirmed `/login` unchanged (284.0 KB / 380 KB); the
+  pre-existing `/courses/future-imperfect/*` FAIL (0060) is unaffected and
+  was re-verified via `git stash -u` on this same change. Do not add a
+  second path to `/app` (a header nav entry, a toggle) without re-confirming
+  with the owner first.

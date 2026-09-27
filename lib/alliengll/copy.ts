@@ -85,4 +85,10 @@ export const alliengllCopy = {
     retry: "Повторить",
     backHome: "На главную",
   },
+
+  // SHELL-012: the sole path off this surface to the Colloquiz shell (/app).
+  // Deliberately just a footer line, not nav — see docs/decisions/0062.
+  footer: {
+    colloquizLink: "Colloquiz — платформа для викторин",
+  },
 } as const;
