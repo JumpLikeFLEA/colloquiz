@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Loader2, Upload } from "lucide-react";
 import { LESSON_IMAGE_ACCEPT } from "@/lib/lessonImages";
 import { COVER_LIMITS_HINT, validateCoverSource } from "@/lib/courseCover";
+import { loadImage } from "@/lib/courseCoverCanvas";
 import type { UploadLessonImage } from "./lessons/[lessonId]/LessonImageUploadButton";
 
 // VIS-001 step 4: the cover-specific replacement for LessonImageUploadButton.
@@ -27,7 +28,12 @@ const CoverCropDialog = dynamic(() => import("./CoverCropDialog").then((m) => m.
 // (net::ERR_FILE_NOT_FOUND, naturalWidth 0 — caught only in a real browser).
 // Creating the URL here, in a plain event handler, has no effect-timing
 // hazard at all: there is no double-invoke of onChange.
-type PendingCover = { file: File; src: string };
+//
+// VIS-002: the decoded HTMLImageElement is held alongside file/src, decoded
+// once here (in the same event handler, awaited before the dialog opens) so
+// CoverCropDialog never calls loadImage itself — it only ever draws an image
+// it's handed, same ownership rule as the object URL.
+type PendingCover = { file: File; src: string; image: HTMLImageElement };
 
 export function CoverImagePicker({
   currentUrl,
@@ -43,14 +49,21 @@ export function CoverImagePicker({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handlePick(file: File) {
+  async function handlePick(file: File) {
     setError(null);
     const reason = validateCoverSource(file);
     if (reason) {
       setError(reason);
       return;
     }
-    setPending({ file, src: URL.createObjectURL(file) });
+    const src = URL.createObjectURL(file);
+    try {
+      const image = await loadImage(src);
+      setPending({ file, src, image });
+    } catch {
+      URL.revokeObjectURL(src);
+      setError("Could not decode that image. Try a different file.");
+    }
   }
 
   function handleCancel() {
@@ -104,6 +117,7 @@ export function CoverImagePicker({
       <CoverCropDialog
         file={pending?.file ?? null}
         src={pending?.src ?? null}
+        image={pending?.image ?? null}
         onCancel={handleCancel}
         onConfirm={handleConfirm}
       />

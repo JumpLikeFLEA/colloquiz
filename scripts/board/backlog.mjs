@@ -1949,6 +1949,33 @@ export const CARDS = [
       'Lesson images (theory image block, image matching) are out of scope — they render at natural aspect. ' +
       'Existing covers are not migrated; the author re-uploads to reframe.',
   },
+  {
+    key: 'VIS-002',
+    title: 'Cover dialog: fit mode, display-based size rule, live preview',
+    milestone: 'M2',
+    epic: 'VIS',
+    type: 'task',
+    rank: 2186,
+    dependsOn: ['VIS-001'],
+    goal:
+      'VIS-001 blocked any image whose 16:9 crop was under 960×540, and told ' +
+      'the author to "zoom out" when she couldn\'t: an 829px square image was ' +
+      'unusable. Square and portrait images could only be cropped, never shown ' +
+      'whole. Add a fit mode with a blurred fill, replace the fixed minimum with ' +
+      'a rule based on where the cover is displayed, and show a live preview of ' +
+      'the exact output.',
+    acceptance: [
+      'Zoom can go below 1, down to the zoom where the whole image fits the 16:9 frame; a "Fit whole image" / "Fill frame" control jumps between the two ends. The area outside the image is filled with a blurred, darkened copy of it.',
+      'Output stays 16:9 JPEG at 1 source px per output px, width capped at 1920, never upscaled. Evidence: an 829×829 source fitted → 1474×829 (sharp metadata), plus the file opened and looked at.',
+      'Size rule on output width: <480 blocked; 480–799 soft; 800–1599 phone_ok; ≥1600 ok. A message suggests "zoom out" only when zoom is above its minimum.',
+      'The dialog shows a catalogue-card-sized preview drawn by the same function that renders the upload.',
+      'Crop maths (fit zoom, draw plan, size rule) lives in lib/courseCover.ts under vitest.',
+      'No effect-driven state added; set-state-in-effect suppressions stay at 1.',
+      'Share image for a fitted cover: GET + decode → 200 png 1200×630 showing the fitted cover.',
+      'Decision doc supersedes 0074 §5.',
+    ],
+    notes: 'Solid-colour fill was considered and not built; blurred fill only.',
+  },
 ];
 
 export function rankOf(key) {
