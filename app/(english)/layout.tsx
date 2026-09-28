@@ -19,8 +19,12 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // "Alliengll" here is the browser-tab title, same literal display text as
+  // LandingHeader.tsx's wordmark (docs/ui-decisions.md, 2026-09-28 landing
+  // rebuild entry) — not a branding decision; alliengllCopy.siteName stays
+  // "Colloquiz".
   title: {
-    default: alliengllCopy.landing.heroTitle,
+    default: "Alliengll",
     template: `%s · ${alliengllCopy.siteName}`,
   },
   description: alliengllCopy.landing.heroSubtitle,

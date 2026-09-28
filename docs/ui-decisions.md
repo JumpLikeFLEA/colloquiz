@@ -894,3 +894,12 @@ Appended to in the same commit as the change it records. Referenced from
   rule. `LandingHeader`'s toggle handler now also writes the cookie
   (`document.cookie`, 1-year `max-age`, no `HttpOnly` — a UI preference, not
   a security-sensitive value, so no server round trip to set it).
+- Browser-tab title for `/` changed from the Russian hero headline
+  ("Английский без напряжения") to "Alliengll" (2026-09-28, ad-hoc):
+  `app/(english)/layout.tsx`'s `metadata.title.default` no longer reads
+  `alliengllCopy.landing.heroTitle`, it's the literal string "Alliengll" —
+  the same literal display text as `LandingHeader.tsx`'s wordmark, not a
+  branding decision (`alliengllCopy.siteName` stays "Colloquiz", untouched).
+  Only the default (the landing page, which sets no title of its own) —
+  the `%s · Colloquiz` template for every other English-surface page
+  (course, lesson) is unchanged.
