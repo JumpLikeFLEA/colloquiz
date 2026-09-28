@@ -57,7 +57,12 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const firstFree = firstFreeLesson(course.lessons);
 
   return (
-    <main className="min-h-svh bg-background">
+    // No min-h-svh: the root layout's wrapper div already sizes itself to
+    // the viewport-minus-footer space, so main forcing its own full-viewport
+    // height double-counted against EnglishFooter and forced a scrollbar on
+    // a short course (same bug as the landing page, docs/ui-decisions.md,
+    // 2026-09-28).
+    <main className="bg-background">
       <div className={`${LESSON_HEADER_COLUMN_CLASS} py-8 flex flex-col gap-6`}>
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-muted">
           {course.coverImageUrl ? (

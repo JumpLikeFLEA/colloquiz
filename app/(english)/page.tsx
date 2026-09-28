@@ -1,16 +1,19 @@
-import Link from "next/link";
-import { alliengllCopy } from "@/lib/alliengll/copy";
+import { cookies } from "next/headers";
 import { getPublicCourse } from "@/lib/coursePage";
 import { firstFreeLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
-import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { CourseCard } from "./CourseCard";
+import { LandingContent } from "./LandingContent";
+import { LANDING_LANG_COOKIE } from "./landingCopy";
+import type { LandingLang } from "./landingCopy";
 
 /**
- * SHELL-010 — the Russian landing page: hero, then the catalogue. Built
- * once, late (docs/handoff.md, "Visual work" §3's landing-page exception) —
- * the copy in lib/alliengll/copy.ts's `landing`/`catalogue` blocks is the
- * partner's, already in place; this route is the first thing that reads it.
+ * SHELL-010 — the landing page: header, hero, then the catalogue. Built
+ * once, late (docs/handoff.md, "Visual work" §3's landing-page exception).
+ * Data is fetched here, server-side; the EN/RU toggle and rendering live in
+ * the Client Component `LandingContent`, whose strings come from
+ * `./landingCopy.ts` — landing-page-only bilingual copy, kept separate from
+ * `lib/alliengll/copy.ts` (still Russian-only, governs every other route;
+ * docs/handoff.md, "Audience and language", 2026-09-28 landing exception).
  *
  * "From the bio link to the first free lesson takes at most one tap after /
  * loads" (acceptance): the hero's primary CTA does NOT go to the catalogue
@@ -31,43 +34,27 @@ export default async function EnglishLandingPage() {
     featured && featured.state === "ok" ? firstFreeLesson(featured.lessons) : null;
   const heroHref = heroLesson ? `/courses/${courses[0].slug}/${heroLesson.slug}` : "#catalogue";
 
-  return (
-    <main className="min-h-svh bg-background">
-      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex flex-col gap-16 py-12`}>
-        <section className="flex flex-col items-start gap-6">
-          <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">
-            {alliengllCopy.landing.heroTitle}
-          </h1>
-          <p className="max-w-xl text-base text-muted-foreground">{alliengllCopy.landing.heroSubtitle}</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href={heroHref}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-            >
-              {alliengllCopy.landing.ctaPrimary}
-            </Link>
-            <Link
-              href="#catalogue"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {alliengllCopy.landing.catalogueLink}
-            </Link>
-          </div>
-        </section>
+  // Read on the server so a returning visitor who picked RU gets it in the
+  // FIRST response — no client-side re-render/flash, and no hydration
+  // mismatch to work around (a useEffect+setState reading localStorage was
+  // tried first and rejected: it flashed EN before correcting to the saved
+  // RU choice, and the lint rule against setState-in-effect is right that
+  // it's the wrong tool here). The cookie is set by LandingContent's own
+  // toggle handler; defaults to "en" (2026-09-28 owner call) for a
+  // first-time visitor with no cookie yet.
+  const savedLang = (await cookies()).get(LANDING_LANG_COOKIE)?.value;
+  const initialLang: LandingLang = savedLang === "ru" ? "ru" : "en";
 
-        <section id="catalogue" className="flex flex-col gap-6">
-          <h2 className="text-xl font-semibold text-foreground">{alliengllCopy.catalogue.title}</h2>
-          {courses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{alliengllCopy.catalogue.empty}</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
-                <CourseCard key={course.slug} course={course} />
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+  return (
+    // flex-1 (not min-h-svh): the root layout's wrapper div already sizes
+    // itself to fill the viewport-minus-footer space (EnglishFooterGate
+    // renders null on this route, so that's the whole viewport here).
+    // flex-1 + flex-col lets THIS <main> stretch to fill that wrapper and
+    // hand the space down to LandingContent's own flex layout, which is
+    // what pushes LandingFooter (rendered inside main, unlike every other
+    // route's EnglishFooter) to the bottom without forcing a scrollbar.
+    <main className="flex flex-1 flex-col bg-background">
+      <LandingContent courses={courses} heroHref={heroHref} initialLang={initialLang} />
     </main>
   );
 }

@@ -3,7 +3,7 @@ import { Geist } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
-import { EnglishFooter } from "./EnglishFooter";
+import { EnglishFooterGate } from "./EnglishFooterGate";
 import { EntryViewBeacon } from "./EntryViewBeacon";
 import "../globals.css";
 
@@ -45,11 +45,20 @@ export default function EnglishRootLayout({
     // hydration, so server and client markup necessarily disagree here —
     // same reasoning as the Colloquiz root layout.
     <html lang="ru" suppressHydrationWarning className={`${geistSans.variable} h-full antialiased`}>
-      <body className="h-full">
+      {/* flex column + min-h-svh here (not on any page's own <main>) is the
+          one sticky-footer anchor for the whole surface: the wrapper below
+          grows (flex-1) to fill whatever's left of the viewport after
+          EnglishFooterGate's natural height, so short content pushes the
+          footer to the bottom without forcing a scrollbar, and long content
+          just pushes the wrapper past 100svh as normal. A page's own <main>
+          reintroducing min-h-svh double-forces height against this and was
+          the earlier landing-page bug (docs/ui-decisions.md, 2026-09-28) —
+          don't add it back on any page under this layout. */}
+      <body className="flex min-h-svh flex-col">
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
         <EntryViewBeacon />
-        {children}
-        <EnglishFooter />
+        <div className="flex flex-1 flex-col">{children}</div>
+        <EnglishFooterGate />
         {/* Kept per docs/decisions/0046: the only source of field Web
             Vitals, which is the evidence the Performance boundary's own
             budget requirement asks for. Cookieless, same as the Colloquiz

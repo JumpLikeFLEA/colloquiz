@@ -51,7 +51,8 @@ export default async function LessonPage({
 
   if (lesson.state === "not_available") {
     return (
-      <main className="min-h-svh flex items-center justify-center px-6 py-16">
+      // flex-1 (not min-h-svh): same reasoning as error.tsx/not-found.tsx.
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
         <div className="max-w-md text-center space-y-3">
           <h1 className="text-xl font-semibold">{lesson.title}</h1>
           {lesson.description && <p className="text-sm text-muted-foreground">{lesson.description}</p>}

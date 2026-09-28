@@ -10,7 +10,8 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
  */
 export default function EnglishNotFound() {
   return (
-    <div className="min-h-svh flex items-center justify-center bg-background px-6 py-16">
+    // flex-1 (not min-h-svh): same reasoning as error.tsx.
+    <div className="flex flex-1 items-center justify-center bg-background px-6 py-16">
       <div className="max-w-md w-full text-center flex flex-col items-center gap-5">
         <div className="flex flex-col gap-2">
           <h1 className="text-lg font-semibold text-foreground">{alliengllCopy.notFound.title}</h1>

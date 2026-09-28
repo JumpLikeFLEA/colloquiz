@@ -26,7 +26,11 @@ export default function EnglishError({
   }, [error]);
 
   return (
-    <main className="min-h-svh flex items-center justify-center px-6 py-16">
+    // flex-1 (not min-h-svh): renders inside the root layout's flex-1
+    // wrapper, so this fills the space already sized for it instead of
+    // forcing its own full-viewport height against the footer below it
+    // (docs/ui-decisions.md, 2026-09-28).
+    <main className="flex flex-1 items-center justify-center px-6 py-16">
       <div className="max-w-md w-full rounded-2xl border border-border bg-card p-6 flex flex-col items-center gap-5 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive-subtle">
           <AlertCircle size={22} className="text-destructive-text" />

@@ -20,9 +20,10 @@ export const alliengllCopy = {
     catalogueLink: "Все курсы",
   },
 
+  // catalogue.title / .empty moved to app/(english)/landingCopy.ts
+  // (2026-09-28 landing exception — those strings are now bilingual and
+  // live only on the landing page, the catalogue's only home today).
   catalogue: {
-    title: "Курсы",
-    empty: "Курсы скоро появятся — загляните позже.",
     freeSampleBadge: "Бесплатно",
   },
 
@@ -126,7 +127,14 @@ export const alliengllCopy = {
 
   // SHELL-012: the sole path off this surface to the Colloquiz shell (/app).
   // Deliberately just a footer line, not nav — see docs/decisions/0062.
+  // 2026-09-28: enriched to match the Claude Design landing import's footer
+  // (owner overwrite, docs/ui-decisions.md) — still one link off-surface,
+  // not nav, so 0062's "not nav" clause still holds; only its "single line"
+  // clause is superseded.
   footer: {
-    colloquizLink: "Colloquiz — платформа для викторин",
+    colloquizHeading: "Colloquiz ↗",
+    colloquizDesc: "Наше приложение с квизами",
+    privacy: "Конфиденциальность",
+    copyright: "© 2026 Alliengll",
   },
 } as const;

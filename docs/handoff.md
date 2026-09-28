@@ -163,7 +163,16 @@ What it means concretely:
   buttons, completion screen, signup offer — is Russian. This is one surface
   written in one language, not an i18n layer: a single strings module, no
   locale switching, no library. Colloquiz and authoring chrome stay English
-  (0018 Decision 5).
+  (0018 Decision 5). **Narrow exception (owner, 2026-09-28, SHELL landing
+  redesign):** the landing page at `/` alone gets a working EN/RU toggle in
+  its header — a visitor arriving from an English-language source can read
+  the pitch before committing to Russian-only chrome. This is scoped to the
+  landing page's own hero/header/catalogue-label strings
+  (`app/(english)/landingCopy.ts`), kept deliberately separate from
+  `lib/alliengll/copy.ts`. Every other route — course page, lesson player,
+  completion screen, signup offer — is unaffected and stays Russian-only,
+  single strings module, no switcher, per the paragraph above. Do not extend
+  the toggle past the landing page without asking again.
 - They arrive from an Instagram reel, via a single static bio link that
   points to `/`, or by tapping a link in an Alliengll Telegram channel post,
   which can point to a course or a lesson (owner, 2026-09-24). Both open

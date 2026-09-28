@@ -753,3 +753,144 @@ Appended to in the same commit as the change it records. Referenced from
   `/login?error=confirm_expired` instead. Do not use `generateLink()`'s
   `action_link` directly to test this flow again — build the `token_hash` URL
   by hand as this card's verification script did.
+- Landing page rebuilt from a Claude Design import (2026-09-28, ad-hoc, option
+  "1a — Catalogue-first" of the "Alliengll landing page options" project),
+  with three deliberate departures from standing decisions, each an explicit
+  owner overwrite in this session:
+  1. **EN/RU toggle, landing page ONLY.** `LandingHeader.tsx` (new) adds a
+     working language switch, reversing the "no locale switching" clause of
+     the 2026-09-24 "Audience and language" decision — but only for `/`. See
+     the carve-out now in `docs/handoff.md`, "Audience and language". Every
+     other English route (course page, lesson player, completion, signup
+     offer) is untouched: still Russian-only, still `lib/alliengll/copy.ts`,
+     still no switcher. `app/(english)/landingCopy.ts` (new) holds the
+     landing page's own `{ ru, en }` strings — deliberately NOT merged into
+     `lib/alliengll/copy.ts`, so the rest of the surface can't accidentally
+     inherit the toggle. `catalogue.title` / `catalogue.empty` moved out of
+     `lib/alliengll/copy.ts` into `landingCopy.ts` (the catalogue's only
+     home today is this page); `catalogue.freeSampleBadge` stays, unused by
+     this card, for whenever a paid/free badge is built.
+  2. **"Alliengll" rendered as the header wordmark.** This is NOT the
+     branding decision `docs/handoff.md`'s "Open questions" still defers —
+     `alliengllCopy.siteName` stays `"Colloquiz"`, and `layout.tsx`'s
+     `<title>`/metadata are untouched. It is literal display text on one
+     page, owner-approved as a demonstration of the page title, not a rename.
+  3. **A "Log in" link in the header**, `/login` — new; nothing on this
+     surface linked there before (registration was offered only after a
+     completed lesson, never on entry). This is additive, not a reversal:
+     the post-lesson signup offer (ANON-004) is unchanged.
+  Also ported from the same design, without conflict: `CourseCard.tsx` grows
+  a compact ROW layout below `sm` (84px→80px square cover beside the text)
+  alongside its existing stacked/grid layout at `sm:` and up — a column of
+  full-width stacked cards read as mostly whitespace at 390px. The design's
+  per-card "Free / First lesson free" badge was deliberately NOT ported:
+  `CatalogueCourse` (`lib/courseCatalogue.ts`) carries no free/paid field,
+  and decision 0070 scoped the catalogue card to cover/title/description
+  only — adding entitlement data to the card is a separate decision.
+  4. **`EnglishFooter.tsx` enriched to match the design's footer** (owner
+     overwrite, same session, after seeing the shipped page) — superseding
+     the paragraph above, which had left it out. Decision 0062's "not nav"
+     clause still holds (still one link to `/app`, no new nav item); only
+     its "single line" clause is superseded. Now: a bold "Colloquiz ↗"
+     heading + a description line (both linking to `/app`), plus a Privacy
+     link (`/privacy`, the existing legal route — decision 0062 was written
+     before that route existed) and a copyright line, laid out via the same
+     `LESSON_HEADER_COLUMN_CLASS` column width the rest of the surface uses
+     rather than a bespoke max-width. `alliengllCopy.footer.colloquizLink`
+     (the old single string) was replaced by `colloquizHeading` /
+     `colloquizDesc` / `privacy` / `copyright`. **Revised same day, same
+     session (owner feedback: the description line "Наше приложение с
+     квизами" wasn't translating on toggle, and the footer read as too
+     tall):** the footer's markup was pulled into a shared, pure
+     `FooterLayout.tsx` (heading/desc/privacy/copyright as props, no i18n
+     logic), sized down to the design's literal proportions — both text
+     rows at 14px/13px (not the `text-sm`/`text-xs` split first shipped,
+     which read taller) and `py-5 sm:py-7` instead of a flat `py-6`. Two
+     callers now render it: `EnglishFooter.tsx` (unchanged behaviour —
+     Russian, from `alliengllCopy.footer`, rendered on every route except
+     `/`) and the new `LandingFooter.tsx` (bilingual, from two new
+     `landingCopy.ts` keys — `footerDesc`/`footerPrivacy` — reading the
+     landing page's own `lang` state; "Colloquiz ↗" and the copyright line
+     are NOT translated, matching the design script, which only templates
+     the description and the Privacy label). Root layout no longer renders
+     `EnglishFooter` directly; a new client `EnglishFooterGate.tsx`
+     (`usePathname`) renders `EnglishFooter` on every route and renders
+     nothing on `/`, so `LandingContent` — which now renders
+     `LandingFooter` itself, full-bleed, after its padded header/hero/
+     catalogue column — is the sole footer on the landing page. This is the
+     one client-side pathname check on this surface; everywhere else still
+     resolves at the server-component layer.
+  Separately: `app/(english)/page.tsx`'s `<main>` dropped `min-h-svh` — with
+  few courses in the catalogue it forced the page to a full-viewport
+  minimum height, padding blank space above the footer and forcing a scroll
+  to reach it for no visual reason (`body` already carries `bg-background`
+  globally, per `app/globals.css`'s `@layer base`, so nothing needed `main`
+  to force viewport height itself). **Superseded same session, owner
+  feedback:** removing `min-h-svh` fixed the forced scroll but left blank
+  space stranded BELOW the footer on a short page instead of above it — the
+  footer just sat wherever the content happened to end, not at the bottom of
+  the viewport. Fixed properly as a standard sticky-footer flex layout,
+  anchored once at `app/(english)/layout.tsx`'s `<body>` (`flex min-h-svh
+  flex-col`, wrapping `{children}` in a `flex flex-1 flex-col` div so it —
+  not any individual page — absorbs the leftover space above
+  `EnglishFooterGate`'s natural height). This is the ONE place `min-h-svh`
+  belongs on this surface; a page's own `<main>` reintroducing it double-
+  counts against the footer and reproduces the original bug, which is why
+  `courses/[courseSlug]/page.tsx`'s `<main>` had its own `min-h-svh` removed
+  in the same pass (identical bug, not previously reported). The landing
+  page needed one more step, because `LandingFooter` renders INSIDE
+  `<main>` (unlike every other route's `EnglishFooter`, which is `<body>`'s
+  direct sibling of the wrapper div): `page.tsx`'s `<main>` is now `flex
+  flex-1 flex-col` so it stretches to fill the wrapper handed down to it,
+  and `LandingContent`'s own padded content div takes `flex-1` so it grows
+  and pushes `LandingFooter` to `<main>`'s bottom — the same pattern,
+  nested one level deeper. `FooterLayout`'s padding/font-size were NOT
+  touched by this fix (verified: footer's own rendered height is unchanged
+  from the prior revision, 111px at 390px width / 77px at 1440px, on every
+  route). Verified at 390×844 and 1440×900 on `/`, the course page and a
+  lesson page: short content sits flush with no scrollbar, long content
+  (the lesson page; the course page at 1440px) scrolls normally with the
+  footer following it. **Corrected same session, owner pushback:** the three
+  `min-h-svh` holdouts named above — `error.tsx`, `not-found.tsx`, and the
+  lesson page's `"not_available"` (paid-preview) state — were NOT a
+  theoretical risk left for later. They render as the sole child of the
+  same root-layout `flex flex-1 flex-col` wrapper as every other route, with
+  the footer directly below as a sibling, so each was reproducing the exact
+  bug this entry describes: forced to `min-h-svh` regardless of its own
+  (short) content, then the footer's height stacked on top, overflowing the
+  viewport by 77–111px. Fixed in the same commit: all three swapped
+  `min-h-svh` for `flex-1` (keeping their existing `flex items-center
+  justify-center` centering unchanged — `flex-1` only changes how much
+  space they're given, not how they use it) so each fills exactly the space
+  the wrapper hands it, the same as every page above. Verified live at
+  390×844 and 1440×900 on `not-found.tsx` (a bogus lesson slug): flush
+  footer, no scrollbar, at both sizes — the paid-preview state and
+  `error.tsx` were not triggered live (this dev environment's only
+  published course has no paid lesson to preview, and `error.tsx` needs a
+  genuine thrown exception, not just a bad URL) but are code-identical in
+  every relevant respect (same wrapper, same `flex flex-1 items-center
+  justify-center` shape) to the one that was verified.
+  Do not extend the EN/RU toggle to any other route without asking again.
+  **Default toggle state flipped to EN (owner, same session):**
+  `LandingContent`'s initial `lang` value is `"en"` for a first-time visitor
+  — a first-time visitor now sees the English hero/header/catalogue strings
+  before touching the toggle. Scoped to just this: `<html lang="ru">`
+  (layout.tsx) and the page's `<title>`/`description` metadata (from
+  `alliengllCopy.landing`, still Russian) are untouched, and every other
+  route's chrome stays Russian-only per the standing rule above.
+  **Toggle choice persisted across reloads (owner bug report, same
+  session):** a `useState` default alone reset to `"en"` on every refresh —
+  a visitor who picked RU got bounced back to EN. Persisted via a cookie
+  (`LANDING_LANG_COOKIE = "colloquiz_landing_lang"`, `landingCopy.ts`), not
+  localStorage: `page.tsx` (Server Component) reads it with `next/headers`'
+  `cookies()` and passes the resolved `initialLang` prop into
+  `LandingContent`, so a returning visitor's saved language is already
+  correct in the FIRST server response — no client-side re-render, no
+  flash. A `useEffect` reading `localStorage` after mount was tried first
+  and dropped: besides the visible EN→RU flash on every return visit, it's
+  exactly the "derive state via `setState` in an effect" antipattern the
+  `react-hooks/set-state-in-effect` lint rule (part of `npm run check`)
+  exists to catch — the fix was to not need the effect, not to suppress the
+  rule. `LandingHeader`'s toggle handler now also writes the cookie
+  (`document.cookie`, 1-year `max-age`, no `HttpOnly` — a UI preference, not
+  a security-sensitive value, so no server round trip to set it).
