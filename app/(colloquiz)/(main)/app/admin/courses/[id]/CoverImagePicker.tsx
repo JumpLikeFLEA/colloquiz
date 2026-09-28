@@ -6,7 +6,16 @@ import { Loader2, Upload } from "lucide-react";
 import { LESSON_IMAGE_ACCEPT } from "@/lib/lessonImages";
 import { COVER_LIMITS_HINT, validateCoverSource } from "@/lib/courseCover";
 import { loadImage } from "@/lib/courseCoverCanvas";
-import type { UploadLessonImage } from "./lessons/[lessonId]/LessonImageUploadButton";
+
+// Deliberately its own 2-arg type, not a reuse of LessonImageUploadButton's
+// UploadLessonImage (which grew a `kind` param under INFRA-002 to pick a
+// lesson-image resize width) — a cover has no such kind, and is resized to
+// its own fixed COVER_MAX_OUTPUT_WIDTH by renderCover before onUpload ever
+// sees it.
+export type UploadCoverImage = (
+  file: File,
+  previousUrl: string | undefined,
+) => Promise<{ url: string } | { error: string }>;
 
 // VIS-001 step 4: the cover-specific replacement for LessonImageUploadButton.
 // Same props/onUpload contract (courseCoverCanvas's renderCover produces a
@@ -42,7 +51,7 @@ export function CoverImagePicker({
 }: {
   currentUrl: string | undefined;
   onUploaded: (url: string) => void;
-  onUpload: UploadLessonImage;
+  onUpload: UploadCoverImage;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<PendingCover | null>(null);

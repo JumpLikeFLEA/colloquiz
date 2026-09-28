@@ -14,7 +14,7 @@ describe("LessonImageUploadButton", () => {
   it("rejects a disallowed file type client-side without calling onUpload", async () => {
     const onUpload = vi.fn();
     const onUploaded = vi.fn();
-    render(<LessonImageUploadButton currentUrl={undefined} onUploaded={onUploaded} onUpload={onUpload} />);
+    render(<LessonImageUploadButton currentUrl={undefined} kind="theory" onUploaded={onUploaded} onUpload={onUpload} />);
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(["x"], "notes.txt", { type: "text/plain" });
@@ -31,6 +31,7 @@ describe("LessonImageUploadButton", () => {
     render(
       <LessonImageUploadButton
         currentUrl="https://cdn/lesson-images/course-1/old.png"
+        kind="matching"
         onUploaded={onUploaded}
         onUpload={onUpload}
       />,
@@ -41,13 +42,13 @@ describe("LessonImageUploadButton", () => {
     pickFile(input, file);
 
     await waitFor(() => expect(onUploaded).toHaveBeenCalledWith("https://cdn/lesson-images/course-1/new.png"));
-    expect(onUpload).toHaveBeenCalledWith(file, "https://cdn/lesson-images/course-1/old.png");
+    expect(onUpload).toHaveBeenCalledWith(file, "https://cdn/lesson-images/course-1/old.png", "matching");
   });
 
   it("shows the error onUpload returns, without calling onUploaded", async () => {
     const onUpload = vi.fn().mockResolvedValue({ error: "That file is 6 MB. The limit is 5 MB." });
     const onUploaded = vi.fn();
-    render(<LessonImageUploadButton currentUrl={undefined} onUploaded={onUploaded} onUpload={onUpload} />);
+    render(<LessonImageUploadButton currentUrl={undefined} kind="theory" onUploaded={onUploaded} onUpload={onUpload} />);
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(["x"], "big.png", { type: "image/png" });

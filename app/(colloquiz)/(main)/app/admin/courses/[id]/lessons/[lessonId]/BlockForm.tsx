@@ -239,6 +239,7 @@ export function BlockForm({
         <div className="space-y-3">
           <LessonImageUploadButton
             currentUrl={block.url || undefined}
+            kind="theory"
             onUploaded={(url) => onChange({ ...block, url })}
             onUpload={onUploadImage}
           />

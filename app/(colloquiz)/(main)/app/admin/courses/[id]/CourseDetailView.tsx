@@ -44,8 +44,7 @@ import {
 } from "@/lib/lessonImages";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring";
-import { type UploadLessonImage } from "./lessons/[lessonId]/LessonImageUploadButton";
-import { CoverImagePicker } from "./CoverImagePicker";
+import { CoverImagePicker, type UploadCoverImage } from "./CoverImagePicker";
 
 async function postJson(url: string, body: unknown, method: "POST" | "PATCH" | "DELETE" = "POST") {
   const res = await fetch(url, {
@@ -84,7 +83,7 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
     subtitle !== (course.subtitle ?? "") ||
     coverImageUrl !== course.coverImageUrl;
 
-  const uploadCover: UploadLessonImage = async (file, previousUrl) => {
+  const uploadCover: UploadCoverImage = async (file, previousUrl) => {
     const reason = validateLessonImageFile(file);
     if (reason) return { error: reason };
 

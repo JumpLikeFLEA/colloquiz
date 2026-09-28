@@ -8,16 +8,24 @@ import { parseLessonDocument, serializeLessonDocument, type LessonBlock } from "
 import { mapParseErrorsToFieldErrors, type LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
 import {
   LESSON_IMAGE_BUCKET,
+  LESSON_IMAGE_MAX_WIDTH_MATCHING,
+  LESSON_IMAGE_MAX_WIDTH_THEORY,
   lessonImageObjectPath,
   lessonImagePathFromUrl,
   validateLessonImageFile,
 } from "@/lib/lessonImages";
+import { resizeImageToWebp } from "@/lib/imageResize";
 import { lessonPublishStatus } from "@/lib/lessonPublishStatus";
 import { createClient } from "@/lib/supabase/client";
 import type { LessonContentDraft, LessonVersionSummary } from "@/lib/lessonContentAuthoring";
 import { BlockList } from "./BlockList";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
-import type { UploadLessonImage } from "./LessonImageUploadButton";
+import type { LessonImageKind, UploadLessonImage } from "./LessonImageUploadButton";
+
+const LESSON_IMAGE_MAX_WIDTH: Record<LessonImageKind, number> = {
+  theory: LESSON_IMAGE_MAX_WIDTH_THEORY,
+  matching: LESSON_IMAGE_MAX_WIDTH_MATCHING,
+};
 
 // Orchestrates the AUTH-002 block editor: holds the working document as
 // plain client state (matching update_lesson's "whole document, not a
@@ -82,18 +90,23 @@ export function LessonContentEditor({
     setDirty(true);
   }
 
-  const uploadLessonImage: UploadLessonImage = async (file, previousUrl) => {
+  const uploadLessonImage: UploadLessonImage = async (file, previousUrl, kind) => {
     // Re-checked here (not just in the picker UI) so a caller can never skip
     // the client-side limits by constructing its own File. The bucket itself
-    // (migration 041) enforces the same limits a third time.
+    // (migration 041) enforces the same limits a third time. Checked against
+    // the ORIGINAL picked file, before the INFRA-002 resize below — the
+    // resized output is always smaller, so a file that passes this check
+    // never fails the bucket's own limit after resizing.
     const reason = validateLessonImageFile(file);
     if (reason) return { error: reason };
 
+    const resized = await resizeImageToWebp(file, LESSON_IMAGE_MAX_WIDTH[kind]);
+
     const supabase = createClient();
-    const path = lessonImageObjectPath(courseId, file.type, crypto.randomUUID());
+    const path = lessonImageObjectPath(courseId, resized.file.type, crypto.randomUUID());
     const { error: uploadError } = await supabase.storage
       .from(LESSON_IMAGE_BUCKET)
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, resized.file, { contentType: resized.file.type, upsert: false });
     if (uploadError) return { error: uploadError.message };
 
     const { data: pub } = supabase.storage.from(LESSON_IMAGE_BUCKET).getPublicUrl(path);

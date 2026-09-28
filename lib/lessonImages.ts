@@ -21,6 +21,18 @@ export const LESSON_IMAGE_ACCEPT = LESSON_IMAGE_MIME_TYPES.join(",");
 export const LESSON_IMAGE_MAX_LABEL = "5 MB";
 export const LESSON_IMAGE_TYPES_LABEL = "PNG, JPEG or WebP";
 
+/**
+ * Output max widths for the client-side resize/WebP-encode done before
+ * upload (INFRA-002, lib/imageResize.ts). A theory image renders up to
+ * 1024px CSS width (app/components/lesson-player/blocks/ImageBlock.tsx's
+ * `sizes`), same breakpoint COVER_MAX_OUTPUT_WIDTH was derived from, so
+ * doubled for DPR 2. A matching element's image renders in a 48px box
+ * (MatchingContentView.tsx's `sizes="48px"`) — 400 is a generous margin over
+ * that display size, not a tight fit to it.
+ */
+export const LESSON_IMAGE_MAX_WIDTH_THEORY = 2048;
+export const LESSON_IMAGE_MAX_WIDTH_MATCHING = 400;
+
 /** Stated in the UI next to the button, BEFORE the user picks a file. */
 export const LESSON_IMAGE_LIMITS_HINT = `${LESSON_IMAGE_TYPES_LABEL}, up to ${LESSON_IMAGE_MAX_LABEL}`;
 

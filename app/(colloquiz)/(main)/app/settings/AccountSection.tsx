@@ -11,10 +11,12 @@ import {
   AVATAR_ACCEPT,
   AVATAR_BUCKET,
   AVATAR_LIMITS_HINT,
+  AVATAR_MAX_WIDTH,
   avatarObjectPath,
   avatarPathFromUrl,
   validateAvatarFile,
 } from "@/lib/avatar";
+import { resizeImageToWebp } from "@/lib/imageResize";
 import {
   DISPLAY_NAME_MAX,
   isProfileFormUnchanged,
@@ -121,13 +123,14 @@ export function AccountSection({
     if (reason) { setAvatarError(reason); return; }
 
     setAvatarBusy(true);
+    const resized = await resizeImageToWebp(file, AVATAR_MAX_WIDTH);
     const supabase = createClient();
     const previousPath = avatarPathFromUrl(profile.avatar_url);
-    const path = avatarObjectPath(userId, file.type, crypto.randomUUID());
+    const path = avatarObjectPath(userId, resized.file.type, crypto.randomUUID());
 
     const { error: uploadError } = await supabase.storage
       .from(AVATAR_BUCKET)
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, resized.file, { contentType: resized.file.type, upsert: false });
     if (uploadError) {
       setAvatarBusy(false);
       // The bucket's own limits land here too, e.g. if the client check is

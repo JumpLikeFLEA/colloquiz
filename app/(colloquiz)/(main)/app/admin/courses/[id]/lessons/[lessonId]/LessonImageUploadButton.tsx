@@ -13,18 +13,29 @@ import { LESSON_IMAGE_ACCEPT, LESSON_IMAGE_LIMITS_HINT, validateLessonImageFile 
 //
 // `onUpload` does the actual upload + old-object bookkeeping; this component
 // owns only the picker UI and its busy/error state.
+//
+// `kind` (INFRA-002) tells the shared uploadLessonImage in
+// LessonContentEditor.tsx which max width to resize to before upload — a
+// theory image and a matching element's image render at very different
+// sizes (see lib/lessonImages.ts's LESSON_IMAGE_MAX_WIDTH_* comment), and
+// this component is the leaf that knows which one it is.
+
+export type LessonImageKind = "theory" | "matching";
 
 export type UploadLessonImage = (
   file: File,
   previousUrl: string | undefined,
+  kind: LessonImageKind,
 ) => Promise<{ url: string } | { error: string }>;
 
 export function LessonImageUploadButton({
   currentUrl,
+  kind,
   onUploaded,
   onUpload,
 }: {
   currentUrl: string | undefined;
+  kind: LessonImageKind;
   onUploaded: (url: string) => void;
   onUpload: UploadLessonImage;
 }) {
@@ -40,7 +51,7 @@ export function LessonImageUploadButton({
       return;
     }
     setBusy(true);
-    const result = await onUpload(file, currentUrl);
+    const result = await onUpload(file, currentUrl, kind);
     setBusy(false);
     if ("error" in result) {
       setError(result.error);

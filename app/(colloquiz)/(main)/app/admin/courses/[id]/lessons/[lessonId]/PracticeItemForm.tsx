@@ -583,6 +583,7 @@ function MatchingElementEditor({
           <div className="space-y-1.5">
             <LessonImageUploadButton
               currentUrl={content.src || undefined}
+              kind="matching"
               onUploaded={(src) => onChange({ ...element, content: { ...content, src } })}
               onUpload={onUploadImage}
             />

@@ -19,6 +19,11 @@ export const AVATAR_ACCEPT = AVATAR_MIME_TYPES.join(",");
 export const AVATAR_MAX_LABEL = "2 MB";
 export const AVATAR_TYPES_LABEL = "PNG, JPEG or WebP";
 
+/** Output max width for the client-side resize/WebP-encode done before
+ * upload (INFRA-002, lib/imageResize.ts) — generous over any avatar display
+ * size in the app today. */
+export const AVATAR_MAX_WIDTH = 512;
+
 /** Stated in the UI next to the button, BEFORE the user picks a file. */
 export const AVATAR_LIMITS_HINT = `${AVATAR_TYPES_LABEL}, up to ${AVATAR_MAX_LABEL}`;
 
