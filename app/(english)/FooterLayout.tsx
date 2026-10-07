@@ -2,10 +2,9 @@ import Link from "next/link";
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 
 /**
- * Pure footer markup shared by `EnglishFooter` (global, Russian, every
- * other route) and `LandingFooter` (landing-page-only, bilingual) so the
- * two can't drift in proportions. Sizes/spacing follow the Claude Design
- * import's footer literally (mobile: 14px body text, a 13px second row;
+ * Pure footer markup for `EnglishFooter`, which since docs/decisions/0080
+ * also replaces the landing's former `LandingFooter` and takes a language.
+ * Sizes/spacing follow the Claude Design import's footer literally (mobile: 14px body text, a 13px second row;
  * desktop: the same, laid out as one row) rather than the larger
  * `text-sm`/`text-xs` split this carried right after the import — that
  * read noticeably taller than the design once shipped (owner feedback,

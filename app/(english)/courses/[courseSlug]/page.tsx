@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { alliengllCopy } from "@/lib/alliengll/copy";
+import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { getPublicCourse } from "@/lib/coursePage";
 import { bestScoreForLesson, courseProgress, courseTotals, firstFreeLesson } from "@/lib/coursePageProgress";
@@ -13,6 +14,7 @@ import { bestScoreForLesson, courseProgress, courseTotals, firstFreeLesson } fro
 // route the OPS-006 budget guard doesn't cover.
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { SectionHeading } from "../../SectionHeading";
+import { courseCopy } from "./courseCopy";
 import { CourseHero } from "./CourseHero";
 import { LessonListItem } from "./LessonListItem";
 
@@ -34,8 +36,12 @@ import { LessonListItem } from "./LessonListItem";
  * text. The hero leads with the short `subtitle` (the catalogue card's
  * summary), falling back to `description`; the full `description` gets its
  * own section only when it isn't already what the hero showed, so a long
- * description never stretches the band. Still a Server Component with no
- * client JS of its own.
+ * description never stretches the band. Still a Server Component; its only
+ * client JS is the EN/RU `LanguageToggle` in the band.
+ *
+ * docs/decisions/0080 — the chrome follows the EN/RU choice shared with the
+ * landing page, read here from the same cookie. Authored content (title,
+ * descriptions, lesson titles) renders as written in either language.
  */
 // SHELL-009 — og:title/og:description come from these (Next's Metadata API
 // fallback), the og:image from the co-located opengraph-image.tsx, which
@@ -66,7 +72,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const progress = courseProgress(course.lessons, attempts);
   const totals = courseTotals(course.lessons);
   const firstFree = firstFreeLesson(course.lessons);
-  const c = alliengllCopy.course;
+  const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
+  const c = courseCopy[lang];
 
   const lead = course.subtitle ?? course.description;
   const about = course.description && course.description !== lead ? course.description : null;
@@ -79,6 +86,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     // 2026-09-28).
     <main className="bg-background">
       <CourseHero
+        lang={lang}
         title={course.title}
         level={course.level}
         lead={lead}
@@ -111,6 +119,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
               {course.lessons.map((lesson, i) => (
                 <LessonListItem
                   key={lesson.slug}
+                  lang={lang}
                   href={`/courses/${courseSlug}/${lesson.slug}`}
                   position={i + 1}
                   lesson={lesson}

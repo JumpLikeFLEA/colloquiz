@@ -3,7 +3,7 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import type { CatalogueCourse } from "@/lib/courseCatalogue";
 import { pluralize } from "@/lib/pluralCategory";
-import type { LandingLang } from "./landingCopy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
 
 /**
@@ -25,7 +25,7 @@ import { landingCopy } from "./landingCopy";
  * image in a grid of real covers. Hover lifts the card and slowly zooms the
  * cover; both are dropped under prefers-reduced-motion.
  */
-export function CourseCard({ course, lang }: { course: CatalogueCourse; lang: LandingLang }) {
+export function CourseCard({ course, lang }: { course: CatalogueCourse; lang: SurfaceLang }) {
   const t = landingCopy[lang];
   const meta =
     course.lessonCount > 0

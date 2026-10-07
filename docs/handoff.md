@@ -169,10 +169,14 @@ What it means concretely:
   the pitch before committing to Russian-only chrome. This is scoped to the
   landing page's own hero/header/catalogue-label strings
   (`app/(english)/landingCopy.ts`), kept deliberately separate from
-  `lib/alliengll/copy.ts`. Every other route — course page, lesson player,
-  completion screen, signup offer — is unaffected and stays Russian-only,
-  single strings module, no switcher, per the paragraph above. Do not extend
-  the toggle past the landing page without asking again. **Bundle exception
+  `lib/alliengll/copy.ts`. **Extended to the course pages (owner,
+  2026-10-07, docs/decisions/0080):** `/` and `/courses/[courseSlug]` share
+  one toggle and one saved choice (a cookie read server-side, so a reload
+  or the next page is already in the chosen language). The course page's
+  strings live beside it in `courseCopy.ts`, and the footer follows the
+  choice there. Every other route (lesson player, completion screen, signup
+  offer, 404, error) has no toggle and keeps a single language. Do not
+  extend the toggle further without asking again. **Bundle exception
   (owner, 2026-10-07, docs/decisions/0079 "Budget"):** the English error
   boundary's four strings live in `lib/alliengll/errorCopy.ts`, not
   `lib/alliengll/copy.ts`. `error.tsx` is a Client Component that ships

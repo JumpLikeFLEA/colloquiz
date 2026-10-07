@@ -1057,3 +1057,26 @@ Appended to in the same commit as the change it records. Referenced from
   page's client JS: `/` went from 180.0 KB (over budget) to 177.7. There is
   no visual change. Do not import copy.ts into a client component that
   renders on those routes.
+- One EN/RU toggle for the landing and course pages (2026-10-07, ad-hoc,
+  docs/decisions/0080), extending the 2026-09-28 landing-only toggle at the
+  owner's request. `/courses/[courseSlug]` now carries the same switch,
+  `LanguageToggle.tsx`, in its band's `BandTopBar`, between the wordmark and
+  "← Все курсы", with the same white-on-gradient classes the landing's
+  header used. The choice is the landing's existing cookie, read
+  server-side by both pages, so landing EN → course EN, RU → RU, and a
+  reload keeps it. The toggle saves through a Server Action
+  (`setSurfaceLang.ts`), not `document.cookie`, so the page and the root
+  layout's footer re-render in the new language at once. Do not swap it
+  back to a client-only cookie write: the course page and the footer would
+  stay in the old language until the next full load.
+
+  Course-page strings moved from `lib/alliengll/copy.ts` to `courseCopy.ts`
+  (`{ ru, en }`). Authored titles and descriptions are not translated.
+
+  The footer follows the route (`footerLangForPath`): the saved choice on a
+  course page, Russian elsewhere, and on `/` the landing renders it from
+  its own toggle state. `LandingFooter.tsx` is gone; `EnglishFooter` takes a
+  `lang` and both read `footerCopy.ts`.
+
+  Verified at 360px (no horizontal scroll; wordmark, toggle and back link
+  fit on one row) and 1440px.

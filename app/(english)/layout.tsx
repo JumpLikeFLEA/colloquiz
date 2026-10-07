@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Geist } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { EnglishFooter } from "./EnglishFooter";
 import { EnglishFooterGate } from "./EnglishFooterGate";
 import { EntryViewBeacon } from "./EntryViewBeacon";
@@ -40,11 +42,18 @@ export const metadata: Metadata = {
 // tiny on purpose: this is the whole cost of dark mode on this surface.
 const darkModeScript = `(function(){try{if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark')}}catch(e){}})()`;
 
-export default function EnglishRootLayout({
+export default async function EnglishRootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The saved EN/RU choice, for the course page's footer (docs/decisions/
+  // 0080). Reading cookies here costs nothing extra: every route under this
+  // layout is already dynamic (each reads the Supabase session cookies).
+  // It stays current because the toggle saves through a Server Action,
+  // which re-renders the layout too, not just the page.
+  const savedLang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
+
   return (
     // suppressHydrationWarning: the inline script below sets `class` before
     // hydration, so server and client markup necessarily disagree here —
@@ -63,9 +72,7 @@ export default function EnglishRootLayout({
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
         <EntryViewBeacon />
         <div className="flex flex-1 flex-col">{children}</div>
-        <EnglishFooterGate>
-          <EnglishFooter />
-        </EnglishFooterGate>
+        <EnglishFooterGate savedLang={savedLang} ru={<EnglishFooter lang="ru" />} en={<EnglishFooter lang="en" />} />
         {/* Kept per docs/decisions/0046: the only source of field Web
             Vitals, which is the evidence the Performance boundary's own
             budget requirement asks for. Cookieless, same as the Colloquiz

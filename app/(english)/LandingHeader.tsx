@@ -1,11 +1,13 @@
 import Link from "next/link";
-import type { LandingLang } from "./landingCopy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
+import { LanguageToggle } from "./LanguageToggle";
 
 /**
- * Landing-page-only header: wordmark, EN/RU toggle, login link. See the
- * 2026-09-28 landing exception in docs/handoff.md ("Audience and
- * language") — this toggle exists nowhere else on the English surface.
+ * Landing-page header: wordmark, EN/RU toggle, login link. The toggle is
+ * the shared `LanguageToggle` the course pages also carry (docs/decisions/
+ * 0080, extending the 2026-09-28 landing exception in docs/handoff.md,
+ * "Audience and language"); the login link is landing-only.
  * "Alliengll" here is a page title, not a branding decision: siteName in
  * lib/alliengll/copy.ts stays "Colloquiz" (docs/handoff.md, "Open
  * questions" — naming is still deliberately deferred).
@@ -20,8 +22,8 @@ export function LandingHeader({
   lang,
   onSetLang,
 }: {
-  lang: LandingLang;
-  onSetLang: (lang: LandingLang) => void;
+  lang: SurfaceLang;
+  onSetLang: (lang: SurfaceLang) => void;
 }) {
   const t = landingCopy[lang];
 
@@ -29,22 +31,7 @@ export function LandingHeader({
     <header className="flex items-center justify-between gap-2">
       <span className="text-lg font-semibold tracking-tight text-white">{t.wordmark}</span>
       <div className="flex items-center gap-1.5">
-        <div role="group" aria-label={t.languageGroupLabel} className="flex gap-0.5 rounded-lg bg-white/10 p-0.5 ring-1 ring-white/20">
-          {(["en", "ru"] as const).map((code) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => onSetLang(code)}
-              aria-pressed={lang === code}
-              lang={code}
-              className={`min-w-11 cursor-pointer rounded-md px-2.5 py-2 text-xs font-semibold tracking-wide transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                lang === code ? "bg-white text-brand-deep shadow-sm" : "text-white/75 hover:text-white"
-              }`}
-            >
-              {code.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <LanguageToggle lang={lang} label={t.languageGroupLabel} onChange={onSetLang} />
         <Link
           href="/login"
           className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors outline-none hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white"

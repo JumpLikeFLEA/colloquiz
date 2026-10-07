@@ -1,9 +1,10 @@
 /**
- * Landing-page-only bilingual strings (docs/handoff.md, "Audience and
- * language", 2026-09-28 landing exception). Deliberately separate from
- * lib/alliengll/copy.ts, which stays Russian-only and governs every other
- * route on this surface — do not merge these back together and do not import
- * this file outside app/(english)/page.tsx and its landing components.
+ * Landing-page bilingual strings (docs/handoff.md, "Audience and language",
+ * 2026-09-28 landing exception; the toggle is shared with the course pages
+ * since docs/decisions/0080, whose own strings live in
+ * courses/[courseSlug]/courseCopy.ts). Deliberately separate from
+ * lib/alliengll/copy.ts — do not merge them, and do not import this file
+ * outside app/(english)/page.tsx and its landing components.
  *
  * Every claim below is one docs/handoff.md already makes about the product
  * (lesson length, levels, free first lessons, explanations, ~1 hour per
@@ -11,13 +12,8 @@
  * figures that nothing measures (docs/decisions/0078).
  */
 
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { PluralForms } from "@/lib/pluralCategory";
-
-export type LandingLang = "ru" | "en";
-
-/** Cookie name for the persisted toggle choice — read server-side by
- * page.tsx, written client-side by LandingContent's toggle handler. */
-export const LANDING_LANG_COOKIE = "colloquiz_landing_lang";
 
 /**
  * The hero mini-demo's item: `i2` from the `exit-check` lesson of
@@ -68,11 +64,9 @@ type LandingStrings = {
   steps: { title: string; text: string }[];
   closingTitle: string;
   closingText: string;
-  footerDesc: string;
-  footerPrivacy: string;
 };
 
-export const landingCopy: Record<LandingLang, LandingStrings> = {
+export const landingCopy: Record<SurfaceLang, LandingStrings> = {
   ru: {
     wordmark: "Alliengll",
     login: "Войти",
@@ -115,8 +109,6 @@ export const landingCopy: Record<LandingLang, LandingStrings> = {
     ],
     closingTitle: "Первый урок — в одно касание",
     closingText: "Без регистрации и без оплаты.",
-    footerDesc: "Наше приложение с квизами",
-    footerPrivacy: "Конфиденциальность",
   },
   en: {
     wordmark: "Alliengll",
@@ -159,7 +151,5 @@ export const landingCopy: Record<LandingLang, LandingStrings> = {
     ],
     closingTitle: "Your first lesson is one tap away",
     closingText: "No sign-up, no payment.",
-    footerDesc: "Our quiz app",
-    footerPrivacy: "Privacy",
   },
 };

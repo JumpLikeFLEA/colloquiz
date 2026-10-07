@@ -2,25 +2,28 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { footerLangForPath, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 
 /**
- * Renders the shared, Russian-only `EnglishFooter` on every English route
- * EXCEPT `/`, which renders its own bilingual `LandingFooter` (reactive to
- * the landing page's EN/RU toggle — the static `EnglishFooter` can't be,
- * it's a Server Component with no access to that client-side state). A
- * client boundary at the very bottom of the root layout, not further up: it
- * costs only `usePathname` (part of Next's own router runtime already
- * shipped, not new bytes) — the rest of app/(english)/layout.tsx stays a
- * Server Component.
+ * Picks which of the root layout's two server-rendered footers to show on
+ * the current route (docs/decisions/0080, `footerLangForPath`): the saved
+ * EN/RU choice on a course page, Russian anywhere else, and nothing on
+ * `/`, whose `LandingContent` renders its own copy so
+ * it can follow the landing toggle without a server round trip.
  *
- * The footer arrives as `children`, already rendered on the server by the
- * layout, rather than being imported here (docs/decisions/0079, "Budget").
- * Importing `EnglishFooter` made it, and lib/alliengll/copy.ts with it, part
- * of this client boundary: the whole strings object (~2.2 KB gzip) shipped
- * on every English route, including `/`, which never shows this footer.
+ * A client boundary at the very bottom of the root layout, not further up:
+ * the layout persists across client-side navigation, so only `usePathname`
+ * (part of Next's own router runtime, already shipped) can tell it which
+ * route it is on now. `savedLang` comes from the layout's own cookie read,
+ * which the toggle's Server Action refreshes.
+ *
+ * Both footers arrive as props, already rendered on the server, rather than
+ * being imported here (docs/decisions/0079, "Budget"): importing the footer
+ * would make it, and its strings, part of this client boundary on every
+ * English route.
  */
-export function EnglishFooterGate({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  if (pathname === "/") return null;
-  return children;
+export function EnglishFooterGate({ savedLang, ru, en }: { savedLang: SurfaceLang; ru: ReactNode; en: ReactNode }) {
+  const lang = footerLangForPath(usePathname(), savedLang);
+  if (lang === null) return null;
+  return lang === "ru" ? ru : en;
 }

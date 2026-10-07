@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Check, ChevronRight, Clock, ListChecks } from "lucide-react";
-import { alliengllCopy } from "@/lib/alliengll/copy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { PublicCourseLesson } from "@/lib/coursePageProgress";
 import { pluralize } from "@/lib/pluralCategory";
 import { LIFT_CARD_CLASS } from "../../surfaceClasses";
+import { courseCopy } from "./courseCopy";
 
 /**
  * One row of the course page's lesson list (docs/decisions/0079 D1–D3): a
@@ -20,19 +21,21 @@ import { LIFT_CARD_CLASS } from "../../surfaceClasses";
  * attempted lesson (D2) gets a ✓ on its tile and its best score.
  */
 export function LessonListItem({
+  lang,
   href,
   position,
   lesson,
   showFreeBadge,
   bestPercent,
 }: {
+  lang: SurfaceLang;
   href: string;
   position: number;
   lesson: PublicCourseLesson;
   showFreeBadge: boolean;
   bestPercent: number | null;
 }) {
-  const c = alliengllCopy.course;
+  const c = courseCopy[lang];
   const meta = (
     <>
       {lesson.estimatedMinutes !== null && (
@@ -44,7 +47,7 @@ export function LessonListItem({
       {lesson.itemCount > 0 && (
         <span className="inline-flex items-center gap-1">
           <ListChecks className="size-3.5" aria-hidden="true" />
-          {lesson.itemCount} {pluralize(lesson.itemCount, "ru", c.exercises)}
+          {lesson.itemCount} {pluralize(lesson.itemCount, lang, c.exercises)}
         </span>
       )}
     </>

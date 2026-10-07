@@ -5,7 +5,7 @@ import { Check, RotateCcw, X } from "lucide-react";
 // Direct path, not the lesson-player barrel: the barrel pulls the whole
 // player (every practice renderer) into `/`'s bundle (docs/decisions/0059).
 import { optionClassName } from "@/app/components/lesson-player/practice/optionClassName";
-import type { LandingLang } from "./landingCopy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { heroDemoItem, landingCopy } from "./landingCopy";
 
 /**
@@ -19,7 +19,7 @@ import { heroDemoItem, landingCopy } from "./landingCopy";
  * answers immediately; "Try again" resets. Nothing is recorded — this is not
  * a lesson attempt (lib/lessonPlayer/attemptStore.ts never sees it).
  */
-export function HeroDemo({ lang }: { lang: LandingLang }) {
+export function HeroDemo({ lang }: { lang: SurfaceLang }) {
   const t = landingCopy[lang].demo;
   const [picked, setPicked] = useState<string | null>(null);
   const submitted = picked !== null;

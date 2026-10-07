@@ -1,9 +1,12 @@
 /**
- * Every learner-facing chrome string for the English (Alliengll) surface —
- * landing, catalogue, course page, player buttons, completion screen, signup
- * offer, not-found — in one place, in Russian (docs/handoff.md, "Audience and
- * language", 2026-09-24 delta). This is one surface written in one language,
- * not an i18n layer: no locale selection, no library, no fallback.
+ * Learner-facing chrome strings for the English (Alliengll) surface that
+ * have ONE fixed language — player buttons, completion screen, signup
+ * offer, not-found — in Russian (docs/handoff.md, "Audience and language",
+ * 2026-09-24 delta). Not an i18n layer: no locale selection, no library, no
+ * fallback. The landing page (app/(english)/landingCopy.ts), the course page
+ * (courses/[courseSlug]/courseCopy.ts) and the footer (footerCopy.ts) follow
+ * the shared EN/RU toggle instead and keep their strings beside the page
+ * (docs/decisions/0080).
  *
  * Colloquiz's own chrome (0018 Decision 5) is untouched and stays English —
  * nothing here is imported outside app/(english)/.
@@ -13,7 +16,7 @@
  * On the lesson page that's unavoidable (the player is client-side). Keep it
  * out of client components that render on `/` or the course page. That is
  * why the footer is server-rendered and handed to `EnglishFooterGate` as
- * children, and why the error boundary's four strings live in
+ * props, and why the error boundary's four strings live in
  * ./errorCopy.ts.
  */
 
@@ -40,26 +43,13 @@ export const alliengllCopy = {
     freeSampleBadge: "Бесплатно",
   },
 
-  // docs/decisions/0079: the course page redesign. New strings pending
-  // owner/partner review, same as 0078's landing copy.
+  // The course page's own strings moved to app/(english)/courses/
+  // [courseSlug]/courseCopy.ts (docs/decisions/0080: it follows the EN/RU
+  // toggle now). These two are still read by the lesson band and the
+  // completion card.
   course: {
-    backToCatalogue: "Все курсы",
-    startFirstFree: "Начать первый бесплатный урок",
-    startCourse: "Начать курс",
-    allFree: "Весь курс бесплатно",
-    progressAttempted: "пройдено уроков",
-    progressAverage: "средний результат",
-    progressOf: "из",
-    lessons: { one: "урок", few: "урока", many: "уроков", other: "урока" },
     exercises: { one: "задание", few: "задания", many: "заданий", other: "задания" },
     minutesLabel: "мин",
-    freeBadge: "Бесплатно",
-    bestScoreLabel: "Лучший",
-    aboutTitle: "О курсе",
-    lessonsEyebrow: "Программа",
-    lessonsTitle: "Уроки курса",
-    noFreeLesson: "Скоро появятся бесплатные уроки",
-    noLessons: "Уроки скоро появятся — загляните позже.",
   },
 
   player: {
@@ -153,16 +143,6 @@ export const alliengllCopy = {
   // ships with every page, and importing this object there put all of it in
   // the client JS of `/`.
 
-  // SHELL-012: the sole path off this surface to the Colloquiz shell (/app).
-  // Deliberately just a footer line, not nav — see docs/decisions/0062.
-  // 2026-09-28: enriched to match the Claude Design landing import's footer
-  // (owner overwrite, docs/ui-decisions.md) — still one link off-surface,
-  // not nav, so 0062's "not nav" clause still holds; only its "single line"
-  // clause is superseded.
-  footer: {
-    colloquizHeading: "Colloquiz ↗",
-    colloquizDesc: "Наше приложение с квизами",
-    privacy: "Конфиденциальность",
-    copyright: "© 2026 Alliengll",
-  },
+  // The footer's strings moved to app/(english)/footerCopy.ts (docs/
+  // decisions/0080): the footer follows the EN/RU choice on course pages.
 } as const;

@@ -7,18 +7,19 @@ import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/colum
 import type { CatalogueCourse } from "@/lib/courseCatalogue";
 import { pluralize } from "@/lib/pluralCategory";
 import { LandingHeader } from "./LandingHeader";
-import { LandingFooter } from "./LandingFooter";
+import { EnglishFooter } from "./EnglishFooter";
 import { CourseCard } from "./CourseCard";
 import { HeroDemo } from "./HeroDemo";
-import type { LandingLang } from "./landingCopy";
-import { landingCopy, LANDING_LANG_COOKIE } from "./landingCopy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
+import { landingCopy } from "./landingCopy";
 import { SectionHeading } from "./SectionHeading";
 import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLASS } from "./surfaceClasses";
 
 /**
  * Landing page body, as a Client Component: holds the EN/RU toggle state
- * (docs/handoff.md, "Audience and language", 2026-09-28 landing exception)
- * and re-renders every string from it. `initialLang` comes from page.tsx,
+ * (docs/handoff.md, "Audience and language"; shared with the course pages
+ * since docs/decisions/0080) and re-renders every string from it, at once,
+ * on toggle. `initialLang` comes from page.tsx,
  * which reads the persisted choice from a cookie server-side — so a
  * returning visitor's saved language is already correct in the FIRST
  * response, with no client-side re-render/flash and no hydration mismatch to
@@ -26,8 +27,9 @@ import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLAS
  * dropped: it flashed the default before correcting, and reads as exactly
  * the "derived state via setState-in-effect" antipattern the react-hooks
  * lint rule (`set-state-in-effect`) exists to catch — the fix is to not need
- * the effect, not to silence the rule). `handleSetLang` writes the same
- * cookie on toggle so the next request already carries it. Data (`courses`,
+ * the effect, not to silence the rule). The shared `LanguageToggle` saves
+ * the choice to the same cookie through a Server Action, so the next page
+ * (and a reload) already carries it. Data (`courses`,
  * `heroHref`) is fetched server-side in page.tsx and passed in — this
  * component owns only the lang toggle, not the Supabase reads.
  *
@@ -40,12 +42,12 @@ import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLAS
  * hero fade up on scroll via the CSS-only `.reveal-on-scroll`
  * (app/globals.css) — no observer, no script.
  *
- * `LandingFooter` renders here (not the shared `EnglishFooter` the root
- * layout uses on every other route — see `EnglishFooterGate.tsx`) because
- * it needs `lang` to translate. This component's two returned elements are
+ * The footer renders here, with the toggle's live `lang` (the root layout's
+ * copy, gated by `EnglishFooterGate.tsx`, renders nothing on `/`), so it
+ * switches language with the rest of the page. This component's two returned elements are
  * `<main>`'s DIRECT children (a Fragment adds no DOM node), so `<main>`'s
  * `flex flex-col` (page.tsx) lays them out as a column: the content div
- * takes `flex-1` to grow and push `LandingFooter` to the bottom of `<main>`
+ * takes `flex-1` to grow and push the footer to the bottom of `<main>`
  * when content is short, exactly like the root layout does for every other
  * route's footer.
  */
@@ -59,22 +61,14 @@ export function LandingContent({
 }: {
   courses: CatalogueCourse[];
   heroHref: string;
-  initialLang: LandingLang;
+  initialLang: SurfaceLang;
   backdrop: ReactNode;
   heroChips: ReactNode;
   /** One per `t.values` entry, same order (HeroDecor.tsx's valueIcons). */
   valueIcons: ReactNode[];
 }) {
-  const [lang, setLang] = useState<LandingLang>(initialLang);
+  const [lang, setLang] = useState<SurfaceLang>(initialLang);
   const t = landingCopy[lang];
-
-  function handleSetLang(next: LandingLang) {
-    setLang(next);
-    // A UI preference, not a security-sensitive value: no HttpOnly, no
-    // server round trip to set it. 1 year, matching the scope of "remember
-    // this visitor's choice" rather than a session-length default.
-    document.cookie = `${LANDING_LANG_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
-  }
 
   const primaryCta = (
     <Link
@@ -95,7 +89,7 @@ export function LandingContent({
         <section className={GRADIENT_BAND_CLASS}>
           {backdrop}
           <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-10 pb-20 pt-5 sm:pb-24 lg:gap-14 lg:pb-28 lg:pt-6`}>
-            <LandingHeader lang={lang} onSetLang={handleSetLang} />
+            <LandingHeader lang={lang} onSetLang={setLang} />
 
             <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
               <div className="flex flex-col items-start gap-5">
@@ -193,7 +187,7 @@ export function LandingContent({
           </section>
         </div>
       </div>
-      <LandingFooter lang={lang} />
+      <EnglishFooter lang={lang} />
     </>
   );
 }

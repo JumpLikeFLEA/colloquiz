@@ -2,10 +2,9 @@ import { cookies } from "next/headers";
 import { getPublicCourse } from "@/lib/coursePage";
 import { firstFreeLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
+import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { GradientBackdrop, HeroChips, valueIcons } from "./HeroDecor";
 import { LandingContent } from "./LandingContent";
-import { LANDING_LANG_COOKIE } from "./landingCopy";
-import type { LandingLang } from "./landingCopy";
 
 /**
  * SHELL-010 — the landing page: header, hero, then the catalogue. Built
@@ -40,11 +39,10 @@ export default async function EnglishLandingPage() {
   // mismatch to work around (a useEffect+setState reading localStorage was
   // tried first and rejected: it flashed EN before correcting to the saved
   // RU choice, and the lint rule against setState-in-effect is right that
-  // it's the wrong tool here). The cookie is set by LandingContent's own
-  // toggle handler; defaults to "en" (2026-09-28 owner call) for a
-  // first-time visitor with no cookie yet.
-  const savedLang = (await cookies()).get(LANDING_LANG_COOKIE)?.value;
-  const initialLang: LandingLang = savedLang === "ru" ? "ru" : "en";
+  // it's the wrong tool here). The cookie is set by the shared
+  // LanguageToggle (here or on a course page, docs/decisions/0080);
+  // defaults to "en" (2026-09-28 owner call) for a first-time visitor.
+  const initialLang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
 
   return (
     // flex-1 (not min-h-svh): the root layout's wrapper div already sizes
@@ -52,7 +50,7 @@ export default async function EnglishLandingPage() {
     // renders null on this route, so that's the whole viewport here).
     // flex-1 + flex-col lets THIS <main> stretch to fill that wrapper and
     // hand the space down to LandingContent's own flex layout, which is
-    // what pushes LandingFooter (rendered inside main, unlike every other
+    // what pushes the footer (rendered inside main, unlike every other
     // route's EnglishFooter) to the bottom without forcing a scrollbar.
     <main className="flex flex-1 flex-col bg-background">
       <LandingContent

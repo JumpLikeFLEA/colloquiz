@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock, Gift, ListChecks } from "lucide-react";
-import { alliengllCopy } from "@/lib/alliengll/copy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { CefrLevel } from "@/lib/courseLevels";
 import type { CourseProgress, CourseTotals } from "@/lib/coursePageProgress";
 import { pluralize } from "@/lib/pluralCategory";
@@ -9,7 +9,9 @@ import { pluralize } from "@/lib/pluralCategory";
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { BandTopBar } from "../../BandTopBar";
 import { GradientBackdrop } from "../../HeroDecor";
+import { LanguageToggle } from "../../LanguageToggle";
 import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLASS } from "../../surfaceClasses";
+import { courseCopy } from "./courseCopy";
 
 /**
  * The course page's gradient hero band (docs/decisions/0079 D1–D3), in the
@@ -27,8 +29,12 @@ import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLAS
  * Progress (D2) is TWO numbers, never blended (docs/handoff.md, "Scoring
  * and progress"), and only rendered once something is attempted: "0 из 8"
  * told every anonymous visitor nothing, on every visit.
+ *
+ * The top bar carries the EN/RU toggle shared with the landing page
+ * (docs/decisions/0080); every string here comes from `courseCopy[lang]`.
  */
 export function CourseHero({
+  lang,
   title,
   level,
   lead,
@@ -37,6 +43,7 @@ export function CourseHero({
   progress,
   cta,
 }: {
+  lang: SurfaceLang;
   title: string;
   level: CefrLevel;
   lead: string | null;
@@ -45,13 +52,16 @@ export function CourseHero({
   progress: CourseProgress;
   cta: { href: string; label: string } | null;
 }) {
-  const c = alliengllCopy.course;
+  const c = courseCopy[lang];
 
   return (
     <section className={GRADIENT_BAND_CLASS}>
       <GradientBackdrop />
       <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-12 pt-5 sm:pb-16 lg:gap-12 lg:pb-20 lg:pt-6`}>
-        <BandTopBar back={{ href: "/#catalogue", label: c.backToCatalogue }} />
+        <BandTopBar
+          back={{ href: "/#catalogue", label: c.backToCatalogue }}
+          toggle={<LanguageToggle lang={lang} label={c.languageGroupLabel} />}
+        />
 
         <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
           <div className="flex flex-col items-start gap-5">
@@ -78,7 +88,7 @@ export function CourseHero({
               <ul className={`${HERO_ENTER_CLASS} delay-200 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/85`}>
                 <li className="inline-flex items-center gap-1.5">
                   <BookOpen className="size-4" aria-hidden="true" />
-                  {totals.lessonCount} {pluralize(totals.lessonCount, "ru", c.lessons)}
+                  {totals.lessonCount} {pluralize(totals.lessonCount, lang, c.lessons)}
                 </li>
                 {totals.totalMinutes !== null && (
                   <li className="inline-flex items-center gap-1.5">
@@ -88,7 +98,7 @@ export function CourseHero({
                 {totals.exerciseCount > 0 && (
                   <li className="inline-flex items-center gap-1.5">
                     <ListChecks className="size-4" aria-hidden="true" />
-                    {totals.exerciseCount} {pluralize(totals.exerciseCount, "ru", c.exercises)}
+                    {totals.exerciseCount} {pluralize(totals.exerciseCount, lang, c.exercises)}
                   </li>
                 )}
               </ul>
