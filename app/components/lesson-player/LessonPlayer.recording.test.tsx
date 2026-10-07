@@ -41,7 +41,7 @@ afterEach(() => {
 async function scoreTheSelectionItem() {
   expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
   fireEvent.click(screen.getByRole("radio", { name: "She goes to school every day." }));
-  fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+  fireEvent.click(screen.getByRole("button", { name: "Check" }));
 }
 
 describe("LessonPlayer — ANON-005 attempt recording", () => {

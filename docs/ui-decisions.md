@@ -1080,3 +1080,25 @@ Appended to in the same commit as the change it records. Referenced from
 
   Verified at 360px (no horizontal scroll; wordmark, toggle and back link
   fit on one row) and 1440px.
+- Lesson chrome is English (2026-10-07, ad-hoc, docs/decisions/0080
+  Decision 5), REVERSING the SHELL-011 entry's Russian player chrome and
+  the 2026-09-24 rule behind it for the lesson page, at the owner's
+  request. Every interface string on `/courses/[courseSlug]/[lessonSlug]`
+  is English, whatever the saved EN/RU choice:
+  - the buttons (Check, Why?/Hide, True/False, Clear, Return to pool);
+  - "Exercise N of M", "Lesson N of M" and the lesson band's "K min · J
+    exercises";
+  - "← Back to course";
+  - the completion card ("N exercises left", "Lesson complete", "Your
+    score", "Next lesson", "Answer review");
+  - the signup offer and the paid-lesson notice.
+
+  The lesson page has no toggle, and its footer is English
+  (`footerLangForPath`). Strings stay in `lib/alliengll/copy.ts`, one fixed
+  language, no switch. Labels SHELL-011 had translated reuse their earlier
+  English wording, except "Submit", which is now "Check".
+
+  Authored lesson content is unchanged. The 404 and error pages stay
+  Russian. The admin preview and the demo change with it, by design. Do not
+  add a toggle to the lesson page, and do not move these strings back to
+  Russian, without asking the owner.

@@ -9,9 +9,10 @@ import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../.
 
 /**
  * The lesson page's header (docs/decisions/0079 D5): a compact version of
- * the course page's gradient band. It holds `BandTopBar` with "← Назад к
- * курсу", the course title, the lesson title, its description, and
- * "Урок N из M · K мин · J заданий".
+ * the course page's gradient band. It holds `BandTopBar` with "← Back to
+ * course" (and no EN/RU toggle: lesson chrome is always English,
+ * docs/decisions/0080 Decision 5), the course title, the lesson title, its description, and
+ * "Lesson N of M · K min · J exercises".
  *
  * Everything sits in `LESSON_READING_FRAME_CLASS`, so the title starts at
  * the same x as the theory and exercises below it. The old header put an
@@ -60,13 +61,13 @@ export function LessonBand({
             {estimatedMinutes !== null && (
               <span className={GLASS_PILL_CLASS}>
                 <Clock className="size-3.5" aria-hidden="true" />
-                {estimatedMinutes} {alliengllCopy.course.minutesLabel}
+                {estimatedMinutes} {p.minutesLabel}
               </span>
             )}
             {itemCount > 0 && (
               <span className={GLASS_PILL_CLASS}>
                 <ListChecks className="size-3.5" aria-hidden="true" />
-                {itemCount} {pluralize(itemCount, "ru", alliengllCopy.course.exercises)}
+                {itemCount} {pluralize(itemCount, "en", p.exercises)}
               </span>
             )}
           </div>

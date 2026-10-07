@@ -29,7 +29,12 @@ describe("footerLangForPath", () => {
     expect(footerLangForPath("/courses/future-imperfect/", saved)).toBe(saved);
   });
 
-  it.each([["/courses"], ["/courses/future-imperfect/true-or-false"], ["/courses/a/b/c"], ["/privacy"], ["/no-such-page"]])(
+  it.each([["ru"], ["en"]] as const)("is always English on a lesson page, whatever was saved (%s)", (saved) => {
+    expect(footerLangForPath("/courses/future-imperfect/true-or-false", saved)).toBe("en");
+    expect(footerLangForPath("/courses/future-imperfect/true-or-false/", saved)).toBe("en");
+  });
+
+  it.each([["/courses"], ["/courses/a/b/c"], ["/privacy"], ["/no-such-page"]])(
     "stays Russian anywhere else (%s)",
     (path) => {
       expect(footerLangForPath(path, "en")).toBe("ru");

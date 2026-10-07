@@ -1,4 +1,4 @@
-# 0080 — One EN/RU toggle for the landing and course pages
+# 0080 — One EN/RU toggle for the landing and course pages; English lesson chrome
 
 ## Context
 
@@ -120,6 +120,75 @@ routes 404 on hosted, see 0079), against `next start` of this change:
 
 The two lesson routes were already above the 260/290 targets, which belong
 to other lessons (0079).
+
+## Decision 5 — lesson chrome is fixed English, with no toggle
+
+The same request's second line: "Buttons text inside the lessons is always
+EN - no RU option there". In the code every lesson button was Russian
+(SHELL-011, a02dc32), so the line could be read three ways. The owner was
+asked and chose "all lesson chrome in English": every interface string on
+the lesson page is English and there is no toggle. That reverses the
+2026-09-24 Russian-chrome rule (docs/handoff.md) for the lesson page; the
+owner confirmed reversals are fine.
+
+The two other readings were rejected by that answer:
+
+- **"Only buttons English"** would mix the languages on every lesson page
+  ("Задание 1 из 5" above a "Check" button).
+- **"Lessons follow the toggle"** needs every player string in both
+  languages. The player is client-side, so both would ship to lesson routes
+  that are already near or over their 260/290 KB budgets.
+
+What changed:
+
+- `lib/alliengll/copy.ts`: `player`, `theory`, `completion`, `signupOffer`
+  and `notAvailable` are now English, still one fixed language and no
+  switch. Where SHELL-011 had replaced an English label with Russian, the
+  earlier wording is reused ("Return to pool", "Hold and drag the handle to
+  reorder.", "Gap N:"…). "Проверить" became "Check" rather than the old
+  "Submit", because "Check" matches what the button does now. The consent
+  line reuses the Colloquiz sign-up form's existing wording ("I am 13 or
+  over and agree to the Terms of Service and Privacy Policy"), not new
+  legal copy. All new English copy is pending owner/partner review.
+- The lesson band's size line and the completion countdown pluralise with
+  `en` rules. The countdown reads "3 exercises left", a suffix where the
+  Russian had a prefix. Points format with `en-US` ("1.5 of 2").
+- `footerLangForPath` returns `"en"` on a lesson page, so the footer
+  matches.
+- The admin lesson preview and the lesson-player demo render the same
+  player, so they are English too. That is by design: the preview is the
+  learner's view.
+
+Not changed:
+
+- **Authored content.** Theory, explanations and exercise text render as
+  the partner wrote them, in whichever language she wrote them.
+- **The 404 and error pages.** These stay Russian. A bad lesson slug
+  therefore shows a Russian 404 under an English footer. Known minor
+  mismatch, out of scope.
+- **`<html lang="ru">`.** The English layout sets this for every route,
+  and it is now wrong for lesson pages and for EN course/landing pages.
+  Proposed as its own card rather than absorbed here.
+
+Verified in a browser (scratchpad `lesson-check.mjs`, `next start`,
+390px, with saved choice `ru` and `en`):
+
+- **Soft navigation from the course page, and a direct load:** no Cyrillic
+  anywhere on the lesson page and no toggle. The footer is English, and the
+  countdown reads "5 exercises left".
+- **Back to the course:** the course page is still in the saved language,
+  footer included.
+
+The `toggle-check.mjs` run from Decision 2 passed again on the same build.
+
+Budget after this step (same temporary routes as above):
+
+| route | after step A | after this step |
+|---|---|---|
+| `/` (budget 180) | 178.0 | 178.0 |
+| `/courses/auth003-smoke-test` (budget 182) | 171.7 | 171.7 |
+| `/courses/auth003-smoke-test/9` | 264.3 | 263.9 |
+| `/courses/auth003-smoke-test/one-of-each-item-type` | 293.0 | 292.6 |
 
 ## What would make us revisit it
 

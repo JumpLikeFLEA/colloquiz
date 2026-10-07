@@ -8,9 +8,10 @@ import type { NextLessonLink } from "@/lib/publicLesson";
 import { READING_WIDTH_CLASS } from "./columnLayout";
 import { RegistrationOffer } from "./RegistrationOffer";
 
-/** Partial credit makes points fractional ("1.5 из 2"); Russian writes the
- * decimal with a comma ("1,5"). */
-const pointsFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 });
+/** Partial credit makes points fractional ("1.5 of 2"). The lesson page's
+ * chrome is English (docs/decisions/0080 Decision 5), so the decimal is a
+ * point, not the Russian comma ("1,5") this used before. */
+const pointsFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
 /**
  * PLAY-007 — closes the loop after a lesson without ever reading as a
@@ -22,12 +23,12 @@ const pointsFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }
  *
  * docs/decisions/0079 D7 revises 0058 Decision 1. What the footer SAYS now
  * depends on `progress` (lib/lessonPlayer/session.ts's `sessionProgress`):
- * - Until every exercise has an answer: a neutral card, "Осталось N
- *   заданий", plus the next-lesson link. It no longer says "Урок завершён"
+ * - Until every exercise has an answer: a neutral card, "N exercises
+ *   left", plus the next-lesson link. It no longer says "Lesson complete"
  *   over an untouched lesson.
  * - Once every exercise is answered: a gradient card in the landing's
- *   closing-CTA look, with "Урок завершён", the score as a large number,
- *   and a white "Следующий урок" CTA (or "Назад к курсу" on the course's
+ *   closing-CTA look, with "Lesson complete", the score as a large number,
+ *   and a white "Next lesson" CTA (or "Back to course" on the course's
  *   last lesson).
  * - A lesson with no exercises gets the neutral card's link only.
  *
@@ -36,7 +37,7 @@ const pointsFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }
  * because no "every item attempted" signal existed. `sessionProgress` is
  * that signal, and docs/handoff.md asks for the offer "AFTER a completed
  * lesson". It renders as its own card under the score, not inside the
- * gradient. The review list ("Разбор ответов") stays available in both
+ * gradient. The review list ("Answer review") stays available in both
  * states, as its own card. It is the same text a wrong row's inline "Why?"
  * shows, deliberately (0058 Decision 2).
  *
@@ -123,7 +124,7 @@ export function LessonCompletion({
             {progress.total > 0 && (
               <>
                 <h2 className="text-lg font-semibold text-foreground">
-                  {c.remainingPrefix} {remaining} {pluralize(remaining, "ru", alliengllCopy.course.exercises)}
+                  {remaining} {pluralize(remaining, "en", alliengllCopy.player.exercises)} {c.remainingSuffix}
                 </h2>
                 <p className="max-w-sm text-sm text-muted-foreground">{c.remainingBody}</p>
               </>

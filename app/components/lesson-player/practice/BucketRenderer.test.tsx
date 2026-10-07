@@ -87,9 +87,9 @@ describe("MatchingRenderer dispatch for presentation: sort", () => {
     fireEvent.click(screen.getByText("Clarke described geostationary satellites."));
     fireEvent.click(screen.getByText("Past simple"));
     fireEvent.click(screen.getByText("Clarke described geostationary satellites."));
-    fireEvent.click(screen.getByRole("button", { name: "Вернуть в список" }));
+    fireEvent.click(screen.getByRole("button", { name: "Return to pool" }));
 
-    expect(screen.queryByRole("button", { name: "Вернуть в список" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Return to pool" })).toBeNull();
   });
 
   it("submit reaches scoreItem with the expected response and a wrong statement stays put with a note", () => {
@@ -101,7 +101,7 @@ describe("MatchingRenderer dispatch for presentation: sort", () => {
     fireEvent.click(screen.getByText("Satellites have existed for over sixty years."));
     fireEvent.click(screen.getByText("Past simple")); // b -> ps, incorrect (authored: pp)
 
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -115,7 +115,7 @@ describe("MatchingRenderer dispatch for presentation: sort", () => {
     // The wrong statement stays inside the bucket the learner chose (Past
     // simple), not moved to the correct one, with a note naming it.
     expect(screen.getByText("Satellites have existed for over sixty years.")).toBeDefined();
-    expect(screen.getByText("Правильно: Present perfect")).toBeDefined();
+    expect(screen.getByText("Correct: Present perfect")).toBeDefined();
   });
 
   it("an unplaced statement is marked wrong in the pool on submit", () => {
@@ -123,12 +123,12 @@ describe("MatchingRenderer dispatch for presentation: sort", () => {
     render(<MatchingRenderer item={parsedSortItem()} attemptId="attempt-1" onScore={onScore} />);
 
     // Leave both statements unplaced.
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     const result = onScore.mock.calls[0][0];
     expect(result.earned).toBe(0);
     expect(result.possible).toBe(2);
-    expect(screen.getAllByText(/^Правильно: /).length).toBe(2);
+    expect(screen.getAllByText(/^Correct: /).length).toBe(2);
   });
 });
 

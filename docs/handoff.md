@@ -174,9 +174,15 @@ What it means concretely:
   one toggle and one saved choice (a cookie read server-side, so a reload
   or the next page is already in the chosen language). The course page's
   strings live beside it in `courseCopy.ts`, and the footer follows the
-  choice there. Every other route (lesson player, completion screen, signup
-  offer, 404, error) has no toggle and keeps a single language. Do not
-  extend the toggle further without asking again. **Bundle exception
+  choice there. Every other route has no toggle and keeps a single
+  language. **Lesson chrome is English (owner, 2026-10-07, docs/decisions/
+  0080 Decision 5), reversing the 2026-09-24 rule above for the lesson
+  page:** player buttons, the lesson band, the progress strip, the
+  completion card, the signup offer and the paid-lesson notice are fixed
+  English, whatever the saved choice, with no toggle. Authored lesson
+  content (theory, explanations) is unaffected. The 404 and the error
+  boundary stay Russian. Do not extend the toggle further without asking
+  again. **Bundle exception
   (owner, 2026-10-07, docs/decisions/0079 "Budget"):** the English error
   boundary's four strings live in `lib/alliengll/errorCopy.ts`, not
   `lib/alliengll/copy.ts`. `error.tsx` is a Client Component that ships

@@ -1,7 +1,8 @@
 /**
  * The English surface's EN/RU choice (docs/decisions/0080). The landing page
- * and the course pages share one toggle and one saved choice; everything
- * else on the surface has no toggle.
+ * and the course pages share one toggle and one saved choice; lesson pages
+ * have no toggle and their chrome is always English; everything else on the
+ * surface (404, error boundary) stays Russian.
  *
  * Pure, so it is unit-tested and safe to import from a Client Component
  * (EnglishFooterGate). Reading the cookie itself (`next/headers`) stays in
@@ -28,6 +29,7 @@ export function parseSurfaceLang(value: string | undefined): SurfaceLang {
 }
 
 const COURSE_PAGE = /^\/courses\/[^/]+$/;
+const LESSON_PAGE = /^\/courses\/[^/]+\/[^/]+$/;
 
 /**
  * Which language the shared footer renders in on `pathname`, or null where
@@ -36,11 +38,13 @@ const COURSE_PAGE = /^\/courses\/[^/]+$/;
  *
  *   /                       → null (LandingContent renders it)
  *   /courses/<course>       → the saved choice (the page has the toggle)
- *   anything else           → "ru" (lesson, 404 and error pages)
+ *   /courses/<c>/<lesson>   → "en" (lesson chrome is always English)
+ *   anything else           → "ru" (404 and error pages stay Russian)
  */
 export function footerLangForPath(pathname: string, savedLang: SurfaceLang): SurfaceLang | null {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (path === "/") return null;
   if (COURSE_PAGE.test(path)) return savedLang;
+  if (LESSON_PAGE.test(path)) return "en";
   return "ru";
 }

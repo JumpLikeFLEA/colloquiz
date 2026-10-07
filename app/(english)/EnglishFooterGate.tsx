@@ -7,8 +7,8 @@ import { footerLangForPath, type SurfaceLang } from "@/lib/alliengll/surfaceLang
 /**
  * Picks which of the root layout's two server-rendered footers to show on
  * the current route (docs/decisions/0080, `footerLangForPath`): the saved
- * EN/RU choice on a course page, Russian anywhere else, and nothing on
- * `/`, whose `LandingContent` renders its own copy so
+ * EN/RU choice on a course page, English on a lesson page (its chrome is
+ * always English), Russian anywhere else, and nothing on `/`, whose `LandingContent` renders its own copy so
  * it can follow the landing toggle without a server round trip.
  *
  * A client boundary at the very bottom of the root layout, not further up:

@@ -8,8 +8,8 @@ import { FooterLayout } from "./FooterLayout";
  * in two places:
  * - by the root layout, once per language, as server-rendered props of
  *   `EnglishFooterGate`, which picks the variant for the current route
- *   (docs/decisions/0080: the saved choice on a course page, Russian
- *   elsewhere) and renders nothing on `/`;
+ *   (docs/decisions/0080: the saved choice on a course page, English on
+ *   a lesson, Russian elsewhere) and renders nothing on `/`;
  * - by `LandingContent` on `/`, with the landing toggle's live state.
  * Not shared with Colloquiz — same "nothing here is imported outside
  * app/(english)/" boundary as lib/alliengll/copy.ts.

@@ -1,9 +1,11 @@
 /**
  * Learner-facing chrome strings for the English (Alliengll) surface that
- * have ONE fixed language — player buttons, completion screen, signup
- * offer, not-found — in Russian (docs/handoff.md, "Audience and language",
- * 2026-09-24 delta). Not an i18n layer: no locale selection, no library, no
- * fallback. The landing page (app/(english)/landingCopy.ts), the course page
+ * have ONE fixed language each. The lesson page (player buttons, lesson
+ * band, completion card, signup offer, paid-lesson notice) is ENGLISH
+ * (owner, 2026-10-07, docs/decisions/0080 Decision 5, reversing the
+ * 2026-09-24 Russian-chrome rule for lessons); the 404 and the page
+ * metadata stay Russian (docs/handoff.md, "Audience and language"). Not an
+ * i18n layer: no locale selection, no library, no fallback. The landing page (app/(english)/landingCopy.ts), the course page
  * (courses/[courseSlug]/courseCopy.ts) and the footer (footerCopy.ts) follow
  * the shared EN/RU toggle instead and keep their strings beside the page
  * (docs/decisions/0080).
@@ -43,88 +45,92 @@ export const alliengllCopy = {
     freeSampleBadge: "Бесплатно",
   },
 
-  // The course page's own strings moved to app/(english)/courses/
-  // [courseSlug]/courseCopy.ts (docs/decisions/0080: it follows the EN/RU
-  // toggle now). These two are still read by the lesson band and the
-  // completion card.
-  course: {
-    exercises: { one: "задание", few: "задания", many: "заданий", other: "задания" },
-    minutesLabel: "мин",
-  },
+  // ── Lesson page: English, fixed (docs/decisions/0080 Decision 5) ──────
+  // Pending owner/partner review. Where SHELL-011 (a02dc32) had replaced an
+  // earlier English label with Russian, the earlier wording is reused. The
+  // course page's strings live in app/(english)/courses/[courseSlug]/
+  // courseCopy.ts and follow the EN/RU toggle instead.
 
   player: {
-    submit: "Проверить",
-    next: "Далее",
-    retry: "Пройти ещё раз",
-    backToCourse: "Назад к курсу",
-    // docs/decisions/0079 D6: the pill above every exercise, "Задание 3 из 8".
-    exerciseLabel: "Задание",
-    exerciseOf: "из",
-    // docs/decisions/0079 D5: the lesson band's "Урок 2 из 8" and the
+    submit: "Check",
+    next: "Next",
+    retry: "Try again",
+    backToCourse: "Back to course",
+    // docs/decisions/0079 D6: the pill above every exercise, "Exercise 3 of 8".
+    exerciseLabel: "Exercise",
+    exerciseOf: "of",
+    // The lesson band's size line ("12 min · 8 exercises") and the
+    // completion card's countdown ("3 exercises left").
+    exercises: { one: "exercise", other: "exercises" },
+    minutesLabel: "min",
+    // docs/decisions/0079 D5: the lesson band's "Lesson 2 of 8" and the
     // sticky progress strip's accessible name.
-    lessonLabel: "Урок",
-    lessonOf: "из",
-    progressLabel: "Прогресс урока",
-    why: "Почему?",
-    hide: "Скрыть",
-    true: "Верно",
-    false: "Неверно",
-    dragReorderHint: "Удерживайте и перетаскивайте, чтобы изменить порядок.",
-    tapToMatch: "Нажмите, чтобы сопоставить",
-    returnToPool: "Вернуть в список",
-    allStatementsSorted: "Все утверждения распределены",
-    correctAnswerPrefix: "Правильно",
-    gapLabel: "Пропуск",
-    clear: "Очистить",
-    allWordsPlaced: "Все слова расставлены",
+    lessonLabel: "Lesson",
+    lessonOf: "of",
+    progressLabel: "Lesson progress",
+    why: "Why?",
+    hide: "Hide",
+    true: "True",
+    false: "False",
+    dragReorderHint: "Hold and drag the handle to reorder.",
+    tapToMatch: "Tap to match",
+    returnToPool: "Return to pool",
+    allStatementsSorted: "All statements sorted",
+    correctAnswerPrefix: "Correct",
+    gapLabel: "Gap",
+    clear: "Clear",
+    allWordsPlaced: "All words placed",
   },
 
   theory: {
-    exampleLabel: "Пример",
-    selfCheckPlaceholder: "Ваш ответ",
-    selfCheckModelAnswerLabel: "Пример ответа",
-    selfCheckShowModelAnswer: "Показать пример ответа",
-    videoTitle: "Видео к уроку",
-    videoPlayAriaLabel: "Воспроизвести видео",
-    videoClickToPlay: "Нажмите, чтобы посмотреть видео",
+    exampleLabel: "Example",
+    selfCheckPlaceholder: "Your answer",
+    selfCheckModelAnswerLabel: "Model answer",
+    selfCheckShowModelAnswer: "Show model answer",
+    videoTitle: "Lesson video",
+    videoPlayAriaLabel: "Play video",
+    videoClickToPlay: "Click to play video",
   },
 
   completion: {
-    title: "Урок завершён",
-    scoreLabel: "Ваш результат",
-    nextLesson: "Следующий урок",
-    reviewTitle: "Разбор ответов",
-    // docs/decisions/0079 D7: "17 из 20" under the score, and the card shown
-    // until every exercise is answered ("Осталось 3 задания").
-    scoreOf: "из",
-    remainingPrefix: "Осталось",
-    remainingBody: "Ответьте на все задания — и здесь появится ваш результат.",
+    title: "Lesson complete",
+    scoreLabel: "Your score",
+    nextLesson: "Next lesson",
+    reviewTitle: "Answer review",
+    // docs/decisions/0079 D7: "17 of 20" under the score, and the card shown
+    // until every exercise is answered ("3 exercises left").
+    scoreOf: "of",
+    remainingSuffix: "left",
+    remainingBody: "Answer every exercise and your score will appear here.",
   },
 
   signupOffer: {
-    title: "Сохраните свой прогресс",
-    body: "Зарегистрируйтесь, чтобы результаты не потерялись.",
-    cta: "Зарегистрироваться",
-    dismiss: "Не сейчас",
+    title: "Save your progress",
+    body: "Sign up so your results aren’t lost.",
+    cta: "Sign up",
+    dismiss: "Not now",
     emailLabel: "Email",
-    passwordLabel: "Пароль",
-    submit: "Создать аккаунт",
-    submitting: "Создаём аккаунт…",
-    orDivider: "или",
+    passwordLabel: "Password",
+    submit: "Create account",
+    submitting: "Creating account…",
+    orDivider: "or",
     oauthGoogle: "Google",
     oauthDiscord: "Discord",
     inAppBrowserNotice:
-      "Вход через Google и Discord не работает во встроенном браузере Instagram или Telegram — зарегистрируйтесь по email или откройте страницу в обычном браузере.",
-    consentPrefix: "Мне есть 13 лет, я согласен(на) с",
-    consentJoiner: "и",
-    termsLink: "Условиями использования",
-    privacyLink: "Политикой конфиденциальности",
-    consentRequired: "Подтвердите, что вам есть 13 лет, и согласие с условиями.",
-    checkEmailTitle: "Проверьте почту",
-    checkEmailBody: "Мы отправили ссылку для подтверждения. Перейдите по ней, чтобы завершить регистрацию.",
-    genericError: "Что-то пошло не так. Попробуйте ещё раз.",
+      "Google and Discord sign-in don’t work in the Instagram or Telegram in-app browser. Sign up with email, or open this page in your regular browser.",
+    // The Colloquiz sign-up form's existing consent wording
+    // (app/(colloquiz)/(auth)/AuthScreen.tsx), not new legal copy.
+    consentPrefix: "I am 13 or over and agree to the",
+    consentJoiner: "and",
+    termsLink: "Terms of Service",
+    privacyLink: "Privacy Policy",
+    consentRequired: "Confirm that you are 13 or over and agree to the terms.",
+    checkEmailTitle: "Check your email",
+    checkEmailBody: "We sent you a confirmation link. Open it to finish signing up.",
+    genericError: "Something went wrong. Please try again.",
   },
 
+  // ── Russian, fixed ────────────────────────────────────────────────────
   notFound: {
     title: "Страница не найдена",
     body: "Такой страницы не существует или она была перемещена.",
@@ -134,8 +140,9 @@ export const alliengllCopy = {
   // PLAY-006: a lesson whose metadata is visible (per docs/handoff.md,
   // "preview, precisely") but whose content the caller isn't entitled to —
   // paid, not bought. Plain state only; the real preview screen is M3.
+  // English: it renders on the lesson page (0080 Decision 5).
   notAvailable: {
-    body: "Этот урок открывается после покупки курса.",
+    body: "This lesson opens when you buy the course.",
   },
 
   // PLAY-006's error boundary strings moved to lib/alliengll/errorCopy.ts

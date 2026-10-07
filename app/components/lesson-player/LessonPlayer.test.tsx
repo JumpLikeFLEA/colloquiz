@@ -66,7 +66,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
 
     fireEvent.click(screen.getByRole("radio", { name: "She goes to school every day." }));
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -86,8 +86,8 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     expect(await screen.findByText("True or False?")).toBeDefined();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Верно" })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "True" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -107,7 +107,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     expect(await screen.findByText("Put the words in the correct order.")).toBeDefined();
 
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -129,7 +129,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     fireEvent.click(screen.getAllByLabelText("Empty answer slot — tap to select")[0]); // ubiquitous's slot
     fireEvent.click(screen.getByText("present everywhere")); // correct pair (p1: l1 -> r2)
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -148,9 +148,9 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     );
 
     fireEvent.click(await screen.findByRole("radio", { name: "She go to school every day." })); // wrong option
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
-    const why = screen.getByRole("button", { name: "Почему?" });
+    const why = screen.getByRole("button", { name: "Why?" });
     expect(why.getAttribute("aria-expanded")).toBe("false");
     expect(lessonBlocks().queryByText(/Third person singular/)).toBeNull();
 
@@ -171,13 +171,13 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     // Submitted with no row answered — every row scores incorrect (documented
     // "unanswered" convention), so all three explanations are checkable at once.
-    fireEvent.click(await screen.findByRole("button", { name: "Проверить" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Check" }));
 
     expect(screen.getByText("1.")).toBeDefined();
     expect(screen.getByText("2.")).toBeDefined();
     expect(screen.getByText("3.")).toBeDefined();
 
-    const whyButtons = screen.getAllByRole("button", { name: "Почему?" });
+    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
     expect(whyButtons).toHaveLength(3);
 
     fireEvent.click(whyButtons[1]);
@@ -195,13 +195,13 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     );
 
     // Submitted with nothing paired — every pair scores incorrect.
-    fireEvent.click(await screen.findByRole("button", { name: "Проверить" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Check" }));
 
     expect(screen.getByText("1.")).toBeDefined();
     expect(screen.getByText("2.")).toBeDefined();
     expect(screen.getByText("3.")).toBeDefined();
 
-    const whyButtons = screen.getAllByRole("button", { name: "Почему?" });
+    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
     expect(whyButtons).toHaveLength(3);
 
     fireEvent.click(whyButtons[0]);
@@ -220,12 +220,12 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     // shuffleOrderingIndices never returns the identity permutation (lib/items/
     // shuffle.ts), so submitting untouched always leaves at least one wrong row.
-    fireEvent.click(await screen.findByRole("button", { name: "Проверить" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Check" }));
 
     const result = onScore.mock.calls[0][0];
     expect(result.subResults.some((r) => !r.correct)).toBe(true);
 
-    const whyButtons = screen.getAllByRole("button", { name: "Почему?" });
+    const whyButtons = screen.getAllByRole("button", { name: "Why?" });
     expect(whyButtons.length).toBeGreaterThan(0);
     fireEvent.click(whyButtons[0]);
     expect(
@@ -249,7 +249,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 
     fireEvent.change(screen.getByLabelText("Gap 1"), { target: { value: "go" } });
     fireEvent.change(screen.getByLabelText("Gap 2"), { target: { value: "on" } });
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
     expect(onScore).toHaveBeenCalledTimes(1);
     const result = onScore.mock.calls[0][0];
@@ -270,10 +270,10 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     // Only Gap 1 is answered (correctly) — Gap 2 stays untouched, so it
     // scores incorrect (documented "untouched" convention) and gets a "Why?".
     fireEvent.change(await screen.findByLabelText("Gap 1"), { target: { value: "go" } });
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
-    expect(screen.getByText("Пропуск 2:")).toBeDefined();
-    fireEvent.click(screen.getByRole("button", { name: "Почему?" }));
+    expect(screen.getByText("Gap 2:")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
     expect(lessonBlocks().getByText(/take the preposition "on"/)).toBeDefined();
   });
 });
@@ -291,24 +291,24 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
 
     // The footer is always present (single-page player, no "reached the end"
     // transition), but until every exercise is answered it counts what's left
-    // rather than claiming "Урок завершён" (docs/decisions/0079 D7).
-    expect(screen.getByText("Осталось 1 задание")).toBeDefined();
-    expect(screen.queryByText("Урок завершён")).toBeNull();
-    expect(screen.queryByText(/Ваш результат/)).toBeNull();
+    // rather than claiming "Lesson complete" (docs/decisions/0079 D7).
+    expect(screen.getByText("1 exercise left")).toBeDefined();
+    expect(screen.queryByText("Lesson complete")).toBeNull();
+    expect(screen.queryByText(/Your score/)).toBeNull();
 
     fireEvent.click(await screen.findByRole("radio", { name: "She goes to school every day." })); // correct
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
-    expect(screen.getByText("Урок завершён")).toBeDefined();
+    expect(screen.getByText("Lesson complete")).toBeDefined();
     // The score now lives only in LessonCompletion's finished card. The
     // top-of-column banner that used to repeat it (SHELL-011) was removed by
     // docs/decisions/0079 D5, and this test passes no `renderProgress`, so
     // the lesson page's sticky strip isn't rendered either.
-    expect(screen.getByText("Ваш результат")).toBeDefined();
+    expect(screen.getByText("Your score")).toBeDefined();
     expect(screen.getAllByText("100%")).toHaveLength(1);
-    expect(screen.getByText("1 из 1")).toBeDefined();
-    expect(screen.queryByText(/Осталось/)).toBeNull();
-    expect(screen.queryByText("Разбор ответов")).toBeNull(); // nothing wrong to review
+    expect(screen.getByText("1 of 1")).toBeDefined();
+    expect(screen.queryByText(/ left$/)).toBeNull();
+    expect(screen.queryByText("Answer review")).toBeNull(); // nothing wrong to review
   });
 
   it("lists the wrong item's explanation under the review heading, alongside the inline copy", async () => {
@@ -322,13 +322,13 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
     );
 
     fireEvent.click(await screen.findByRole("radio", { name: "She go to school every day." })); // wrong option
-    fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
-    expect(screen.getByText("Разбор ответов")).toBeDefined();
+    expect(screen.getByText("Answer review")).toBeDefined();
     // Two copies now exist: the inline (still-collapsed) panel and this
     // review section's own — see lessonBlocks()'s doc comment above.
     expect(screen.getAllByText(/Third person singular present tense takes an -s ending/)).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Почему?" }));
+    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
     expect(screen.getAllByText(/Third person singular present tense takes an -s ending/)).toHaveLength(2);
   });
 
@@ -344,7 +344,7 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
       />,
     );
 
-    const link = screen.getByRole("link", { name: /Следующий урок: True or False/ });
+    const link = screen.getByRole("link", { name: /Next lesson: True or False/ });
     expect(link.getAttribute("href")).toBe("/courses/future-imperfect/true-or-false");
 
     rerender(
@@ -356,7 +356,7 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
         nextLesson={null}
       />,
     );
-    expect(screen.queryByRole("link", { name: /Следующий урок/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Next lesson/ })).toBeNull();
   });
 });
 
@@ -371,8 +371,8 @@ describe("LessonPlayer — exercise cards (docs/decisions/0079 D6)", () => {
     render(<LessonPlayer document={document} attemptId="attempt-1" practiceRenderer={practiceRenderer} />);
 
     expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
-    expect(screen.getByText("Задание 1 из 2")).toBeDefined();
-    expect(screen.getByText("Задание 2 из 2")).toBeDefined();
-    expect(screen.queryByText(/Задание 3/)).toBeNull();
+    expect(screen.getByText("Exercise 1 of 2")).toBeDefined();
+    expect(screen.getByText("Exercise 2 of 2")).toBeDefined();
+    expect(screen.queryByText(/Exercise 3/)).toBeNull();
   });
 });

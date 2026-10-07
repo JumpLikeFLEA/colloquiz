@@ -280,7 +280,7 @@ function LessonPlayerBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonScore.status]);
 
-  // docs/decisions/0079 D6 — "Задание N из M". N counts practice blocks
+  // docs/decisions/0079 D6 — "Exercise N of M". N counts practice blocks
   // only, in document order, so it agrees with the "N заданий" the course
   // page shows (`published_item_count` = `countPracticeBlocks`).
   const practiceIds = document.filter((block) => block.kind === "practice").map((block) => block.id);
@@ -339,7 +339,7 @@ function LessonPlayerBody({
   );
 }
 
-/** The "Задание N из M" pill at the top of every exercise card
+/** The "Exercise N of M" pill at the top of every exercise card
  * (docs/decisions/0079 D6) — the landing demo card's label pill. Turns to
  * the success tokens with a ✓ once the exercise has a result, so a learner
  * scrolling back up can see which ones are done. It marks "answered",

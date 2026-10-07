@@ -62,7 +62,7 @@ describe("LessonCompletion — registration offer gating", () => {
 describe("LessonCompletion — what the card says (docs/decisions/0079 D7)", () => {
   it("counts the remaining exercises, and doesn't claim the lesson is finished, until every one is answered", () => {
     render(<LessonCompletion score={scored} progress={partial} explanations={new Map()} courseSlug="c" nextLesson={null} />);
-    expect(screen.getByText("Осталось 1 задание")).toBeDefined();
+    expect(screen.getByText("1 exercise left")).toBeDefined();
     expect(screen.queryByText(alliengllCopy.completion.title)).toBeNull();
   });
 
@@ -70,7 +70,7 @@ describe("LessonCompletion — what the card says (docs/decisions/0079 D7)", () 
     render(<LessonCompletion score={scored} progress={all} explanations={new Map()} courseSlug="c" nextLesson={null} />);
     expect(screen.getByText(alliengllCopy.completion.title)).toBeDefined();
     expect(screen.getByText("50%")).toBeDefined();
-    expect(screen.queryByText(/Осталось/)).toBeNull();
+    expect(screen.queryByText(/ left$/)).toBeNull();
   });
 
   it("offers the way back to the course on the last lesson", () => {

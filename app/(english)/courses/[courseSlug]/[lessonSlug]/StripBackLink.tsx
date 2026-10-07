@@ -7,7 +7,7 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
  * progress strip (docs/decisions/0079 D5). It exists so a learner deep in
  * a lesson can leave without scrolling back to the band. Rendered
  * server-side by page.tsx and passed down as a node, so the icon costs no
- * client JS. The accessible name is the band's own "Назад к курсу" text.
+ * client JS. The accessible name is the band's own "Back to course" text.
  */
 export function StripBackLink({ courseSlug }: { courseSlug: string }) {
   return (
