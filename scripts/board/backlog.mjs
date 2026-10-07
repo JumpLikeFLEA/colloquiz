@@ -21,7 +21,13 @@ export const MILESTONES = [
   },
   { key: 'M1', title: 'Content & authoring', goal: 'The partner can publish a lesson without Gleb.' },
   { key: 'M2', title: 'Public surface', goal: 'A reel viewer can play a free lesson with no account.' },
-  { key: 'M3', title: 'Monetisation', goal: 'A paid course can be bought and unlocked.' },
+  {
+    key: 'M3',
+    title: 'First paid cohort',
+    goal:
+      'The partner runs a four-week cohort with manually enrolled students, weekly voice tasks ' +
+      'with her written feedback, and the before/after screen.',
+  },
   { key: 'M4', title: 'Progression & polish', goal: 'English progression, explanations UI, analytics, SEO.' },
 ];
 
@@ -43,6 +49,8 @@ export const EPICS = [
       'Visual and interaction design on the English surface and its authoring UI. ' +
       'Distinct from SHELL (routing/layouts) and from SHELL-011 (the end-of-M2 polish pass).',
   },
+  { key: 'COH', title: 'Cohort courses', desc: 'Runs, weekly unlocks, enrolment by invite, tiers, calls, the final screen.' },
+  { key: 'VOICE', title: 'Voice tasks', desc: 'The voice block, recording, submissions, the partner\'s feedback and review queue.' },
 ];
 
 export const CARDS = [
@@ -2074,6 +2082,572 @@ export const CARDS = [
     ],
   },
 
+  // --------------------------------------------- M3 (first paid cohort) ---
+  // Scoped through prompts/m3-cohort-backlog.md (phases 1-2, owner answers
+  // 2026-10-07). Shared rules every M3 card inherits, stated once here:
+  // - Full protocol: seeded rows, every caller x content cell printed, a check
+  //   against an empty table counts as a failure, and every denial has a
+  //   positive control (the same cell succeeding for the caller who should).
+  // - Migration numbering and re-emitted bodies: at write time and again just
+  //   before commit, print `ls supabase/migrations | tail -1` and
+  //   `rg -l "FUNCTION delete_my_account" supabase/migrations | sort | tail -1`.
+  //   If either changed, renumber, re-emit from the new latest body, re-check.
+  //   The owner applies migrations strictly in number order.
+  // - A migration touching can_read_lesson, has_course_entitlement or the
+  //   lessons / lesson_versions policies re-runs PLAY-006's anonymous-path
+  //   rows (docs/decisions/0056 Decision 4) alongside its own matrix.
+  // - Budgets: /, a free course page and a free lesson keep their figures
+  //   byte for byte (178.0 / 171.7 / 257.6 KB at scoping time). Every card
+  //   touching an English route prints `npm run budget` before and after.
+  {
+    key: 'ANON-016',
+    title: 'Every sign-in path returns to the lesson',
+    milestone: 'M3',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2300,
+    dependsOn: [],
+    goal:
+      'M3 audit item 5: /auth/confirm\'s failed `code` branch (app/auth/confirm/route.ts:79-90) and ' +
+      'the expired-link redirects drop `next`, so a cross-browser confirmation lands on /login and ' +
+      'then on /, not on the lesson. A learner with an existing email account has no sign-in entry ' +
+      'on a lesson at all: RegistrationOffer offers signup and OAuth only, and the landing "Log in" ' +
+      'carries next=/. Helps M2 learners too.',
+    acceptance: [
+      '/auth/confirm\'s failed `code` branch (/login?notice=confirmed_sign_in) and both expired-link redirects (confirm_expired, recovery_expired) carry `next` through `safeNext`, and /login honours `next` alongside `notice` and `error`. Route tests cover all three shapes, including next=%40evil.com staying on-origin.',
+      'A "Sign in" entry for an existing account sits next to the registration offer and links to /login?next=<lesson path>. Signing in from it by email/password and by OAuth lands on the same lesson; the redirect chain is printed for each.',
+      'Cross-browser email confirmation ends on the same lesson, signed in, or on /login with `next` intact; the chain is printed.',
+      'External step, owner: confirm the hosted "Confirm signup" template uses token_hash and next={{ .RedirectTo }} (docs/decisions/0068 Decision 5). The result is recorded in the closing comment, whatever it is.',
+      '`npm run budget` before and after: / and the free lesson unchanged (the entry is a link; no new client module).',
+    ],
+    notes:
+      'Lesson chrome is English (0080 Decision 5). ANON-011 depends on this card. Worked with an explicit ' +
+      '`work on ANON-016`: M2 stays the active milestone.',
+  },
+  {
+    key: 'CNT-011',
+    title: 'Lesson access levels and the sign-in prompt (owner settles)',
+    milestone: 'M3',
+    epic: 'CNT',
+    type: 'decision',
+    rank: 2310,
+    dependsOn: [],
+    goal:
+      'Replace the `in_free_sample` boolean with three levels: open to anyone / needs sign-in / needs ' +
+      'entitlement, and settle the two conflicts docs/handoff.md records under "Partner answers ' +
+      '(2026-10-07)". This card, and nowhere else, is where the owner settles them.',
+    acceptance: [
+      'Column and value names are given, named so nobody mistakes the column for a general lock (docs/handoff.md, "Entitlement and access"). The migration mapping changes no behaviour: true -> open, false -> entitlement.',
+      'What `create_lesson` writes for a new lesson (today: the first lesson open, every later one paid, 046:111), and the fate of `set_lesson_free_sample` and app/api/admin/courses/[id]/lessons/[lessonId]/free-sample/route.ts.',
+      'Conflict 1, for the owner: a sign-in wall in front of some lessons vs "no signup wall; registration is offered only after a completed lesson". Scope options laid out: free courses only; never the entry lesson of a Telegram post; default open lesson = first.',
+      'Conflict 2, for the owner: "the start of the lesson" for a denied visitor. Options: (a) title + description only; (b) the leading theory blocks up to the first practice block, returned by a SECURITY DEFINER function under the same access rule; (c) an author-marked teaser boundary. For every option, answer keys and practice payloads never reach a denied client. States whether a teaser exists for entitlement lessons or for sign-in lessons only, against "partial play of paid lessons is NOT built".',
+      'States that moving a lesson from sign-in to entitlement deliberately removes access from signed-in, non-entitled learners: an author action, not a regression (so CNT-013 does not flag it).',
+      'Return-to-lesson after sign-in is covered by ANON-016 for every path; anonymous progress on open lessons still migrates (ANON-004/013).',
+      'Output: a decision file, plus the docs/handoff.md delta text for the owner to commit.',
+    ],
+    notes: 'Feeds CNT-012 (migration), CNT-014 (readers), AUTH-009 (editor) and ANON-011 (sign-in state).',
+  },
+  {
+    key: 'COH-001',
+    title: 'Cohort data model, grant ownership and the unlock rule',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'decision',
+    rank: 2320,
+    dependsOn: [],
+    goal:
+      'Decide how runs, enrolments, tiers, calls and weekly unlocks are stored, and how cohort access ' +
+      'reaches the single access function. Runs repeat (partner, 2026-10-07), so a learner may be in ' +
+      'more than one run of the same course, and `course_entitlements` has one row per (user_id, ' +
+      'course_id) (041:174).',
+    acceptance: [
+      'Where enrolment lives: (a) run_id + tier columns on course_entitlements; (b) a run_enrolments table. With (a), joining a later run overwrites the first; for each option, what happens to that learner\'s earlier submissions, final screen and roster history.',
+      'Grant ownership, three options compared: (i) one shared grant row that stays while any non-revoked enrolment points at it; (ii) a row per enrolment (needs a new key); (c) cohort access derives from enrolments: has_course_entitlement(course) is true for an active course_entitlements row OR a non-revoked enrolment in any run of that course; a claim writes one enrolment row, a revoke sets its revoked_at, and course_entitlements stays for comps and future self-serve sales. Compared on rows written per claim, what a revoke touches, what the access function reads, and the protocol cells each needs.',
+      'How revocation is stored: a revoked_at column (0018 Decision 6 / 0025: "additive") vs deleting the row.',
+      'The unlock rule: week N opens at starts_at + 7*(N-1) days; a late joiner sees every past week at once; a learner in two runs gets a lesson open in ANY of their runs; after the run everything stays open.',
+      'Editing a lesson\'s week, or a run\'s start, after the run has started never re-locks a lesson a learner could already open (the cohort form of the "ordinal-derived free samples" failure mode). Decide between: freezing weeks and the start date once a run starts; keeping the earliest unlock ever computed; forward-only edits.',
+      'Run lifecycle: what "close a run" means, and what a closed run still shows.',
+      'lessons.week (nullable; required at publish for a cohort course), courses.format (self_paced | cohort), and whether a cohort course may also have open or sign-in lessons (a taster).',
+      'Calls: a per-run list with starts_at, a Meet URL and an optional title; who can read the URL; display in the learner\'s local time with the zone named.',
+      'What a non-enrolled visitor sees on a cohort course page; optionally an external "how to join" link per course, a plain link with no provider JS.',
+      'Whether invite contact labels are learner personal data (and so join export and deletion).',
+      'The state function returns e.g. open | sign_in | not_entitled | opens_at(ts) per lesson for the caller (settled: the UI never computes these).',
+      'Output: a decision file, a schema sketch, the protocol matrix COH-002 must print, and, if (c) wins, the delta text for docs/handoff.md\'s Payments paragraph ("manual grants ... course_entitlements.source = \'grant\'").',
+    ],
+    notes: 'Feeds COH-002, COH-003 and CNT-013.',
+  },
+  {
+    key: 'OPS-019',
+    title: 'M3 legal changes: which are material under §13, and how notice is given',
+    milestone: 'M3',
+    epic: 'OPS',
+    type: 'decision',
+    rank: 2330,
+    dependsOn: [],
+    goal:
+      'Privacy §13 promises notice BEFORE a material change takes effect, so legal text cannot trail ' +
+      'the features. M3 audit item 12: privacy:174 says a learner\'s email is never shown to other ' +
+      'users; terms:57 and privacy:140 say the Service is free; nothing covers recordings; Telegram is ' +
+      'not a listed provider. The owner decides; the text then ships in each feature card\'s commit.',
+    acceptance: [
+      'For each change below: material or not under §13, and how notice is given if it is (in-app, email, or none). Owner\'s call.',
+      'Output lists the text each card must carry, keyed by card: COH-003 (terms:57 "free of charge", privacy:140, invite contact labels if COH-001 says they are personal data); AUTH-011 (privacy:174, the course author sees contacts, activity and acquisition); VOICE-005 (recordings: what, why, who hears them, retention); ANON-012 (Telegram as an identity provider, subprocessors.md).',
+      'Paid access wording: granted manually after payment made outside the app, revoked by hand on a refund or chargeback.',
+      'Terms versioning: terms-of-service.md has its own version line and profiles.terms_version stamps it (036). Whether 0083\'s minor-bump rule extends to the terms is decided here.',
+      'The Russian-version question is answered or recorded as still open.',
+    ],
+    notes:
+      'Each carrying card bumps the minor version and date per docs/decisions/0083 in its own commit, ' +
+      'and depends on this card.',
+  },
+  {
+    key: 'VOICE-002',
+    title: 'Feedback text: storage shape and paste',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'decision',
+    rank: 2340,
+    dependsOn: [],
+    goal:
+      'The partner pastes feedback text, shown under the recording, with basic formatting, at least ' +
+      'bold (partner, 2026-10-07). Decide how it is stored and how paste works. The same shape serves ' +
+      'the final-screen comment (COH-005).',
+    acceptance: [
+      'Options: (a) structured paragraphs of runs with a strong mark, like InlineContent (lib/lessons/inline.ts); widening INLINE_MARKS is itself a decision (0020/0022), so say whether feedback gets its own type instead; (b) a light-markup string (**bold**) rendered by a KaTeX-free renderer.',
+      'Paste from Google Docs: whether clipboard HTML is parsed into runs, or plain-text paste plus a bold button. Docs wraps everything in <b style="font-weight:normal">, so <b> alone is not bold: a real Docs clipboard sample is committed as a test fixture and its parsed runs are printed.',
+      'No rich-text library unless the owner says so (a new npm dependency is a stop).',
+    ],
+  },
+  {
+    key: 'VOICE-001',
+    title: 'Spike: recording and playback on real devices',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2350,
+    dependsOn: [],
+    goal:
+      'Find out what native MediaRecorder actually does on the devices and in-app browsers this ' +
+      'audience uses, before the voice block, the bucket and the recorder are designed around it.',
+    acceptance: [
+      'A throwaway recorder page behind the admin gate, never imported by an English route; deleted or kept-and-gated at the end, and the card says which.',
+      'Matrix, iOS Safari, Android Chrome, desktop Chrome and Safari, Instagram in-app (iOS, Android), Telegram in-app (iOS, Android): getUserMedia permission; MediaRecorder present and the printed isTypeSupported list; the MIME actually produced; whether audioBitsPerSecond is honoured and bytes per minute at the chosen rate; what happens on screen lock or app switch mid-recording. An untested cell is printed as "not tested", never omitted.',
+      'Cross-playback: every produced file played on every device, including the partner\'s own phone. No transcoding on Vercel: the playback matrix decides which formats are acceptable.',
+      'Recorded as tables in a decision file. Recommendations: accepted MIME list, bitrate, max duration, the bucket size limit, and the in-app-browser fallback. Every failure becomes a proposed card.',
+    ],
+    notes:
+      'Needs phones, as do OPS-007 (M2), ANON-010 and SHELL-017; the owner decides whether to batch ' +
+      'the sessions. No M3 card becomes a dependency of OPS-007.',
+  },
+  {
+    key: 'ANON-010',
+    title: 'Spike: Telegram sign-in through OIDC and a Supabase custom provider',
+    milestone: 'M3',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2360,
+    dependsOn: [],
+    goal:
+      'Telegram\'s OIDC login (oauth.telegram.org, Authorization Code + PKCE, client id/secret via ' +
+      'BotFather) through hosted Supabase\'s custom provider (custom:telegram, email_optional: true). ' +
+      'Re-read core.telegram.org/bots/telegram-login and ' +
+      'supabase.com/docs/guides/auth/custom-oauth-providers; do not rely on this summary.',
+    acceptance: [
+      'Sign-in demonstrated and printed on desktop, and inside Telegram\'s and Instagram\'s in-app browsers on iOS and Android (does it hand off to the Telegram app and come back?). lib/inAppBrowser.ts currently hides all OAuth in both; the result says where Telegram works.',
+      'The claims that land in auth.identities.identity_data are printed (is preferred_username there?).',
+      'Whether the telegram:bot_access scope can be requested through the custom provider, and whether the bot can then message that user (input for COH-006).',
+      'An email-less account through: ANON-009\'s acquisition write and 0081 Decision 3\'s 24 h window, /auth/callback\'s 60 s new-account window, account export and deletion, terms acceptance.',
+      'Account linking: a Telegram identity has no email, so nothing auto-links; a learner who claims an invite with Telegram and later signs in by email gets a second account without the course. Linking lives only in /app/settings (ProvidersSection) today. The card recommends the minimum linking path; ANON-012 builds it.',
+      'Output: go/no-go, plus the exact config steps, as a decision file.',
+    ],
+    notes:
+      'External: the owner creates the bot in BotFather and enters the provider config in the Supabase ' +
+      'dashboard. Needs phones (see VOICE-001\'s notes).',
+  },
+  {
+    key: 'OPS-018',
+    title: 'Supabase plan before the first paid cohort',
+    milestone: 'M3',
+    epic: 'OPS',
+    type: 'decision',
+    rank: 2370,
+    dependsOn: ['VOICE-001'],
+    goal: 'Decide the Supabase plan before real learners and recordings depend on the project (docs/decisions/0076 left it open).',
+    acceptance: [
+      'Facts with sources: Free-plan pause behaviour (0076); backup and restore on Free vs the next plan; cost.',
+      'Storage and egress growth projected from stated inputs: learners per run, voice tasks per run, VOICE-001\'s measured bytes per minute and the chosen max duration.',
+      'The owner decides; the decision file records what would trigger revisiting.',
+    ],
+  },
+  {
+    key: 'CNT-012',
+    title: 'Migration: access levels and the lesson state function',
+    milestone: 'M3',
+    epic: 'CNT',
+    type: 'task',
+    rank: 2380,
+    dependsOn: ['CNT-011'],
+    goal:
+      'Write the migration for the levels and mapping CNT-011 chose: can_read_lesson, the lessons / ' +
+      'lesson_versions policies, and a state function the UI renders from instead of deciding itself. ' +
+      'Migration and protocol only; the pages that read it are CNT-014.',
+    acceptance: [
+      'The levels column with CNT-011\'s mapping; can_read_lesson and the policies (044:139-195, 041:242-262) respect it.',
+      'A set-returning state function per course, e.g. course_lesson_states(course_id) -> lesson_id, state, opens_at, plus the single-lesson form getPublicLesson will use. The teaser function too, if CNT-011 chose one.',
+      'Seeded data has at least one lesson per old in_free_sample value; per-level counts before and after are printed, and a zero in any cell is a failure. The owner pastes the hosted counts when applying.',
+      'The teaser check runs against a lesson that has practice blocks and asserts no practice payload and no answer key in the response.',
+      'Full protocol: anon / signed-in / entitled / editor x open / sign-in / entitlement / draft / archived, plus PLAY-006\'s anonymous-path rows.',
+      'Migration-number and re-emitted-body print rule (section header).',
+    ],
+    notes: 'Serialised before COH-002 and CNT-013, which rewrite the same functions.',
+  },
+  {
+    key: 'CNT-014',
+    title: 'Learner surfaces read lesson states from SQL',
+    milestone: 'M3',
+    epic: 'CNT',
+    type: 'task',
+    rank: 2390,
+    dependsOn: ['CNT-012'],
+    goal:
+      'M3 audit item 3: the lesson page asks SQL, but the course page and landing decide "free", ' +
+      '"whole course free" and where the CTA points from the raw in_free_sample column ' +
+      '(lib/coursePage.ts:61,84; lib/coursePageProgress.ts:29,97; courses/[courseSlug]/page.tsx:131; ' +
+      'app/(english)/page.tsx:36). Make every learner surface render the state CNT-012 returns.',
+    acceptance: [
+      'getPublicLesson uses the single-lesson state form.',
+      'The course page, its per-row free badges, the "all free" pill and its CTA read course_lesson_states (or the name CNT-012 chose).',
+      'The landing\'s anonymous CTA is the first lesson whose state for anon is open, taken from SQL.',
+      'No TypeScript computes open / sign-in / entitlement; `rg -n in_free_sample app lib` (and the new column) is printed.',
+      '`npm run budget` before and after: /, the free course page and the free lesson unchanged byte for byte (server-only change).',
+    ],
+  },
+  {
+    key: 'AUTH-009',
+    title: 'Editor: per-lesson access level',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2400,
+    dependsOn: ['CNT-012'],
+    goal: 'Replace the free-sample toggle with the three access levels in the course editor.',
+    acceptance: [
+      'Each lesson row sets its level through CNT-012\'s RPC; a course-level summary shows which lessons are open to anyone.',
+      'The editor shows each lesson\'s level and, for sign-in and entitlement lessons, renders the actual denied-state component with that lesson\'s metadata. No access state is computed in TypeScript (no lib/entitlement.ts deciding state).',
+      'A non-editor\'s call to the RPC is denied (printed), with an editor\'s call succeeding as the positive control.',
+      'Authoring chrome stays English.',
+    ],
+  },
+  {
+    key: 'ANON-011',
+    title: 'Sign-in prompt on sign-in lessons',
+    milestone: 'M3',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2410,
+    dependsOn: ['CNT-014', 'ANON-016'],
+    goal:
+      'A denied sign-in lesson renders the CNT-011 shape (title, description, the teaser if chosen) ' +
+      'plus a sign-in prompt. Return-to-lesson itself is ANON-016\'s.',
+    acceptance: [
+      'The sign-in state renders as a Server Component; an open lesson ships no new client JS.',
+      'After signing in from the prompt by any path, the learner is on the same lesson (ANON-016\'s chains re-run and printed from this state).',
+      'Anonymous progress from open lessons still migrates.',
+      'After this card, `rg -n in_free_sample app lib` (and the new column) hits only authoring code; printed.',
+      'Lesson chrome stays English. `npm run budget` before and after: an open lesson unchanged.',
+    ],
+  },
+  {
+    key: 'COH-002',
+    title: 'Migration: cohort schema, editor functions and the schedule branch',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2420,
+    dependsOn: ['COH-001', 'CNT-012'],
+    goal:
+      'Write what COH-001 chose: runs, weeks, enrolment and tier, calls, courses.format, revocation, ' +
+      'and every editor function for runs, weeks and calls (the 044 precedent: schema and RPCs ' +
+      'together; AUTH-010 is UI only). The schedule branch goes inside the access function, and the ' +
+      'state function returns opens_at.',
+    acceptance: [
+      'Every editor function is gated on can_edit_course; a non-editor\'s denial and an editor of another course\'s denial are printed, each with a positive control.',
+      'The re-lock rule COH-001 chose holds: editing a week or the start of a started run never re-locks a lesson a learner could open (seeded before/after printed).',
+      'Full protocol, seeded with a run whose start is in the past so some weeks are open and some are not. Callers: anon, signed-in non-enrolled, basic enrolled before and after unlock, extended enrolled, a learner in two runs, editor. Content: open-week lesson, future-week lesson, a call URL. The run has at least 2 calls, and the extended learner in the same run seeing both is the positive control for "a basic learner sees no calls".',
+      'Export and deletion cover course_entitlements and every new user-keyed table. delete_my_account is re-emitted from 053\'s body (or whatever the print rule shows is latest), not from memory; full protocol on a seeded account.',
+      'PLAY-006\'s anonymous-path rows re-run; migration-number and re-emitted-body print rule (section header).',
+    ],
+  },
+  {
+    key: 'AUTH-010',
+    title: 'Cohort authoring: format, weeks, runs, calls',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2430,
+    dependsOn: ['COH-002'],
+    goal: 'UI only, over COH-002\'s functions.',
+    acceptance: [
+      'An editor can set a course\'s format; set each lesson\'s week (required at publish for a cohort course); create, edit and close runs (start date and time); add, edit and delete calls on a run, including a "repeat weekly xN" helper.',
+      'The re-lock rule is demonstrated through the UI on a run that has already started.',
+      'Pages sit under /app/admin/courses/[id]/... behind canEditCourse(id). English chrome.',
+    ],
+  },
+  {
+    key: 'COH-003',
+    title: 'Invite links: create, claim, revoke',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2440,
+    dependsOn: ['COH-002', 'ANON-016', 'OPS-019'],
+    goal:
+      'Payment happens outside the app; the partner enrols each paying learner by sending an invite ' +
+      'link for a run and tier.',
+    acceptance: [
+      'An editor creates an invite for a run + tier with a name and a contact label (email or @telegram) and gets a one-time link. Tokens are hashed and rate-limited, as in 049/0066.',
+      'The claim page /invite/[token] is English with no toggle; its budget is stated and printed. Sign-in by any method returns to the claim (ANON-016\'s paths). The claim writes access atomically per COH-001\'s grant-ownership choice, then the learner lands on the course page.',
+      'Expired, used and revoked states each have a page.',
+      'Revoke follows COH-001\'s rule and removes exactly the access that invite created; a learner in a second run keeps that run\'s access (printed).',
+      'Contact labels are readable by editors only. This migration does not touch the access function; it writes enrolment/grant rows only.',
+      'Full protocol, including the first claim succeeding (positive control), a second claim of the same link by another account, and an editor of course A acting on course B. Migration-number and re-emitted-body print rule if it touches delete_my_account.',
+      'Ships OPS-019\'s text for terms:57 and privacy:140 (and invite contact labels, if OPS-019 says so), with a 0083 version bump.',
+    ],
+  },
+  {
+    key: 'COH-004',
+    title: 'Cohort course page and the schedule states',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2450,
+    dependsOn: ['COH-002', 'CNT-014'],
+    goal: 'Lessons grouped by week with their unlock dates, and the calls for extended-tier learners.',
+    acceptance: [
+      'Lessons are grouped by week, with "opens on <date>" in the learner\'s local time. A direct link to a not-yet-open lesson shows the same state on the lesson page. Every state comes from the state function; the states render as Server Components.',
+      'An extended-tier learner sees the run\'s calls, next one first, with a Join link. A basic learner sees nothing about calls, with the extended learner in the same run seeing them as the positive control. A non-enrolled visitor sees what COH-001 decided.',
+      'Copy goes through courseCopy.ts and its EN/RU toggle; lesson chrome stays English.',
+      '`npm run budget` before and after; free routes unchanged.',
+    ],
+  },
+  {
+    key: 'CNT-013',
+    title: 'Purchased access survives every editor action',
+    milestone: 'M3',
+    epic: 'CNT',
+    type: 'task',
+    rank: 2460,
+    dependsOn: ['CNT-012', 'COH-002', 'COH-003'],
+    goal:
+      'Owner\'s call (2026-10-07) on the card 0025 and 0041 proposed: archive and unpublish stay ' +
+      'editor-gated (the entitled branch already bypasses archived_at and course status, 044:139-164, ' +
+      'and the partner must manage her own courses). Replace "gate on is_admin" with an invariant: no ' +
+      'editor-callable function removes access from an entitled learner, except the deliberate revoke.',
+    acceptance: [
+      'Every editor-callable function is listed by rg over supabase/migrations (the list is printed): archive, unpublish, any lesson/course/version delete, anything that clears published_version_id, the access-level change, the week change, the run start change.',
+      'Each is run against a seeded entitled learner (a grant and a cohort enrolment); can_read_lesson before and after is printed. Revoke is the one named exception.',
+      'Any function that can still remove access is fixed or made admin-only.',
+      'Closes the card proposed in docs/decisions/0025 and 0041 by reference.',
+    ],
+    notes: 'Must be Done before OPS-020.',
+  },
+  {
+    key: 'VOICE-003',
+    title: 'The voice block in the lesson document and editor',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2470,
+    dependsOn: ['VOICE-001'],
+    goal:
+      'Voice tasks are a third block kind, never an item type and never scored (docs/handoff.md, ' +
+      '"Item types"). Defaults (max duration) come from VOICE-001.',
+    acceptance: [
+      'A third block kind, e.g. { kind: \'task\', type: \'voice\', id, prompt, maxSeconds, compare?: \'before\' | \'after\' }, parsed in lib/lessons under vitest. Item count, lesson score and completion are unaffected (tests).',
+      'The player\'s block switch is exhaustive (a `never` check), so an unknown kind fails to compile instead of rendering as theory (LessonPlayer.tsx:371).',
+      'At most one before and one after per course, enforced at publish by reading the other lessons\' published versions; tested across two lessons.',
+      'The editor can insert it anywhere; the preview shows a placeholder recorder.',
+      'The importer and prompts/draft-lesson.md (0028) know the block.',
+      'Each script in M3 audit item 6 (import-lesson, validate-course-file, seed-local-fixtures, sweep-lesson-images, lessonImages, perfReport, session, blockWidth) handles the new kind or is shown not to care, by test or printed rg.',
+      'A pure plain-text rendering of the block, under vitest (content export itself is M4).',
+    ],
+  },
+  {
+    key: 'VOICE-004',
+    title: 'Migration: submissions, feedback and the voice bucket',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2480,
+    dependsOn: ['COH-002', 'VOICE-002', 'VOICE-003'],
+    goal: 'Store learners\' recordings and the partner\'s feedback, in the project\'s first private bucket.',
+    acceptance: [
+      'A private bucket with VOICE-001\'s size limit and MIME list; path {course}/{user}/{submission}.{ext}. Storage RLS: a learner inserts and reads only under their own prefix; an editor of the course reads; nobody else.',
+      'Playback through signed URLs, with the expiry stated and a fetch after expiry shown to fail. The report-only CSP gains the media-src / connect-src entries playback needs (next.config.ts has no media-src today).',
+      'The submit RPC checks the block exists in the published version and is a voice block, and the caller is entitled with the lesson open.',
+      'Decided (owner, 2026-10-07): a re-send supersedes the previous recording until feedback is published; after that the block locks. The superseded recording\'s object is deleted, and the card states when.',
+      'Feedback (VOICE-002\'s shape) is written only by can_edit_course; a learner reads their own once it is published.',
+      'Export lists submissions and feedback. Deletion removes the rows (delete_my_account re-emitted from the latest body) AND the objects, in app/api/account/delete/route.ts the way it already does for avatars (route.ts:49-52); shown on a seeded account by listing the bucket before and after.',
+      'Full protocol: owner / another learner / editor / editor of another course / anon x read audio, read feedback, write feedback, submit to a locked block; positive controls: the owner reads their own audio, the course editor reads it.',
+      'Migration-number and re-emitted-body print rule (section header).',
+    ],
+  },
+  {
+    key: 'VOICE-005',
+    title: 'Recorder and feedback in the lesson player',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2485,
+    dependsOn: ['VOICE-004', 'OPS-019'],
+    goal: 'The learner records, listens, re-records and sends; feedback appears under the recording.',
+    acceptance: [
+      'Record -> listen -> re-record -> send. Upload happens only on send, with progress and retry. English lesson chrome.',
+      'States: entitled (can send); sent (own playback + "waiting for feedback"); feedback published (shown under the recording); locked after feedback; free or anonymous context (local-only practice, nothing uploaded); in-app browser (VOICE-001\'s fallback).',
+      'The recorder is a dynamic import reached only from a voice block. `npm run budget` before and after: a lesson without a voice block unchanged.',
+      'Demonstrated on the VOICE-001 devices that passed.',
+      'Ships OPS-019\'s recordings and retention text with a 0083 version bump: this is the first card that lets a learner store audio in production.',
+    ],
+  },
+  {
+    key: 'VOICE-006',
+    title: 'Review queue for the partner',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2490,
+    dependsOn: ['VOICE-004'],
+    goal: 'Where the partner listens to submissions and writes feedback, and the final comment.',
+    acceptance: [
+      'Per run and week: submissions without published feedback, oldest first, with the audio player and the VOICE-002 editor. Save a draft, publish, and edit after publishing (the learner sees the latest version).',
+      'The final comment for COH-005 is written here (VOICE-002\'s shape).',
+      'Status per learner and week. Under /app/admin/courses/[id]/..., gated on canEditCourse(id). English chrome.',
+    ],
+  },
+  {
+    key: 'COH-005',
+    title: 'Final screen: before / after and the final comment',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2495,
+    dependsOn: ['VOICE-005', 'VOICE-006', 'COH-003'],
+    goal: 'The same prompt recorded at the start and at the end, compared on one screen.',
+    acceptance: [
+      'For an enrolled learner of a run: the before and after recordings side by side, plus the partner\'s final comment.',
+      'Each state has a defined render: before missing, after missing, comment not yet published. English, no toggle; budget printed.',
+      'Readable only by the learner and course editors (full protocol, with the learner reading their own screen as the positive control).',
+    ],
+  },
+  {
+    key: 'PROG-001',
+    title: 'Per-learner lesson opens',
+    milestone: 'M3',
+    epic: 'PROG',
+    type: 'task',
+    rank: 2500,
+    dependsOn: [],
+    goal: 'Record which lessons a signed-in learner has opened, for the learners page (AUTH-011).',
+    acceptance: [
+      'A signed-in learner opening a lesson records (user, lesson, first_opened, last_opened). Nothing is recorded for anon.',
+      'Kept separate from funnel_events, which stay anonymous (docs/decisions/0069); this write is per-user.',
+      'Hypothesis to test first: recording during server render could be triggered by link prefetch. Show that a prefetched-but-not-opened lesson records nothing, or record on mount instead, fired from the point that already fires lesson_start in LessonPlayer, so no new client module ships on the free lesson.',
+      'Export and deletion cover the table; delete_my_account re-emitted from the latest body. Migration-number and re-emitted-body print rule (section header).',
+      '`npm run budget` before and after: the free lesson unchanged, or the difference measured and justified.',
+    ],
+  },
+  {
+    key: 'AUTH-011',
+    title: 'Learners page: roster and stats',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2505,
+    dependsOn: ['COH-003', 'VOICE-004', 'PROG-001', 'OPS-019'],
+    goal: 'The partner sees who her learners are, where they came from and what they have done.',
+    acceptance: [
+      'One SECURITY DEFINER RPC returning only learners of courses the caller edits. Columns: email from auth.users; the invite\'s contact label; acquisition course + channel (signup_acquisitions, 053); run and tier; lessons opened and completed; last activity; voices sent and answered.',
+      'Telegram username: present if ANON-012 is Done when this card is worked; otherwise out of scope, and the closing comment says so.',
+      'Filters: course, run. English chrome; the cross-course page uses the getCourseAccess() gate.',
+      'Full protocol: a non-editor gets zero rows, and an editor of course A sees no learner who only touched course B; positive control: the editor of course A sees at least one seeded learner of A.',
+      'Ships OPS-019\'s text for privacy:174 with a 0083 version bump.',
+    ],
+  },
+  {
+    key: 'ANON-012',
+    title: 'Telegram sign-in button',
+    milestone: 'M3',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2510,
+    dependsOn: ['ANON-010', 'OPS-019'],
+    goal: 'Build Telegram sign-in where ANON-010 proved it works.',
+    acceptance: [
+      'On the English sign-in paths, AuthScreen, and ProvidersSection linking.',
+      'lib/inAppBrowser.ts becomes per-provider: Google stays hidden in in-app browsers; Telegram shows wherever ANON-010 proved it works (tests).',
+      'The minimum account-linking path ANON-010 recommended.',
+      '`next` and acquisition are preserved (ANON-016\'s chains, 0081).',
+      '`npm run budget` before and after: no change to an anonymous visitor\'s critical-path JS; the lesson route\'s figure printed (the button sits in RegistrationOffer).',
+      'Ships OPS-019\'s Telegram subprocessor text with a version bump.',
+    ],
+  },
+  {
+    key: 'COH-006',
+    title: 'Telegram bot notifications',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'decision',
+    rank: 2515,
+    dependsOn: ['ANON-010'],
+    goal: 'Reminders through a Telegram bot (partner, 2026-10-07). Not part of the M3 bar.',
+    acceptance: [
+      'Which events ("week N is open", "your feedback is ready", others), the wording, and how the bot reaches a learner (telegram:bot_access vs a /start deep link), with opt-in and opt-out.',
+      'Scheduling for "week N is open": a cron job vs computed at send time.',
+      'Output: a decision file and proposed build cards, with their milestone left to the owner.',
+    ],
+  },
+  {
+    key: 'OPS-020',
+    title: 'Cohort dry run on production (M3 exit)',
+    milestone: 'M3',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2520,
+    dependsOn: [
+      'ANON-016', 'CNT-011', 'COH-001', 'OPS-019', 'VOICE-002', 'VOICE-001', 'ANON-010', 'OPS-018',
+      'CNT-012', 'CNT-014', 'AUTH-009', 'ANON-011', 'COH-002', 'AUTH-010', 'COH-003', 'COH-004',
+      'CNT-013', 'VOICE-003', 'VOICE-004', 'VOICE-005', 'VOICE-006', 'COH-005', 'PROG-001',
+      'AUTH-011', 'ANON-012', 'OPS-010',
+    ],
+    goal: 'Rehearse a whole cohort on production with test accounts on real phones.',
+    acceptance: [
+      'A run whose start is in the past, so weeks 1-2 are open and week 3 shows its date.',
+      'One basic and one extended learner invited; claims made inside Telegram\'s in-app browser and in Safari.',
+      'Recording and sending from iOS and Android; the partner reviews on her own device; feedback appears; the extended learner sees the next call; the final screen shows before/after; the learners page shows all of it.',
+      'One learner is revoked and their access is gone; a learner in another run keeps theirs.',
+      'Every row involved is printed. The production `npm run budget` table is pasted, and free routes are unchanged from their M2 figures.',
+    ],
+    notes:
+      'Writes to production: owner-run, or explicitly authorised at the time (a stop under CLAUDE.md). ' +
+      'COH-006 is deliberately not a dependency.',
+  },
+  // ------------------------------------------------ milestone-less chores ---
+  {
+    key: 'OPS-021',
+    title: 'Delete or archive docs/instruction_external_LLM_course.txt',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3030,
+    dependsOn: [],
+    goal:
+      'The file describes the retired Colloquiz stages schema (lines 4-5, 55), not the lesson document; ' +
+      'the live drafting prompt is prompts/draft-lesson.md (docs/decisions/0028). Found in the M3 audit.',
+    acceptance: [
+      '`rg -n instruction_external_LLM_course` over the repo is printed before; every reference is removed or repointed to prompts/draft-lesson.md.',
+      'The file is deleted, or moved under an archive path with a header saying it is retired; the card records which.',
+    ],
+    notes: 'No milestone (the OPS-011 shape), so next-card never picks it.',
+  },
   // -------------------------------------------------------------- INFRA ---
   {
     key: 'INFRA-001',
