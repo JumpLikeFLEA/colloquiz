@@ -1659,6 +1659,39 @@ export const CARDS = [
     notes: 'Proposed 2026-09-27 during OPS-009 (legal copy review). Narrower and faster than OPS-015 (which reports on this same table\'s cleanup gap as part of a generic scheduled sweep across all four rate-limit log tables) — this fixes only pending_claims_creation_log inline, the same way 051 already fixes funnel_events_creation_log; OPS-015 still stands for the other two (feedback, account_export_log).',
   },
   {
+    key: 'ANON-009',
+    title: 'Acquisition: record which course and channel a learner signed up from',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2208,
+    dependsOn: ['ANON-004', 'OPS-008'],
+    goal:
+      'The partner needs to see which free course each registered learner ' +
+      'came from (partner spec 2026-10-06; owner pulled it into M2 on ' +
+      '2026-10-07 because it is the only part of that spec that loses data ' +
+      'if it lands after launch). The signup paths already carry what is ' +
+      'needed: /auth/confirm (token_hash branch) and /auth/callback ' +
+      '(new-account branch) receive `next` and the tab\'s funnel `source`, ' +
+      'and already record a server-side `signup` event (0069). But ' +
+      'funnel_events has no user id by design (051), so nothing ties a ' +
+      'channel or a course to an account. Record both once, at the signup ' +
+      'moment. The admin view that reads them is M3.',
+    acceptance: [
+      'Storage is a NEW table keyed by user_id (PK, FK profiles ON DELETE CASCADE) with course_id (FK courses ON DELETE SET NULL), source (same CHECK as funnel_events.source) and created_at. It is NOT columns on profiles: profiles rows are readable by tutors (006 "profiles: linked read"), group co-members (014) and admins (027). RLS on, owner-read only; no INSERT/UPDATE/DELETE grant — written only by a SECURITY DEFINER RPC that uses auth.uid().',
+      'Write-once: the RPC inserts ON CONFLICT (user_id) DO NOTHING. A second call never changes the row — shown on a seeded user, printing the row before and after a second call.',
+      'The course is resolved on the server from the `next` path (`/courses/<courseSlug>/...`) to a PUBLISHED course, never from a client-supplied id. Any other path (`/`, `/app/...`, an unpublished or unknown slug, garbage) gives course_id NULL. The path parser is a pure lib/ function under vitest: course path, lesson path, trailing slash, query string, `/app/...`, encoded input and `//evil`-style input.',
+      'Written from both genuine-signup branches: /auth/confirm token_hash (including the cross-browser confirmation) and /auth/callback new-account. Never written on an ordinary sign-in by an existing user. A failed write never blocks or alters the redirect (same posture as recordServerFunnelEvent).',
+      'source = null (GPC/DNT opt-out, or a path that does not thread a source) → no row at all, per 0069. Covered by a test.',
+      'FULL PROTOCOL on seeded rows: the owner reads their own row; another signed-in user, a group co-member of the owner, a tutor linked to the owner and anon each read zero rows; a direct INSERT/UPDATE from an authenticated session is denied. Every result printed. A check against an empty table is a failure.',
+      'Account export includes the row and account deletion removes it, shown on a seeded account (precedent: lesson_attempts, 0064).',
+      'docs/release/legal/privacy-policy.md says, in the same commit, that the course and channel a learner signed up from are stored with their account, why, and that GPC/DNT prevents it (OPS-008 precedent: a new category of data means a privacy change in the same commit).',
+      'Migration written as 053_*, handed over with the SQL to run, not applied. After the owner applies it: one email signup from a lesson completion confirmed in a different browser, and one OAuth signup, each with its resulting row printed. Plus the count of existing accounts with no row (not backfilled).',
+      '`npm run check && npm test` exit 0. `npm run budget` before and after printed; no English route moves (the change is server-side).',
+    ],
+    notes: 'Attribution is the signup moment, not the first-ever visit; a first-visit model would need a cross-session identifier, which 0069 rules out. No backfill. Out of scope: the admin stats view (M3), Telegram sign-in (M3; it will reuse /auth/callback and so inherit this write), and M3\'s sign-in prompt on lessons the partner does not mark open (partner, 2026-10-07: after sign-in the learner returns to that same lesson, so `next` is the lesson path and the course resolves through this same parser). Spec: claude/partner-spec-cohort-course.md §4.7 in the claude.ai project.',
+  },
+  {
     key: 'ANON-005',
     title: 'Signed-in learners record attempts directly',
     milestone: 'M2',
@@ -1891,6 +1924,7 @@ export const CARDS = [
     dependsOn: [
       'SHELL-010', 'SHELL-011', 'SHELL-012', 'SHELL-013', 'ANON-004', 'ANON-005',
       'OPS-006', 'OPS-007', 'OPS-008', 'OPS-009', 'PLAY-007', 'INFRA-001',
+      'ANON-009',
     ],
     goal:
       'M2\'s bar, proven end to end on production: a reel viewer can play a ' +
