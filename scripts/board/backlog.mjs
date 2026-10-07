@@ -1850,6 +1850,38 @@ export const CARDS = [
     ],
   },
   {
+    key: 'SHELL-018',
+    title: 'Tech debt: the page language marker matches the interface language',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2207,
+    dependsOn: [],
+    goal:
+      'Tech debt left by docs/decisions/0080 (Decision 5, "Not changed"). ' +
+      'app/(english)/layout.tsx hardcodes `<html lang="ru">` on every ' +
+      'English-surface route, but since 0080 the interface language varies ' +
+      'by page: `/` and `/courses/[courseSlug]` render in the visitor\'s ' +
+      'saved EN/RU choice, lesson pages are always English, and the 404 and ' +
+      'error pages stay Russian. An English page marked as Russian fails ' +
+      'WCAG 2.1 SC 3.1.1 (Language of Page), which exists because assistive ' +
+      'technology and browsers use the page language for pronunciation and ' +
+      'translation. Low priority: not part of OPS-010\'s launch bar.',
+    acceptance: [
+      'On every English-surface route, `<html lang>` equals the language of that page\'s interface chrome: `/` and `/courses/[courseSlug]` follow the saved EN/RU choice, lesson pages are `en`, the 404 and error pages are `ru`. The rule is decided in one pure, unit-tested function beside `footerLangForPath` (lib/alliengll/surfaceLang.ts), not re-derived per page.',
+      'The marker stays correct without a full reload: after toggling EN/RU on `/` and on a course page, and after client-side navigation course → lesson → course, `document.documentElement.lang` matches the visible chrome. Verified in a real browser, with the printed value pasted for each step.',
+      'No new hydration warning in the console, and `npm run budget` shows `/` and the course page still within their 180 / 182 KB budgets (output pasted).',
+    ],
+    notes:
+      'The root layout persists across client-side navigation and re-renders ' +
+      'only on a full load or the toggle\'s Server Action, so a ' +
+      'server-rendered `lang` alone goes stale on a soft navigation between a ' +
+      'course page and a lesson. That is the same reason EnglishFooterGate ' +
+      'reads `usePathname()` (docs/decisions/0080 Decision 4). Out of scope: ' +
+      'tagging authored content (theory, explanations) with its own `lang`; ' +
+      'that needs per-block language data the authoring model does not have.',
+  },
+  {
     key: 'OPS-010',
     title: 'Launch rehearsal (M2 exit)',
     milestone: 'M2',
