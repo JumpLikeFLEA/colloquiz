@@ -30,8 +30,15 @@
  *
  * --url (or BUDGET_BASE_URL) points the guard at an already-running server —
  * e.g. OPS-010's launch rehearsal against the deployed production URL.
- * Without it, this script builds (if `.next` is missing or stale) and starts
- * its own local `next start` on an ephemeral port, then tears it down after.
+ * Without it, this script starts its own local `next start` on an ephemeral
+ * port and tears it down after, running `next build` first unless `.next`
+ * holds a build this script made from the current sources (OPS-017,
+ * docs/decisions/0089). After each successful build it writes a sha256 of
+ * every file `git ls-files -co --exclude-standard` lists, plus the `.env*`
+ * files `next build` reads (NEXT_PUBLIC_* values are frozen into the build),
+ * to `.next/budget-source-fingerprint`, and reuses the build only when that
+ * stamp matches the sources now. No stamp, a mismatch or a missing build all
+ * rebuild. --url builds nothing and checks nothing about `.next`.
  *
  * The `/courses/play-006-smoke/free-lesson` route below requires
  * `npm run seed:local` (scripts/seed-local-fixtures.ts) to have been run
@@ -41,9 +48,10 @@
 
 import { chromium, type CDPSession } from "@playwright/test";
 import { execFileSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { buildDecision, sourceFingerprint, type SourceEntry } from "./budgetBuildStamp";
 
 const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
 
@@ -160,12 +168,46 @@ async function waitForServer(origin: string, timeoutMs: number): Promise<void> {
   die(`Server at ${origin} did not become ready within ${timeoutMs}ms.`);
 }
 
+// The env files `next build` loads in production mode
+// (node_modules/next/dist/docs/01-app/02-guides/environment-variables.md).
+// They are gitignored, so `git ls-files` never lists them.
+const BUILD_ENV_FILES = [".env", ".env.production", ".env.local", ".env.production.local"];
+const STAMP_PATH = join(process.cwd(), ".next", "budget-source-fingerprint");
+
+function currentSourceEntries(): SourceEntry[] {
+  let listed: string;
+  try {
+    listed = execFileSync("git", ["ls-files", "-z", "-co", "--exclude-standard"], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch (e) {
+    // Without the file list there is no telling a fresh build from a stale
+    // one, so refuse rather than reuse.
+    die(`Cannot list sources with \`git ls-files\` to check .next for staleness: ${(e as Error).message}`);
+  }
+  const paths = [...listed.split("\0").filter(Boolean), ...BUILD_ENV_FILES.filter((p) => existsSync(p))];
+  return paths.map((path) => ({ path, content: existsSync(path) ? readFileSync(path) : null }));
+}
+
 function buildIfNeeded(): void {
-  const buildIdPath = join(process.cwd(), ".next", "BUILD_ID");
-  if (existsSync(buildIdPath)) return;
-  console.log("No .next build found — running `next build` first...");
+  const current = sourceFingerprint(currentSourceEntries());
+  const decision = buildDecision({
+    buildIdExists: existsSync(join(process.cwd(), ".next", "BUILD_ID")),
+    stamp: existsSync(STAMP_PATH) ? readFileSync(STAMP_PATH, "utf8") : null,
+    current,
+  });
+  if (decision.action === "reuse") {
+    console.log(`Reusing .next: ${decision.reason}.`);
+    return;
+  }
+  console.log(`Rebuilding: ${decision.reason} — running \`next build\`...`);
   const result = spawnSync(npxBin, ["next", "build"], { stdio: "inherit", shell: true });
   if (result.status !== 0) die("`next build` failed.");
+  // Stamp the fingerprint taken BEFORE the build: a file edited while the
+  // build ran then mismatches next time and rebuilds, instead of being
+  // recorded as built.
+  writeFileSync(STAMP_PATH, current);
 }
 
 async function startLocalServer(): Promise<{ origin: string; proc: ChildProcess }> {
