@@ -1210,6 +1210,28 @@ export const CARDS = [
     notes: 'Proposed in #135.',
   },
   {
+    key: 'OPS-017',
+    title: 'Budget guard rebuilds (or refuses) a stale .next',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2211,
+    dependsOn: [],
+    goal:
+      'scripts/budget.ts\'s header says it builds "if `.next` is missing or stale", but buildIfNeeded() ' +
+      'only checks that .next/BUILD_ID exists. Found in SHELL-019 (#140): a run after a source change ' +
+      'silently reused the previous build and printed the baseline figure (178.0 KB on /) for code that, ' +
+      'rebuilt from scratch, measured 241.3 KB (docs/decisions/0086). Any before/after comparison that ' +
+      'does not `rm -rf .next` first can report "no change" for a change it never measured.',
+    acceptance: [
+      'Reproduce first: on the current code, change a file under app/ that alters a route\'s client JS, run `npm run budget` without deleting .next, and show the printed figure did not move.',
+      'After the fix, the same sequence either measures the changed code (the figure moves) or refuses to run with a message naming the stale build. Which of the two is recorded as a decision, with the staleness rule it uses.',
+      'The `--url` path (OPS-010, an already-running server) is unaffected: it builds nothing and checks nothing about .next.',
+      'The header comment matches what the code does.',
+    ],
+    notes: 'priority:low. Proposed in #140 (SHELL-019). Until it lands, every budget figure in a decision file should come from a fresh `rm -rf .next` build.',
+  },
+  {
     key: 'SHELL-014',
     title: 'Colloquiz gets its own root layout',
     milestone: 'M2',
