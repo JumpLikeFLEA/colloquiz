@@ -12,6 +12,7 @@ import {
   toggleSelectionOption,
 } from "@/lib/lessonPlayer/selectionResponse";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
+import { optionClassName } from "./optionClassName";
 
 /**
  * PLAY-002 — `selection` renderer (MCQ single, MCQ multi, True/False; one
@@ -100,34 +101,4 @@ export function SelectionRenderer({
       )}
     </div>
   );
-}
-
-function optionClassName({
-  isSelected,
-  submitted,
-  feedback,
-}: {
-  isSelected: boolean;
-  submitted: boolean;
-  feedback: { wasSelected: boolean; isCorrect: boolean } | undefined;
-}): string {
-  const base =
-    "flex w-full min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors";
-
-  if (!submitted) {
-    return `${base} cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-      isSelected ? "border-brand bg-brand-subtle text-brand-text" : "border-border bg-background hover:border-brand/40"
-    }`;
-  }
-
-  if (feedback?.wasSelected && feedback.isCorrect) {
-    return `${base} border-success-border bg-success-subtle text-success`;
-  }
-  if (feedback?.wasSelected && !feedback.isCorrect) {
-    return `${base} border-destructive-border bg-destructive-subtle text-destructive-text`;
-  }
-  if (!feedback?.wasSelected && feedback?.isCorrect) {
-    return `${base} border-success-border bg-background text-success`;
-  }
-  return `${base} border-border bg-background text-muted-foreground opacity-70`;
 }

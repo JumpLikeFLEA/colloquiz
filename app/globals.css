@@ -395,3 +395,55 @@
     animation-duration: 1ms;
   }
 }
+
+/* Landing page motion (app/(english)/, docs/decisions/0078). CSS only — the
+   English surface ships no animation library (framer-motion is a forbidden
+   signature on English routes, scripts/budget.ts). No colours here. */
+
+/* Slow bob for the hero's decorative word chips; each chip offsets it with
+   its own animation-delay so they never move in step. */
+.landing-float {
+  animation: landing-float 6s ease-in-out infinite;
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Sections fade up as they scroll into view, driven by the scroll position
+   itself (a view() timeline), not by JS. Progressive enhancement: where
+   animation-timeline is unsupported the @supports block never applies and
+   the section is simply visible — nothing is ever hidden waiting for a
+   script. Above-the-fold sections are already past their entry range at
+   load, so they render fully visible. */
+@supports (animation-timeline: view()) {
+  .reveal-on-scroll {
+    animation: landing-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
+@keyframes landing-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-float,
+  .reveal-on-scroll {
+    animation: none;
+  }
+}

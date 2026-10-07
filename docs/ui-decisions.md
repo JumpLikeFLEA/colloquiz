@@ -903,3 +903,45 @@ Appended to in the same commit as the change it records. Referenced from
   Only the default (the landing page, which sets no title of its own) —
   the `%s · Colloquiz` template for every other English-surface page
   (course, lesson) is unchanged.
+- Landing page redesigned (2026-10-07, ad-hoc, docs/decisions/0078),
+  SUPERSEDING the 2026-09-28 entry's layout (not its EN/RU toggle, cookie,
+  footer or sticky-footer rules, which all stand unchanged). `/` is now:
+  - a full-bleed brand-gradient hero band (`from-brand-deep via-brand
+    to-brand-accent`, dot grid, glow orbs — the `AuthLeftPanel` vocabulary,
+    rebuilt in `app/(english)/HeroDecor.tsx` because that panel uses
+    framer-motion, forbidden on English routes);
+  - `LandingHeader` moved INSIDE that band and restyled white-on-gradient
+    (`bg-white/10` toggle track, active `bg-white text-brand-deep`) — do not
+    move it back onto `bg-background` without redoing those colours;
+  - a white primary CTA (same one-tap `heroHref`, 0070 Decision 2);
+  - a tappable demo card (`HeroDemo.tsx`, one real `selection` item copied
+    from Future Imperfect, styled by the player's own `optionClassName`,
+    now its own module);
+  - a four-tile value strip overlapping the hero's bottom edge;
+  - the catalogue;
+  - a three-step "how it works";
+  - a closing gradient CTA card.
+
+  Hero word chips are a SOLID `bg-brand-deep`, not translucent white:
+  white-on-white vanished where they overlap the demo card.
+
+  `CourseCard` gained a "N lessons · ~M min" line (supersedes 0070's card
+  scope; minutes omitted when any lesson lacks an estimate), a
+  brand-gradient level tile in place of the grey "no cover" caption, and a
+  hover lift + cover zoom instead of `hover:bg-accent`; its title is now an
+  `h3` under the section's `h2`. Still no free/paid badge — that's
+  entitlement display, a separate decision.
+
+  Motion is CSS only: tw-animate-css entry stagger, `.landing-float`, and a
+  `.reveal-on-scroll` driven by `animation-timeline: view()` inside
+  `@supports` (unsupported browsers just show the section; nothing waits on
+  JS). All of it is off under `prefers-reduced-motion`.
+
+  Decorative markup (`GradientBackdrop`, `HeroChips`, `valueIcons`) is
+  rendered by page.tsx and passed into the client `LandingContent` as
+  props so it costs no client JS — `/` is at 179.8 KB of its 180 KB budget
+  (`npm run budget`), so do not import those back into the client
+  component.
+
+  New Russian copy (value strip, steps, demo feedback, closing card) is
+  pending owner/partner review.

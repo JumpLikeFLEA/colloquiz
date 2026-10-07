@@ -9,6 +9,12 @@ import { landingCopy } from "./landingCopy";
  * "Alliengll" here is a page title, not a branding decision: siteName in
  * lib/alliengll/copy.ts stays "Colloquiz" (docs/handoff.md, "Open
  * questions" — naming is still deliberately deferred).
+ *
+ * Sits INSIDE the hero's brand-gradient band (docs/decisions/0078), so it is
+ * white-on-gradient: translucent white surfaces (`bg-white/10`, the
+ * AuthLeftPanel vocabulary) rather than the page's own card/muted tokens,
+ * which would read as grey patches on indigo. The gradient is dark in both
+ * themes, so these need no dark-mode variant.
  */
 export function LandingHeader({
   lang,
@@ -21,39 +27,27 @@ export function LandingHeader({
 
   return (
     <header className="flex items-center justify-between gap-2">
-      <span className="text-lg font-semibold tracking-tight text-foreground">{t.wordmark}</span>
+      <span className="text-lg font-semibold tracking-tight text-white">{t.wordmark}</span>
       <div className="flex items-center gap-1.5">
-        <div role="group" aria-label="Language" className="flex gap-0.5 rounded-lg bg-muted p-0.5">
-          <button
-            type="button"
-            onClick={() => onSetLang("en")}
-            aria-pressed={lang === "en"}
-            lang="en"
-            className={`min-w-11 rounded-md px-2.5 py-2 text-xs font-semibold tracking-wide ${
-              lang === "en"
-                ? "bg-background text-foreground shadow-sm ring-1 ring-border"
-                : "text-muted-foreground"
-            }`}
-          >
-            EN
-          </button>
-          <button
-            type="button"
-            onClick={() => onSetLang("ru")}
-            aria-pressed={lang === "ru"}
-            lang="ru"
-            className={`min-w-11 rounded-md px-2.5 py-2 text-xs font-semibold tracking-wide ${
-              lang === "ru"
-                ? "bg-background text-foreground shadow-sm ring-1 ring-border"
-                : "text-muted-foreground"
-            }`}
-          >
-            RU
-          </button>
+        <div role="group" aria-label={t.languageGroupLabel} className="flex gap-0.5 rounded-lg bg-white/10 p-0.5 ring-1 ring-white/20">
+          {(["en", "ru"] as const).map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => onSetLang(code)}
+              aria-pressed={lang === code}
+              lang={code}
+              className={`min-w-11 cursor-pointer rounded-md px-2.5 py-2 text-xs font-semibold tracking-wide transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                lang === code ? "bg-white text-brand-deep shadow-sm" : "text-white/75 hover:text-white"
+              }`}
+            >
+              {code.toUpperCase()}
+            </button>
+          ))}
         </div>
         <Link
           href="/login"
-          className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors outline-none hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white"
         >
           {t.login}
         </Link>

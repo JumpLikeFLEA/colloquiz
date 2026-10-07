@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { CefrLevel } from "@/lib/courseLevels";
 import type { CatalogueCourse } from "@/lib/courseCatalogue";
+import { summariseLessons, type CatalogueLessonRow } from "@/lib/catalogueSummary";
 
 /**
  * SHELL-010 — the public catalogue read, one row per published course.
@@ -26,22 +27,35 @@ import type { CatalogueCourse } from "@/lib/courseCatalogue";
  * and at one-course-today (docs/handoff.md, "Launch bar") the order is
  * moot — created_at is the least-surprising default for when a second and
  * third course arrive.
+ *
+ * Each course embeds its lessons' `estimated_minutes` plus the two columns
+ * the size line needs to exclude drafts and archived lessons
+ * (docs/decisions/0078). That exclusion happens in summariseLessons, not
+ * here and not by RLS alone — "lessons: editor read" (041) hands a
+ * signed-in editor every lesson of their course, so this listing would
+ * otherwise count their drafts. One query, no N+1: PostgREST resolves the
+ * embed through lessons.course_id.
  */
 export const getPublishedCourses = cache(async (): Promise<CatalogueCourse[]> => {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("courses")
-    .select("slug, title, subtitle, cover_image_url, level")
+    .select("slug, title, subtitle, cover_image_url, level, lessons(estimated_minutes, published_version_id, archived_at)")
     .eq("status", "published")
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((c) => ({
-    slug: c.slug,
-    title: c.title,
-    subtitle: c.subtitle,
-    coverImageUrl: c.cover_image_url,
-    level: c.level as CefrLevel,
-  }));
+  return (data ?? []).map((c) => {
+    const { lessonCount, totalMinutes } = summariseLessons((c.lessons ?? []) as CatalogueLessonRow[]);
+    return {
+      slug: c.slug,
+      title: c.title,
+      subtitle: c.subtitle,
+      coverImageUrl: c.cover_image_url,
+      level: c.level as CefrLevel,
+      lessonCount,
+      totalMinutes,
+    };
+  });
 });

@@ -88,7 +88,10 @@ const ROUTES: RouteBudget[] = [
   // actually published there, same as /login needs no seed) at 172.0 KB.
   // budgetKB is that measurement plus ~4.5% headroom (the PLAY-012/SHELL-008
   // precedent, docs/decisions/0057/0059) — re-derive both from a real
-  // `npm run budget` run before raising it, never guess.
+  // `npm run budget` run before raising it, never guess. The 172.0 KB above
+  // had gone stale: the clean tree printed 185.0 KB (OVER) on 2026-10-07,
+  // and the landing redesign brought it back to 179.8 KB without raising
+  // budgetKB (docs/decisions/0078, Decision 5) — 0.2 KB of headroom left.
   { path: "/", budgetKB: 180, guardForbiddenSignatures: true },
   // PLAY-006/PLAY-012 (docs/decisions/0056, 0057): a REAL authored lesson —
   // `future-imperfect`'s first lesson, `true-or-false` — not a synthetic

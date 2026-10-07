@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getPublicCourse } from "@/lib/coursePage";
 import { firstFreeLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
+import { GradientBackdrop, HeroChips, valueIcons } from "./HeroDecor";
 import { LandingContent } from "./LandingContent";
 import { LANDING_LANG_COOKIE } from "./landingCopy";
 import type { LandingLang } from "./landingCopy";
@@ -54,7 +55,14 @@ export default async function EnglishLandingPage() {
     // what pushes LandingFooter (rendered inside main, unlike every other
     // route's EnglishFooter) to the bottom without forcing a scrollbar.
     <main className="flex flex-1 flex-col bg-background">
-      <LandingContent courses={courses} heroHref={heroHref} initialLang={initialLang} />
+      <LandingContent
+        courses={courses}
+        heroHref={heroHref}
+        initialLang={initialLang}
+        backdrop={<GradientBackdrop />}
+        heroChips={<HeroChips />}
+        valueIcons={valueIcons()}
+      />
     </main>
   );
 }

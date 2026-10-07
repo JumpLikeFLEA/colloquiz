@@ -15,4 +15,8 @@ export type CatalogueCourse = {
   subtitle: string | null;
   coverImageUrl: string | null;
   level: CefrLevel;
+  /** Published, non-archived lessons only — lib/catalogueSummary.ts. */
+  lessonCount: number;
+  /** Sum of those lessons' estimates; null if any has none (0078). */
+  totalMinutes: number | null;
 };
