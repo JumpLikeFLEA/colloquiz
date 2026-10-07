@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkedAcceptanceLines, normalizeAcceptanceLine } from './bootstrap-board.mjs';
+import { checkedAcceptanceLines, normalizeAcceptanceLine, sameBody } from './bootstrap-board.mjs';
 import { CARDS } from './backlog.mjs';
 
 // OPS-005 (docs/decisions/0015): a ticked acceptance line in the live issue
@@ -94,5 +94,24 @@ describe('the ITEM-002 case', () => {
     const reworded = first.replace('reuses', 'uses');
     const checked = checkedAcceptanceLines(issueBody(reworded, ...rest));
     expect(checked.has(normalizeAcceptanceLine(first))).toBe(false);
+  });
+});
+
+// OPS-005 follow-up: #137 and #138 came back from GitHub with CRLF line
+// endings after their boxes were ticked. split('\n') left a trailing '\r'
+// on every line, `(.*)$` can't match past it, and a re-render would have
+// unticked every box.
+describe('CRLF issue bodies', () => {
+  const lines = ['First line of acceptance.', 'Second line -- with a dash.'];
+  const crlfBody = issueBody(...lines).replace(/\n/g, '\r\n');
+
+  it('ticked lines in a CRLF body still read as checked', () => {
+    const checked = checkedAcceptanceLines(crlfBody);
+    for (const l of lines) expect(checked.has(normalizeAcceptanceLine(l))).toBe(true);
+  });
+
+  it('a CRLF body equals the same body with LF endings', () => {
+    expect(sameBody(crlfBody, issueBody(...lines))).toBe(true);
+    expect(sameBody(crlfBody, issueBody(lines[0]))).toBe(false);
   });
 });

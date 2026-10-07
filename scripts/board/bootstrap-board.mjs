@@ -92,6 +92,19 @@ function normalizeAcceptanceLine(text) {
     .trim();
 }
 
+// A live issue body can come back from GitHub with CRLF line endings (seen
+// on #137 and #138 after their boxes were ticked). Every comparison against
+// a live body goes through LF, or a trailing '\r' defeats the ticked-line
+// regex and every re-render unticks the boxes (OPS-005 follow-up).
+function toLf(text) {
+  return text.replace(/\r\n?/g, '\n');
+}
+
+// Whether a live body already matches the body this script would render.
+function sameBody(existingBody, desiredBody) {
+  return toLf(existingBody).trim() === toLf(desiredBody).trim();
+}
+
 // Acceptance lines already checked off by hand in the live issue, so
 // re-rendering the body (e.g. a later bootstrap run adding an unrelated
 // card) doesn't silently un-tick completed work. Matched by normalized
@@ -100,7 +113,7 @@ function normalizeAcceptanceLine(text) {
 function checkedAcceptanceLines(existingBody) {
   if (!existingBody) return new Set();
   const checked = new Set();
-  for (const line of existingBody.split('\n')) {
+  for (const line of toLf(existingBody).split('\n')) {
     const m = /^- \[[xX]\] (.*)$/.exec(line);
     if (m) checked.add(normalizeAcceptanceLine(m[1]));
   }
@@ -319,9 +332,9 @@ function runDiff(log) {
       lines.push(`  + ${desiredTitle}`);
     }
 
-    if (existing.body.trim() !== desiredBody.trim()) {
+    if (!sameBody(existing.body, desiredBody)) {
       lines.push(`  body:`);
-      lines.push(...diffLines(existing.body.trim(), desiredBody.trim()));
+      lines.push(...diffLines(toLf(existing.body).trim(), desiredBody.trim()));
     }
 
     const currentLabels = new Set(existing.labels);
@@ -464,7 +477,7 @@ function main() {
       // we sent (e.g. an issue edited via --body-file, which always ends in
       // one) — trim before comparing so that alone doesn't register as a
       // real content difference.
-      const bodyOk = existing.body.trim() === desiredBody.trim();
+      const bodyOk = sameBody(existing.body, desiredBody);
 
       if (titleOk && bodyOk && labelsOk && milestoneOk) {
         log(`${card.key}: #${number} up to date — skipped`);
@@ -528,4 +541,4 @@ if (process.argv[1] && process.argv[1].endsWith('bootstrap-board.mjs')) {
   main();
 }
 
-export { checkedAcceptanceLines, normalizeAcceptanceLine };
+export { checkedAcceptanceLines, normalizeAcceptanceLine, sameBody };

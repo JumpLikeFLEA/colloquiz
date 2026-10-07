@@ -54,3 +54,8 @@ be imported and tested without the import itself shelling out to `gh`.
   between the canonical text and GitHub's echo (e.g. straight vs.
   full-width parentheses) — extend the function's character classes rather
   than adding a second normalisation pass.
+- **Follow-up, 2026-10-07:** live bodies can come back from GitHub with CRLF
+  line endings (#137, #138: every ticked line ended in `\r`, so none
+  matched and a re-render would have unticked them all). `toLf()` now runs
+  before `checkedAcceptanceLines` and before the body comparison
+  (`sameBody`), covered by the CRLF tests in `bootstrap-board.test.mjs`.
