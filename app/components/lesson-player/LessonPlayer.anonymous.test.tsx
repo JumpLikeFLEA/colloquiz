@@ -100,4 +100,31 @@ describe("LessonPlayer — ANON-013 anonymous attempts are stored locally", () =
 
     expect(window.localStorage.getItem(ATTEMPT_STORAGE_KEY)).toBeNull();
   });
+
+  it("ANON-015 — renders and scores when reading window.localStorage throws (blocked storage)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
+    const blocked = () => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    };
+    vi.spyOn(window, "localStorage", "get").mockImplementation(blocked);
+    vi.spyOn(window, "sessionStorage", "get").mockImplementation(blocked);
+
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v1"
+        isSignedIn={false}
+      />,
+    );
+
+    expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
+    fireEvent.click(screen.getByRole("radio", { name: "She goes to school every day." }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
+
+    // The attempt is scored on the page (the completion card reached its
+    // scored state) even though nothing could be persisted.
+    expect(await screen.findByText("Lesson complete", { exact: false })).toBeDefined();
+  });
 });

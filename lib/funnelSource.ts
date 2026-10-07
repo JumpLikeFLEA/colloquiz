@@ -94,15 +94,25 @@ export function resolveFunnelSource(env: FunnelSourceEnv): FunnelSource | null {
  * `fireFunnelEvent`'s doc comment), not only to fire an event directly.
  */
 export function getCurrentFunnelSource(): FunnelSource | null {
-  return resolveFunnelSource({
-    sessionStorage: window.sessionStorage,
-    navigator: {
-      doNotTrack: navigator.doNotTrack,
-      globalPrivacyControl: (navigator as { globalPrivacyControl?: boolean }).globalPrivacyControl,
-    },
-    location: window.location,
-    referrer: document.referrer,
-  });
+  // ANON-015 — blocked storage throws, either on reading
+  // `window.sessionStorage` itself or on getItem/setItem. RegistrationOffer
+  // calls this inside its signup handlers, so a throw here failed the
+  // signup itself. The source is the only thing lost: `null` is the same
+  // value an opted-out visitor gets, and records no acquisition row
+  // (docs/decisions/0069, 0081, 0084).
+  try {
+    return resolveFunnelSource({
+      sessionStorage: window.sessionStorage,
+      navigator: {
+        doNotTrack: navigator.doNotTrack,
+        globalPrivacyControl: (navigator as { globalPrivacyControl?: boolean }).globalPrivacyControl,
+      },
+      location: window.location,
+      referrer: document.referrer,
+    });
+  } catch {
+    return null;
+  }
 }
 
 export type FunnelEventType = "landing_view" | "lesson_start" | "lesson_complete";

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ATTEMPT_STORAGE_KEY,
   createAttemptStore,
@@ -31,6 +31,31 @@ function throwingBackend(): AttemptStorageBackend {
 
 const attempt1 = { attemptId: "a1", lessonVersionId: "v1", blockId: "b1", earned: 1, possible: 2 };
 const attempt2 = { attemptId: "a2", lessonVersionId: "v1", blockId: "b1", earned: 2, possible: 2 };
+
+describe("createAttemptStore — default backend (window.localStorage)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("persists through window.localStorage when it is readable (control)", () => {
+    const backend = memoryBackend();
+    vi.stubGlobal("window", { localStorage: backend });
+    createAttemptStore().record(attempt1);
+    expect(JSON.parse(backend.store[ATTEMPT_STORAGE_KEY]).attempts).toHaveLength(1);
+  });
+
+  it("ANON-015 — falls back to memory when reading window.localStorage itself throws", () => {
+    vi.stubGlobal("window", {
+      get localStorage(): Storage {
+        throw new Error("SecurityError: The operation is insecure.");
+      },
+    });
+    const store = createAttemptStore();
+    store.record(attempt1);
+    expect(store.getAll()).toEqual([expect.objectContaining({ attemptId: "a1" })]);
+    expect(store.bestForBlock("v1", "b1")).toEqual(expect.objectContaining({ attemptId: "a1" }));
+  });
+});
 
 describe("createAttemptStore", () => {
   it("records an attempt and persists it to the backend", () => {

@@ -163,4 +163,64 @@ describe("RegistrationOffer", () => {
     expect(await screen.findByText(alliengllCopy.signupOffer.consentRequired)).toBeDefined();
     expect(signUp).not.toHaveBeenCalled();
   });
+
+  describe("ANON-015 — browser storage blocked", () => {
+    // Chrome-style blocked storage: reading the `localStorage` /
+    // `sessionStorage` property itself throws, before any getItem/setItem.
+    // The most hostile mode — a getItem/setItem-only throw is covered at the
+    // lib layer (funnelSource.test.ts, attemptStore.test.ts).
+    function blockStorage() {
+      const blocked = () => {
+        throw new DOMException("The operation is insecure.", "SecurityError");
+      };
+      vi.spyOn(window, "localStorage", "get").mockImplementation(blocked);
+      vi.spyOn(window, "sessionStorage", "get").mockImplementation(blocked);
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("still reaches signUp, with no source and no claim, when storage access throws", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      blockStorage();
+
+      render(<RegistrationOffer lessonPath="/courses/c/l" />);
+      fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
+      fireEvent.change(screen.getByLabelText(alliengllCopy.signupOffer.emailLabel), {
+        target: { value: "learner@example.com" },
+      });
+      fireEvent.change(screen.getByLabelText(alliengllCopy.signupOffer.passwordLabel), {
+        target: { value: "correct horse battery staple" },
+      });
+      fireEvent.click(screen.getByRole("checkbox"));
+      fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.submit }));
+
+      await vi.waitFor(() => expect(signUp).toHaveBeenCalledTimes(1));
+      expect(screen.queryByText(alliengllCopy.signupOffer.genericError)).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+      const callArgs = signUp.mock.calls[0][0] as { options: { emailRedirectTo: string } };
+      const redirectUrl = new URL(callArgs.options.emailRedirectTo);
+      expect(redirectUrl.searchParams.get("next")).toBe("/courses/c/l");
+      expect(redirectUrl.searchParams.get("source")).toBeNull();
+      expect(redirectUrl.searchParams.get("claim")).toBeNull();
+    });
+
+    it("still reaches signInWithOAuth, with no source, when storage access throws", async () => {
+      blockStorage();
+
+      render(<RegistrationOffer lessonPath="/courses/c/l" />);
+      fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
+      fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.oauthGoogle }));
+
+      await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
+      expect(screen.queryByText(alliengllCopy.signupOffer.genericError)).toBeNull();
+      const callArgs = signInWithOAuth.mock.calls[0][0] as { options: { redirectTo: string } };
+      const redirectUrl = new URL(callArgs.options.redirectTo);
+      expect(redirectUrl.pathname).toBe("/auth/callback");
+      expect(redirectUrl.searchParams.get("next")).toBe("/courses/c/l");
+      expect(redirectUrl.searchParams.get("source")).toBeNull();
+    });
+  });
 });

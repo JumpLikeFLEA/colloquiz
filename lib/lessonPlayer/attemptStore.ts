@@ -82,8 +82,16 @@ function parsePayload(raw: string | null): StoredAttempt[] {
 
 function resolveBackend(backend?: AttemptStorageBackend): AttemptStorageBackend | null {
   if (backend) return backend;
-  if (typeof window === "undefined" || !window.localStorage) return null;
-  return window.localStorage;
+  if (typeof window === "undefined") return null;
+  // ANON-015 — reading the property itself can throw (a SecurityError when
+  // the browser blocks storage for this site), not only getItem/setItem.
+  // Uncaught here, it threw out of LessonPlayer's useState initializer and
+  // took the whole lesson down (docs/decisions/0084).
+  try {
+    return window.localStorage ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function tryGetItem(backend: AttemptStorageBackend | null): string | null {

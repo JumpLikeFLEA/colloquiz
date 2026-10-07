@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { classifyFunnelSource, isFunnelOptedOut, resolveFunnelSource, type FunnelSourceEnv } from "./funnelSource";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  classifyFunnelSource,
+  getCurrentFunnelSource,
+  isFunnelOptedOut,
+  resolveFunnelSource,
+  type FunnelSourceEnv,
+} from "./funnelSource";
 
 describe("isFunnelOptedOut", () => {
   it("is false when neither signal is set", () => {
@@ -133,5 +139,57 @@ describe("resolveFunnelSource", () => {
       sessionStorage: { getItem: () => "not-a-real-source", setItem: vi.fn() },
     });
     expect(resolveFunnelSource(env)).toBe("direct");
+  });
+});
+
+describe("getCurrentFunnelSource — ANON-015 blocked storage", () => {
+  // The "unit" project runs under node, so the browser globals are stubbed.
+  function stubBrowser(sessionStorage: () => Pick<Storage, "getItem" | "setItem">) {
+    vi.stubGlobal("window", {
+      get sessionStorage() {
+        return sessionStorage();
+      },
+      location: { search: "?utm_source=telegram" },
+    });
+    vi.stubGlobal("navigator", {});
+    vi.stubGlobal("document", { referrer: "" });
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("classifies through working storage (control: the stubs reach resolveFunnelSource)", () => {
+    const setItem = vi.fn();
+    stubBrowser(() => ({ getItem: () => null, setItem }));
+    expect(getCurrentFunnelSource()).toBe("telegram");
+    expect(setItem).toHaveBeenCalledWith("colloquiz_funnel_source", "telegram");
+  });
+
+  it("returns null when reading window.sessionStorage itself throws", () => {
+    stubBrowser(() => {
+      throw new Error("SecurityError: The operation is insecure.");
+    });
+    expect(getCurrentFunnelSource()).toBeNull();
+  });
+
+  it("returns null when getItem throws", () => {
+    stubBrowser(() => ({
+      getItem: () => {
+        throw new Error("storage disabled");
+      },
+      setItem: vi.fn(),
+    }));
+    expect(getCurrentFunnelSource()).toBeNull();
+  });
+
+  it("returns null when setItem throws", () => {
+    stubBrowser(() => ({
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+    }));
+    expect(getCurrentFunnelSource()).toBeNull();
   });
 });
