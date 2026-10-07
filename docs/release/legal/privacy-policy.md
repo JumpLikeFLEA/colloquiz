@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.0 · Last updated 2026-09-26
+Version 1.1 · Last updated 2026-10-07
 
 > **Source of truth.** This file is the canonical text. `app/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -12,6 +12,11 @@ Version 1.0 · Last updated 2026-09-26
 > **Not legal advice.** This is a standard-form GDPR/UK-GDPR policy written to match what
 > the code actually does, verified against the repository. Have it reviewed if the
 > service grows beyond a personal project.
+>
+> **Every change bumps the version and date.** Any edit to text that renders on
+> /privacy (everything outside these maintainer blockquotes) raises the minor version
+> and sets "Last updated" to the commit date, in the same commit. Section 13 promises
+> this to users. See docs/decisions/0083-privacy-policy-versioning.md.
 
 ---
 
@@ -99,10 +104,6 @@ channels bring learners, so we can decide which courses to make next. It is reco
 only at sign-up and never updated afterwards, it is visible only to you (in your data
 export) and to us, and it is deleted when you delete your account. If your browser
 sends a Global Privacy Control or Do Not Track signal, nothing is recorded.
-
-We use an error-monitoring service that receives a technical report when something breaks
-— a stack trace, the page you were on, and browser details. Session cookies and your
-email address are stripped from these reports before they are sent.
 
 ### 3.4 Cookies and similar technologies
 
@@ -196,7 +197,6 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | Notifications | Deleted when your account is closed |
 | Feedback and question reports | Up to 24 months, so we can track recurring problems |
 | Provider server logs | Per the provider's own policy, typically days to a few weeks |
-| Error reports | Per the monitoring provider's retention, typically 30–90 days |
 | English lesson practice attempts | Until you close your account; then **deleted outright**, not anonymised — see section 9 |
 | Signup source (the course and arrival channel you signed up from) | Until you close your account; then **deleted outright** |
 | Cross-device claim stash (pre-signup lesson scores held server-side) | Deleted when the confirmation link is first used; if never used, unusable after 7 days and deleted at the next sign-up after that |
