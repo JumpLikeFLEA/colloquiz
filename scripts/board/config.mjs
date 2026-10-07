@@ -50,6 +50,6 @@ export const MILESTONE_TITLES = {
   M0: 'M0 — Foundations & item engine',
   M1: 'M1 — Content & authoring',
   M2: 'M2 — Public surface',
-  M3: 'M3 — Monetisation',
+  M3: 'M3 — First paid cohort',
   M4: 'M4 — Progression & polish',
 };
