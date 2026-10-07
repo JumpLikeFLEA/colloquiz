@@ -6,6 +6,7 @@ import { Mail, Lock } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { isInAppBrowser } from "@/lib/inAppBrowser";
 import { createAttemptStore, toRecordAttemptPayload } from "@/lib/lessonPlayer/attemptStore";
+import { oauthQueryParams } from "@/lib/authRedirect";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
 import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
 
@@ -117,7 +118,10 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
       if (oauthSource) callbackParams.set("source", oauthSource);
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback?${callbackParams.toString()}` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?${callbackParams.toString()}`,
+          queryParams: oauthQueryParams(provider),
+        },
       });
       if (oauthError) {
         setError(oauthError.message);

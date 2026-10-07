@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, signupEmailRedirectTo } from "./authRedirect";
+import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo } from "./authRedirect";
 
 const ORIGIN = "https://colloquiz.app";
 
@@ -65,5 +65,15 @@ describe("oauthCallbackUrl", () => {
 
   it("carries next alone, as before", () => {
     expect(oauthCallbackUrl(ORIGIN, "/app/s/abc", null)).toBe(`${ORIGIN}/auth/callback?next=%2Fapp%2Fs%2Fabc`);
+  });
+});
+
+describe("oauthQueryParams", () => {
+  it("asks Google to show its account chooser", () => {
+    expect(oauthQueryParams("google")).toEqual({ prompt: "select_account" });
+  });
+
+  it("leaves Discord's authorize URL unchanged", () => {
+    expect(oauthQueryParams("discord")).toBeUndefined();
   });
 });

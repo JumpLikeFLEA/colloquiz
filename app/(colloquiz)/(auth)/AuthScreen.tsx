@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
-import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, signupEmailRedirectTo } from "@/lib/authRedirect";
+import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo } from "@/lib/authRedirect";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -301,7 +301,10 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: oauthCallbackUrl(window.location.origin, dest, funnelSource()) },
+      options: {
+        redirectTo: oauthCallbackUrl(window.location.origin, dest, funnelSource()),
+        queryParams: oauthQueryParams(provider),
+      },
     });
     // On success the browser navigates away; only failures land here.
     if (error) {

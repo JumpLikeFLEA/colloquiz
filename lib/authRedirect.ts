@@ -58,3 +58,23 @@ export function oauthCallbackUrl(origin: string, next: string, source: FunnelSou
   if (source) params.set("source", source);
   return `${origin}/auth/callback?${params.toString()}`;
 }
+
+/**
+ * `queryParams` for `signInWithOAuth`, forwarded by auth-js onto the
+ * provider's authorize URL (node_modules/@supabase/auth-js/dist/main/
+ * GoTrueClient.js, `_getUrlForProvider`).
+ *
+ * Google gets `prompt=select_account`. Without it, Google can reuse the
+ * Google account the browser is already signed in to and skip its chooser,
+ * and signing out of this app does not sign the browser out of Google. The
+ * owner reported it on 2026-10-07: after one Google sign-in, a second
+ * account could not be chosen. That this is Google's no-`prompt` behaviour
+ * is an assumption from Google's OpenID Connect docs, confirmed only once
+ * a real second account sees the chooser.
+ *
+ * Discord is left as it was: nobody has reported it, and its `prompt`
+ * values mean something different.
+ */
+export function oauthQueryParams(provider: string): Record<string, string> | undefined {
+  return provider === "google" ? { prompt: "select_account" } : undefined;
+}
