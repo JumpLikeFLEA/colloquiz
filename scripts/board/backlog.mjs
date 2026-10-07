@@ -1189,6 +1189,27 @@ export const CARDS = [
     notes: 'priority:low. Proposed 2026-09-27 during ANON-006 (#121) privilege review, not blocking any open card. Scope widened 2026-09-27 during OPS-008 to also report on funnel_events_creation_log (docs/decisions/0069).',
   },
   {
+    key: 'OPS-016',
+    title: 'Privacy policy housekeeping: error-monitoring text and version/date',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2202,
+    dependsOn: [],
+    goal:
+      'docs/release/legal/privacy-policy.md still describes an error-monitoring service (the paragraph ' +
+      'after the funnel-events one, and the section 7 "Error reports" retention row), although Sentry was ' +
+      'removed in OPS-012 (0046/0047). Its section 13 promises a new version number and date with every ' +
+      'change, but OPS-008, OPS-009 and ANON-009 all changed the policy without bumping "Version 1.0 · ' +
+      'Last updated 2026-09-26".',
+    acceptance: [
+      'Every mention of error monitoring is removed or matches what the code does. `rg -i "sentry|error.monitor|error report" docs/release/legal` printed before and after; subprocessors.md checked the same way.',
+      'Version and Last-updated date bumped. A decision records whether every future policy edit bumps them, written where the next session editing the policy will see it.',
+      '/privacy renders: HTTP 200 and the changed text present.',
+    ],
+    notes: 'Proposed in #135.',
+  },
+  {
     key: 'SHELL-014',
     title: 'Colloquiz gets its own root layout',
     milestone: 'M2',
@@ -1692,6 +1713,77 @@ export const CARDS = [
     notes: 'Attribution is the signup moment, not the first-ever visit; a first-visit model would need a cross-session identifier, which 0069 rules out. No backfill. Out of scope: the admin stats view (M3), Telegram sign-in (M3; it will reuse /auth/callback and so inherit this write), and M3\'s sign-in prompt on lessons the partner does not mark open (partner, 2026-10-07: after sign-in the learner returns to that same lesson, so `next` is the lesson path and the course resolves through this same parser). Spec: claude/partner-spec-cohort-course.md §4.7 in the claude.ai project.',
   },
   {
+    key: 'ANON-013',
+    title: 'Anonymous lesson attempts are stored locally and migrate at signup',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2150,
+    dependsOn: [],
+    goal:
+      'docs/handoff.md ("Audience and language"): "progress lives in localStorage until registration, ' +
+      'then migrates." The pieces exist: the local attempt store (lib/lessonPlayer/attemptStore.ts, ' +
+      'ANON-002), the cross-browser stash (RegistrationOffer stashLocalAttempts -> /api/pending-claims -> ' +
+      '/auth/confirm claim, ANON-006/ANON-004) and the same-browser mount-time flush (LessonPlayer ' +
+      'recordSignedInAttempt, 0068 Decision 6). But LessonPlayer.tsx:196 returns before ' +
+      'attemptStore.record() unless the learner is already signed in, and that is the only `.record(` ' +
+      'call in app/ and lib/ (4edf65a, ANON-005). So an anonymous learner\'s attempts never reach ' +
+      'localStorage and both migration paths upload nothing. Measured in ANON-009\'s OAuth test ' +
+      '(2026-10-07, #135): a learner who answered every exercise of ' +
+      'auth003-smoke-test/one-of-each-item-type and signed up with Google had 0 lesson_attempts and no ' +
+      'new pending_claims row.',
+    acceptance: [
+      'An anonymous learner\'s scored block is written to the local attempt store, with no network call and no @supabase/ssr chunk loaded on that path; the signed-in path is unchanged. A LessonPlayer test covers it and fails on the current code.',
+      'Same browser, OAuth: an anonymous learner answers a free lesson, signs up from the signup offer and lands back with every attempt as a lesson_attempts row; the course page shows the lesson as attempted with its best score. Rows printed.',
+      'Cross-browser email (confirmation ON, local stack): the pending_claims stash carries the attempts and /auth/confirm\'s claim turns them into lesson_attempts rows. Rows printed.',
+      'The decision file records why ANON-004/ANON-005\'s verification did not catch this, read from their closing comments. Suspected pattern (a hypothesis until confirmed): a check that passed on a seeded or empty store.',
+      '`npm run check && npm test` exit 0. `npm run budget` before and after for the lesson routes; the anonymous path ships no new chunk.',
+    ],
+    notes: 'Found during ANON-009\'s OAuth test (#135 evidence comment). Blocks OPS-010. Out of scope: whether the lesson should show the just-finished result after the signup redirect (it re-renders empty today); raise it as its own card if the course page\'s best score is not enough.',
+  },
+  {
+    key: 'ANON-014',
+    title: 'Attribute signups that start from the landing "Log in" link',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2209,
+    dependsOn: ['ANON-009'],
+    goal:
+      'ANON-009 records the signup course and channel only when the signup redirect threads `source`. ' +
+      'AuthScreen threads neither value: its email signup passes a bare /auth/confirm as emailRedirectTo ' +
+      '(app/(colloquiz)/(auth)/AuthScreen.tsx:261) and its OAuth callback carries `next` only, never ' +
+      '`source` (:294-296). The landing header\'s "Log in" (app/(english)/LandingHeader.tsx:36) leads ' +
+      'there, so a learner who registers that way gets no signup_acquisitions row.',
+    acceptance: [
+      'A signup that starts from the English surface\'s login entry point threads `source` (getCurrentFunnelSource(), null under GPC/DNT) and `next` into both the email and OAuth redirects. Colloquiz-only signups are unaffected.',
+      'Tests: from that entry point, email and OAuth reach /auth/confirm and /auth/callback with the source; a GPC/DNT visitor sends none.',
+      'One signup per method from the landing link, each with its signup_acquisitions row printed (email needs confirmation ON).',
+      'Hypothesis from #135\'s audit, confirmed or refuted with a printed redirect chain: AuthScreen\'s email confirmation unwraps `next` to a bare /auth/confirm and ends at /login?error=confirm_expired.',
+    ],
+    notes: 'Proposed in #135. Interacts with SHELL-019, which decides what the English header shows a signed-in learner.',
+  },
+  {
+    key: 'ANON-015',
+    title: 'Signup offer works when browser storage is blocked',
+    milestone: 'M2',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2204,
+    dependsOn: [],
+    goal:
+      'Hypothesis from #135\'s audit, unverified: getCurrentFunnelSource() (lib/funnelSource.ts:96-106) ' +
+      'reads window.sessionStorage, and RegistrationOffer.tsx calls it inside the signup handlers\' try ' +
+      'blocks (buildEmailRedirectTo, handleOAuth). If storage access throws (storage blocked), the signup ' +
+      'would fail with the generic error instead of only losing the source.',
+    acceptance: [
+      'Reproduce first: a test, or a real browser with storage blocked, shows whether signUp / signInWithOAuth is reached when sessionStorage throws. If it does not reproduce, close the card with that evidence.',
+      'If it reproduces: the signup proceeds with source = null (no acquisition row, per 0069/0081), covered by a test that fails on the current code.',
+      'The same check for the local attempt store reads and writes that ANON-013 adds to the anonymous lesson path.',
+    ],
+    notes: 'Proposed in #135.',
+  },
+  {
     key: 'ANON-005',
     title: 'Signed-in learners record attempts directly',
     milestone: 'M2',
@@ -1915,6 +2007,29 @@ export const CARDS = [
       'that needs per-block language data the authoring model does not have.',
   },
   {
+    key: 'SHELL-019',
+    title: 'Account state on the English surface: signed-in indicator and sign-out',
+    milestone: 'M2',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2206,
+    dependsOn: [],
+    goal:
+      'The English surface has no account chrome. LandingHeader.tsx:36 links "Log in" to /login for ' +
+      'everyone; a signed-in learner who clicks it is sent straight back to / by proxy.ts, so the link ' +
+      'looks dead. The only sign-out is in AppSidebar.tsx, inside the Colloquiz shell. Found in ANON-009\'s ' +
+      'OAuth test (#135): after signing up, the owner could not tell whether they were signed in and could ' +
+      'not sign out from the English surface.',
+    acceptance: [
+      'A decision file records how `/`, the course page and the lesson page know a learner is signed in without breaking the performance boundary (docs/handoff.md: the landing and the free lesson render WITHOUT an authenticated Supabase session, with no @supabase/ssr client JS on the critical path). Options with measured cost.',
+      'A signed-in learner sees that they are signed in and can sign out from `/`, the course page and the lesson page. A signed-out visitor sees "Log in" exactly as today, and a signed-in learner does not see it.',
+      'Copy follows the per-route language rules (landing and course page: EN/RU toggle; lesson page: English).',
+      'docs/ui-decisions.md entry in the same commit.',
+      '`npm run budget` before and after for `/`, the course page and the lesson pages; `/` stays within 180 KB (177.3 KB at 89e4714).',
+    ],
+    notes: 'Proposed in #135. The footer stays the only path to /app (SHELL-012, 0062); sign-out is not a second path to Colloquiz.',
+  },
+  {
     key: 'OPS-010',
     title: 'Launch rehearsal (M2 exit)',
     milestone: 'M2',
@@ -1924,7 +2039,7 @@ export const CARDS = [
     dependsOn: [
       'SHELL-010', 'SHELL-011', 'SHELL-012', 'SHELL-013', 'ANON-004', 'ANON-005',
       'OPS-006', 'OPS-007', 'OPS-008', 'OPS-009', 'PLAY-007', 'INFRA-001',
-      'ANON-009',
+      'ANON-009', 'ANON-013',
     ],
     goal:
       'M2\'s bar, proven end to end on production: a reel viewer can play a ' +
