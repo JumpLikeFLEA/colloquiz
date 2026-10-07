@@ -12,12 +12,8 @@ import { CourseCard } from "./CourseCard";
 import { HeroDemo } from "./HeroDemo";
 import type { LandingLang } from "./landingCopy";
 import { landingCopy, LANDING_LANG_COOKIE } from "./landingCopy";
-
-/** Hero text entry animation (tw-animate-css, CSS only). `fill-mode-both`
- * holds each line at its start state through its stagger delay instead of
- * flashing in place first. */
-const HERO_ENTER_CLASS =
-  "animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both motion-reduce:animate-none";
+import { SectionHeading } from "./SectionHeading";
+import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLASS } from "./surfaceClasses";
 
 /**
  * Landing page body, as a Client Component: holds the EN/RU toggle state
@@ -83,7 +79,7 @@ export function LandingContent({
   const primaryCta = (
     <Link
       href={heroHref}
-      className="group inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-deep shadow-lg shadow-brand-deep/30 outline-none transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className={WHITE_CTA_CLASS}
     >
       {t.ctaPrimary}
       <ArrowRight
@@ -96,14 +92,14 @@ export function LandingContent({
   return (
     <>
       <div className="flex flex-1 flex-col">
-        <section className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-brand to-brand-accent text-white">
+        <section className={GRADIENT_BAND_CLASS}>
           {backdrop}
           <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-10 pb-20 pt-5 sm:pb-24 lg:gap-14 lg:pb-28 lg:pt-6`}>
             <LandingHeader lang={lang} onSetLang={handleSetLang} />
 
             <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
               <div className="flex flex-col items-start gap-5">
-                <span className={`${HERO_ENTER_CLASS} inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/20`}>
+                <span className={`${HERO_ENTER_CLASS} ${GLASS_PILL_CLASS}`}>
                   {t.heroEyebrow}
                 </span>
                 <h1 className={`${HERO_ENTER_CLASS} delay-75 text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl`}>
@@ -199,15 +195,5 @@ export function LandingContent({
       </div>
       <LandingFooter lang={lang} />
     </>
-  );
-}
-
-function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wider text-brand-text">{eyebrow}</span>
-      <h2 className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">{title}</h2>
-      {subtitle && <p className="text-sm text-muted-foreground sm:text-base">{subtitle}</p>}
-    </div>
   );
 }

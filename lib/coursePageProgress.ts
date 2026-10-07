@@ -80,11 +80,12 @@ export function publishedLessonsOnly<T extends { published_version_id: string | 
   return rows.filter((r) => r.published_version_id !== null && r.archived_at === null);
 }
 
-export type CourseTotals = { lessonCount: number; totalMinutes: number | null; allFree: boolean };
+export type CourseTotals = { lessonCount: number; exerciseCount: number; totalMinutes: number | null; allFree: boolean };
 
 /**
  * The course page hero's size line and "whole course is free" flag
- * (docs/decisions/0079 D1/D3). `totalMinutes` follows
+ * (docs/decisions/0079 D1/D3). `exerciseCount` sums each lesson's
+ * `published_item_count` (= its practice-block count). `totalMinutes` follows
  * lib/catalogueSummary.ts's rule — null rather than a partial sum when any
  * lesson has no estimate, so the hero never understates the course and
  * never disagrees with the catalogue card that led here. `allFree` is false
@@ -98,7 +99,8 @@ export function courseTotals(lessons: readonly PublicCourseLesson[]): CourseTota
     lessonCount > 0 && lessons.every((l) => l.estimatedMinutes !== null)
       ? lessons.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0)
       : null;
-  return { lessonCount, totalMinutes, allFree };
+  const exerciseCount = lessons.reduce((sum, l) => sum + l.itemCount, 0);
+  return { lessonCount, exerciseCount, totalMinutes, allFree };
 }
 
 export type LessonNav<T> = { position: number; total: number; next: T | null };

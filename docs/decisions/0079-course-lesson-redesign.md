@@ -79,3 +79,109 @@ as `published_item_count`. The "N заданий" on the course page and the
 
 Verified: `/courses/auth003-smoke-test/one-of-each-item-type` still links
 "Следующий урок" to `/9`, and `/9` (the last lesson) shows none.
+
+## Decision 1 — course page: a gradient hero band, then the lessons, one column edge
+
+Settled in the grill, choosing between a gradient hero band, a two-column
+light page with a sticky summary card, and a full-bleed cover banner. The
+band won because it carries the landing's look (0078) straight through,
+and because a banner depends on every course having a good wide cover,
+which nothing guarantees.
+
+- **Top bar.** `BandTopBar` holds the wordmark and a back link.
+- **Lead.** The hero leads with `subtitle`, the ≤200-character catalogue
+  summary, and falls back to `description`. The full `description` gets
+  an "О курсе" section below the band only when it differs from the lead,
+  so a long description never stretches the band.
+- **Size line.** The hero's size line comes from `courseTotals`
+  (lib/coursePageProgress.ts). Minutes are omitted when any lesson lacks
+  an estimate, the same rule the catalogue card follows (0078 D2), so the
+  two never disagree. An exercise count of 0 is hidden; the real
+  smoke-test course has a lesson with none.
+- **Missing cover.** At `lg` there is a translucent level tile, not
+  `CourseCard`'s gradient tile, which would be gradient on gradient. On a
+  phone there is no tile at all, because the level pill already says it
+  and a tile would push the lesson list down.
+- **Alignment (implementation call).** The "О курсе" text is capped at
+  `max-w-3xl` for line length, but it is LEFT-aligned to the hero's
+  column edge, not centred. A centred narrower block under a left-aligned
+  hero is the exact misalignment the owner reported.
+- **Motion (implementation call).** The hero has the landing's
+  tw-animate-css entry stagger, off under reduced motion. There is no
+  `.reveal-on-scroll` on the sections below. They are usually already in
+  view on load, where a scroll-driven fade leaves the list half-faded
+  until the visitor scrolls.
+
+## Decision 2 — the two progress numbers render only once something is attempted
+
+The handoff requires "two numbers, never blended", and that is kept. What
+changed is when they show. Today that is only for a signed-in learner
+with attempts, because anonymous attempts aren't read on this page (see
+lib/courseAttempts.ts). An anonymous visitor was always shown "0/N
+пройдено уроков", which carried no information. When the numbers do
+show, they are two separate glass tiles in the hero. An attempted lesson
+row gets a ✓ on its number tile and "Лучший: N%".
+
+## Decision 3 — "free" is marked once for an all-free course
+
+At launch every lesson of the first courses is free (docs/handoff.md,
+2026-09-24), so a per-row "Бесплатно" badge would sit on every row.
+
+- **All-free course.** One "Весь курс бесплатно" pill in the hero, no
+  per-row badges, and the CTA reads "Начать курс".
+- **Mixed course.** A per-row badge on the free lessons, and the original
+  "Начать первый бесплатный урок" CTA.
+- **Paid rows.** No lock icon either way. There is no forced order, and
+  the paid-preview UX is M3.
+
+Free is still the author's explicit `inFreeSample` flag, never derived
+from position.
+
+## Decision 9 — the "Alliengll" wordmark extends to the course and lesson pages
+
+0078 put "Alliengll" in the landing header as literal display text, not a
+rename. The course and lesson bands carry the same wordmark, linking to
+`/`. It is still not a branding decision: `alliengllCopy.siteName` stays
+"Colloquiz", and so does the `%s · Colloquiz` title template. There is no
+EN/RU toggle (the landing exception in docs/handoff.md stays
+landing-only) and no login link (registration is offered after a lesson,
+never before one).
+
+## Decision 10 — how this was verified without touching the hosted database
+
+Owner-approved in the grill:
+
+- **Fixtures.** A dev-only fixture module, gated on `NODE_ENV=development`
+  plus `ENGLISH_FIXTURES=1` and on `fixture-*` slugs, hooked into
+  `getPublicCourse`, `getCourseAttemptSummary`, `getPublicLesson` and
+  `getLessonNav`. It was kept as a scratchpad patch, reversed before every
+  commit and re-applied after, so it is in no commit (the 0078 D6
+  precedent). Fixture shapes: no cover, a long title, a long two-paragraph
+  description, 8 lessons, mixed free/paid, null minutes, all-free with a
+  real cover, and recorded attempts.
+- **Real data.** The real published `auth003-smoke-test` course was
+  checked too.
+- **Screenshots.** Playwright (bundled Chromium) at 390×844 and 1440×900,
+  in light and dark, with reduced motion. `scrollWidth` was checked equal
+  to the viewport width (no horizontal scroll) on every shot.
+
+## Budget
+
+The committed budget routes are `/courses/future-imperfect/*`, which 404
+on hosted (probed 2026-10-07; only `auth003-smoke-test` is published). So
+these numbers come from `npm run budget` run with a temporary, uncommitted
+ROUTES edit pointing at that course. The committed budgets are unchanged.
+
+Before this work, at e1c124e:
+
+| route | KB |
+|---|---|
+| `/login` | 284.1 |
+| `/` | 179.8 / 180 |
+| `/courses/auth003-smoke-test` | 173.1 |
+| `/courses/auth003-smoke-test/9` | 263.0 |
+| `/courses/auth003-smoke-test/one-of-each-item-type` | 291.3 |
+
+The two lesson figures are above the 260/290 targets. Those targets were
+set for different lessons (`future-imperfect`'s), so the comparison that
+means something here is the before→after delta on the same route.

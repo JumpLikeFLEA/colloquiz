@@ -12,6 +12,11 @@
 export const alliengllCopy = {
   siteName: "Colloquiz",
 
+  // docs/decisions/0079 D9: the course and lesson pages' header wordmark —
+  // the same literal display text as the landing header's (0078), not a
+  // rename. siteName above (and the `%s · Colloquiz` title template) stays.
+  wordmark: "Alliengll",
+
   landing: {
     heroTitle: "Английский без напряжения",
     heroSubtitle:
@@ -27,16 +32,24 @@ export const alliengllCopy = {
     freeSampleBadge: "Бесплатно",
   },
 
+  // docs/decisions/0079: the course page redesign. New strings pending
+  // owner/partner review, same as 0078's landing copy.
   course: {
-    lessonsLabel: "уроков",
+    backToCatalogue: "Все курсы",
     startFirstFree: "Начать первый бесплатный урок",
+    startCourse: "Начать курс",
+    allFree: "Весь курс бесплатно",
     progressAttempted: "пройдено уроков",
     progressAverage: "средний результат",
-    itemCountLabel: "Заданий",
+    progressOf: "из",
+    lessons: { one: "урок", few: "урока", many: "уроков", other: "урока" },
+    exercises: { one: "задание", few: "задания", many: "заданий", other: "задания" },
     minutesLabel: "мин",
     freeBadge: "Бесплатно",
-    bestScoreLabel: "Лучший результат",
-    noCover: "Без обложки",
+    bestScoreLabel: "Лучший",
+    aboutTitle: "О курсе",
+    lessonsEyebrow: "Программа",
+    lessonsTitle: "Уроки курса",
     noFreeLesson: "Скоро появятся бесплатные уроки",
     noLessons: "Уроки скоро появятся — загляните позже.",
   },

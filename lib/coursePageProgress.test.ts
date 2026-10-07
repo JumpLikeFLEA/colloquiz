@@ -87,7 +87,7 @@ describe("courseTotals", () => {
       lesson({ slug: "a", ordinal: 1, estimatedMinutes: 12, inFreeSample: true }),
       lesson({ slug: "b", ordinal: 2, estimatedMinutes: 15, inFreeSample: true }),
     ];
-    expect(courseTotals(lessons)).toEqual({ lessonCount: 2, totalMinutes: 27, allFree: true });
+    expect(courseTotals(lessons)).toEqual({ lessonCount: 2, exerciseCount: 10, totalMinutes: 27, allFree: true });
   });
 
   it("is not allFree when any lesson is paid", () => {
@@ -101,7 +101,7 @@ describe("courseTotals", () => {
   });
 
   it("claims nothing for a course with no lessons", () => {
-    expect(courseTotals([])).toEqual({ lessonCount: 0, totalMinutes: null, allFree: false });
+    expect(courseTotals([])).toEqual({ lessonCount: 0, exerciseCount: 0, totalMinutes: null, allFree: false });
   });
 });
 

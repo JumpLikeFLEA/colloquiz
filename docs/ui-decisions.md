@@ -945,3 +945,40 @@ Appended to in the same commit as the change it records. Referenced from
 
   New Russian copy (value strip, steps, demo feedback, closing card) is
   pending owner/partner review.
+- Course page redesigned (2026-10-07, ad-hoc, docs/decisions/0079),
+  following the 0078 landing vocabulary. `/courses/[courseSlug]` is now:
+  - a full-bleed gradient hero band (`CourseHero.tsx`) holding
+    `BandTopBar` (the "Alliengll" wordmark linking to `/`, and "← Все
+    курсы" linking to `/#catalogue`; no toggle, no login), the level pill,
+    a "Весь курс бесплатно" pill when every lesson is free, the title, the
+    lead (the short `subtitle`, falling back to `description`), a size line
+    ("N уроков · ~M мин · K заданий"), the two progress numbers as two
+    glass tiles, and the white CTA ("Начать курс" when the whole course is
+    free). The cover sits on the right at `lg` and above the text on a
+    phone. A course with no cover gets a translucent level tile at `lg`
+    only, not `CourseCard`'s gradient tile, which would be gradient on
+    gradient;
+  - an "О курсе" section with the full `description`, only when it isn't
+    already the hero's lead;
+  - "Уроки курса": numbered rows (`LessonListItem.tsx`) using the
+    landing's step-number tile and the catalogue card's hover lift. Each
+    row shows its minutes and exercises on the right at `sm`+, and under
+    the description on a phone.
+
+  Everything below the band is left-aligned to the hero text's column
+  edge. Do not centre a narrower block under a left-aligned hero; that
+  misalignment is what this replaced.
+
+  Progress shows ONLY once something has been attempted. It is still two
+  numbers, never blended (docs/handoff.md); "0 из 8" for every anonymous
+  visitor said nothing. An attempted row gets a ✓ on its tile and
+  "Лучший: N%".
+
+  "Бесплатно" is per-row only when the course is NOT entirely free; on an
+  all-free course it would repeat on every row. Paid rows get no lock
+  icon, since the paid preview is M3.
+
+  Shared pieces moved out of `LandingContent.tsx`, with no change to the
+  landing's output: `SectionHeading.tsx`, and `surfaceClasses.ts`
+  (gradient band, hero entry stagger, white CTA, glass pill, lift card).
+  The page adds no client JS: every new component is a Server Component.
