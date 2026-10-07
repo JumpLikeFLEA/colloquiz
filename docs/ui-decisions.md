@@ -1026,3 +1026,21 @@ Appended to in the same commit as the change it records. Referenced from
   the SHELL-011 entry above kept. It showed at the top while the learner
   was at the bottom. Do not restore it: the strip and the completion card
   carry the score.
+- Lesson completion card is state-aware (2026-10-07, docs/decisions/0079
+  Decision 7), REVISING the 2026-09-26 "Lesson completion screen" entry's
+  always-"Урок завершён" footer.
+
+  Until every exercise has an answer, the footer is a neutral dashed card:
+  "Осталось N заданий" plus a quiet next-lesson link. Once every exercise
+  is answered, it is a gradient card in the landing's closing-CTA look:
+  "✓ Урок завершён", the score as a big number with "earned из possible"
+  (ru-RU decimals), and a white next-lesson CTA, or "Назад к курсу" on the
+  last lesson.
+
+  The registration offer is now its own card under the score, and it
+  shows only once EVERY exercise is answered, revising 0068 Decision 2's
+  "any item scored". "Разбор ответов" is its own card under that.
+
+  "Every exercise answered" comes from `sessionProgress`, NOT
+  `lessonScore.status === "scored"`, which is true after the first answer.
+  Do not swap them back.

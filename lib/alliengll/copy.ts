@@ -96,6 +96,11 @@ export const alliengllCopy = {
     scoreLabel: "Ваш результат",
     nextLesson: "Следующий урок",
     reviewTitle: "Разбор ответов",
+    // docs/decisions/0079 D7: "17 из 20" under the score, and the card shown
+    // until every exercise is answered ("Осталось 3 задания").
+    scoreOf: "из",
+    remainingPrefix: "Осталось",
+    remainingBody: "Ответьте на все задания — и здесь появится ваш результат.",
   },
 
   signupOffer: {

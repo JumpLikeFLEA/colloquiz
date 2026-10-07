@@ -311,3 +311,85 @@ Verified:
   line up.
 - **Strip behaviour.** After answering two exercises and scrolling, the
   strip is stuck to the top and reads "2/8", with the bar a quarter full.
+
+## Decision 7 — a state-aware completion card; the registration offer waits for every exercise
+
+This revises 0058 Decision 1 and 0068 Decision 2.
+
+**The problem.** `LessonCompletion` was always rendered with the heading
+"Урок завершён", so a lesson nobody had touched announced itself
+finished. Separately, a re-read of the scoring code turned up a surprise:
+`scoreSession(...).status === "scored"` turns true on the FIRST answer
+(`aggregateLessonScore`, lib/items/lessonScore.ts, is "scored" whenever
+`possible > 0`). 0058 Decision 1 and 0068 Decision 2 both say so. As a
+result, the registration offer appeared after one answer, even though
+docs/handoff.md says "after a completed lesson". 0068 used "any item
+scored" only because "there is no 'every item attempted' signal anywhere
+in the player". `sessionProgress` (Decision 5a) is that signal.
+
+**The card now:**
+- **Until every exercise has an answer:** a neutral dashed card with
+  "Осталось N заданий" (pluralised), one line of explanation, and the
+  next-lesson link in a quiet brand-subtle style.
+- **Once every exercise is answered:** a gradient card in the landing's
+  closing-CTA look, containing:
+  - a "✓ Урок завершён" pill
+  - "Ваш результат", with the score as a large number and "earned из
+    possible" under it, formatted ru-RU, so partial credit reads "1,5 из
+    2", not "1.5"
+  - a white "Следующий урок: <title> →" CTA, or "Назад к курсу" on the
+    course's last lesson. The title wraps rather than truncates; on a
+    phone, truncation cut it to "Как вежливо з…".
+- **A lesson with no exercises:** only the next-lesson link, or nothing at
+  all if it is also the last lesson. No empty card.
+
+**The registration offer** (owner decision during implementation) now
+renders only once every exercise is answered, as its own card under the
+score. "Разбор ответов" is its own card under that, available in both
+states.
+
+**Not changed:** the `lesson_complete` funnel event (OPS-008, 0069) still
+fires on the first answer. Changing what a funnel step means mid-stream
+breaks comparability with what has already been collected. The owner
+chose to leave it and propose a separate card (see "Proposed follow-ups"
+below).
+
+Verified:
+- **Tests.** LessonCompletion.test.tsx now covers:
+  - no offer while exercises remain, even when the lesson is already
+    scored (the 0068 D2 revision, as a test)
+  - "Осталось 1 задание" without "Урок завершён" before completion
+  - the finished state with "50%"
+  - "Назад к курсу" linking to `/courses/c` on the last lesson
+
+  LessonPlayer.test.tsx's PLAY-007 test now walks the countdown state into
+  the finished state.
+- **Screenshots** (selection-only fixture lessons, so a script could
+  answer every exercise): the countdown card at 1440, the finished card
+  with next-lesson CTA at 1440 and 390, and the last-lesson finished card
+  at 390 in light and dark.
+- **Admin shell.** A second temporary admin user (created, used, deleted;
+  `getUserById` returns no user, 0 `profiles` rows) found 0
+  `role=progressbar` elements in both the admin preview and the demo. The
+  pages demonstrably rendered: 5 and 8 "Задание N из M" pills, and the
+  preview's "Осталось" card present. The positive control on the public
+  lesson `/courses/auth003-smoke-test/one-of-each-item-type` found 1
+  progressbar and 5 pills. Lesson `/9`, which has 0 exercises, found 0
+  progressbars, by design.
+
+  A first run of this check printed 0 pills, because shell escaping had
+  turned the regex's `\d+` into `d+`. That empty result was discarded as
+  evidence, not accepted.
+
+## Proposed follow-ups (not done here)
+
+- **Align `lesson_complete` with "every exercise answered".** Acceptance:
+  the OPS-008 `lesson_complete` event fires on the transition into
+  `sessionProgress` answered === total, and docs/decisions/0069 records
+  the definition change and the date, so funnel numbers before and after
+  aren't compared as one series.
+- **Admin preview header alignment.** Acceptance: PreviewClient's "Back to
+  editor / Preview" header uses the reading frame
+  (`LESSON_READING_FRAME_CLASS`), so it lines up with the content below it
+  the way the public lesson band now does. Left alone here because it is
+  Colloquiz authoring chrome, outside this request.

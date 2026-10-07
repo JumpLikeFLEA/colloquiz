@@ -279,7 +279,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
 });
 
 describe("LessonPlayer — completion screen (PLAY-007)", () => {
-  it("shows the Russian score line once an item is attempted, and no review section before any wrong answer", async () => {
+  it("counts down to the finished state, then shows the score, with no review section before any wrong answer", async () => {
     const onScore = vi.fn<(result: ItemScoreResult) => void>();
     render(
       <LessonPlayer
@@ -289,21 +289,25 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
       />,
     );
 
-    // The footer heading is always present (single-page player, no "reached
-    // the end" transition — see LessonCompletion's doc comment); only the
-    // score line depends on an attempt existing.
-    expect(screen.getByText("Урок завершён")).toBeDefined();
+    // The footer is always present (single-page player, no "reached the end"
+    // transition), but until every exercise is answered it counts what's left
+    // rather than claiming "Урок завершён" (docs/decisions/0079 D7).
+    expect(screen.getByText("Осталось 1 задание")).toBeDefined();
+    expect(screen.queryByText("Урок завершён")).toBeNull();
     expect(screen.queryByText(/Ваш результат/)).toBeNull();
 
     fireEvent.click(await screen.findByRole("radio", { name: "She goes to school every day." })); // correct
     fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(screen.getByText("Урок завершён")).toBeDefined();
-    // ONE element carries this line: LessonCompletion's own score line. The
-    // top-of-column score banner that made it two (SHELL-011) was removed by
-    // docs/decisions/0079 D5. The lesson page's sticky strip shows the score
-    // instead, but this test passes no `renderProgress`, so it renders none.
-    expect(screen.getAllByText(/Ваш результат: 100% \(1\/1\)/).length).toBe(1);
+    // The score now lives only in LessonCompletion's finished card. The
+    // top-of-column banner that used to repeat it (SHELL-011) was removed by
+    // docs/decisions/0079 D5, and this test passes no `renderProgress`, so
+    // the lesson page's sticky strip isn't rendered either.
+    expect(screen.getByText("Ваш результат")).toBeDefined();
+    expect(screen.getAllByText("100%")).toHaveLength(1);
+    expect(screen.getByText("1 из 1")).toBeDefined();
+    expect(screen.queryByText(/Осталось/)).toBeNull();
     expect(screen.queryByText("Разбор ответов")).toBeNull(); // nothing wrong to review
   });
 

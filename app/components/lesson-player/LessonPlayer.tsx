@@ -327,6 +327,7 @@ function LessonPlayerBody({
         </div>
         <LessonCompletion
           score={lessonScore}
+          progress={{ answered, total }}
           explanations={explanationsForSession(document, results)}
           courseSlug={courseSlug}
           nextLesson={nextLesson}
