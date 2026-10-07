@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock, Gift, ListChecks } from "lucide-react";
@@ -32,6 +33,8 @@ import { courseCopy } from "./courseCopy";
  *
  * The top bar carries the EN/RU toggle shared with the landing page
  * (docs/decisions/0080); every string here comes from `courseCopy[lang]`.
+ * `account` is the signed-in learner's `AccountMenu` (SHELL-019,
+ * docs/decisions/0086), null for a signed-out visitor.
  */
 export function CourseHero({
   lang,
@@ -42,6 +45,7 @@ export function CourseHero({
   totals,
   progress,
   cta,
+  account,
 }: {
   lang: SurfaceLang;
   title: string;
@@ -51,6 +55,7 @@ export function CourseHero({
   totals: CourseTotals;
   progress: CourseProgress;
   cta: { href: string; label: string } | null;
+  account: ReactNode;
 }) {
   const c = courseCopy[lang];
 
@@ -61,6 +66,7 @@ export function CourseHero({
         <BandTopBar
           back={{ href: "/#catalogue", label: c.backToCatalogue }}
           toggle={<LanguageToggle lang={lang} label={c.languageGroupLabel} />}
+          account={account}
         />
 
         <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">

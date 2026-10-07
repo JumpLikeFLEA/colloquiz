@@ -38,7 +38,11 @@ import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, WHITE_CTA_CLAS
  * overlapping its bottom edge, the catalogue, "how it works", and a closing
  * gradient CTA card repeating the hero's one-tap link. `backdrop`,
  * `heroChips` and `valueIcons` are rendered server-side by page.tsx and
- * passed in, so their purely decorative markup costs no client JS. Sections below the
+ * passed in, so their purely decorative markup costs no client JS. `account`
+ * is the same idea for the header's account chip (SHELL-019, docs/decisions/
+ * 0086): page.tsx renders it once per language, server-side, and this
+ * component only picks the one matching the toggle; null for a signed-out
+ * visitor, who gets the "Log in" link. Sections below the
  * hero fade up on scroll via the CSS-only `.reveal-on-scroll`
  * (app/globals.css) — no observer, no script.
  *
@@ -58,6 +62,7 @@ export function LandingContent({
   backdrop,
   heroChips,
   valueIcons,
+  account,
 }: {
   courses: CatalogueCourse[];
   heroHref: string;
@@ -66,6 +71,7 @@ export function LandingContent({
   heroChips: ReactNode;
   /** One per `t.values` entry, same order (HeroDecor.tsx's valueIcons). */
   valueIcons: ReactNode[];
+  account: Record<SurfaceLang, ReactNode> | null;
 }) {
   const [lang, setLang] = useState<SurfaceLang>(initialLang);
   const t = landingCopy[lang];
@@ -89,7 +95,7 @@ export function LandingContent({
         <section className={GRADIENT_BAND_CLASS}>
           {backdrop}
           <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-10 pb-20 pt-5 sm:pb-24 lg:gap-14 lg:pb-28 lg:pt-6`}>
-            <LandingHeader lang={lang} onSetLang={setLang} />
+            <LandingHeader lang={lang} onSetLang={setLang} account={account?.[lang] ?? null} />
 
             <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
               <div className="flex flex-col items-start gap-5">

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { getPublicCourse } from "@/lib/coursePage";
+import { getSignedInAccount } from "@/lib/signedInAccount";
 import { bestScoreForLesson, courseProgress, courseTotals, firstFreeLesson } from "@/lib/coursePageProgress";
 // Direct path, not the `@/app/components/lesson-player` barrel: that barrel
 // also re-exports LessonPlayer + practiceRenderer (dnd-kit and every
@@ -13,6 +14,7 @@ import { bestScoreForLesson, courseProgress, courseTotals, firstFreeLesson } fro
 // barrel-import issue; out of scope to fix here since it's a Colloquiz admin
 // route the OPS-006 budget guard doesn't cover.
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
+import { AccountMenu } from "../../AccountMenu";
 import { SectionHeading } from "../../SectionHeading";
 import { courseCopy } from "./courseCopy";
 import { CourseHero } from "./CourseHero";
@@ -74,6 +76,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const firstFree = firstFreeLesson(course.lessons);
   const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
   const c = courseCopy[lang];
+  // SHELL-019 (docs/decisions/0086): the account chip, in the saved language.
+  const signedIn = await getSignedInAccount();
 
   const lead = course.subtitle ?? course.description;
   const about = course.description && course.description !== lead ? course.description : null;
@@ -93,6 +97,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         coverImageUrl={course.coverImageUrl}
         totals={totals}
         progress={progress}
+        account={signedIn && <AccountMenu email={signedIn.email} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           firstFree
             ? { href: `/courses/${courseSlug}/${firstFree.slug}`, label: totals.allFree ? c.startCourse : c.startFirstFree }

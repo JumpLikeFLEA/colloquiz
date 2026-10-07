@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
+import { getSignedInAccount } from "@/lib/signedInAccount";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
+import { AccountMenu } from "../../../AccountMenu";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
 import { StripBackLink } from "./StripBackLink";
@@ -55,6 +57,9 @@ export default async function LessonPage({
   if (lesson.state === "not_found") notFound();
 
   const nav = await getLessonNav(lesson.courseId, lessonSlug);
+  // SHELL-019 (docs/decisions/0086): the account chip, always English here
+  // (lesson chrome, docs/decisions/0080 Decision 5).
+  const signedIn = await getSignedInAccount();
   const band = (
     <LessonBand
       courseSlug={courseSlug}
@@ -64,6 +69,9 @@ export default async function LessonPage({
       position={nav && { index: nav.position, total: nav.total }}
       estimatedMinutes={lesson.estimatedMinutes}
       itemCount={lesson.itemCount}
+      account={
+        signedIn && <AccountMenu email={signedIn.email} lang="en" next={`/courses/${courseSlug}/${lessonSlug}`} />
+      }
     />
   );
 

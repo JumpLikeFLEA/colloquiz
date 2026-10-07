@@ -1102,3 +1102,32 @@ Appended to in the same commit as the change it records. Referenced from
   Russian. The admin preview and the demo change with it, by design. Do not
   add a toggle to the lesson page, and do not move these strings back to
   Russian, without asking the owner.
+- Account chip on the English surface (2026-10-07, SHELL-019,
+  docs/decisions/0086). A signed-in learner sees a white circle with their
+  email's initial (a person icon if the session has no email) on `/`, the
+  course page and the lesson page. On `/` it REPLACES the header's "Log in"
+  link, which a signed-in learner could not use (proxy.ts bounced /login
+  back to /). On the course and lesson pages it sits at the far right of
+  `BandTopBar`. Tapping it opens a card with "Signed in as <email>" and
+  "Sign out". A signed-out visitor sees exactly what they saw before:
+  "Log in" on `/` only.
+  - Zero client JS on purpose. `AccountMenu.tsx` is a Server Component; the
+    menu is a native `<details>`, and an open summary's `::before` is a
+    fixed full-viewport layer, so an outside tap closes it. There is no
+    Escape-to-close.
+  - Sign-out is a plain form POST to `/auth/sign-out`, which 303s back to
+    the same page, signed out. Do not turn it into a Server Action or a
+    client `signOut()`: the first re-renders the lesson player in place
+    with a new `attemptId`, the second ships `@supabase/ssr` to every
+    English route (+63.3 KB on `/`, measured in 0086).
+  - On `/`, page.tsx renders the menu in both languages and
+    `LandingContent` picks one with the toggle (the `EnglishFooterGate`
+    pattern). Course page: the saved language. Lesson page: English.
+    Strings in `app/(english)/accountCopy.ts`.
+  - The card uses the `popover` tokens and the sign-out button reuses the
+    paid-lesson card's "Back to course" button classes.
+  - Course page on a phone: with the toggle AND the chip in the top bar,
+    "← All courses" wrapped onto two lines at 360px. In that case only, the
+    back link shows just its arrow below `sm` (label kept as its
+    `aria-label`). The lesson page and signed-out views keep the label.
+  - Sign-out is not a path to `/app`; the footer stays the only one (0062).

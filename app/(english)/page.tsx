@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { getPublicCourse } from "@/lib/coursePage";
 import { firstFreeLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
+import { getSignedInAccount } from "@/lib/signedInAccount";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
+import { AccountMenu } from "./AccountMenu";
 import { GradientBackdrop, HeroChips, valueIcons } from "./HeroDecor";
 import { LandingContent } from "./LandingContent";
 
@@ -44,6 +46,18 @@ export default async function EnglishLandingPage() {
   // defaults to "en" (2026-09-28 owner call) for a first-time visitor.
   const initialLang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
 
+  // SHELL-019 (docs/decisions/0086): resolved here, server-side, so `/`
+  // ships no session-reading JS. Both languages are rendered so the
+  // landing's client-side toggle can switch the menu with the rest of the
+  // page, the same way the root layout hands EnglishFooterGate both footers.
+  const signedIn = await getSignedInAccount();
+  const account = signedIn
+    ? {
+        en: <AccountMenu email={signedIn.email} lang="en" next="/" />,
+        ru: <AccountMenu email={signedIn.email} lang="ru" next="/" />,
+      }
+    : null;
+
   return (
     // flex-1 (not min-h-svh): the root layout's wrapper div already sizes
     // itself to fill the viewport-minus-footer space (EnglishFooterGate
@@ -60,6 +74,7 @@ export default async function EnglishLandingPage() {
         backdrop={<GradientBackdrop />}
         heroChips={<HeroChips />}
         valueIcons={valueIcons()}
+        account={account}
       />
     </main>
   );

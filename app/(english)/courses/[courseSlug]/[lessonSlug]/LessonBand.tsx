@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Clock, ListChecks } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { pluralize } from "@/lib/pluralCategory";
@@ -22,7 +23,9 @@ import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../.
  * `LessonPageClient` as a node, so its markup and icons cost no client JS
  * (the 0078 Decision 5 pattern). The paid "not_available" state renders
  * the same band (D8), which is why the lesson-specific fields are plain
- * props rather than a `PublicLesson`.
+ * props rather than a `PublicLesson`. `account` is the signed-in learner's
+ * `AccountMenu` (SHELL-019, docs/decisions/0086), English like the rest of
+ * the lesson chrome; null for a signed-out visitor.
  */
 export function LessonBand({
   courseSlug,
@@ -32,6 +35,7 @@ export function LessonBand({
   position,
   estimatedMinutes,
   itemCount,
+  account,
 }: {
   courseSlug: string;
   courseTitle: string;
@@ -40,6 +44,7 @@ export function LessonBand({
   position: { index: number; total: number } | null;
   estimatedMinutes: number | null;
   itemCount: number;
+  account: ReactNode;
 }) {
   const p = alliengllCopy.player;
 
@@ -47,7 +52,7 @@ export function LessonBand({
     <section className={GRADIENT_BAND_CLASS}>
       <GradientBackdrop />
       <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
-        <BandTopBar back={{ href: `/courses/${courseSlug}`, label: p.backToCourse }} />
+        <BandTopBar back={{ href: `/courses/${courseSlug}`, label: p.backToCourse }} account={account} />
         <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
           <p className="line-clamp-1 text-sm font-medium text-white/75">{courseTitle}</p>
           <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{title}</h1>
