@@ -185,3 +185,26 @@ Before this work, at e1c124e:
 The two lesson figures are above the 260/290 targets. Those targets were
 set for different lessons (`future-imperfect`'s), so the comparison that
 means something here is the before→after delta on the same route.
+
+## Decision 11 — lesson images and videos move to reading width (revises 0043)
+
+Decided with the owner during implementation. The "before" screenshot of a
+lesson at 1440px showed what 0043 had left open ("seen as intended …
+pending a look in a real browser"): a 1024px video between 672px
+paragraphs and exercises. That is the misalignment the owner reported.
+
+`lessonBlockWidth` now puts `image` and `video` at reading width, alongside
+every other theory block and every practice block. `table` keeps its own
+FIT band, the only block that may grow wider, because a table genuinely
+needs the room. That left the "wide" band with no block, so it was
+removed from the type and from `LessonPlayer`'s switch rather than kept as
+a dead case. `ImageBlockView`'s `sizes` now matches: 672px at `lg`, 544px
+up to it, full width on a phone.
+
+Heading centring (`HEADING_WIDTH_CLASS`) is untouched. 0043 made it
+explicit policy, and that stands. Its original trigger, a left-aligned
+heading over a wider block, now only occurs above a wide table.
+
+**What would make us revisit it:** an author with an image that is
+unreadable at 672px, such as a dense diagram. The precedent to reach for
+is `table`'s FIT band, not a return to full-column breakout.

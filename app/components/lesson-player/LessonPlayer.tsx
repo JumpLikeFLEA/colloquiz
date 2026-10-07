@@ -29,8 +29,6 @@ function widthClassFor(block: LessonBlock): string {
       return READING_WIDTH_CLASS;
     case "fit":
       return FIT_WIDTH_CLASS;
-    case "wide":
-      return "";
   }
 }
 

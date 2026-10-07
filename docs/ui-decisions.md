@@ -982,3 +982,12 @@ Appended to in the same commit as the change it records. Referenced from
   landing's output: `SectionHeading.tsx`, and `surfaceClasses.ts`
   (gradient band, hero entry stagger, white CTA, glass pill, lift card).
   The page adds no client JS: every new component is a Server Component.
+- Lesson images and videos at reading width (2026-10-07, docs/decisions/0079
+  Decision 11), REVISING the 2026-09-26 "Lesson player: adaptive content
+  width" entry, which made `image`/`video` WIDE (full 1024px column). In a
+  real browser that breakout read as misaligned next to the 672px text, so
+  now every block is at reading width except `table`, which keeps its own
+  FIT band. The "wide" band no longer exists in `lessonBlockWidth`.
+  `ImageBlockView`'s `sizes` is 672px at `lg`. Heading centring is
+  unchanged. If an image really needs more room, reach for `table`'s FIT
+  band, not the old breakout.

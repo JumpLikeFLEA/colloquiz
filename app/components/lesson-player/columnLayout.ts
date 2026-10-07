@@ -47,8 +47,8 @@ export const HEADING_WIDTH_CLASS = "w-full lg:max-w-2xl lg:mx-auto lg:text-cente
  * is the same figure as `READING_WIDTH_CLASS`'s `max-w-2xl` floor — a sparse
  * table (few short columns) sits at reading width; a table that needs more
  * room grows up to the column width, then `TableBlockView`'s own
- * `overflow-x-auto` takes over. `image`/`video` stay full column width (no
- * wrapper class — see `lessonBlockWidth`'s "wide" case).
+ * `overflow-x-auto` takes over. Since docs/decisions/0079 this is the only
+ * band wider than reading width: `image`/`video` moved to reading width.
  */
 export const FIT_WIDTH_CLASS = "lg:mx-auto lg:w-fit lg:min-w-[42rem] lg:max-w-full";
 

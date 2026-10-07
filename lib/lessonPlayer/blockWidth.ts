@@ -1,6 +1,6 @@
 import type { LessonBlock } from "../lessons";
 
-export type LessonBlockWidth = "reading" | "wide" | "fit";
+export type LessonBlockWidth = "reading" | "fit";
 
 /**
  * Which column width a lesson-player block renders at (ad-hoc adaptive-width
@@ -10,7 +10,13 @@ export type LessonBlockWidth = "reading" | "wide" | "fit";
  *
  * `table` is "fit", not "wide" (owner review, 2026-09-26): a table sizes to
  * its own content, clamped between reading width and the full column,
- * rather than always claiming the whole column like `image`/`video`.
+ * rather than always claiming the whole column.
+ *
+ * `image`/`video` were "wide" (full column, a deliberate breakout) until
+ * docs/decisions/0079 moved them to reading width: in a real browser a
+ * 1024px video between 672px paragraphs read as misaligned, which 0043 had
+ * left open ("pending a look in a real browser"). That left "wide" with no
+ * block, so it was removed.
  */
 export function lessonBlockWidth(block: LessonBlock): LessonBlockWidth {
   if (block.kind === "practice") {
@@ -19,14 +25,13 @@ export function lessonBlockWidth(block: LessonBlock): LessonBlockWidth {
   switch (block.type) {
     case "table":
       return "fit";
-    case "image":
-    case "video":
-      return "wide";
     case "heading":
     case "prose":
     case "example":
     case "callout":
     case "list":
+    case "image":
+    case "video":
     case "self_check":
       return "reading";
     default: {
