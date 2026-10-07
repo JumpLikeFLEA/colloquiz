@@ -393,3 +393,23 @@ Verified:
   (`LESSON_READING_FRAME_CLASS`), so it lines up with the content below it
   the way the public lesson band now does. Left alone here because it is
   Colloquiz authoring chrome, outside this request.
+
+## Decision 8 — the paid "not_available" state gets the same shell
+
+No lesson can reach this state at launch: the first courses are entirely
+free, and the paid preview is M3. It still shouldn't look orphaned next
+to the new pages. It now renders the same `LessonBand` as a playable
+lesson, with "Урок N из M", minutes and "N заданий" in the band's pills,
+where the old screen had a bare "Заданий: 8" line. Below the band is one
+card with the existing "Этот урок открывается после покупки курса." and a
+"Назад к курсу" link.
+
+There is deliberately no buy CTA; that is M3's paid-preview card. The
+title, description, item count and minutes stay visible for every lesson
+(docs/handoff.md, "Preview, precisely"). Entitlement is untouched: the
+state is still decided by `can_read_lesson`, through `getPublicLesson`.
+`alliengllCopy.notAvailable.itemCountLabel` is gone because the band
+shows the count.
+
+Verified on the dev fixture's paid lesson, at 1440×900 (light) and
+390×844 (dark).

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
+// Direct path, not the lesson-player barrel (docs/decisions/0059).
+import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
 import { StripBackLink } from "./StripBackLink";
@@ -51,38 +54,51 @@ export default async function LessonPage({
 
   if (lesson.state === "not_found") notFound();
 
+  const nav = await getLessonNav(lesson.courseId, lessonSlug);
+  const band = (
+    <LessonBand
+      courseSlug={courseSlug}
+      courseTitle={lesson.courseTitle}
+      title={lesson.title}
+      description={lesson.description}
+      position={nav && { index: nav.position, total: nav.total }}
+      estimatedMinutes={lesson.estimatedMinutes}
+      itemCount={lesson.itemCount}
+    />
+  );
+
   if (lesson.state === "not_available") {
+    // docs/decisions/0079 D8: the paid, not-entitled state gets the same
+    // band as a playable lesson. Title, description, item count and
+    // minutes stay visible for every lesson (docs/handoff.md, "Preview,
+    // precisely") and now sit in the band. Below it is one card with the
+    // existing copy and a way back to the course. There is no buy CTA:
+    // the paid preview is M3, and no lesson can reach this state at launch.
+    // No min-h-svh on <main> (the root layout's sticky-footer wrapper
+    // sizes the page, docs/ui-decisions.md 2026-09-28).
     return (
-      // flex-1 (not min-h-svh): same reasoning as error.tsx/not-found.tsx.
-      <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="max-w-md text-center space-y-3">
-          <h1 className="text-xl font-semibold">{lesson.title}</h1>
-          {lesson.description && <p className="text-sm text-muted-foreground">{lesson.description}</p>}
-          <p className="text-sm text-muted-foreground">
-            {alliengllCopy.notAvailable.itemCountLabel}: {lesson.itemCount}
-          </p>
-          <p className="text-sm text-muted-foreground">{alliengllCopy.notAvailable.body}</p>
+      <main className="bg-background">
+        {band}
+        <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
+          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+            <p className="max-w-sm text-base font-medium text-foreground">{alliengllCopy.notAvailable.body}</p>
+            <Link
+              href={`/courses/${courseSlug}`}
+              className="inline-flex min-h-11 items-center rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              {alliengllCopy.player.backToCourse}
+            </Link>
+          </section>
         </div>
       </main>
     );
   }
 
   const attemptId = crypto.randomUUID();
-  const nav = await getLessonNav(lesson.courseId, lessonSlug);
 
   return (
     <LessonPageClient
-      header={
-        <LessonBand
-          courseSlug={courseSlug}
-          courseTitle={lesson.courseTitle}
-          title={lesson.title}
-          description={lesson.description}
-          position={nav && { index: nav.position, total: nav.total }}
-          estimatedMinutes={lesson.estimatedMinutes}
-          itemCount={lesson.itemCount}
-        />
-      }
+      header={band}
       backLink={<StripBackLink courseSlug={courseSlug} />}
       document={lesson.document}
       attemptId={attemptId}

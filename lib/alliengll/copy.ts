@@ -138,7 +138,6 @@ export const alliengllCopy = {
   // paid, not bought. Plain state only; the real preview screen is M3.
   notAvailable: {
     body: "Этот урок открывается после покупки курса.",
-    itemCountLabel: "Заданий",
   },
 
   // PLAY-006's error boundary (app/(english)/error.tsx) — an invariant break

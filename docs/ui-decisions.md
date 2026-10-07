@@ -1044,3 +1044,7 @@ Appended to in the same commit as the change it records. Referenced from
   "Every exercise answered" comes from `sessionProgress`, NOT
   `lessonScore.status === "scored"`, which is true after the first answer.
   Do not swap them back.
+- Paid lesson state (2026-10-07, docs/decisions/0079 Decision 8): the
+  "not_available" screen uses the same `LessonBand` as a playable lesson,
+  then one card with the existing copy and "Назад к курсу". There is no
+  buy CTA (M3), and no lock icon.
