@@ -299,11 +299,11 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Проверить" }));
 
     expect(screen.getByText("Урок завершён")).toBeDefined();
-    // Two elements now carry this line: the always-scrolled-to-top progress
-    // banner (docs/decisions/0058's "proposed new card", fixed by SHELL-011 —
-    // it reused this same Russian copy instead of its old hardcoded English)
-    // and LessonCompletion's own score line, further down the page.
-    expect(screen.getAllByText(/Ваш результат: 100% \(1\/1\)/).length).toBe(2);
+    // ONE element carries this line: LessonCompletion's own score line. The
+    // top-of-column score banner that made it two (SHELL-011) was removed by
+    // docs/decisions/0079 D5. The lesson page's sticky strip shows the score
+    // instead, but this test passes no `renderProgress`, so it renders none.
+    expect(screen.getAllByText(/Ваш результат: 100% \(1\/1\)/).length).toBe(1);
     expect(screen.queryByText("Разбор ответов")).toBeNull(); // nothing wrong to review
   });
 

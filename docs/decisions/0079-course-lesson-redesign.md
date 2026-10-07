@@ -250,3 +250,64 @@ Verified:
   `getUserById` returns no user, and 0 `profiles` rows. The admin lesson
   preview and `/app/admin/lesson-player-demo` render the same cards inside
   the Colloquiz shell.
+
+## Decision 5 — lesson band and sticky progress strip; the top score banner goes
+
+Settled in the grill. The other options were a light header with no strip,
+and a single always-sticky bar.
+
+**The band.** `LessonBand` is a server-rendered compact gradient band,
+passed into the client `LessonPageClient` as a node, so it costs no client
+JS (0078 D5). It holds:
+- `BandTopBar`, with "← Назад к курсу"
+- the course title
+- the lesson `<h1>` and its description
+- glass pills: "Урок N из M" (from Decision 5a's `getLessonNav`), minutes,
+  and "N заданий"
+
+Its content edge is `LESSON_READING_FRAME_CLASS` (columnLayout.ts): `px-4`
+around exactly the 42rem reading measure at `lg`, and `max-w-xl` below
+it. The title, the strip and every block below it therefore start at one
+x. The old `<h1>` sat at the 1024px column's edge, over content centred at
+672px.
+
+**The strip.** `LessonProgressStrip` is `sticky top-0`, directly under the
+band. It holds an icon-only back link (server-rendered, `aria-label`
+"Назад к курсу"), a `role="progressbar"` of answered/total exercises, and
+"x/y". Once every exercise has an answer, "x/y" becomes the lesson score
+("85%"). Details:
+- Plain CSS sticky, with no scroll listener or observer.
+- Its containing block is `LessonPageClient`'s wrapper, which spans the
+  band and the whole player.
+- It is never an ancestor of matching's bank (0039 D5), and the bank
+  sticks to the bottom, not the top.
+- It is not rendered for a lesson with no exercises.
+
+**How it reaches the page.** `LessonPlayer` gained an optional
+`renderProgress(progress)`, rendered as a sibling just before its column.
+Only `LessonPageClient` passes it. The admin preview and the demo render
+no strip: the preview's own header sits above it inside the Colloquiz
+shell, and a second sticky bar there would only fight the shell's topbar.
+
+**`complete` vs `scored`.** `LessonProgress.complete` means every practice
+block has a result. That is `sessionProgress` (Decision 5a), not
+`lessonScore.status === "scored"`, which turns true on the first answer
+(0058 Decision 1, 0068 Decision 2).
+
+**The banner is removed.** The score banner that opened `LessonPlayer`'s
+column predates PLAY-007's completion box: it was an English
+"Progress: X%" line that 0058 flagged and left alone. SHELL-011/0071
+localised and kept it. It sat at the top of the page and appeared only once an
+answer existed, i.e. while the learner was further down. The strip
+carries the running state where the learner can see it, and
+`LessonCompletion` carries the score at the end. `LessonPlayer.test.tsx`'s
+"two elements carry the score line" expectation is now one, with the
+reason in the test.
+
+Verified:
+- **Screenshots.** Playwright at 1440×900 (light) and 390×844 (light and
+  dark), with `scrollWidth` equal to the viewport width.
+- **Band.** The title, the strip's back arrow and the content's left edge
+  line up.
+- **Strip behaviour.** After answering two exercises and scrolling, the
+  strip is stuck to the top and reads "2/8", with the bar a quarter full.

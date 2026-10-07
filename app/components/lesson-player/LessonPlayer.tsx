@@ -7,7 +7,12 @@ import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
-import { explanationsForSession, scoreSession, type LessonSessionResults } from "@/lib/lessonPlayer/session";
+import {
+  explanationsForSession,
+  scoreSession,
+  sessionProgress,
+  type LessonSessionResults,
+} from "@/lib/lessonPlayer/session";
 import { fireFunnelEvent } from "@/lib/funnelSource";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
@@ -54,6 +59,13 @@ export interface PracticeRendererProps {
   onScore: (result: ItemScoreResult) => void;
 }
 
+/** What `LessonPlayerProps.renderProgress` is handed (docs/decisions/0079
+ * D5). `complete` means every practice block has a result.
+ * `lessonScore.status === "scored"` can't say that: it turns true on the
+ * FIRST answer (0058 Decision 1). `percent` is the running lesson score, or
+ * null before any answer. */
+export type LessonProgress = { answered: number; total: number; complete: boolean; percent: number | null };
+
 export interface LessonPlayerProps {
   /** Raw, unparsed lesson document JSON — parsed here, on read, per
    * CNT-003/0018 Decision 2 ("the database is canonical", nothing reads a
@@ -96,6 +108,11 @@ export interface LessonPlayerProps {
    * same-browser email confirmation or OAuth round trip returns here.
    * Defaults to "" (offer still renders, just returns to "/" on confirm). */
   lessonPath?: string;
+  /** docs/decisions/0079 D5 — rendered immediately BEFORE the player's own
+   * column, as a sibling of it, with the live answered/total counts. The
+   * public lesson page passes its sticky progress strip here. The admin
+   * preview, the demo and tests pass nothing and render nothing. */
+  renderProgress?: (progress: LessonProgress) => ReactNode;
 }
 
 /**
@@ -148,6 +165,7 @@ export function LessonPlayer({
   lessonVersionId = "",
   isSignedIn = false,
   lessonPath = "",
+  renderProgress,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
   const [results, setResults] = useState<LessonSessionResults>({});
@@ -197,6 +215,7 @@ export function LessonPlayer({
       nextLesson={nextLesson}
       lessonPath={lessonPath}
       isSignedIn={isSignedIn}
+      renderProgress={renderProgress}
     />
   );
 }
@@ -225,6 +244,7 @@ function LessonPlayerBody({
   nextLesson,
   lessonPath,
   isSignedIn,
+  renderProgress,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
@@ -235,11 +255,19 @@ function LessonPlayerBody({
   nextLesson: NextLessonLink | null;
   lessonPath: string;
   isSignedIn: boolean;
+  renderProgress?: (progress: LessonProgress) => ReactNode;
 }) {
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
   // the whole document rather than incremental updates.
   const lessonScore = scoreSession(document, results);
+  const { answered, total } = sessionProgress(document, results);
+  const progress: LessonProgress = {
+    answered,
+    total,
+    complete: total > 0 && answered === total,
+    percent: lessonScore.status === "scored" ? lessonScore.percent : null,
+  };
 
   // OPS-008 — lesson_complete fires exactly once, on the transition into
   // "scored". Keyed on `lessonScore.status` rather than `results` itself, so
@@ -258,55 +286,55 @@ function LessonPlayerBody({
   const practiceIds = document.filter((block) => block.kind === "practice").map((block) => block.id);
   const practiceNumber = new Map(practiceIds.map((id, index) => [id, index + 1]));
 
+  // The score banner that used to open this column is gone
+  // (docs/decisions/0079 D5): it appeared at the top of the page while the
+  // learner was at the bottom. The running score now lives in the caller's
+  // `renderProgress` strip and in LessonCompletion.
   return (
-    <div className={LESSON_COLUMN_CLASS}>
-      {lessonScore.status === "scored" && (
-        <div
-          className={`rounded-lg border border-brand-border bg-brand-subtle px-3 py-2 text-sm text-brand-text ${READING_WIDTH_CLASS}`}
-        >
-          {alliengllCopy.completion.scoreLabel}: {lessonScore.percent}% ({lessonScore.earned}/{lessonScore.possible})
-        </div>
-      )}
-      {/* `contents` keeps every block a direct flex child of LESSON_COLUMN_CLASS
-          (so `gap-4` still applies between blocks, not just around this
-          wrapper) — it exists only so tests can scope a query to "the
-          authored blocks" and distinguish an inline per-item explanation from
-          PLAY-007's own copy of the same text in LessonCompletion's review
-          section below. */}
-      <div data-testid="lesson-blocks" className="contents">
-        {document.map((block) => {
-          const widthClass = widthClassFor(block);
-          return block.kind === "practice" ? (
-            <div key={block.id} className={widthClass}>
-              <div className={PRACTICE_CARD_CLASS}>
-                <ExercisePill
-                  number={practiceNumber.get(block.id) ?? 0}
-                  total={practiceIds.length}
-                  answered={results[block.id] !== undefined}
-                />
-                {practiceRenderer ? (
-                  practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
-                ) : (
-                  <PracticeBlockPlaceholder block={block} />
-                )}
+    <>
+      {renderProgress?.(progress)}
+      <div className={LESSON_COLUMN_CLASS}>
+        {/* `contents` keeps every block a direct flex child of LESSON_COLUMN_CLASS
+            (so `gap-4` still applies between blocks, not just around this
+            wrapper) — it exists only so tests can scope a query to "the
+            authored blocks" and distinguish an inline per-item explanation from
+            PLAY-007's own copy of the same text in LessonCompletion's review
+            section below. */}
+        <div data-testid="lesson-blocks" className="contents">
+          {document.map((block) => {
+            const widthClass = widthClassFor(block);
+            return block.kind === "practice" ? (
+              <div key={block.id} className={widthClass}>
+                <div className={PRACTICE_CARD_CLASS}>
+                  <ExercisePill
+                    number={practiceNumber.get(block.id) ?? 0}
+                    total={practiceIds.length}
+                    answered={results[block.id] !== undefined}
+                  />
+                  {practiceRenderer ? (
+                    practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
+                  ) : (
+                    <PracticeBlockPlaceholder block={block} />
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div key={block.id} className={widthClass}>
-              <TheoryBlockRenderer block={block} />
-            </div>
-          );
-        })}
+            ) : (
+              <div key={block.id} className={widthClass}>
+                <TheoryBlockRenderer block={block} />
+              </div>
+            );
+          })}
+        </div>
+        <LessonCompletion
+          score={lessonScore}
+          explanations={explanationsForSession(document, results)}
+          courseSlug={courseSlug}
+          nextLesson={nextLesson}
+          lessonPath={lessonPath}
+          isSignedIn={isSignedIn}
+        />
       </div>
-      <LessonCompletion
-        score={lessonScore}
-        explanations={explanationsForSession(document, results)}
-        courseSlug={courseSlug}
-        nextLesson={nextLesson}
-        lessonPath={lessonPath}
-        isSignedIn={isSignedIn}
-      />
-    </div>
+    </>
   );
 }
 

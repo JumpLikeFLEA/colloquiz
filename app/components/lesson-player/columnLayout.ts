@@ -17,6 +17,15 @@ export const LESSON_COLUMN_CLASS = "mx-auto flex w-full max-w-xl lg:max-w-5xl fl
  * lesson-player-demo page) that don't share LessonPlayer's flex/gap. */
 export const LESSON_HEADER_COLUMN_CLASS = "mx-auto max-w-xl lg:max-w-5xl px-4";
 
+/** The lesson page's band and sticky progress strip (docs/decisions/0079
+ * D5), sized so their CONTENT edge is the reading column's edge: `px-4`
+ * either side of exactly the 42rem `READING_WIDTH_CLASS` measure at `lg`,
+ * the same 576px `max-w-xl` column below it. Centred like the player's
+ * own column, so the lesson title, the progress bar, the theory and the
+ * exercises all start at one x. A narrower title over a wider column was
+ * the misalignment the redesign set out to fix. */
+export const LESSON_READING_FRAME_CLASS = "mx-auto w-full max-w-xl px-4 lg:max-w-[44rem]";
+
 /**
  * Reading-measure wrapper for theory/practice blocks that should NOT grow to
  * the full column at `lg`+. `w-full` is required alongside `lg:mx-auto`: the

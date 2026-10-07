@@ -62,6 +62,11 @@ export const alliengllCopy = {
     // docs/decisions/0079 D6: the pill above every exercise, "Задание 3 из 8".
     exerciseLabel: "Задание",
     exerciseOf: "из",
+    // docs/decisions/0079 D5: the lesson band's "Урок 2 из 8" and the
+    // sticky progress strip's accessible name.
+    lessonLabel: "Урок",
+    lessonOf: "из",
+    progressLabel: "Прогресс урока",
     why: "Почему?",
     hide: "Скрыть",
     true: "Верно",

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
+import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
+import { StripBackLink } from "./StripBackLink";
 
 /**
  * PLAY-006 — the first genuinely public read path. Replaces SHELL-007's
@@ -70,7 +72,18 @@ export default async function LessonPage({
 
   return (
     <LessonPageClient
-      title={lesson.title}
+      header={
+        <LessonBand
+          courseSlug={courseSlug}
+          courseTitle={lesson.courseTitle}
+          title={lesson.title}
+          description={lesson.description}
+          position={nav && { index: nav.position, total: nav.total }}
+          estimatedMinutes={lesson.estimatedMinutes}
+          itemCount={lesson.itemCount}
+        />
+      }
+      backLink={<StripBackLink courseSlug={courseSlug} />}
       document={lesson.document}
       attemptId={attemptId}
       courseSlug={courseSlug}

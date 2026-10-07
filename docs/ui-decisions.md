@@ -1008,3 +1008,21 @@ Appended to in the same commit as the change it records. Referenced from
 
   The admin lesson preview and the lesson-player demo change with it, by
   design: the preview is the learner's view.
+- Lesson page header and progress strip (2026-10-07, docs/decisions/0079
+  Decision 5). The bare `<h1>` at the 1024px column's edge is replaced by
+  `LessonBand`, a compact gradient band. It holds `BandTopBar` with "←
+  Назад к курсу", the course title, the lesson title and description, and
+  glass pills ("Урок N из M", minutes, exercises). The band is aligned to
+  the reading column via `LESSON_READING_FRAME_CLASS`, so the title starts
+  where the content starts.
+
+  Under the band, `LessonProgressStrip` is `sticky top-0`: an icon back
+  link, a progress bar of answered exercises, "x/y", and the score % once
+  every exercise is answered. It is CSS sticky with no JS observer. It
+  exists only on the public lesson page (via `LessonPlayer`'s
+  `renderProgress`), never in the admin preview or the demo.
+
+  REMOVED: the score banner at the top of `LessonPlayer`'s column, which
+  the SHELL-011 entry above kept. It showed at the top while the learner
+  was at the bottom. Do not restore it: the strip and the completion card
+  carry the score.

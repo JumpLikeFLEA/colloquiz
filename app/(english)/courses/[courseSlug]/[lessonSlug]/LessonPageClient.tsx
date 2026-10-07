@@ -1,7 +1,9 @@
 "use client";
 
-import { LESSON_HEADER_COLUMN_CLASS, LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
+import type { ReactNode } from "react";
+import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import { LessonProgressStrip } from "./LessonProgressStrip";
 
 /**
  * PLAY-006's client half of the RSC boundary. `practiceRenderer` is a
@@ -23,9 +25,17 @@ import type { NextLessonLink } from "@/lib/publicLesson";
  *
  * ANON-004 adds `lessonPath`, forwarded straight to `LessonPlayer` for its
  * completion screen's registration offer (docs/decisions/0068).
+ *
+ * docs/decisions/0079 D5: the bare `<h1>` header is replaced by `header`,
+ * the gradient `LessonBand` rendered server-side by page.tsx, and the
+ * player gets a sticky `LessonProgressStrip` through `renderProgress`.
+ * `backLink` is that strip's icon link, also rendered server-side. The
+ * wrapper div is the strip's sticky containing block, so it spans the band
+ * and the whole player.
  */
 export function LessonPageClient({
-  title,
+  header,
+  backLink,
   document,
   attemptId,
   courseSlug,
@@ -34,7 +44,8 @@ export function LessonPageClient({
   isSignedIn,
   lessonPath,
 }: {
-  title: string;
+  header: ReactNode;
+  backLink: ReactNode;
   document: unknown[];
   attemptId: string;
   courseSlug: string;
@@ -44,10 +55,8 @@ export function LessonPageClient({
   lessonPath: string;
 }) {
   return (
-    <div className="py-8">
-      <div className={`${LESSON_HEADER_COLUMN_CLASS} mb-2`}>
-        <h1 className="text-xl font-semibold">{title}</h1>
-      </div>
+    <div className="pb-8">
+      {header}
       <LessonPlayer
         document={document}
         attemptId={attemptId}
@@ -57,6 +66,7 @@ export function LessonPageClient({
         lessonVersionId={lessonVersionId}
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}
+        renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
       />
     </div>
   );
