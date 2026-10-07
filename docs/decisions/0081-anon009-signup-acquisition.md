@@ -87,3 +87,17 @@ anonymisation: nothing else reads another learner's acquisition row.
   M3's sign-in prompt on lessons the partner does not mark open (partner,
   2026-10-07) is expected to pass the lesson path as `next`, and so inherits
   this write.
+
+## Finding — email confirmation was off on the hosted project (2026-10-07)
+
+Post-apply check against the hosted project: a plain `signUp`, made the way
+`RegistrationOffer` makes it, returned a session with `email_confirmed_at`
+already set, and wrote no `signup_acquisitions` row. With confirmation off,
+an email signup never reaches `/auth/confirm`, so this card records email
+signups only once confirmation is on. The owner is turning it back on before
+launch (launch checklist §1, the Resend sending domain). The same gap hits
+OPS-008's `signup` event and `RegistrationOffer`'s "check your email" copy.
+
+**What would make us revisit this:** a decision to launch with confirmation
+off. That needs a third write path, where `signUp` returns a session, and is
+a new card, not a change to this one.
