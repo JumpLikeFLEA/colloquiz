@@ -991,3 +991,20 @@ Appended to in the same commit as the change it records. Referenced from
   `ImageBlockView`'s `sizes` is 672px at `lg`. Heading centring is
   unchanged. If an image really needs more room, reach for `table`'s FIT
   band, not the old breakout.
+- Exercise cards (2026-10-07, docs/decisions/0079 Decision 6). A practice
+  block's card is now drawn ONCE, by `LessonPlayer` (`PRACTICE_CARD_CLASS`:
+  rounded-2xl, shadow-sm, `p-4 sm:p-5`), not by each renderer. The six
+  renderers lost their `rounded-lg border bg-card p-3` root; do not put it
+  back, or the card doubles.
+
+  A "Задание N из M" pill tops every card. It counts practice blocks only
+  and turns green with a ✓ once answered. That means answered, NOT
+  correct: it goes green on a wrong answer too, on purpose.
+
+  "Проверить" is `SUBMIT_BUTTON_CLASS` (rounded-xl, `min-h-11`, tinted
+  shadow) and prompts are `PROMPT_TEXT_CLASS` (semibold, `sm:text-base`),
+  both from `practice/practiceClasses.ts`. Option rows (`optionClassName`)
+  are unchanged.
+
+  The admin lesson preview and the lesson-player demo change with it, by
+  design: the preview is the learner's view.

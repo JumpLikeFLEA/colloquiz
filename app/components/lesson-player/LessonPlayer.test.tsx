@@ -355,3 +355,20 @@ describe("LessonPlayer — completion screen (PLAY-007)", () => {
     expect(screen.queryByRole("link", { name: /Следующий урок/ })).toBeNull();
   });
 });
+
+describe("LessonPlayer — exercise cards (docs/decisions/0079 D6)", () => {
+  it("numbers practice blocks only, in document order, out of the practice total", async () => {
+    const document = [
+      { id: "intro", kind: "theory", type: "prose", text: [{ text: "Theory first." }] },
+      { ...(exampleRaw("selection — MCQ single") as Record<string, unknown>), kind: "practice" },
+      { id: "between", kind: "theory", type: "prose", text: [{ text: "More theory." }] },
+      { ...(exampleRaw("selection_grid — inline True/False") as Record<string, unknown>), kind: "practice" },
+    ];
+    render(<LessonPlayer document={document} attemptId="attempt-1" practiceRenderer={practiceRenderer} />);
+
+    expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
+    expect(screen.getByText("Задание 1 из 2")).toBeDefined();
+    expect(screen.getByText("Задание 2 из 2")).toBeDefined();
+    expect(screen.queryByText(/Задание 3/)).toBeNull();
+  });
+});

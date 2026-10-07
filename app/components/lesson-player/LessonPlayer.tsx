@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Check } from "lucide-react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
@@ -10,7 +11,13 @@ import { explanationsForSession, scoreSession, type LessonSessionResults } from 
 import { fireFunnelEvent } from "@/lib/funnelSource";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
-import { FIT_WIDTH_CLASS, HEADING_WIDTH_CLASS, LESSON_COLUMN_CLASS, READING_WIDTH_CLASS } from "./columnLayout";
+import {
+  FIT_WIDTH_CLASS,
+  HEADING_WIDTH_CLASS,
+  LESSON_COLUMN_CLASS,
+  PRACTICE_CARD_CLASS,
+  READING_WIDTH_CLASS,
+} from "./columnLayout";
 import { LessonCompletion } from "./LessonCompletion";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
@@ -245,6 +252,12 @@ function LessonPlayerBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonScore.status]);
 
+  // docs/decisions/0079 D6 — "Задание N из M". N counts practice blocks
+  // only, in document order, so it agrees with the "N заданий" the course
+  // page shows (`published_item_count` = `countPracticeBlocks`).
+  const practiceIds = document.filter((block) => block.kind === "practice").map((block) => block.id);
+  const practiceNumber = new Map(practiceIds.map((id, index) => [id, index + 1]));
+
   return (
     <div className={LESSON_COLUMN_CLASS}>
       {lessonScore.status === "scored" && (
@@ -265,11 +278,18 @@ function LessonPlayerBody({
           const widthClass = widthClassFor(block);
           return block.kind === "practice" ? (
             <div key={block.id} className={widthClass}>
-              {practiceRenderer ? (
-                practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
-              ) : (
-                <PracticeBlockPlaceholder block={block} />
-              )}
+              <div className={PRACTICE_CARD_CLASS}>
+                <ExercisePill
+                  number={practiceNumber.get(block.id) ?? 0}
+                  total={practiceIds.length}
+                  answered={results[block.id] !== undefined}
+                />
+                {practiceRenderer ? (
+                  practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
+                ) : (
+                  <PracticeBlockPlaceholder block={block} />
+                )}
+              </div>
             </div>
           ) : (
             <div key={block.id} className={widthClass}>
@@ -287,5 +307,23 @@ function LessonPlayerBody({
         isSignedIn={isSignedIn}
       />
     </div>
+  );
+}
+
+/** The "Задание N из M" pill at the top of every exercise card
+ * (docs/decisions/0079 D6) — the landing demo card's label pill. Turns to
+ * the success tokens with a ✓ once the exercise has a result, so a learner
+ * scrolling back up can see which ones are done. It marks "answered",
+ * never "correct" (docs/handoff.md: nothing demotivates the learner). */
+function ExercisePill({ number, total, answered }: { number: number; total: number; answered: boolean }) {
+  return (
+    <p
+      className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+        answered ? "bg-success-subtle text-success" : "bg-brand-subtle text-brand-text"
+      }`}
+    >
+      {answered && <Check className="size-3.5" aria-hidden="true" />}
+      {alliengllCopy.player.exerciseLabel} {number} {alliengllCopy.player.exerciseOf} {total}
+    </p>
   );
 }

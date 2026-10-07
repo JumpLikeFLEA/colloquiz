@@ -59,6 +59,9 @@ export const alliengllCopy = {
     next: "Далее",
     retry: "Пройти ещё раз",
     backToCourse: "Назад к курсу",
+    // docs/decisions/0079 D6: the pill above every exercise, "Задание 3 из 8".
+    exerciseLabel: "Задание",
+    exerciseOf: "из",
     why: "Почему?",
     hide: "Скрыть",
     true: "Верно",

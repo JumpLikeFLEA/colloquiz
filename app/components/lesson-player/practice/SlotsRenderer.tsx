@@ -12,6 +12,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Check, X } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { PROMPT_TEXT_CLASS, SUBMIT_BUTTON_CLASS } from "./practiceClasses";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, SlotsItem } from "@/lib/items";
 import { shuffleForItem } from "@/lib/items/shuffle";
@@ -113,7 +114,7 @@ function GapLayout({
 
   return (
     <>
-      <p className="mb-3 text-sm font-medium text-foreground">{prompt}</p>
+      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}>{prompt}</p>
       <div className="mb-3 flex flex-col gap-2">
         {Array.from({ length: gapCount }, (_, index) => (
           <div key={index} className="flex items-center gap-2">
@@ -169,7 +170,7 @@ function GapExplanations({
 }
 
 function submitButtonClassName(): string {
-  return "mt-1 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover cursor-pointer transition-colors";
+  return `mt-2 ${SUBMIT_BUTTON_CLASS}`;
 }
 
 function gapControlClassName({
@@ -240,7 +241,7 @@ function TypedSlots({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div>
       <GapLayout
         prompt={prompt}
         segments={segments}
@@ -365,7 +366,7 @@ function DragSlots({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div>
       <DndContext
         id={`slots-${attemptId}:${item.id}`}
         sensors={sensors}

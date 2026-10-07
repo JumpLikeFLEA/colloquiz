@@ -52,6 +52,14 @@ export const HEADING_WIDTH_CLASS = "w-full lg:max-w-2xl lg:mx-auto lg:text-cente
  */
 export const FIT_WIDTH_CLASS = "lg:mx-auto lg:w-fit lg:min-w-[42rem] lg:max-w-full";
 
+/** The card every practice block renders inside (docs/decisions/0079 D6),
+ * drawn once by `LessonPlayer` around the renderer rather than by each of
+ * the six renderers: the landing's card shape (rounded-2xl, a resting
+ * shadow), with more padding than the old per-renderer `p-3` so an
+ * exercise reads as its own object between theory blocks. No `overflow`:
+ * matching's bank is `sticky` inside it (docs/decisions/0039 Decision 5). */
+export const PRACTICE_CARD_CLASS = "rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5";
+
 /** The one-line revert point for the `text-base`-at-`lg` experiment
  * (docs/decisions/0043) — theory body text only; captions stay `text-xs`. */
 export const THEORY_BODY_TEXT_CLASS = "text-sm lg:text-base";

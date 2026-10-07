@@ -11,6 +11,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, X } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { PROMPT_TEXT_CLASS, SUBMIT_BUTTON_CLASS } from "./practiceClasses";
 import { resolveExplanations, scoreItem } from "@/lib/items";
 import type { ItemScoreResult, OrderingItem } from "@/lib/items";
 import { shuffleOrderingIndices } from "@/lib/items/shuffle";
@@ -91,8 +92,8 @@ export function OrderingRenderer({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
-      <p className="mb-1 text-sm font-medium text-foreground">{item.payload.prompt}</p>
+    <div>
+      <p className={`mb-1 ${PROMPT_TEXT_CLASS}`}>{item.payload.prompt}</p>
       {!submitted && (
         <p className="mb-3 text-xs text-muted-foreground">{alliengllCopy.player.dragReorderHint}</p>
       )}
@@ -137,7 +138,7 @@ export function OrderingRenderer({
         <button
           type="button"
           onClick={submit}
-          className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover cursor-pointer transition-colors"
+          className={`mt-4 ${SUBMIT_BUTTON_CLASS}`}
         >
           {alliengllCopy.player.submit}
         </button>

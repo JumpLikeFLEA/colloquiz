@@ -208,3 +208,45 @@ heading over a wider block, now only occurs above a wide table.
 **What would make us revisit it:** an author with an image that is
 unreadable at 672px, such as a dense diagram. The precedent to reach for
 is `table`'s FIT band, not a return to full-column breakout.
+
+## Decision 6 — one exercise card, drawn by the player, with "Задание N из M"
+
+Each of the six practice renderers used to draw its own `rounded-lg border
+bg-card p-3` root: Slots did so twice, once per input mode. The card now
+lives in one place. `LessonPlayer` wraps every practice block in
+`PRACTICE_CARD_CLASS` (columnLayout.ts: rounded-2xl, resting shadow,
+`p-4 sm:p-5`), and the renderers render only their contents.
+
+- **Pill.** The top of the card carries a "Задание N из M" pill in the
+  landing demo card's label-pill style. N counts practice blocks only, in
+  document order, so it agrees with the course page's "N заданий"
+  (`published_item_count` = `countPracticeBlocks`). Once the exercise has
+  a result, the pill switches to the success tokens with a ✓. It marks
+  "answered", never "correct", so a wrong answer turns it green too.
+  Nothing on the page demotivates (docs/handoff.md).
+- **Shared classes.** "Проверить" and the prompt line share
+  `practice/practiceClasses.ts`. The button takes the landing CTA's shape
+  (rounded-xl, `min-h-11`, tinted shadow) in the brand fill. The prompt
+  steps up to `font-semibold sm:text-base`, so it reads as the card's
+  title. `optionClassName` is unchanged; the landing's hero demo already
+  uses it.
+- **Card is the player's, not the renderers'.** It was moved into
+  `LessonPlayer` rather than restyled six times. One definition can't
+  drift, and a seventh item type gets the card for free. The admin preview
+  and `lesson-player-demo` render through the same `LessonPlayer`, so they
+  change too. That is intended: the preview must be the learner's view
+  (docs/handoff.md, "Preview is must-have").
+- **No `overflow` on the card.** Matching's bank is `sticky bottom-0`
+  inside it (0039 Decision 5).
+
+Verified:
+- **Test.** An RTL test in LessonPlayer.test.tsx: a document of theory,
+  practice, theory, practice renders "Задание 1 из 2" and "Задание 2 из 2",
+  and nothing numbered 3.
+- **Screenshots.** At 1440 and 390: an answered pill turns green, wrong or
+  right.
+- **Admin shell.** Through a temporary admin user, created via the Admin
+  API, used for this check, then deleted. Deletion was confirmed:
+  `getUserById` returns no user, and 0 `profiles` rows. The admin lesson
+  preview and `/app/admin/lesson-player-demo` render the same cards inside
+  the Colloquiz shell.
