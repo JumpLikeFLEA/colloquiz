@@ -7,6 +7,14 @@
  *
  * Colloquiz's own chrome (0018 Decision 5) is untouched and stays English —
  * nothing here is imported outside app/(english)/.
+ *
+ * Bundle note (docs/decisions/0079, "Budget"): any Client Component that
+ * imports this module ships the WHOLE object (~2.2 KB gzip) to the browser.
+ * On the lesson page that's unavoidable (the player is client-side). Keep it
+ * out of client components that render on `/` or the course page. That is
+ * why the footer is server-rendered and handed to `EnglishFooterGate` as
+ * children, and why the error boundary's four strings live in
+ * ./errorCopy.ts.
  */
 
 export const alliengllCopy = {
@@ -140,15 +148,10 @@ export const alliengllCopy = {
     body: "Этот урок открывается после покупки курса.",
   },
 
-  // PLAY-006's error boundary (app/(english)/error.tsx) — an invariant break
-  // or a failed read, not a learner mistake, so the copy stays generic and
-  // gives no internal detail.
-  error: {
-    title: "Что-то пошло не так",
-    body: "Попробуйте ещё раз — обычно это помогает.",
-    retry: "Повторить",
-    backHome: "На главную",
-  },
+  // PLAY-006's error boundary strings moved to lib/alliengll/errorCopy.ts
+  // (docs/decisions/0079, "Budget"): the boundary is a Client Component that
+  // ships with every page, and importing this object there put all of it in
+  // the client JS of `/`.
 
   // SHELL-012: the sole path off this surface to the Colloquiz shell (/app).
   // Deliberately just a footer line, not nav — see docs/decisions/0062.

@@ -413,3 +413,51 @@ shows the count.
 
 Verified on the dev fixture's paid lesson, at 1440×900 (light) and
 390×844 (dark).
+
+### After, and the fix it took (owner decision during implementation)
+
+The first "after" run (at 7e230f2) put `/` at **180.0 KB, over its 180 KB
+budget**, up from 179.8. The cause was measured, not guessed:
+
+- **First hypothesis, falsified.** An unused export in `surfaceClasses.ts`
+  was shipping. In fact its string appeared in no client chunk, and that
+  attempted fix was reverted.
+- **The real cause.** The Russian strings this work added to
+  `lib/alliengll/copy.ts` cost about 186 B gzip on every English route
+  (computed by gzipping the built chunk with and without them). The whole
+  copy object, about 2.2 KB gzip, shipped to `/` and the course page.
+- **Why it shipped there.** Two client components imported it: the root
+  layout's `EnglishFooterGate` (through `EnglishFooter`), and
+  `app/(english)/error.tsx`. Confirmed by listing the scripts each route
+  downloads from a `next start` of the build: `/` loaded the chunk that
+  carried copy.ts.
+
+**Owner's choice: stop shipping copy.ts there.**
+- `EnglishFooterGate` now takes the footer as server-rendered `children`.
+- The error boundary's four strings moved to `lib/alliengll/errorCopy.ts`.
+  This is a narrow, documented exception to "a single strings module", now
+  recorded in docs/handoff.md, "Audience and language".
+- Re-checked the same way: neither `/` nor the course page downloads a
+  chunk with any copy.ts-only string. One false positive was ruled out:
+  "Наше приложение с квизами" also exists in `landingCopy.ts`. The lesson
+  page still loads copy.ts, as it must, because the player is client-side.
+
+Final run, same temporary routes:
+
+| route | before (e1c124e) | after |
+|---|---|---|
+| `/login` | 284.1 | 284.1 |
+| `/` (budget 180) | 179.8 | **177.7** |
+| `/courses/auth003-smoke-test` | 173.1 | **171.1** |
+| `/courses/auth003-smoke-test/9` | 263.0 | 264.6 (+1.6) |
+| `/courses/auth003-smoke-test/one-of-each-item-type` | 291.3 | 293.3 (+2.0) |
+
+The lesson routes grew by 1.6–2.0 KB: the strip, the exercise pill, the
+two-state completion card, their icons and strings.
+
+**Hypothesis, not verified:** applied to the committed `future-imperfect`
+measurements (0059: 256.5 / 282.7), that growth would land at about
+258 / 285 KB, inside their 260 / 290 budgets. Those routes 404 on hosted,
+so this could not be measured. Re-run `npm run budget` once
+`future-imperfect` is published, or against a seeded local stack, before
+relying on it.

@@ -4,7 +4,8 @@ import { FooterLayout } from "./FooterLayout";
 /**
  * SHELL-012: the ONLY link from the English surface to /app (docs/handoff.md,
  * "Open questions" — a footer link only, no toggle, no nav entry). Rendered
- * from the root layout (via `EnglishFooterGate`) so it appears on every page
+ * by the root layout (as `EnglishFooterGate`'s server-rendered children, so
+ * lib/alliengll/copy.ts stays out of the client bundle) on every page
  * under app/(english)/ without each page wiring it in — EXCEPT the landing
  * page, which renders its own bilingual `LandingFooter` instead (see
  * `EnglishFooterGate.tsx`). Not shared with Colloquiz — same "nothing here

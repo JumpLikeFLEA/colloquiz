@@ -1048,3 +1048,12 @@ Appended to in the same commit as the change it records. Referenced from
   "not_available" screen uses the same `LessonBand` as a playable lesson,
   then one card with the existing copy and "Назад к курсу". There is no
   buy CTA (M3), and no lock icon.
+- Footer and error-boundary bundling (2026-10-07, docs/decisions/0079
+  "Budget"). `EnglishFooterGate` receives the footer as server-rendered
+  `children` (layout.tsx) instead of importing `EnglishFooter`. The English
+  `error.tsx` reads its strings from `lib/alliengll/errorCopy.ts`.
+
+  Both changes keep the ~2.2 KB copy.ts object out of `/`'s and the course
+  page's client JS: `/` went from 180.0 KB (over budget) to 177.7. There is
+  no visual change. Do not import copy.ts into a client component that
+  renders on those routes.

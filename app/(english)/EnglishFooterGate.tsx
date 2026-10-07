@@ -1,7 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { EnglishFooter } from "./EnglishFooter";
 
 /**
  * Renders the shared, Russian-only `EnglishFooter` on every English route
@@ -12,9 +12,15 @@ import { EnglishFooter } from "./EnglishFooter";
  * costs only `usePathname` (part of Next's own router runtime already
  * shipped, not new bytes) — the rest of app/(english)/layout.tsx stays a
  * Server Component.
+ *
+ * The footer arrives as `children`, already rendered on the server by the
+ * layout, rather than being imported here (docs/decisions/0079, "Budget").
+ * Importing `EnglishFooter` made it, and lib/alliengll/copy.ts with it, part
+ * of this client boundary: the whole strings object (~2.2 KB gzip) shipped
+ * on every English route, including `/`, which never shows this footer.
  */
-export function EnglishFooterGate() {
+export function EnglishFooterGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (pathname === "/") return null;
-  return <EnglishFooter />;
+  return children;
 }

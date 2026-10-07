@@ -172,7 +172,14 @@ What it means concretely:
   `lib/alliengll/copy.ts`. Every other route — course page, lesson player,
   completion screen, signup offer — is unaffected and stays Russian-only,
   single strings module, no switcher, per the paragraph above. Do not extend
-  the toggle past the landing page without asking again.
+  the toggle past the landing page without asking again. **Bundle exception
+  (owner, 2026-10-07, docs/decisions/0079 "Budget"):** the English error
+  boundary's four strings live in `lib/alliengll/errorCopy.ts`, not
+  `lib/alliengll/copy.ts`. `error.tsx` is a Client Component that ships
+  with every page, and importing copy.ts there shipped the whole strings
+  object (~2.2 KB gzip) to `/`. It is still Russian, still one language,
+  still not an i18n layer. Keep copy.ts out of any client component that
+  renders on `/` or the course page.
 - They arrive from an Instagram reel, via a single static bio link that
   points to `/`, or by tapping a link in an Alliengll Telegram channel post,
   which can point to a course or a lesson (owner, 2026-09-24). Both open

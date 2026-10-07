@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { EnglishFooter } from "./EnglishFooter";
 import { EnglishFooterGate } from "./EnglishFooterGate";
 import { EntryViewBeacon } from "./EntryViewBeacon";
 import "../globals.css";
@@ -62,7 +63,9 @@ export default function EnglishRootLayout({
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
         <EntryViewBeacon />
         <div className="flex flex-1 flex-col">{children}</div>
-        <EnglishFooterGate />
+        <EnglishFooterGate>
+          <EnglishFooter />
+        </EnglishFooterGate>
         {/* Kept per docs/decisions/0046: the only source of field Web
             Vitals, which is the evidence the Performance boundary's own
             budget requirement asks for. Cookieless, same as the Colloquiz
