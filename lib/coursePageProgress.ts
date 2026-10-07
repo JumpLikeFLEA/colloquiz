@@ -63,3 +63,57 @@ export function courseProgress(
   const sum = attemptedScores.reduce((acc, p) => acc + p, 0);
   return { attempted: attemptedScores.length, total, averagePercent: Math.round(sum / attemptedScores.length) };
 }
+
+/**
+ * Drops draft and archived lessons from a lessons read (docs/decisions/0079
+ * D4). Same two conditions, and the same reason, as lib/catalogueSummary.ts:
+ * "lessons: editor read" (migration 041) returns every lesson of a course to
+ * a signed-in editor, drafts and archived ones included, so a public page
+ * that leaned on RLS alone listed lessons to an editor that 404 on tap
+ * (lib/publicLesson.ts serves `published_version_id IS NOT NULL` only). For
+ * everyone else "lessons: published read" (041, amended by 044) has already
+ * excluded these rows, so this changes nothing for them.
+ */
+export function publishedLessonsOnly<T extends { published_version_id: string | null; archived_at: string | null }>(
+  rows: readonly T[],
+): T[] {
+  return rows.filter((r) => r.published_version_id !== null && r.archived_at === null);
+}
+
+export type CourseTotals = { lessonCount: number; totalMinutes: number | null; allFree: boolean };
+
+/**
+ * The course page hero's size line and "whole course is free" flag
+ * (docs/decisions/0079 D1/D3). `totalMinutes` follows
+ * lib/catalogueSummary.ts's rule — null rather than a partial sum when any
+ * lesson has no estimate, so the hero never understates the course and
+ * never disagrees with the catalogue card that led here. `allFree` is false
+ * for a course with no lessons: "the whole course is free" about nothing
+ * would be a claim with no evidence behind it.
+ */
+export function courseTotals(lessons: readonly PublicCourseLesson[]): CourseTotals {
+  const lessonCount = lessons.length;
+  const allFree = lessonCount > 0 && lessons.every((l) => l.inFreeSample);
+  const totalMinutes =
+    lessonCount > 0 && lessons.every((l) => l.estimatedMinutes !== null)
+      ? lessons.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0)
+      : null;
+  return { lessonCount, totalMinutes, allFree };
+}
+
+export type LessonNav<T> = { position: number; total: number; next: T | null };
+
+/**
+ * "Урок N из M" and the next-lesson link for the lesson page
+ * (docs/decisions/0079 D5), from the course's lessons already in display
+ * order. Position is the 1-based INDEX in that list, never the ordinal:
+ * ordinals are display order only, neither unique nor gapless (migration
+ * 041's comment on `lessons.ordinal`), so "ordinal 30" is not "lesson 30".
+ * `null` when the slug isn't in the list — the caller shows no position
+ * rather than a wrong one.
+ */
+export function lessonNav<T extends { slug: string }>(lessons: readonly T[], slug: string): LessonNav<T> | null {
+  const index = lessons.findIndex((l) => l.slug === slug);
+  if (index === -1) return null;
+  return { position: index + 1, total: lessons.length, next: lessons[index + 1] ?? null };
+}

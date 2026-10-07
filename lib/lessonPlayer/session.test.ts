@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseLessonDocument } from "../lessons/parseLessonDocument";
 import type { ItemScoreResult } from "../items";
-import { buildYouTubeEmbedUrl, explanationsForSession, scoreSession } from "./session";
+import { buildYouTubeEmbedUrl, explanationsForSession, scoreSession, sessionProgress } from "./session";
 
 function selectionBlock(id: string) {
   return {
@@ -52,6 +52,27 @@ describe("scoreSession", () => {
     expect(score.percent).toBe(100);
     expect(score.items).toHaveLength(1);
     expect(score.items[0].itemId).toBe("q1");
+  });
+});
+
+describe("sessionProgress", () => {
+  const correct: ItemScoreResult = {
+    earned: 1,
+    possible: 1,
+    subResults: [{ id: "q1", correct: true, earned: 1, possible: 1, explanationRef: "r1" }],
+  };
+
+  it("counts practice blocks only — a theory block is never part of the total", () => {
+    // parseFixture always prepends one prose block.
+    expect(sessionProgress(parseFixture("q1", "q2", "q3"), {})).toEqual({ answered: 0, total: 3 });
+  });
+
+  it("counts a block as answered once it has a result", () => {
+    expect(sessionProgress(parseFixture("q1", "q2"), { q2: correct })).toEqual({ answered: 1, total: 2 });
+  });
+
+  it("ignores a result whose id isn't a practice block in this document", () => {
+    expect(sessionProgress(parseFixture("q1"), { p1: correct, stray: correct })).toEqual({ answered: 0, total: 1 });
   });
 });
 

@@ -34,6 +34,20 @@ export function scoreSession(document: LessonDocument, results: LessonSessionRes
   return aggregateLessonScore(itemInputs);
 }
 
+export type SessionProgress = { answered: number; total: number };
+
+/** How many practice blocks have a result so far, out of how many the
+ * lesson has — the lesson page's progress strip and the completion card's
+ * "Осталось N заданий" (docs/decisions/0079 D5/D7). `total` is the same
+ * count `countPracticeBlocks` (lib/lessons/parseLessonDocument.ts) feeds to
+ * `publish_lesson` as `published_item_count`, so it agrees with the
+ * "N заданий" the course page shows for this lesson. A result for an id that
+ * isn't a practice block in this document is not counted. */
+export function sessionProgress(document: LessonDocument, results: LessonSessionResults): SessionProgress {
+  const blocks = practiceBlocks(document);
+  return { answered: blocks.filter((b) => results[b.id] !== undefined).length, total: blocks.length };
+}
+
 /** Resolved explanations for every scored-and-wrong sub-response, keyed by
  * the practice block's item id, in authored document order. An item with no
  * entry in `results` (not yet attempted) is simply absent from the map. */

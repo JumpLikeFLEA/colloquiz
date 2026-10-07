@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
-import { getNextLesson, getPublicLesson } from "@/lib/publicLesson";
+import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
 import { LessonPageClient } from "./LessonPageClient";
 
 /**
@@ -66,7 +66,7 @@ export default async function LessonPage({
   }
 
   const attemptId = crypto.randomUUID();
-  const nextLesson = await getNextLesson(lesson.courseId, lesson.ordinal);
+  const nav = await getLessonNav(lesson.courseId, lessonSlug);
 
   return (
     <LessonPageClient
@@ -74,7 +74,7 @@ export default async function LessonPage({
       document={lesson.document}
       attemptId={attemptId}
       courseSlug={courseSlug}
-      nextLesson={nextLesson}
+      nextLesson={nav?.next ?? null}
       lessonVersionId={lesson.lessonVersionId}
       isSignedIn={lesson.isSignedIn}
       lessonPath={`/courses/${courseSlug}/${lessonSlug}`}
