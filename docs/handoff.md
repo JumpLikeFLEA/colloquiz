@@ -6,8 +6,11 @@ project has already identified.
 
 Status: M0 (foundations & item engine) complete — the five item types score
 under test, `/app` carries Colloquiz (decision 0005), and a demo player
-exists. M1 is closing, and M2 is being scoped. Update this file in the same
-commit as any work that contradicts it.
+exists. M2 (public surface) is in progress; its exit is the launch
+rehearsal, OPS-010. M3 was redefined on 2026-10-07 as the first paid cohort
+course; its cards are scoped from the partner's answers recorded under "Open
+questions". Update this file in the same commit as any work that contradicts
+it.
 
 ## Product thesis
 
@@ -24,6 +27,21 @@ by it.
 
 Anything proposed on the grounds that "a real language-learning app would…"
 is out of scope by definition. This is not one.
+
+**Two product lines (owner, 2026-10-07).** The thesis above is the thesis of
+the FREE mini-courses, which are also the funnel. Next to them sits a PAID
+line of more serious content: cohort courses. A cohort course has a common
+start date and runs four weeks, with lessons released by week; the same
+course repeats as new runs (partner, 2026-10-07: "if the first one works
+out"). Each week has a voice task that the partner answers in writing. The
+same prompt is recorded at the start and at the end, and a final screen
+compares the two. There are two tiers: basic, and extended, which adds a
+weekly call or speaking club held outside the app; the app shows when each
+call is and links to it (partner, 2026-10-07). The value is structure,
+speaking practice and a person who gives feedback — what the partner's
+audience survey (21 respondents, October 2026; her caveat: a small, warm
+sample) reported missing. Still out of scope for both lines: spaced
+repetition, placement tests, a comprehensive curriculum, LLM grading.
 
 ## The two surfaces
 
@@ -50,6 +68,11 @@ One Next.js app, one Supabase project, one account per person.
 0005), so the English surface owns the clean URLs.
 
 ## Course and lesson shape
+
+The rules below describe the free mini-courses. A cohort course runs four
+weeks. Each lesson carries the week it belongs to; that is an attribute of the
+lesson, so the structure is still two levels, course → lesson. The exact shape
+is decided on M3's cohort data-model card.
 
 - A course is **3–8 lessons**. 5–8 is the norm; 3–4 exists so a learner is not
   faced with a month of work.
@@ -83,6 +106,11 @@ immediately. There is no per-lesson purchase and no drip release.
 - **No locks and no forced order.** A learner may start at the last lesson,
   jump around, and skip. The reel that brought them may have been about lesson
   4; sending them to lesson 1 loses them.
+- **Exception: cohort courses (owner, 2026-10-07).** Lessons open by week,
+  counted from the cohort's start date. The schedule is decided in the same
+  single SQL function as entitlement, never by the UI alone. Inside an open
+  week there is still no forced order, and nothing ever locks on a score.
+  Self-paced courses are unchanged.
 - The per-lesson `access` flag has exactly ONE job: **is this lesson part of
   the free sample?** It is not a general-purpose lock. Name it so nobody
   mistakes it for one.
@@ -259,6 +287,13 @@ Video and images are THEORY BLOCKS, not item types; they extend the existing
 implementing the same interface once LLM grading is built. If accommodating it
 requires changing the interface, the abstraction was wrong.
 
+**Voice tasks are not an item type (owner, 2026-10-07).** They are reviewed
+by a person and never scored, so they don't touch `lib/items` or the
+`{ earned, possible }` contract. They are a third block kind beside theory
+and practice, outside the lesson score and outside "completion = every lesson
+attempted". The `free_text` rule above is unaffected; it is about auto-scored
+items.
+
 Per-type scoring and normalisation decisions are settled in
 `docs/decisions/0008`–`0015`. Read those before changing any scoring
 behaviour.
@@ -320,6 +355,15 @@ most. Do not build a placeholder landing page.
 - Ship free before paid. M2 precedes M3 so a launch does not depend on a
   payment provider approving a Serbian entity.
 
+**First paid course: payment outside the app (owner, 2026-10-07).** The
+partner collects payment through Patreon or a similar service. The app
+records manual grants only (`course_entitlements.source = 'grant'`), created
+through invite links she sends. A refund or chargeback is revoked by hand. No
+checkout, webhook or provider script ships for it. Russian-issued cards don't
+work on Patreon either, so the Russia-resident gap is unchanged. The
+merchant-of-record route above (Polar vs Paddle) is parked until self-serve
+sales of evergreen courses are wanted.
+
 ## Milestones
 
 - **M0 — foundations & item engine.** Complete.
@@ -332,8 +376,15 @@ most. Do not build a placeholder landing page.
   minimal course progress (the two numbers as text; the ring stays
   deferred). **Anonymous play is required for launch** — an earlier proposal
   to split M2 and ship first to known students without it was considered and
-  rejected.
-- **M3 — monetisation.**
+  rejected. Also first-touch acquisition per registered learner (ANON-009,
+  pulled in 2026-10-07).
+- **M3 — first paid cohort** (redefined 2026-10-07). Bar: the partner runs a
+  four-week cohort with manually enrolled students, weekly voice tasks with
+  her written feedback, and the before/after screen. It also carries the
+  free-funnel changes from the same spec: Telegram sign-in, lessons that need
+  a sign-in (the partner marks which lessons stay open; see "Open
+  questions"), and learner stats. Merchant-of-record checkout moves to a
+  later, not-yet-numbered milestone.
 - **M4 — progression & polish**, including content export.
 
 ## Deliberately out of scope for v1
@@ -390,5 +441,30 @@ most. Do not build a placeholder landing page.
   whether this stays one codebase under one owner. Named as valid, not yet
   answered. Content ownership and purchaser access ARE settled; the commercial
   split is not.
-- Polar vs Paddle (M3 `type:decision`).
+- ~~Polar vs Paddle (M3 `type:decision`).~~ **Parked (owner, 2026-10-07):**
+  the first paid course is paid outside the app; see Payments.
 - Pricing model: per-course purchase, bundle, or subscription.
+- Supabase plan before the first paid cohort: the Free plan may pause a
+  project after 7 days of low activity (docs/decisions/0076). Open.
+- **Partner answers (2026-10-07).** Inputs for the M3 cards, not decisions
+  yet:
+  - **Runs:** the cohort course repeats as new runs (e.g. monthly) if the
+    first one works out. The first run's start date is not set yet.
+  - **Extended tier:** a calendar-like place in the app where the learner
+    sees when the next call is, with a Google Meet link attached to it.
+  - **Feedback on a voice task:** text she pastes in, shown under the
+    recording; no file needed. She wants basic formatting, at least bold.
+  - **Sign-in on free courses:** she marks which lessons are open without
+    sign-in (default: the first). A link to any other lesson shows its title
+    and the start of the lesson, then asks the learner to sign in, and after
+    sign-in returns them to that same lesson, not to `/`. **Conflicts the
+    owner settles on the access-level card before it is built:** it puts a
+    sign-in wall in front of some lessons ("Audience and language": no
+    signup wall; registration is offered only after a completed lesson);
+    and "the start of the lesson" is partial content served to someone the
+    access function denies, which the single-function entitlement rule has
+    to cover (compare "Partial play of paid lessons is deliberately NOT
+    built").
+  - **Reminders:** yes, through a Telegram bot ("week 2 is open", "your
+    feedback is ready"); which events and the wording are still to be
+    worked out. Whether this lands in M3 is open.
