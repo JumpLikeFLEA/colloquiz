@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
@@ -14,6 +14,7 @@ import {
   type LessonSessionResults,
 } from "@/lib/lessonPlayer/session";
 import { fireFunnelEvent } from "@/lib/funnelSource";
+import { bestPercentForVersion, higherPercent } from "@/lib/lessonPlayer/previousBest";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import {
@@ -115,6 +116,31 @@ export interface LessonPlayerProps {
    * public lesson page passes its sticky progress strip here. The admin
    * preview, the demo and tests pass nothing and render nothing. */
   renderProgress?: (progress: LessonProgress) => ReactNode;
+  /** docs/decisions/0088 — the signed-in learner's best score on this
+   * lesson as the server knows it (`get_course_attempt_summary`), or null.
+   * Combined with the best from attempts still in the local store, which
+   * the server can't see yet right after a sign-in from the lesson's end.
+   * Defaults to null; the admin preview and the demo pass nothing. */
+  previousBestPercent?: number | null;
+}
+
+const NEVER_CHANGES = () => () => {};
+let localBestCache: { attemptId: string; value: number | null } | null = null;
+
+/**
+ * The best score in the local attempt store for this lesson version, read
+ * ONCE per page load (keyed on `attemptId`, which page.tsx makes fresh per
+ * request). Once is the point: the mount-time upload below empties the store
+ * a moment later, and the note must not vanish when it does. The upload is
+ * awaited behind a dynamic import and a network call, so this first read,
+ * made while rendering, comes before it. A stable value per key is also
+ * what `useSyncExternalStore`'s getSnapshot requires.
+ */
+function localBestAtLoad(attemptId: string, lessonVersionId: string): number | null {
+  if (localBestCache?.attemptId !== attemptId) {
+    localBestCache = { attemptId, value: bestPercentForVersion(createAttemptStore().getAll(), lessonVersionId) };
+  }
+  return localBestCache.value;
 }
 
 /**
@@ -174,8 +200,21 @@ export function LessonPlayer({
   isSignedIn = false,
   lessonPath = "",
   renderProgress,
+  previousBestPercent = null,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
+
+  // docs/decisions/0088. useSyncExternalStore, not a useState initializer:
+  // the server has no localStorage, so its snapshot is null and hydration
+  // matches the server HTML; the client then re-renders with the local
+  // value. Signed-in learners only (the reported case).
+  const showsPreviousBest = isSignedIn && lessonVersionId !== "";
+  const localBest = useSyncExternalStore(
+    NEVER_CHANGES,
+    () => (showsPreviousBest ? localBestAtLoad(attemptId, lessonVersionId) : null),
+    () => null,
+  );
+  const previousBest = showsPreviousBest ? higherPercent(previousBestPercent, localBest) : null;
   const [results, setResults] = useState<LessonSessionResults>({});
   const [attemptStore] = useState<AttemptStore>(() => createAttemptStore());
 
@@ -229,6 +268,7 @@ export function LessonPlayer({
       lessonPath={lessonPath}
       isSignedIn={isSignedIn}
       renderProgress={renderProgress}
+      previousBest={previousBest}
     />
   );
 }
@@ -258,6 +298,7 @@ function LessonPlayerBody({
   lessonPath,
   isSignedIn,
   renderProgress,
+  previousBest,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
@@ -269,6 +310,7 @@ function LessonPlayerBody({
   lessonPath: string;
   isSignedIn: boolean;
   renderProgress?: (progress: LessonProgress) => ReactNode;
+  previousBest: number | null;
 }) {
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
@@ -307,6 +349,16 @@ function LessonPlayerBody({
     <>
       {renderProgress?.(progress)}
       <div className={LESSON_COLUMN_CLASS}>
+        {previousBest !== null && (
+          // docs/decisions/0088: a page that opens blank after a sign-in
+          // read as lost progress. This says the score was kept.
+          <p className={`${READING_WIDTH_CLASS} rounded-xl bg-brand-subtle px-4 py-3 text-sm text-brand-text`}>
+            <span className="font-semibold">
+              {alliengllCopy.player.previousBestLabel}: {previousBest}%
+            </span>{" "}
+            {alliengllCopy.player.previousBestNote}
+          </p>
+        )}
         {/* `contents` keeps every block a direct flex child of LESSON_COLUMN_CLASS
             (so `gap-4` still applies between blocks, not just around this
             wrapper) — it exists only so tests can scope a query to "the

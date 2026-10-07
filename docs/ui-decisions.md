@@ -1131,3 +1131,22 @@ Appended to in the same commit as the change it records. Referenced from
     back link shows just its arrow below `sm` (label kept as its
     `aria-label`). The lesson page and signed-out views keep the label.
   - Sign-out is not a path to `/app`; the footer stays the only one (0062).
+- Lesson page "Your best" note (2026-10-07, ad-hoc, docs/decisions/0088).
+  Owner report: signing in from the end of a lesson brought them back to a
+  blank lesson, which read as lost results. A signed-in learner who has
+  attempted the lesson now sees a note at the top of the lesson column, at
+  reading width, in `bg-brand-subtle text-brand-text` (the exercise pill's
+  tokens): "**Your best: N%** Answer again to try to beat it. Your best
+  score is kept." The exercises stay unanswered; restoring the answers
+  themselves was option B and was not chosen.
+  - This is NOT the running-score banner 0079 D5 removed. That showed this
+    visit's score at the top; this shows the best score from earlier
+    visits, and the running score still lives in the strip and the
+    completion card.
+  - The figure is the higher of the server's best (the course page's
+    "Best") and the best still in the local attempt store. The local one
+    is needed right after a sign-in, before the player uploads the
+    anonymous attempts. Do not drop it in favour of the server figure
+    alone.
+  - Signed-in learners only. The admin preview and the demo pass no
+    lesson version and show nothing.

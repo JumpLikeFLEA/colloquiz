@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
 import { getSignedInAccount } from "@/lib/signedInAccount";
+import { getCourseAttemptSummary } from "@/lib/courseAttempts";
+import { bestScoreForLesson } from "@/lib/coursePageProgress";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../../AccountMenu";
@@ -104,6 +106,17 @@ export default async function LessonPage({
 
   const attemptId = crypto.randomUUID();
 
+  // docs/decisions/0088 — the same "Best" the course page shows for this
+  // lesson. A failed read shows no note rather than failing the lesson.
+  let previousBestPercent: number | null = null;
+  if (signedIn) {
+    try {
+      previousBestPercent = bestScoreForLesson(lessonSlug, await getCourseAttemptSummary(lesson.courseId));
+    } catch (err) {
+      console.error("failed to read the lesson's best score", err);
+    }
+  }
+
   return (
     <LessonPageClient
       header={band}
@@ -115,6 +128,7 @@ export default async function LessonPage({
       lessonVersionId={lesson.lessonVersionId}
       isSignedIn={lesson.isSignedIn}
       lessonPath={`/courses/${courseSlug}/${lessonSlug}`}
+      previousBestPercent={previousBestPercent}
     />
   );
 }

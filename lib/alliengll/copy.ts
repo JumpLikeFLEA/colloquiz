@@ -80,6 +80,10 @@ export const alliengllCopy = {
     gapLabel: "Gap",
     clear: "Clear",
     allWordsPlaced: "All words placed",
+    // docs/decisions/0088: the note above a lesson a signed-in learner has
+    // already attempted, so a fresh page doesn't read as lost progress.
+    previousBestLabel: "Your best",
+    previousBestNote: "Answer again to try to beat it. Your best score is kept.",
   },
 
   theory: {

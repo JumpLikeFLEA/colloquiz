@@ -43,6 +43,7 @@ export function LessonPageClient({
   lessonVersionId,
   isSignedIn,
   lessonPath,
+  previousBestPercent,
 }: {
   header: ReactNode;
   backLink: ReactNode;
@@ -53,6 +54,8 @@ export function LessonPageClient({
   lessonVersionId: string;
   isSignedIn: boolean;
   lessonPath: string;
+  /** docs/decisions/0088 — the server's best score for this learner, or null. */
+  previousBestPercent: number | null;
 }) {
   return (
     <div className="pb-8">
@@ -66,6 +69,7 @@ export function LessonPageClient({
         lessonVersionId={lessonVersionId}
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}
+        previousBestPercent={previousBestPercent}
         renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
       />
     </div>
