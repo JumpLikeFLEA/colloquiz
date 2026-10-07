@@ -325,7 +325,7 @@ and which of the above you nearly hit, so the review has something to check.
 - Any `--no-approval` stop listed above fires.
 - A dependency satisfaction audit (step 1) recommends anything other than
   "genuinely blocks".
-- 3 or more cards in Verify.
+- 5 or more cards in Verify.
 - A migration is ready to apply and nothing further can be verified without
   it.
 
