@@ -5,6 +5,7 @@ import { extractClientIp, hashClaimToken } from '@/lib/pendingClaims'
 import { safeNext } from '@/lib/safeNext'
 import { recordServerFunnelEvent } from '@/lib/funnelEventServer'
 import { isFunnelSource } from '@/lib/funnelSource'
+import { recordSignupAcquisition } from '@/lib/signupAcquisitionServer'
 
 /**
  * ANON-004 — after a successful verification establishes a session, claim
@@ -105,6 +106,9 @@ export async function GET(request: NextRequest) {
         path: next,
         ip: extractClientIp(request.headers) ?? '127.0.0.1',
       })
+      // ANON-009 (docs/decisions/0081) — same genuine-signup moment, tied to
+      // the account this time. Awaited (0081 Decision 4), never throws.
+      await recordSignupAcquisition(supabase, { source, next })
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

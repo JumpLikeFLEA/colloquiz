@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 2;
+export const EXPORT_FORMAT_VERSION = 3;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -20,6 +20,7 @@ export const EXPORT_CONTENTS = [
   "Group memberships — the groups you belong to and your role",
   "Duel history — opponents, outcomes and scores",
   "Lesson attempts — every English-course practice-block attempt and score",
+  "Signup source — the course and arrival channel recorded when you signed up",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -38,6 +39,14 @@ export type LessonAttemptRow = {
   created_at: string;
 };
 
+export type SignupAcquisitionRow = {
+  course_id: string | null;
+  source: string;
+  created_at: string;
+  /** Embedded `courses(slug, title)`; null once the course is unpublished or gone. */
+  courses: unknown;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -48,6 +57,7 @@ export type ExportSources = {
   memberships: MembershipRow[];
   duels: unknown[];
   lessonAttempts: LessonAttemptRow[];
+  signupAcquisition: SignupAcquisitionRow | null;
 };
 
 /**
@@ -137,6 +147,23 @@ export function buildExportPayload(
       possible: row.possible,
       recorded_at: row.created_at,
     })),
+
+    // ANON-009 (docs/decisions/0081): written once at signup, absent for an
+    // account created before it shipped or under a GPC/DNT opt-out.
+    signup_acquisition: src.signupAcquisition ? exportSignupAcquisition(src.signupAcquisition) : null,
+  };
+}
+
+function exportSignupAcquisition(row: SignupAcquisitionRow) {
+  // PostgREST types an embedded resource as an array; this one is a to-one FK.
+  const embedded = Array.isArray(row.courses) ? row.courses[0] : row.courses;
+  const course = (embedded ?? null) as { slug?: string; title?: string } | null;
+  return {
+    source: row.source,
+    course_id: row.course_id,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    recorded_at: row.created_at,
   };
 }
 

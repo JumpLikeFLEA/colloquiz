@@ -4,6 +4,7 @@ import { safeNext } from '@/lib/safeNext'
 import { extractClientIp } from '@/lib/pendingClaims'
 import { recordServerFunnelEvent } from '@/lib/funnelEventServer'
 import { isFunnelSource } from '@/lib/funnelSource'
+import { recordSignupAcquisition } from '@/lib/signupAcquisitionServer'
 
 // OPS-008 (docs/decisions/0069) — how fresh `created_at` must be to count an
 // OAuth sign-in as a new signup rather than an existing user re-authenticating.
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
             path: next,
             ip: extractClientIp(request.headers) ?? '127.0.0.1',
           })
+          // ANON-009 (docs/decisions/0081) — awaited, never throws.
+          await recordSignupAcquisition(supabase, { source, next })
         }
       }
       return NextResponse.redirect(`${origin}${next}`)

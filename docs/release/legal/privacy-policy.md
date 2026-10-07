@@ -92,6 +92,14 @@ signal, we do not store it and record no arrival channel. To prevent abuse, your
 address is briefly logged separately from the events, never stored with them, and
 deleted automatically once it is no longer needed for that purpose.
 
+Separately, when you create an account on the English course platform, we store with
+your account, once, which course you signed up from (if you signed up from a course or
+lesson page) and that same coarse arrival channel. This tells us which courses and
+channels bring learners, so we can decide which courses to make next. It is recorded
+only at sign-up and never updated afterwards, it is visible only to you (in your data
+export) and to us, and it is deleted when you delete your account. If your browser
+sends a Global Privacy Control or Do Not Track signal, nothing is recorded.
+
 We use an error-monitoring service that receives a technical report when something breaks
 — a stack trace, the page you were on, and browser details. Session cookies and your
 email address are stripped from these reports before they are sent.
@@ -141,6 +149,7 @@ name or feedback.
 | Temporarily linking English lesson scores you earned before signing up to your account, via the confirmation link you request at sign-up | **Contract** (Art. 6(1)(b)) — a step you request in order to enter into the contract |
 | Keeping the Service secure, preventing abuse, moderating reported content | **Legitimate interests** (Art. 6(1)(f)) — running a safe service |
 | Aggregate, non-identifying analytics to keep the Service working | **Legitimate interests** — we use privacy-preserving, cookieless tools, which we consider a minimal intrusion |
+| Recording which course and arrival channel you signed up from | **Legitimate interests** — learning which courses and channels bring learners, so we know which courses to make; one record per account, never updated, and not recorded under Global Privacy Control or Do Not Track |
 | Complying with legal obligations | **Legal obligation** (Art. 6(1)(c)) |
 
 You may object to any processing based on legitimate interests — see section 8.
@@ -189,6 +198,7 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | Provider server logs | Per the provider's own policy, typically days to a few weeks |
 | Error reports | Per the monitoring provider's retention, typically 30–90 days |
 | English lesson practice attempts | Until you close your account; then **deleted outright**, not anonymised — see section 9 |
+| Signup source (the course and arrival channel you signed up from) | Until you close your account; then **deleted outright** |
 | Cross-device claim stash (pre-signup lesson scores held server-side) | Deleted when the confirmation link is first used; if never used, unusable after 7 days and deleted at the next sign-up after that |
 | IP address logged when creating a cross-device claim stash | 1 hour |
 
@@ -198,8 +208,8 @@ Under the GDPR / UK GDPR you have the right to:
 
 - **Access** your data, and to receive a **portable copy**. You can do this yourself,
   immediately: **Settings › Data and privacy › Export my data** produces a complete JSON
-  file of your profile, results, achievements, group memberships, duel history and
-  English lesson practice attempts.
+  file of your profile, results, achievements, group memberships, duel history,
+  English lesson practice attempts and the course and channel you signed up from.
 - **Rectify** inaccurate data — Settings › Account.
 - **Erase** your data ("right to be forgotten") — **Settings › Data and privacy › Delete
   my account**. See section 9 for exactly what this does.
@@ -221,6 +231,7 @@ When you delete your account we, immediately and irreversibly:
 - remove your notifications, notification preferences and any in-progress quiz;
 - remove you from all leaderboards;
 - erase your English lesson practice attempts outright — see the contrast below;
+- erase the record of which course and channel you signed up from;
 - close your sign-in — you can no longer access the account, and neither can anyone else.
 
 We **retain your quiz results and any questions or quizzes you contributed, in
