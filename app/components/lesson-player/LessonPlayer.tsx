@@ -52,8 +52,9 @@ export interface PracticeRendererProps {
    * generate this itself. */
   attemptId: string;
   /** Called by a real per-type renderer (PLAY-002..004) once the learner
-   * submits a response. Always updates local session state; ANON-005 adds a
-   * best-effort record of the attempt for a signed-in learner (see
+   * submits a response. Always updates local session state; records the
+   * attempt to the local store (ANON-013) and, for a signed-in learner,
+   * makes a best-effort upload of it (ANON-005; see
    * `LessonPlayer`'s own doc comment) — nothing here awaits or surfaces that
    * network call. */
   onScore: (result: ItemScoreResult) => void;
@@ -100,8 +101,9 @@ export interface LessonPlayerProps {
   lessonVersionId?: string;
   /** ANON-005 — whether the caller already resolved an authenticated session
    * server-side (`lib/publicLesson.ts`'s `authUserFrom`). Defaults to false.
-   * Recording never happens unless this is true AND `lessonVersionId` is set,
-   * so passing one without the other is inert, not a half-broken state. */
+   * Uploading never happens unless this is true AND `lessonVersionId` is set.
+   * Recording to the local store needs only `lessonVersionId` (ANON-013), so
+   * an anonymous learner's attempts are there to migrate at signup. */
   isSignedIn?: boolean;
   /** ANON-004 — this lesson's own path (`/courses/<courseSlug>/<lessonSlug>`),
    * threaded straight to the completion screen's registration offer so a
@@ -155,6 +157,12 @@ export interface LessonPlayerProps {
  * attempts flushed too — see docs/decisions/0068 Decision 6. Idempotent on
  * `attemptId` either way, so this can never double-count against a
  * `handleScore`-triggered upload.
+ *
+ * ANON-013 — that flush, and RegistrationOffer's cross-browser
+ * `pending_claims` stash, only have something to migrate because an
+ * anonymous learner's scored blocks are recorded to the local store too
+ * (`handleScore`). Until ANON-013 they were not, and both paths uploaded
+ * nothing (docs/decisions/0082).
  */
 export function LessonPlayer({
   document,
@@ -193,7 +201,11 @@ export function LessonPlayer({
   function handleScore(blockId: string, result: ItemScoreResult) {
     setResults((prev) => ({ ...prev, [blockId]: result }));
 
-    if (!isSignedIn || !lessonVersionId) return;
+    // ANON-013 — every learner's attempt goes to the local store, signed in
+    // or not: it is what the mount-time flush (0068 Decision 6) and
+    // RegistrationOffer's pending_claims stash both migrate from. Only the
+    // upload, and with it the @supabase/ssr chunk, is signed-in only.
+    if (!lessonVersionId) return;
     attemptStore.record({
       attemptId: crypto.randomUUID(),
       lessonVersionId,
@@ -201,6 +213,7 @@ export function LessonPlayer({
       earned: result.earned,
       possible: result.possible,
     });
+    if (!isSignedIn) return;
     void recordSignedInAttempt(attemptStore);
   }
 
