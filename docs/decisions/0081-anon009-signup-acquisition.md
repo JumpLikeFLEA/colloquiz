@@ -82,7 +82,8 @@ anonymisation: nothing else reads another learner's acquisition row.
 
 - AuthScreen's email and OAuth signups (`/signup`, `/login` in register mode,
   and the landing header's "Log in" link that leads there) thread no `source`,
-  so a learner who registers that way is never attributed.
+  so a learner who registers that way is never attributed. Resolved for
+  the landing link by ANON-014, see 0085.
 - Anything that changes `next` on the way to the routes changes the course.
   M3's sign-in prompt on lessons the partner does not mark open (partner,
   2026-10-07) is expected to pass the lesson path as `next`, and so inherits

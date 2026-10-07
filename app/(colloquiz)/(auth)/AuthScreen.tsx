@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
+import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, signupEmailRedirectTo } from "@/lib/authRedirect";
+import { getCurrentFunnelSource } from "@/lib/funnelSource";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -184,9 +186,12 @@ interface AuthScreenProps {
 export function AuthScreen({ initialMode, initialError, initialNotice, redirectTo }: AuthScreenProps) {
   const router = useRouter();
   // Where to land after auth. Kept relative + single-slash to prevent open redirects.
-  const dest = redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-    ? redirectTo
-    : "/";
+  const dest = authDest(redirectTo);
+  // ANON-014 (docs/decisions/0085) — reached from the English surface (the
+  // landing header's "Log in" passes next=/), so a signup here is attributed
+  // like RegistrationOffer's. A Colloquiz entry never reads the funnel source.
+  const englishEntry = isEnglishSurfaceEntry(redirectTo);
+  const funnelSource = () => (englishEntry ? getCurrentFunnelSource() : null);
   const [mode, setMode] = useState<"login" | "register" | "forgot">(initialMode);
   const [form, setForm] = useState<AuthFormState>({ email: "", password: "", name: "", confirmPassword: "", city: "" });
   const [error, setError] = useState<string | null>(initialError ?? null);
@@ -202,7 +207,10 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
     setForm({ email: "", password: "", name: "", confirmPassword: "", city: "" });
     setAgreed(false);
     setError(null);
-    window.history.replaceState(null, "", next === "login" ? "/login" : "/signup");
+    // Keep `next` in the URL so a reload doesn't lose the destination (and,
+    // for an English entry, the attribution).
+    const query = redirectTo ? `?${new URLSearchParams({ next: redirectTo }).toString()}` : "";
+    window.history.replaceState(null, "", `${next === "login" ? "/login" : "/signup"}${query}`);
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -258,7 +266,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           password: form.password,
           options: {
             data: { full_name: form.name, city: form.city },
-            emailRedirectTo: `${window.location.origin}/auth/confirm`,
+            emailRedirectTo: signupEmailRedirectTo(window.location.origin, dest, funnelSource()),
           },
         });
 
@@ -291,12 +299,9 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
     setError(null);
     setOauthLoading(provider);
     const supabase = createClient();
-    const callback = dest === "/"
-      ? `${window.location.origin}/auth/callback`
-      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(dest)}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: callback },
+      options: { redirectTo: oauthCallbackUrl(window.location.origin, dest, funnelSource()) },
     });
     // On success the browser navigates away; only failures land here.
     if (error) {

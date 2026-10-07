@@ -12,6 +12,10 @@ import { LanguageToggle } from "./LanguageToggle";
  * lib/alliengll/copy.ts stays "Colloquiz" (docs/handoff.md, "Open
  * questions" — naming is still deliberately deferred).
  *
+ * The login link carries `next=/`: that is what marks /login as the English
+ * entry point, so a signup there threads the funnel source (ANON-014,
+ * docs/decisions/0085).
+ *
  * Sits INSIDE the hero's brand-gradient band (docs/decisions/0078), so it is
  * white-on-gradient: translucent white surfaces (`bg-white/10`, the
  * AuthLeftPanel vocabulary) rather than the page's own card/muted tokens,
@@ -33,7 +37,7 @@ export function LandingHeader({
       <div className="flex items-center gap-1.5">
         <LanguageToggle lang={lang} label={t.languageGroupLabel} onChange={onSetLang} />
         <Link
-          href="/login"
+          href="/login?next=/"
           className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors outline-none hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white"
         >
           {t.login}
