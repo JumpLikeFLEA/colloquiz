@@ -2376,6 +2376,7 @@ export const CARDS = [
       'Full protocol, seeded with a run whose start is in the past so some weeks are open and some are not. Callers: anon, signed-in non-enrolled, basic enrolled before and after unlock, extended enrolled, a learner in two runs, editor. Content: open-week lesson, future-week lesson, a call URL. The run has at least 2 calls, and the extended learner in the same run seeing both is the positive control for "a basic learner sees no calls".',
       'Export and deletion cover course_entitlements and every new user-keyed table. delete_my_account is re-emitted from 053\'s body (or whatever the print rule shows is latest), not from memory; full protocol on a seeded account.',
       'PLAY-006\'s anonymous-path rows re-run; migration-number and re-emitted-body print rule (section header).',
+      'The access-level freeze (docs/decisions/0094 Decision 4, extending 0093 Decision 5) holds: while a run of the course is in progress, raising a published lesson\'s access_level to entitled is denied, and lowering it is allowed. Each is printed with a positive control (the same raise on a course with no run in progress succeeds; the lowering leaves can_read_lesson true for the same callers).',
     ],
   },
   {
