@@ -110,6 +110,11 @@ immediately. There is no per-lesson purchase and no drip release.
   counted from the cohort's start date. The schedule is decided in the same
   single SQL function as entitlement, never by the UI alone. Inside an open
   week there is still no forced order, and nothing ever locks on a score.
+  A run has a start and a stored end. Week N of a run opens at its start plus
+  7 × (N−1) days; after the end every lesson is open. While a run of the
+  course is in progress, a published lesson's week cannot be moved later, and
+  a run's start cannot be changed once it has begun, so no edit can re-lock a
+  lesson a learner could already open (docs/decisions/0093).
   Self-paced courses are unchanged.
 - The per-lesson `access` flag has exactly ONE job: **is this lesson part of
   the free sample?** It is not a general-purpose lock. Name it so nobody
@@ -356,9 +361,12 @@ most. Do not build a placeholder landing page.
   payment provider approving a Serbian entity.
 
 **First paid course: payment outside the app (owner, 2026-10-07).** The
-partner collects payment through Patreon or a similar service. The app
-records manual grants only (`course_entitlements.source = 'grant'`), created
-through invite links she sends. A refund or chargeback is revoked by hand. No
+partner collects payment through Patreon or a similar service. Access is
+recorded by hand: a claim of an invite link she sends writes one
+`run_enrolments` row (run, learner, tier); a refund or chargeback sets that
+row's `revoked_at`. `course_entitlements` (`source = 'grant'`) is kept for
+comps, test accounts and future self-serve sales, and a grant on a cohort
+course opens every lesson regardless of the schedule. No
 checkout, webhook or provider script ships for it. Russian-issued cards don't
 work on Patreon either, so the Russia-resident gap is unchanged. The
 merchant-of-record route above (Polar vs Paddle) is parked until self-serve
