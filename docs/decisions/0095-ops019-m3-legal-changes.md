@@ -123,17 +123,7 @@ stamped 1.0 against Terms 1.1.
 
 ## Board consequences
 
-- OPS-022 "Legal revision for launch" (M2, rank 2209.5, ahead of OPS-010,
-  which depends on it) carries Decisions 2 to 4. It drafts all three legal
-  files and stops for owner sign-off on the full diff before committing.
-  OPS-010 gains the check that a fresh production signup has
-  `profiles.terms_version = '1.1'` after the owner applies the migration.
-- OPS-022 keeps `dependsOn: ['OPS-019']` as the record. OPS-019 is an M3
-  card, so it must not hold up M2's exit: it is closed by this commit's
-  `Closes #145` when the owner pushes.
-- VOICE-004 gains the 6-month automatic purge and the replaced-recording
-  deletion; COH-003 gains the 30-day unclaimed-label purge; COH-005 renders a
-  purged recording as removed, not as "before missing".
-- COH-003, AUTH-011, VOICE-004, VOICE-005, ANON-012 and PROG-001 depend on
-  OPS-022 and replace "ships the text" with "the live legal text describes
-  what this card does; if it doesn't, stop and ask".
+- OPS-022 "Legal revision for launch" (M2, rank 2209.5, ahead of OPS-010, which depends on it) carries Decisions 2 to 4. It drafts all three legal files and stops for owner sign-off on the full diff before committing. OPS-010 gains the check that a fresh production signup has  after the owner applies the migration.
+- OPS-022 keeps  as the record. OPS-019 is an M3 card, so it must not hold up M2's exit: it is closed by this commit's  when the owner pushes.
+- VOICE-004 gains the 6-month automatic purge and the replaced-recording deletion; COH-003 gains the 30-day unclaimed-label purge; COH-005 renders a purged recording as removed, not as "before missing".
+- COH-003, AUTH-011, VOICE-004, VOICE-005, ANON-012 and PROG-001 depend on OPS-022 and drop "ships the text" for "the live legal text describes what this card does; if it doesn't, stop and ask".
