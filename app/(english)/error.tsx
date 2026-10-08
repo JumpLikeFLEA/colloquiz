@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { alliengllErrorCopy } from "@/lib/alliengll/errorCopy";
+import { BOUNDARY_LANG } from "@/lib/alliengll/surfaceLang";
+import { PageLang } from "./HtmlLang";
 
 /**
  * PLAY-006: this surface's first route that can throw for a real reason (an
@@ -33,6 +35,8 @@ export default function EnglishError({
     // forcing its own full-viewport height against the footer below it
     // (docs/ui-decisions.md, 2026-09-28).
     <main className="flex flex-1 items-center justify-center px-6 py-16">
+      {/* Russian chrome on whatever path threw (SHELL-018, docs/decisions/0091). */}
+      <PageLang lang={BOUNDARY_LANG} />
       <div className="max-w-md w-full rounded-2xl border border-border bg-card p-6 flex flex-col items-center gap-5 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive-subtle">
           <AlertCircle size={22} className="text-destructive-text" />

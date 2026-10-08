@@ -7,6 +7,7 @@ import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/colum
 import type { CatalogueCourse } from "@/lib/courseCatalogue";
 import { pluralize } from "@/lib/pluralCategory";
 import { LandingHeader } from "./LandingHeader";
+import { PageLang } from "./HtmlLang";
 import { EnglishFooter } from "./EnglishFooter";
 import { CourseCard } from "./CourseCard";
 import { HeroDemo } from "./HeroDemo";
@@ -91,6 +92,10 @@ export function LandingContent({
 
   return (
     <>
+      {/* The toggle switches these strings at once, before its Server
+          Action's re-render reaches the root layout (SHELL-018,
+          docs/decisions/0091). */}
+      <PageLang lang={lang} />
       <div className="flex flex-1 flex-col">
         <section className={GRADIENT_BAND_CLASS}>
           {backdrop}

@@ -31,20 +31,40 @@ export function parseSurfaceLang(value: string | undefined): SurfaceLang {
 const COURSE_PAGE = /^\/courses\/[^/]+$/;
 const LESSON_PAGE = /^\/courses\/[^/]+\/[^/]+$/;
 
+/** The 404 and the error boundary's chrome is Russian on every path they
+ * can appear on (docs/handoff.md, "Audience and language"). They render on
+ * the URL that failed, so the path alone can't tell them apart from the page
+ * that should have rendered there; they claim this language themselves
+ * (`PageLang`, app/(english)/HtmlLang.tsx). */
+export const BOUNDARY_LANG: SurfaceLang = "ru";
+
+function trimPath(pathname: string): string {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+}
+
 /**
- * Which language the shared footer renders in on `pathname`, or null where
- * the page renders its own footer instead (`/`, whose `LandingContent`
- * follows the landing's client-side toggle state).
+ * The language of the interface chrome on `pathname`, which is what
+ * `<html lang>` must say (WCAG 2.1 SC 3.1.1; SHELL-018):
  *
- *   /                       → null (LandingContent renders it)
+ *   /                       → the saved choice (the landing has the toggle)
  *   /courses/<course>       → the saved choice (the page has the toggle)
  *   /courses/<c>/<lesson>   → "en" (lesson chrome is always English)
  *   anything else           → "ru" (404 and error pages stay Russian)
  */
-export function footerLangForPath(pathname: string, savedLang: SurfaceLang): SurfaceLang | null {
-  const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
-  if (path === "/") return null;
-  if (COURSE_PAGE.test(path)) return savedLang;
+export function pageLangForPath(pathname: string, savedLang: SurfaceLang): SurfaceLang {
+  const path = trimPath(pathname);
+  if (path === "/" || COURSE_PAGE.test(path)) return savedLang;
   if (LESSON_PAGE.test(path)) return "en";
-  return "ru";
+  return BOUNDARY_LANG;
+}
+
+/**
+ * Which language the shared footer renders in on `pathname`: the page's own
+ * language (`pageLangForPath`), or null on `/`, whose `LandingContent`
+ * renders its own footer so it follows the landing's client-side toggle
+ * state.
+ */
+export function footerLangForPath(pathname: string, savedLang: SurfaceLang): SurfaceLang | null {
+  if (trimPath(pathname) === "/") return null;
+  return pageLangForPath(pathname, savedLang);
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { BOUNDARY_LANG } from "@/lib/alliengll/surfaceLang";
+import { PageLang } from "./HtmlLang";
 
 /**
  * In-segment 404 — renders inside THIS root layout (fonts, globals.css,
@@ -12,6 +14,9 @@ export default function EnglishNotFound() {
   return (
     // flex-1 (not min-h-svh): same reasoning as error.tsx.
     <div className="flex flex-1 items-center justify-center bg-background px-6 py-16">
+      {/* Russian chrome on whatever path 404'd, e.g. a bad lesson slug
+          (SHELL-018, docs/decisions/0091). */}
+      <PageLang lang={BOUNDARY_LANG} />
       <div className="max-w-md w-full text-center flex flex-col items-center gap-5">
         <div className="flex flex-col gap-2">
           <h1 className="text-lg font-semibold text-foreground">{alliengllCopy.notFound.title}</h1>

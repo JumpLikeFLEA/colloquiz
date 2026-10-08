@@ -1,8 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { authUserFrom } from '@/lib/auth'
+import { PATHNAME_HEADER } from '@/lib/requestPath'
 
 export async function proxy(request: NextRequest) {
+  // Forwarded to Server Components; see lib/requestPath.ts. Set before the
+  // first NextResponse.next({ request }) so every response built below,
+  // including the one setAll rebuilds, carries it.
+  request.headers.set(PATHNAME_HEADER, request.nextUrl.pathname)
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
