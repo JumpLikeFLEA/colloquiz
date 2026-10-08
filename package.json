@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "check": "tsc --noEmit && eslint . && node scripts/check-hex-literals.mjs",
+    "check": "tsc --noEmit && eslint . && node scripts/check-hex-literals.mjs && node scripts/check-terms-version.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "tsx --env-file=.env.local scripts/bench.ts",

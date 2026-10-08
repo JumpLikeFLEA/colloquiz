@@ -1,6 +1,6 @@
 # Subprocessors
 
-**Colloquiz — https://colloquiz.app** · Version 1.0 · Last updated 2026-09-26
+**Colloquiz — https://colloquiz.app** · Version 1.1 · Last updated 2026-10-08
 
 These are the third parties that process personal data on our behalf. The
 [Privacy Policy](./privacy-policy.md) links here. Keep this file current — adding a
@@ -20,6 +20,7 @@ verified rather than trusted.
 | **Resend** | Outbound email — **account mail only** (sign-up confirmation, password reset) | Email address, and the message content | EU/US | EU–US DPF / SCCs | Configured as custom SMTP **inside Supabase Auth**; the app holds no API key and sends no mail of its own — see `lib/feedbackNotify.ts` |
 | **Google** (Google Ireland Ltd.) | OAuth sign-in — **only if the user chooses it** | Email address, account identifier, name and picture as returned by the provider | EU/US | EU–US DPF / SCCs | `app/(auth)/AuthScreen.tsx`, `app/auth/callback/route.ts` |
 | **Discord** (Discord Inc.) | OAuth sign-in — **only if the user chooses it** | Same as above | US | SCCs | `app/(auth)/AuthScreen.tsx`, `app/auth/callback/route.ts` |
+| **Telegram** (legal entity to be confirmed from telegram.org/privacy before ANON-012 ships) | Sign-in — **only if the user chooses it** | Telegram account identifier, name, username and profile picture, as Telegram returns them (ANON-010 prints the real field list; until then these are Telegram's documented claims) | Outside the EEA | Not yet confirmed — to be settled by the owner before ANON-012 ships | Planned, not yet built: ANON-012. Listed before it goes live, per step 1 below |
 | **Discord** (webhook) | Operator notification when new in-app feedback arrives | The feedback text, which may contain whatever the user typed | US | SCCs | `lib/feedbackNotify.ts`, `FEEDBACK_DISCORD_WEBHOOK_URL` — optional; feedback is stored either way |
 
 ## Added as part of the 1.0 release
@@ -42,3 +43,6 @@ verified rather than trusted.
 2. Confirm a DPA is in place (usually accepting the provider's standard terms).
 3. Bump the version and date at the top of this file and of the Privacy Policy.
 4. If the change materially affects users, notify them in-app per Terms §10.
+
+Change log: 1.1 (2026-10-08) added Telegram. No notice was needed: production has no
+real accounts before launch (docs/decisions/0095, Decision 1).

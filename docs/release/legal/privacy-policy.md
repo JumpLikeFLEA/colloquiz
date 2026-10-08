@@ -2,9 +2,9 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.1 · Last updated 2026-10-07
+Version 1.2 · Last updated 2026-10-08
 
-> **Source of truth.** This file is the canonical text. `app/(legal)/privacy/page.tsx`
+> **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
 > publication — a privacy policy without a real controller name and contact address is
 > not compliant.
@@ -56,6 +56,9 @@ that produces legal or similarly significant effects.
 | Profile picture | Optional, Settings › Account | Shown to you and to members of groups you join |
 | Your age confirmation | Sign-up | We only offer the Service to people aged 13 and over |
 | Feedback and question reports | When you submit them | To fix problems and moderate the question bank |
+| Telegram identity — if you sign in with Telegram: your Telegram account identifier, name, username and profile picture, as Telegram returns them | Sign-in with Telegram | Account identity and sign-in. Instead of an email address, a Telegram account has a username, which is what a course author sees |
+| Voice recordings — if you send one for a voice task in a cohort course: the audio | You, in the voice task | So the course author can listen and answer in writing, and so you can compare your first and last recording |
+| Invite contact label — an author's note of a name and a contact (email or @telegram) for someone they invite to a course | The course author, not you | To send you the invite. Only the course author sees it |
 
 ### 3.2 Data created as you use the Service
 
@@ -70,6 +73,9 @@ that produces legal or similarly significant effects.
 | Notifications and your notification preferences | To tell you about things that concern you inside the app |
 | Quizzes you create or share, and share links you generate | To provide those features |
 | English lesson practice-item attempts — each item you complete, its score, and which lesson block it belongs to | To score your lesson and show your progress, and, if you started before signing in, to carry that progress onto your account once you do |
+| English lesson opens — which lessons you opened while signed in, and when | To show you your progress, and to show the author of the course how learners move through it |
+| Cohort enrolments — if you join a cohort course: the run, your tier, when you joined and, if it happened, when your access was ended (for example after a refund) | To give you access to the course and to open its lessons week by week |
+| The author's written feedback on a voice task, and a final comment — if you join a cohort course | So you can read it under your recording |
 
 **Your numeric skill rating is never shown to anyone, including you.** It is stored with
 database permissions that make it unreadable outside the duel calculation itself; only a
@@ -137,8 +143,9 @@ one hour.
 ### 3.5 What we do not collect
 
 We do not collect special-category data (health, race, religion, political opinions,
-biometrics, sexual orientation), payment details (the Service is free), or precise
-location. Please do not put such information into free-text fields such as your display
+biometrics, sexual orientation), payment details, or precise location. We collect no
+payment details: paid courses are paid to the author through a third-party platform, and
+we never see your card or account details there. Please do not put such information into free-text fields such as your display
 name or feedback.
 
 ## 4. Why we process it, and our legal basis
@@ -150,6 +157,11 @@ name or feedback.
 | Temporarily linking English lesson scores you earned before signing up to your account, via the confirmation link you request at sign-up | **Contract** (Art. 6(1)(b)) — a step you request in order to enter into the contract |
 | Keeping the Service secure, preventing abuse, moderating reported content | **Legitimate interests** (Art. 6(1)(f)) — running a safe service |
 | Aggregate, non-identifying analytics to keep the Service working | **Legitimate interests** — we use privacy-preserving, cookieless tools, which we consider a minimal intrusion |
+| Signing you in with Telegram, if you choose it | **Contract** (Art. 6(1)(b)) — the sign-in method you asked for |
+| Running a cohort course you joined: your enrolments (run and tier), opening its lessons week by week, recording which lessons you opened, and your voice recordings with the author's written feedback and final comment | **Contract** (Art. 6(1)(b)) — providing the course you joined |
+| A course author seeing, in a cohort course you joined, your email or Telegram username, your invite's contact label, how you found the course, and your activity in it | **Contract** (Art. 6(1)(b)) — running the course you joined |
+| A course author seeing, in a free course, your email or Telegram username, how you found the course, and your activity in it, including lesson opens | **Legitimate interests** (Art. 6(1)(f)) — helping the author run and improve the course and reach its learners. You can object (section 8) |
+| An author's contact label for you before you have claimed an invite | **Legitimate interests** — sending the invite you were offered |
 | Recording which course and arrival channel you signed up from | **Legitimate interests** — learning which courses and channels bring learners, so we know which courses to make; one record per account, never updated, and not recorded under Global Privacy Control or Do Not Track |
 | Complying with legal obligations | **Legal obligation** (Art. 6(1)(c)) |
 
@@ -171,7 +183,27 @@ Some information is visible to other users by design:
   you join, and to anyone you duel.
 - Questions and quizzes you author inside a group are visible to that group.
 
-Your email address is **never** shown to other users.
+Your email address is not shown to other learners.
+
+**Course authors.** In this policy, "the course author" means anyone who edits the
+course. The author of a course you take while signed in, free or paid, sees your email
+address or Telegram username; your invite's contact label (if you were invited); how you
+found the course (the course and the arrival channel); and your activity in that course:
+lessons opened and completed, recordings sent and answered, and your last activity. The
+purpose is to run the course and contact you about it. For a cohort course you joined
+this rests on contract; for a free course it rests on legitimate interests, and you can
+object (section 8).
+
+**Voice recordings** are heard by you and the course author. We access them only to run
+the Service. They are never used for promotion. Practice recordings in free or anonymous
+lessons stay on your device and are never uploaded.
+
+**Invite contact labels** are seen only by the course author. **Cohort enrolments** and
+**lesson opens** are visible to you and to the course author. The author's **written
+feedback and final comment** are visible to you and to the author. If you sign in with
+Telegram, Telegram is a provider of that sign-in, listed in the subprocessor list, and
+your **Telegram identity** is visible to us and, as a username, to the author of a course
+you take.
 
 We will disclose data if legally compelled to do so, and will tell you unless prohibited.
 
@@ -199,6 +231,12 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | Provider server logs | Per the provider's own policy, typically days to a few weeks |
 | English lesson practice attempts | Until you close your account; then **deleted outright**, not anonymised — see section 9 |
 | Signup source (the course and arrival channel you signed up from) | Until you close your account; then **deleted outright** |
+| Telegram identity | Until you close your account; then erased with your profile details |
+| Voice recordings | A recording you replace is deleted when you replace it. All recordings are deleted 6 months after the end of the run, or when you delete your account, whichever comes first |
+| The author's written feedback and final comment | Until you close your account; then **deleted outright** |
+| Invite contact labels | Once you claim the invite, kept with your enrolment and deleted when you delete your account. A label never claimed is deleted 30 days after the invite expires or is revoked |
+| Cohort enrolments | Until you close your account; then **deleted outright** |
+| English lesson opens | Until you close your account; then **deleted outright** |
 | Cross-device claim stash (pre-signup lesson scores held server-side) | Deleted when the confirmation link is first used; if never used, unusable after 7 days and deleted at the next sign-up after that |
 | IP address logged when creating a cross-device claim stash | 1 hour |
 
@@ -209,7 +247,10 @@ Under the GDPR / UK GDPR you have the right to:
 - **Access** your data, and to receive a **portable copy**. You can do this yourself,
   immediately: **Settings › Data and privacy › Export my data** produces a complete JSON
   file of your profile, results, achievements, group memberships, duel history,
-  English lesson practice attempts and the course and channel you signed up from.
+  English lesson practice attempts, the course and channel you signed up from, the
+  lessons you opened, your cohort enrolments, your Telegram identity, and the author's
+  written feedback and final comment. The export includes a copy of your voice
+  recordings, and an invite contact label is included once you have claimed it.
 - **Rectify** inaccurate data — Settings › Account.
 - **Erase** your data ("right to be forgotten") — **Settings › Data and privacy › Delete
   my account**. See section 9 for exactly what this does.
@@ -232,6 +273,9 @@ When you delete your account we, immediately and irreversibly:
 - remove you from all leaderboards;
 - erase your English lesson practice attempts outright — see the contrast below;
 - erase the record of which course and channel you signed up from;
+- erase your voice recordings, the author's written feedback and final comment, your
+  cohort enrolments, your lesson opens, the invite contact label kept with your
+  enrolment, and your Telegram identity;
 - close your sign-in — you can no longer access the account, and neither can anyone else.
 
 We **retain your quiz results and any questions or quizzes you contributed, in
@@ -239,9 +283,9 @@ anonymised form**, with no link back to you. We do this because other people's d
 depends on it: group members' quiz histories, shared questions other learners are
 answering, and aggregate subject statistics would otherwise be destroyed or corrupted.
 This is permitted under Art. 17(3) and Art. 89 — anonymised data is no longer personal
-data. Your English lesson practice attempts are different: nothing else in the Service
-reads another learner's attempts, so there is no one else's data at stake, and they are
-deleted outright rather than kept anonymised.
+data. Your English lesson practice attempts, and the course data listed above, are different:
+nothing else in the Service reads another learner's attempts or recordings, so there is
+no one else's data at stake, and they are deleted outright rather than kept anonymised.
 
 If you would prefer a different outcome, email privacy@colloquiz.app and we will discuss what
 is possible.

@@ -2,13 +2,22 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.0 · Last updated 2026-09-01
+Version 1.1 · Last updated 2026-10-08
 
-> **Source of truth.** This file is the canonical text. `app/(legal)/terms/page.tsx`
+> **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/terms/page.tsx`
 > renders it; edit here first. Fill every `[BRACKETED]` placeholder before publication.
 >
-> **Not legal advice.** Standard-form terms for a free, consumer-facing web service
-> offered from the EU/UK. Have them reviewed before any paid tier or serious scale.
+> **Not legal advice.** Standard-form terms for a consumer-facing web service offered
+> from the EU/UK. Have them reviewed before "we" take payments (docs/decisions/0095,
+> "What would make us revisit this") or before serious scale.
+>
+> **Every change bumps the version and date.** Any edit to text that renders on /terms
+> (everything outside these maintainer blockquotes) raises the minor version (1.1 → 1.2
+> …) and sets "Last updated" to the commit date, in the same commit — the same rule as
+> the Privacy Policy (docs/decisions/0083, extended to the Terms by 0095 Decision 4).
+> The same commit replaces `current_terms_version()` in a new migration;
+> `scripts/check-terms-version.mjs` (part of `npm run check`) fails if that function and
+> the version above disagree. Edits that only touch these blockquotes don't bump.
 
 ---
 
@@ -54,10 +63,19 @@ Colloquiz is a self-study quiz platform. It offers subject quizzes, custom and s
 quizzes, collaborative study groups, 1-v-1 duels, progress tracking, and gamification
 features such as experience points, streaks, levels and achievements.
 
-The Service is provided **free of charge**. We may introduce optional paid features in
-future; if we do, we will tell you in advance and the free features you rely on will not
-suddenly become paid without notice. Nothing you have already earned — results, XP,
-achievements — will be taken away or put behind a paywall.
+Colloquiz itself is **free to use**: we take no payment from you. Some courses on the
+Service are paid; their authors sell them, not us (see "Paid courses" below). Nothing you
+have already earned — results, XP, achievements — will be taken away or put behind a
+paywall. A free course will not become paid without notice.
+
+**Paid courses.** Paid courses are sold by their author through Patreon or a similar
+platform, under that platform's terms, and refunds are handled by the author there. After
+payment, the author sends you an invite that gives you access. If the payment is refunded
+or charged back, your access ends.
+
+**Cohort courses.** If you join a cohort course, its lessons open week by week from the
+cohort's start date, and the course author may review the voice recordings you send and
+reply in writing. What we collect for this, and for how long, is in the Privacy Policy.
 
 **Educational content is not advice.** Questions and explanations are provided for study
 and self-testing. They may contain errors. Do not rely on them for medical, legal,
@@ -127,7 +145,7 @@ care about. You can export your data at any time from **Settings › Data and pr
 Nothing in these Terms limits liability that cannot be limited by law — including death or
 personal injury caused by negligence, fraud, or your statutory rights as a consumer.
 
-Subject to that, and because the Service is provided free of charge, we are not liable for
+Subject to that, and because we take no payment from you, we are not liable for
 indirect or consequential loss, loss of profit, loss of data, or loss of opportunity. Our
 total liability to you for any claim is limited to **EUR 100**.
 
