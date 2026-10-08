@@ -93,7 +93,19 @@ const nextConfig: NextConfig = {
       : [],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // VOICE-001 spike only (branch spike/voice-001, never merged).
+      {
+        source: "/app/admin/voice-spike",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
+          },
+        ],
+      },
+    ];
   },
   // SHELL-001: Colloquiz moved wholesale under /app so the English surface
   // (planned M2) can own the clean top-level URLs. Every route that used to
