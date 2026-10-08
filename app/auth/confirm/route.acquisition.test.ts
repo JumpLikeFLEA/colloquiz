@@ -101,7 +101,7 @@ describe("GET /auth/confirm — signup acquisition", () => {
     );
 
     expect(acquisitionCalls()).toEqual([]);
-    expect(response.headers.get("location")).toBe("http://localhost:3000/login?error=confirm_expired");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/login?error=confirm_expired&next=%2Fcourses%2Fc%2Fl");
   });
 
   it("an RPC error or throw leaves the redirect unchanged", async () => {

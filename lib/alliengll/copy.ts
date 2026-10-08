@@ -112,6 +112,7 @@ export const alliengllCopy = {
     title: "Save your progress",
     body: "Sign up so your results aren’t lost.",
     cta: "Sign up",
+    signIn: "Already have an account? Sign in",
     dismiss: "Not now",
     emailLabel: "Email",
     passwordLabel: "Password",

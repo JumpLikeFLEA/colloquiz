@@ -59,6 +59,20 @@ export function unwrapNext(
   }
 }
 
+/**
+ * ANON-016 — a failed verification still lands on /login, and /login sends a
+ * successful sign-in to its own `next`. Dropping `next` here is what turned a
+ * cross-browser confirmation into "log in, then land on /". `next` is the
+ * already-`safeNext`ed value; the root path is omitted (it is /login's own
+ * default) and so is /reset-password, which would send a learner who forgot
+ * their password to a page that needs the session they don't have.
+ */
+export function loginRedirect(origin: string, param: 'error' | 'notice', value: string, next: string): string {
+  const params = new URLSearchParams({ [param]: value })
+  if (next !== '/' && next !== '/reset-password') params.set('next', next)
+  return `${origin}/login?${params.toString()}`
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
@@ -86,8 +100,8 @@ export async function GET(request: NextRequest) {
     // For a recovery link (signalled by its destination) "sign in with your
     // password" would be wrong advice — the user forgot it.
     return next === '/reset-password'
-      ? NextResponse.redirect(`${origin}/login?error=recovery_expired`)
-      : NextResponse.redirect(`${origin}/login?notice=confirmed_sign_in`)
+      ? NextResponse.redirect(loginRedirect(origin, 'error', 'recovery_expired', next))
+      : NextResponse.redirect(loginRedirect(origin, 'notice', 'confirmed_sign_in', next))
   }
 
   if (token_hash && type) {
@@ -114,6 +128,6 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(
-    `${origin}/login?error=${type === 'recovery' ? 'recovery_expired' : 'confirm_expired'}`
+    loginRedirect(origin, 'error', type === 'recovery' ? 'recovery_expired' : 'confirm_expired', next)
   )
 }

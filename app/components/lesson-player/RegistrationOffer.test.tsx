@@ -224,3 +224,14 @@ describe("RegistrationOffer", () => {
     });
   });
 });
+
+describe("RegistrationOffer — sign-in entry (ANON-016)", () => {
+  const href = `/login?next=${encodeURIComponent("/courses/c/l")}`;
+
+  it("links existing accounts to /login with the lesson path, collapsed and expanded", () => {
+    render(<RegistrationOffer lessonPath="/courses/c/l" />);
+    expect(screen.getByRole("link", { name: alliengllCopy.signupOffer.signIn }).getAttribute("href")).toBe(href);
+    fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
+    expect(screen.getByRole("link", { name: alliengllCopy.signupOffer.signIn }).getAttribute("href")).toBe(href);
+  });
+});

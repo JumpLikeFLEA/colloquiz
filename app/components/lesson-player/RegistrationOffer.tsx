@@ -36,6 +36,8 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
 
   const inAppBrowser = isInAppBrowser(typeof navigator === "undefined" ? null : navigator.userAgent);
 
+  const signInHref = `/login?${new URLSearchParams({ next: lessonPath }).toString()}`;
+
   /** Stashes any local attempts server-side (ANON-006) and returns the raw
    * claim token to embed in the confirmation redirect, or null when there is
    * nothing to migrate — a learner opening the offer without having attempted
@@ -155,6 +157,9 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
             {alliengllCopy.signupOffer.dismiss}
           </button>
         </div>
+        <Link href={signInHref} className="text-sm font-medium text-brand-text hover:underline">
+          {alliengllCopy.signupOffer.signIn}
+        </Link>
       </div>
     );
   }
@@ -291,6 +296,9 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
           </button>
         </div>
       </form>
+        <Link href={signInHref} className="text-sm font-medium text-brand-text hover:underline">
+          {alliengllCopy.signupOffer.signIn}
+        </Link>
     </div>
   );
 }

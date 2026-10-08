@@ -1150,3 +1150,8 @@ Appended to in the same commit as the change it records. Referenced from
     alone.
   - Signed-in learners only. The admin preview and the demo pass no
     lesson version and show nothing.
+- RegistrationOffer sign-in entry (2026-10-08, ANON-016, docs/decisions/0092):
+  an "Already have an account? Sign in" text link (English, lesson chrome)
+  under the offer, collapsed and expanded, to `/login?next=<lesson path>`.
+  Composed from the offer's existing link/text classes. Do not remove: an
+  existing account had no sign-in entry on a lesson at all.
