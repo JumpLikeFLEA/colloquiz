@@ -2069,7 +2069,7 @@ export const CARDS = [
     dependsOn: [
       'SHELL-010', 'SHELL-011', 'SHELL-012', 'SHELL-013', 'ANON-004', 'ANON-005',
       'OPS-006', 'OPS-007', 'OPS-008', 'OPS-009', 'PLAY-007', 'INFRA-001',
-      'ANON-009', 'ANON-013',
+      'ANON-009', 'ANON-013', 'OPS-022',
     ],
     goal:
       'M2\'s bar, proven end to end on production: a reel viewer can play a ' +
@@ -2079,6 +2079,7 @@ export const CARDS = [
       'Hosted "Confirm email" is ON (owner, 2026-09-24 — it is OFF today only temporarily); the rehearsal\'s signup goes through a real confirmation email opened in a different browser than the one that played the lesson — this is what SHELL-012\'s production-landing claim and ANON-004\'s cross-browser claim both resolve to in the end.',
       'The production `npm run budget` output is pasted (pointed at the deployed URL, per OPS-006\'s base-URL override).',
       'The first course is published and all its lessons are free (settled input 1), with counts printed.',
+      'After the owner applies OPS-022\'s migration, a fresh production signup has profiles.terms_version = \'1.1\' (printed).',
     ],
   },
 
@@ -2199,6 +2200,30 @@ export const CARDS = [
     notes:
       'Each carrying card bumps the minor version and date per docs/decisions/0083 in its own commit, ' +
       'and depends on this card.',
+  },
+  {
+    key: 'OPS-022',
+    title: 'Legal revision for launch',
+    milestone: 'M2',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2209.5,
+    dependsOn: ['OPS-019'],
+    goal:
+      'One pre-launch revision of the legal text, worded conditionally, so M3 features need no ' +
+      'per-card legal edits and no notice period (docs/decisions/0095).',
+    acceptance: [
+      'terms-of-service.md is 1.1 and privacy-policy.md is 1.2, each with the date, carrying 0095 Decisions 2 and 3: terms:57-60, terms:130 (§8), privacy:140, privacy:174 and §5, voice, Telegram, invite contact labels, paid access via Patreon. Also covered: per-learner lesson opens (PROG-001), cohort enrolments (run, tier, when joined, when revoked), and the author\'s written feedback and final comment (VOICE-002, COH-005). Rendered /terms and /privacy checked.',
+      'Draft all three files (terms-of-service.md, privacy-policy.md, subprocessors.md), then STOP and show the full diff for owner sign-off before committing.',
+      'Every new category (recordings, feedback and final comment, invite contact labels, enrolments, lesson opens, Telegram identity) appears in every section of the privacy policy that lists categories: what we collect, legal basis, who sees it, retention, export and deletion. Printed as a category x section grid with no empty cell.',
+      'subprocessors.md lists Telegram, with its version and date bumped per its change procedure.',
+      'A migration redefines handle_new_user() once, from 036\'s body, to call current_terms_version(); written, not applied, with the SQL handed over for the owner to apply.',
+      'A guard test (0034\'s pattern) fails if the version in the latest current_terms_version() disagrees with the Terms markdown header; shown failing on a deliberate mismatch.',
+      '0083\'s minor-bump rule is stated in terms-of-service.md\'s maintainer note.',
+    ],
+    notes:
+      'OPS-019 (M3) is kept as dependsOn for the record; it is closed when 0095 is committed and ' +
+      'pushed (Closes #145), so it does not hold up M2.',
   },
   {
     key: 'VOICE-002',
@@ -2401,7 +2426,7 @@ export const CARDS = [
     epic: 'COH',
     type: 'task',
     rank: 2440,
-    dependsOn: ['COH-002', 'ANON-016', 'OPS-019'],
+    dependsOn: ['COH-002', 'ANON-016', 'OPS-022'],
     goal:
       'Payment happens outside the app; the partner enrols each paying learner by sending an invite ' +
       'link for a run and tier.',
@@ -2412,7 +2437,8 @@ export const CARDS = [
       'Revoke follows COH-001\'s rule and removes exactly the access that invite created; a learner in a second run keeps that run\'s access (printed).',
       'Contact labels are readable by editors only. This migration does not touch the access function; it writes enrolment/grant rows only.',
       'Full protocol, including the first claim succeeding (positive control), a second claim of the same link by another account, and an editor of course A acting on course B. Migration-number and re-emitted-body print rule if it touches delete_my_account.',
-      'Ships OPS-019\'s text for terms:57 and privacy:140 (and invite contact labels, if OPS-019 says so), with a 0083 version bump.',
+      'Unclaimed invite contact labels are purged 30 days after the invite expires or is revoked (0095); the mechanism is the card\'s choice, and the purge is shown on seeded data (positive control: a label inside the window survives).',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
   },
   {
@@ -2480,7 +2506,7 @@ export const CARDS = [
     epic: 'VOICE',
     type: 'task',
     rank: 2480,
-    dependsOn: ['COH-002', 'VOICE-002', 'VOICE-003'],
+    dependsOn: ['COH-002', 'VOICE-002', 'VOICE-003', 'OPS-022'],
     goal: 'Store learners\' recordings and the partner\'s feedback, in the project\'s first private bucket.',
     acceptance: [
       'A private bucket with VOICE-001\'s size limit and MIME list; path {course}/{user}/{submission}.{ext}. Storage RLS: a learner inserts and reads only under their own prefix; an editor of the course reads; nobody else.',
@@ -2491,6 +2517,8 @@ export const CARDS = [
       'Export lists submissions and feedback. Deletion removes the rows (delete_my_account re-emitted from the latest body) AND the objects, in app/api/account/delete/route.ts the way it already does for avatars (route.ts:49-52); shown on a seeded account by listing the bucket before and after.',
       'Full protocol: owner / another learner / editor / editor of another course / anon x read audio, read feedback, write feedback, submit to a locked block; positive controls: the owner reads their own audio, the course editor reads it.',
       'Migration-number and re-emitted-body print rule (section header).',
+      'Recordings are deleted automatically 6 months after the run ends (mechanism is the card\'s choice). Objects are removed through the Storage API, never by deleting storage.objects rows. A replaced recording\'s object is deleted when it is replaced. Shown on seeded data, with a recording inside the window as the positive control.',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
   },
   {
@@ -2500,14 +2528,14 @@ export const CARDS = [
     epic: 'VOICE',
     type: 'task',
     rank: 2485,
-    dependsOn: ['VOICE-004', 'OPS-019'],
+    dependsOn: ['VOICE-004', 'OPS-022'],
     goal: 'The learner records, listens, re-records and sends; feedback appears under the recording.',
     acceptance: [
       'Record -> listen -> re-record -> send. Upload happens only on send, with progress and retry. English lesson chrome.',
       'States: entitled (can send); sent (own playback + "waiting for feedback"); feedback published (shown under the recording); locked after feedback; free or anonymous context (local-only practice, nothing uploaded); in-app browser (VOICE-001\'s fallback).',
       'The recorder is a dynamic import reached only from a voice block. `npm run budget` before and after: a lesson without a voice block unchanged.',
       'Demonstrated on the VOICE-001 devices that passed.',
-      'Ships OPS-019\'s recordings and retention text with a 0083 version bump: this is the first card that lets a learner store audio in production.',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
   },
   {
@@ -2537,6 +2565,7 @@ export const CARDS = [
     acceptance: [
       'For an enrolled learner of a run: the before and after recordings side by side, plus the partner\'s final comment.',
       'Each state has a defined render: before missing, after missing, comment not yet published. English, no toggle; budget printed.',
+      'A recording removed by the 6-month purge (VOICE-004) renders as removed, not as "before missing", so a learner who returns later is not told they never recorded.',
       'Readable only by the learner and course editors (full protocol, with the learner reading their own screen as the positive control).',
     ],
   },
@@ -2547,7 +2576,7 @@ export const CARDS = [
     epic: 'PROG',
     type: 'task',
     rank: 2500,
-    dependsOn: [],
+    dependsOn: ['OPS-022'],
     goal: 'Record which lessons a signed-in learner has opened, for the learners page (AUTH-011).',
     acceptance: [
       'A signed-in learner opening a lesson records (user, lesson, first_opened, last_opened). Nothing is recorded for anon.',
@@ -2555,6 +2584,7 @@ export const CARDS = [
       'Hypothesis to test first: recording during server render could be triggered by link prefetch. Show that a prefetched-but-not-opened lesson records nothing, or record on mount instead, fired from the point that already fires lesson_start in LessonPlayer, so no new client module ships on the free lesson.',
       'Export and deletion cover the table; delete_my_account re-emitted from the latest body. Migration-number and re-emitted-body print rule (section header).',
       '`npm run budget` before and after: the free lesson unchanged, or the difference measured and justified.',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
   },
   {
@@ -2564,14 +2594,14 @@ export const CARDS = [
     epic: 'AUTH',
     type: 'task',
     rank: 2505,
-    dependsOn: ['COH-003', 'VOICE-004', 'PROG-001', 'OPS-019'],
+    dependsOn: ['COH-003', 'VOICE-004', 'PROG-001', 'OPS-022'],
     goal: 'The partner sees who her learners are, where they came from and what they have done.',
     acceptance: [
       'One SECURITY DEFINER RPC returning only learners of courses the caller edits. Columns: email from auth.users; the invite\'s contact label; acquisition course + channel (signup_acquisitions, 053); run and tier; lessons opened and completed; last activity; voices sent and answered.',
       'Telegram username: present if ANON-012 is Done when this card is worked; otherwise out of scope, and the closing comment says so.',
       'Filters: course, run. English chrome; the cross-course page uses the getCourseAccess() gate.',
       'Full protocol: a non-editor gets zero rows, and an editor of course A sees no learner who only touched course B; positive control: the editor of course A sees at least one seeded learner of A.',
-      'Ships OPS-019\'s text for privacy:174 with a 0083 version bump.',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
   },
   {
@@ -2581,7 +2611,7 @@ export const CARDS = [
     epic: 'ANON',
     type: 'task',
     rank: 2510,
-    dependsOn: ['ANON-010', 'OPS-019'],
+    dependsOn: ['ANON-010', 'OPS-022'],
     goal: 'Build Telegram sign-in where ANON-010 proved it works.',
     acceptance: [
       'On the English sign-in paths, AuthScreen, and ProvidersSection linking.',
@@ -2589,7 +2619,7 @@ export const CARDS = [
       'The minimum account-linking path ANON-010 recommended.',
       '`next` and acquisition are preserved (ANON-016\'s chains, 0081).',
       '`npm run budget` before and after: no change to an anonymous visitor\'s critical-path JS; the lesson route\'s figure printed (the button sits in RegistrationOffer).',
-      'Ships OPS-019\'s Telegram subprocessor text with a version bump.',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
   },
   {
