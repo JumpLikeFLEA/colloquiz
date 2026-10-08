@@ -226,6 +226,13 @@ in `next.config`. Do not add a `"lint": "next lint"` script.
 Issue bodies are specs. `docs/decisions/` holds settled decisions. Board
 scripts live in `scripts/board/`.
 
+Columns: Ready → In progress → Verify → Done is the workflow. **Hold** is
+the owner's parking column, outside that flow: a card is moved there by
+hand (or `board-move.mjs <KEY> Hold`), and a session never moves one in or
+out on its own. `next-card.mjs` never picks a Hold card, a Hold card never
+keeps its milestone active, and Hold cards don't count toward the "5 or
+more cards in Verify" stop (docs/decisions/0090).
+
 Milestones: **M0** item engine · **M1** content & authoring · **M2** public
 surface · **M3** monetisation · **M4** progression & polish.
 Issue keys are epic-prefixed: `ITEM-`, `CNT-`, `AUTH-`, `SHELL-`, `ANON-`,
@@ -320,12 +327,12 @@ and which of the above you nearly hit, so the review has something to check.
 ## Return to chat when
 
 - The card is `type:decision`.
-- The active milestone is complete (every card in Verify or Done).
+- The active milestone is complete (every card in Verify, Done or Hold).
 - The active milestone has no pickable cards left.
 - Any `--no-approval` stop listed above fires.
 - A dependency satisfaction audit (step 1) recommends anything other than
   "genuinely blocks".
-- 5 or more cards in Verify.
+- 5 or more cards in Verify. Cards in Hold don't count.
 - A migration is ready to apply and nothing further can be verified without
   it.
 

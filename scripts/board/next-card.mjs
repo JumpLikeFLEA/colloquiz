@@ -10,8 +10,12 @@
  *      would-be pick is type:decision — and exit 0.
  *
  * The active milestone is the lowest-numbered milestone (M0 before M1
- * before ...) that has any card whose live column is not Verify or Done.
- * This is derived from the live board every run, never hardcoded.
+ * before ...) that has any card whose live column is not Verify, Done or
+ * Hold. This is derived from the live board every run, never hardcoded.
+ *
+ * Hold is the owner's parking column (docs/decisions/0090): a card there is
+ * never picked and never keeps its milestone active, so parking the last
+ * open card of a milestone lets `work on next` move on to the next one.
  *
  * The decision logic (`decide`, `activeMilestoneKey`, `isDepClosed`) is pure
  * — it takes an array of { card, issueState, column } records and returns a
@@ -26,7 +30,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { CARDS, MILESTONES, rankOf } from './backlog.mjs';
-import { OWNER, PROJECT_NUMBER, BOARD_LABEL } from './config.mjs';
+import { OWNER, PROJECT_NUMBER, BOARD_LABEL, HOLD_COLUMN } from './config.mjs';
 
 const HELP = `Usage: node scripts/board/next-card.mjs
 
@@ -100,12 +104,21 @@ export function isDepClosed(depKey, records) {
   return !!rec && rec.issueState === 'CLOSED';
 }
 
+// Columns that don't keep a milestone active.
+const SETTLED_COLUMNS = new Set(['Verify', 'Done', HOLD_COLUMN]);
+
 export function activeMilestoneKey(records, milestones = MILESTONES) {
   for (const m of milestones) {
-    const incomplete = records.some((r) => r.card.milestone === m.key && r.column !== 'Verify' && r.column !== 'Done');
+    const incomplete = records.some((r) => r.card.milestone === m.key && !SETTLED_COLUMNS.has(r.column));
     if (incomplete) return m.key;
   }
-  return null; // every milestone's cards are all Verify/Done
+  return null; // every milestone's cards are all Verify/Done/Hold
+}
+
+// Keys of milestone cards parked in Hold, for the printed result: a parked
+// card is skipped silently by the logic above, so say so out loud.
+export function heldKeys(records) {
+  return records.filter((r) => r.card.milestone && r.column === HOLD_COLUMN).map((r) => r.card.key);
 }
 
 // Returns a discriminated result describing the pick, or which
@@ -146,10 +159,10 @@ export function decide(records, milestones = MILESTONES) {
 function printResult(result) {
   switch (result.kind) {
     case 'milestone-complete':
-      console.log('Return to chat: the active milestone is complete — every card in every milestone (M0-M4) is in Verify or Done.');
+      console.log('Return to chat: the active milestone is complete — every card in every milestone (M0-M4) is in Verify, Done or Hold.');
       return;
     case 'no-ready':
-      console.log(`Return to chat: no pickable cards — the active milestone (${result.active}) has no card in Ready (everything is In progress, Verify, Done, or has no issue yet).`);
+      console.log(`Return to chat: no pickable cards — the active milestone (${result.active}) has no card in Ready (everything is In progress, Verify, Done, Hold, or has no issue yet).`);
       return;
     case 'blocked':
       console.log(`Return to chat: no pickable cards — every Ready card in the active milestone (${result.active}) is blocked by an open dependency.`);
@@ -184,6 +197,8 @@ function main() {
 
   const records = buildRecords();
   printResult(decide(records));
+  const held = heldKeys(records);
+  if (held.length > 0) console.log(`\nParked in ${HOLD_COLUMN} (skipped): ${held.join(', ')}`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('next-card.mjs')) {

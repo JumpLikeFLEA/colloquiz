@@ -6,7 +6,7 @@
  *
  * The Status field is the repo's BUILT-IN Projects v2 field, not a custom
  * one: GraphQL refuses to delete a built-in field ("Only custom fields can
- * be deleted"), so its four options were set in place via a raw
+ * be deleted"), so its options were set in place via a raw
  * `gh api graphql` call to `updateProjectV2Field` rather than a
  * delete-and-recreate. Same field id as the project's seeded default;
  * only the option set changed. See docs/decisions/ for the record.
@@ -23,12 +23,21 @@ export const STATUS_FIELD_ID = 'PVTSSF_lAHOAvj_ps4BkGZJzhi4OC8';
 export const STATUS_OPTIONS = {
   Ready: '1c65783e',
   'In progress': '8bbfa64b',
+  Hold: 'a1fbdd56',
   Verify: 'a06374af',
   Done: 'b7602d84',
 };
 
-// Board columns in workflow order, for validation and printing.
+// Board columns in board order, for validation and printing. Hold sits
+// between In progress and Verify on the board but is NOT a workflow step:
+// the workflow is Ready -> In progress -> Verify -> Done, and Hold is where
+// the owner parks a card by hand (added 2026-10-08, docs/decisions/0090).
 export const STATUS_COLUMNS = Object.keys(STATUS_OPTIONS);
+
+// Parked by the owner: never picked by next-card.mjs, never keeps a
+// milestone active, never counted toward the "5 or more cards in Verify"
+// return-to-chat rule.
+export const HOLD_COLUMN = 'Hold';
 
 // Applied to every card issue this tooling creates, so scripts can scope
 // queries away from the repo's 43 pre-existing, unrelated issues.

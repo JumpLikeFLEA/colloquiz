@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decide, activeMilestoneKey, isDepClosed } from './next-card.mjs';
+import { decide, activeMilestoneKey, isDepClosed, heldKeys } from './next-card.mjs';
 
 // OPS-011: INFRA cards carry no `milestone` field at all (deliberately
 // outside M0-M4 — see backlog.mjs's INFRA-001/002/003). next-card.mjs must
@@ -73,5 +73,48 @@ describe('milestone-less cards are never picked', () => {
     // all, only issueState.
     const records = [record({ card: { key: 'INFRA-001', milestone: undefined }, issueState: 'CLOSED' })];
     expect(isDepClosed('INFRA-001', records)).toBe(true);
+  });
+});
+
+// docs/decisions/0090: Hold is the owner's parking column. A held card is
+// never picked and never keeps its milestone active.
+describe('cards in Hold are parked', () => {
+  it('a Ready card is picked over a lower-rank card in Hold', () => {
+    const records = [
+      record({ card: { key: 'M0-HELD', milestone: 'M0' }, column: 'Hold' }),
+      record({ card: { key: 'M0-TASK', milestone: 'M0', dependsOn: [], type: 'task' }, column: 'Ready' }),
+    ];
+    const result = decide(records, MILESTONES);
+    expect(result.kind).toBe('pick');
+    expect(result.record.card.key).toBe('M0-TASK');
+  });
+
+  it('a milestone whose only open card is in Hold is not active; the next one is', () => {
+    const records = [
+      record({ card: { key: 'M0-HELD', milestone: 'M0' }, column: 'Hold' }),
+      record({ card: { key: 'M0-DONE', milestone: 'M0' }, column: 'Done' }),
+      record({ card: { key: 'M1-TASK', milestone: 'M1', dependsOn: [], type: 'task' }, column: 'Ready' }),
+    ];
+    expect(activeMilestoneKey(records, MILESTONES)).toBe('M1');
+    const result = decide(records, MILESTONES);
+    expect(result.kind).toBe('pick');
+    expect(result.record.card.key).toBe('M1-TASK');
+  });
+
+  it('every card in Verify, Done or Hold reports milestone-complete', () => {
+    const records = [
+      record({ card: { key: 'M0-HELD', milestone: 'M0' }, column: 'Hold' }),
+      record({ card: { key: 'M1-VERIFY', milestone: 'M1' }, column: 'Verify' }),
+    ];
+    expect(decide(records, MILESTONES).kind).toBe('milestone-complete');
+  });
+
+  it('heldKeys lists milestone cards in Hold only', () => {
+    const records = [
+      record({ card: { key: 'M0-HELD', milestone: 'M0' }, column: 'Hold' }),
+      record({ card: { key: 'INFRA-HELD', milestone: undefined }, column: 'Hold' }),
+      record({ card: { key: 'M0-TASK', milestone: 'M0', dependsOn: [], type: 'task' }, column: 'Ready' }),
+    ];
+    expect(heldKeys(records)).toEqual(['M0-HELD']);
   });
 });
