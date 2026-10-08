@@ -116,11 +116,16 @@ immediately. There is no per-lesson purchase and no drip release.
   a run's start cannot be changed once it has begun, so no edit can re-lock a
   lesson a learner could already open (docs/decisions/0093).
   Self-paced courses are unchanged.
-- The per-lesson `access` flag has exactly ONE job: **is this lesson part of
-  the free sample?** It is not a general-purpose lock. Name it so nobody
-  mistakes it for one.
+- The per-lesson `access_level` has exactly ONE job: **who may open this
+  lesson**: `anyone` (the free sample), `signed_in` (any account, which is
+  free), or `entitled`. It is not a schedule (a cohort lesson's week is its
+  own attribute) and not a general-purpose lock. `anyone` and `signed_in`
+  lessons ignore the cohort schedule; it governs `entitled` lessons only
+  (docs/decisions/0094).
 - **Preview, precisely:** title, description and item count are visible for
   every lesson, including paid ones. Free-sample lessons are fully playable.
+  A lesson marked "sign in to open" also shows its leading theory, up to the
+  first exercise or self-check, to a visitor who is not signed in.
   Everything else opens on purchase. Partial play of a paid lesson is
   deliberately NOT built — it costs more and weakens the sample.
 - **Author intent is frozen into data, not recomputed.** Which lessons are in
@@ -227,12 +232,20 @@ What it means concretely:
   points to `/`, or by tapping a link in an Alliengll Telegram channel post,
   which can point to a course or a lesson (owner, 2026-09-24). Both open
   inside an in-app browser. The path from that tap to a playable lesson must
-  have no extra clicks: no signup wall, no interstitial, no "choose your
-  level" gate before anything happens.
+  have no extra clicks. The entry points (the landing and course CTAs, and a
+  self-paced course's first lesson) are always playable anonymously: every
+  published self-paced course has at least one lesson open to anyone. The
+  partner may mark later lessons "sign in to open"; a link straight to one
+  shows its title, description and the start of the lesson and asks for
+  sign-in, and returns the learner to that lesson (docs/decisions/0094). No
+  interstitial and no "choose your level" gate anywhere. A cohort course may
+  have no open lesson: a visitor who is not enrolled gets the preview and
+  `how_to_join_url` (0093).
 - **Anonymous play is a launch requirement, not a later addition.** The first
   lesson is playable with no account; progress lives in localStorage until
   registration, then migrates. Registration is offered AFTER a completed
-  lesson, never before one. Consequence: free content cannot live behind
+  lesson. The only thing that asks sooner is a lesson the partner has marked
+  "sign in to open", and never an entry point. Consequence: free content cannot live behind
   enrollment-gated RLS — it needs a genuinely public read path.
 
 ## Authoring
@@ -465,14 +478,13 @@ sales of evergreen courses are wanted.
   - **Sign-in on free courses:** she marks which lessons are open without
     sign-in (default: the first). A link to any other lesson shows its title
     and the start of the lesson, then asks the learner to sign in, and after
-    sign-in returns them to that same lesson, not to `/`. **Conflicts the
-    owner settles on the access-level card before it is built:** it puts a
-    sign-in wall in front of some lessons ("Audience and language": no
-    signup wall; registration is offered only after a completed lesson);
-    and "the start of the lesson" is partial content served to someone the
-    access function denies, which the single-function entitlement rule has
-    to cover (compare "Partial play of paid lessons is deliberately NOT
-    built").
+    sign-in returns them to that same lesson, not to `/`. **Settled by the
+    owner, 2026-10-08 (docs/decisions/0094):** no wall before a self-paced
+    course's entry lesson; "the start of the lesson" is served by a SQL
+    function under the access rule, for sign-in lessons only. Until Telegram
+    sign-in (ANON-012) works in the in-app browsers, the partner should not
+    mark lessons "sign in to open": every wall there costs an email round trip
+    through another browser. Guidance, not an enforced rule.
   - **Reminders:** yes, through a Telegram bot ("week 2 is open", "your
     feedback is ready"); which events and the wording are still to be
     worked out. Whether this lands in M3 is open.
