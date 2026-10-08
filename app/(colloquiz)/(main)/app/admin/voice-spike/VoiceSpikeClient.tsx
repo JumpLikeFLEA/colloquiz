@@ -16,9 +16,26 @@ const CANDIDATE_MIMES = [
   "audio/x-m4a",
 ];
 
-const BITRATES = [0, 16000, 24000, 32000, 64000, 128000];
+const BITRATES = [0, 16000, 24000, 32000, 48000, 64000, 128000];
+
+const TAKE_LABELS = [
+  "(no label)",
+  "1: default MIME, 32 kbps, 60 s",
+  "2: default MIME, 32 kbps, 30 s, lock/switch midway",
+  "3: default MIME, 48 kbps, 30 s",
+];
+
+const PROTOCOL = [
+  "Copy report BEFORE recording and keep it (environment, header, isTypeSupported).",
+  "Take 1: pick label 1, bitrate 32000, default MIME. Speak continuously for 60 s. Stop.",
+  "Take 2: label 2, same settings. Record 30 s; midway lock the screen or switch app, return, stop. Note what the log shows.",
+  "Take 3: label 3, bitrate 48000, 30 s. Stop.",
+  "Play back all three takes (use the Takes list), Download takes 1 and 3, and note any failure.",
+  "Copy report again (the second report is the one to send).",
+];
 
 type Take = {
+  label: string;
   requestedMime: string;
   requestedBps: number;
   recorderMime: string;
@@ -50,6 +67,7 @@ export function VoiceSpikeClient() {
   const [supported, setSupported] = useState<Record<string, string>>({});
   const [mime, setMime] = useState("");
   const [bps, setBps] = useState(0);
+  const [label, setLabel] = useState(TAKE_LABELS[0]);
   const [recording, setRecording] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [takes, setTakes] = useState<Take[]>([]);
@@ -126,6 +144,7 @@ export function VoiceSpikeClient() {
         setTakes((t) => [
           ...t,
           {
+            label,
             requestedMime: mime || "(browser default)",
             requestedBps: bps,
             recorderMime: rec.mimeType,
@@ -172,10 +191,14 @@ export function VoiceSpikeClient() {
   const reportText = JSON.stringify({ env, supported, takes, log }, null, 2);
 
   function copy() {
+    // writeText can be missing (insecure context) or reject (in-app browsers);
+    // both land in the read-only textarea below for a manual select-all.
+    const fail = () => setCopied("clipboard blocked: select all in the box below");
+    if (!navigator.clipboard?.writeText) return fail();
     navigator.clipboard
       .writeText(reportText)
       .then(() => setCopied("copied"))
-      .catch(() => setCopied("clipboard blocked: select the box below"));
+      .catch(fail);
   }
 
   return (
@@ -184,6 +207,15 @@ export function VoiceSpikeClient() {
         <h1 className="text-xl font-semibold">VOICE-001 recorder spike</h1>
         <p className="text-sm text-muted-foreground mt-1">Throwaway. Admin/editor only.</p>
       </div>
+
+      <section className="rounded-2xl border border-border bg-card p-4 space-y-2">
+        <h2 className="font-medium">Protocol (per device and browser)</h2>
+        <ol className="list-decimal pl-5 text-sm space-y-1">
+          {PROTOCOL.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ol>
+      </section>
 
       <section className="rounded-2xl border border-border bg-card p-4 space-y-2">
         <h2 className="font-medium">Environment</h2>
@@ -195,6 +227,21 @@ export function VoiceSpikeClient() {
       <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
         <h2 className="font-medium">Record</h2>
         <div className="flex flex-wrap gap-3 text-sm">
+          <label className="flex flex-col gap-1">
+            Take label
+            <select
+              className="rounded-md border border-border bg-background px-2 py-1"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              disabled={recording}
+            >
+              {TAKE_LABELS.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="flex flex-col gap-1">
             MIME
             <select
@@ -291,11 +338,15 @@ export function VoiceSpikeClient() {
         <button type="button" onClick={copy} className="cursor-pointer rounded-xl border border-border px-4 min-h-11">
           Copy report {copied && `(${copied})`}
         </button>
-        <textarea
-          readOnly
-          className="w-full h-32 text-xs rounded-md border border-border bg-background p-2"
-          value={reportText}
-        />
+        {copied.startsWith("clipboard blocked") && (
+          <textarea
+            readOnly
+            autoFocus
+            onFocus={(e) => e.currentTarget.select()}
+            className="w-full h-32 text-xs rounded-md border border-border bg-background p-2"
+            value={reportText}
+          />
+        )}
       </section>
     </div>
   );
