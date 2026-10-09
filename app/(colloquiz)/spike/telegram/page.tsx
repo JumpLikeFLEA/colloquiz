@@ -4,6 +4,7 @@
 // Signs in through the custom:telegram provider and prints the identities.
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { oauthCallbackUrl } from "@/lib/authRedirect";
 
 export default function TelegramSpike() {
   const [out, setOut] = useState<string>("loading…");
@@ -11,17 +12,18 @@ export default function TelegramSpike() {
 
   useEffect(() => {
     const supabase = createClient();
-    // detectSessionInUrl exchanges ?code= (PKCE) on client creation; getUser
-    // waits for that to settle.
-    supabase.auth.getUser().then(({ data, error }) => {
+    // The code was already exchanged server-side by /auth/callback.
+    supabase.auth.getUser().then(async ({ data, error }) => {
       if (error || !data.user) {
         setOut("not signed in");
         return;
       }
       const u = data.user;
+      // Read-only: ANON-009's row, owner-read RLS (migration 053).
+      const acq = await supabase.from("signup_acquisitions").select("*").eq("user_id", u.id);
       setOut(
         JSON.stringify(
-          { id: u.id, email: u.email ?? null, phone: u.phone ?? null, created_at: u.created_at, app_metadata: u.app_metadata, user_metadata: u.user_metadata, identities: u.identities },
+          { id: u.id, email: u.email ?? null, phone: u.phone ?? null, created_at: u.created_at, app_metadata: u.app_metadata, user_metadata: u.user_metadata, identities: u.identities, signup_acquisitions: acq.error ? acq.error.message : acq.data },
           null,
           2,
         ),
@@ -33,7 +35,7 @@ export default function TelegramSpike() {
     setErr(null);
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "custom:telegram" as never,
-      options: { redirectTo: `${window.location.origin}/spike/telegram` },
+      options: { redirectTo: oauthCallbackUrl(window.location.origin, "/spike/telegram", "telegram") },
     });
     if (error) setErr(error.message);
   }
