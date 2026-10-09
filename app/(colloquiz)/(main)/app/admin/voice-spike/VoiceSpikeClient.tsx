@@ -34,11 +34,36 @@ const PROTOCOL = [
   "Copy report again (the second report is the one to send).",
 ];
 
+// Container from the first bytes of the file, for browsers whose
+// MediaRecorder.mimeType / Blob.type come back empty (Firefox 157, 0097).
+function sniffContainer(head: Uint8Array): string {
+  const hex = Array.from(head.slice(0, 12), (b) => b.toString(16).padStart(2, "0")).join(" ");
+  const ascii = (from: number, to: number) => String.fromCharCode(...head.slice(from, to));
+  let kind = "unknown";
+  if (ascii(0, 4) === "OggS") kind = "ogg";
+  else if (head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3) kind = "webm/matroska";
+  else if (ascii(4, 8) === "ftyp") kind = `mp4 (brand ${ascii(8, 12)})`;
+  else if (ascii(0, 4) === "RIFF") kind = "riff/wav";
+  else if (ascii(0, 3) === "ID3" || (head[0] === 0xff && (head[1] & 0xe0) === 0xe0)) kind = "mp3/aac";
+  return `${kind} [${hex}]`;
+}
+
+function readHead(blob: Blob): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(new Uint8Array(r.result as ArrayBuffer));
+    r.onerror = () => reject(r.error);
+    r.readAsArrayBuffer(blob.slice(0, 16));
+  });
+}
+
 type Take = {
   label: string;
   requestedMime: string;
   requestedBps: number;
   recorderMime: string;
+  firstChunkMime: string;
+  sniffed: string;
   blobMime: string;
   recorderBps: number | null;
   bytes: number;
@@ -129,18 +154,29 @@ export function VoiceSpikeClient() {
       if (bps) opts.audioBitsPerSecond = bps;
       const rec = new MediaRecorder(stream, opts);
       recorderRef.current = rec;
+      let firstChunkMime = "(no chunk)";
       rec.ondataavailable = (ev) => {
-        if (ev.data.size) chunksRef.current.push(ev.data);
+        if (ev.data.size) {
+          if (!chunksRef.current.length) firstChunkMime = ev.data.type;
+          chunksRef.current.push(ev.data);
+        }
       };
       rec.onerror = (ev) =>
         note(`recorder error: ${String((ev as unknown as { error?: Error }).error?.name ?? ev.type)}`);
       rec.onpause = () => note("recorder pause");
       rec.onresume = () => note("recorder resume");
-      rec.onstop = () => {
+      rec.onstop = async () => {
         const seconds = (performance.now() - startedRef.current) / 1000;
         const blob = new Blob(chunksRef.current, { type: rec.mimeType });
         stream.getTracks().forEach((t) => t.stop());
         note(`recorder stop: ${blob.size} bytes, ${seconds.toFixed(1)} s`);
+        let sniffed = "(not read)";
+        try {
+          sniffed = sniffContainer(await readHead(blob));
+        } catch (err) {
+          sniffed = `sniff failed: ${(err as Error).name}`;
+        }
+        note(`first chunk type="${firstChunkMime}" sniffed=${sniffed}`);
         setTakes((t) => [
           ...t,
           {
@@ -148,6 +184,8 @@ export function VoiceSpikeClient() {
             requestedMime: mime || "(browser default)",
             requestedBps: bps,
             recorderMime: rec.mimeType,
+            firstChunkMime,
+            sniffed,
             blobMime: blob.type,
             recorderBps: typeof rec.audioBitsPerSecond === "number" ? rec.audioBitsPerSecond : null,
             bytes: blob.size,
@@ -186,6 +224,9 @@ export function VoiceSpikeClient() {
     );
     setUrl(URL.createObjectURL(f));
     note(`picked file ${f.name} (${f.type}, ${f.size} B)`);
+    readHead(f)
+      .then((h) => note(`picked file sniffed=${sniffContainer(h)}`))
+      .catch((err) => note(`picked file sniff failed: ${(err as Error).name}`));
   }
 
   const reportText = JSON.stringify({ env, supported, takes, log }, null, 2);
