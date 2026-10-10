@@ -57,7 +57,10 @@ describe("LessonPlayer — previous best note (0088)", () => {
 
     expect(screen.getByText("Your best: 75%")).toBeDefined();
     // The mount-time flush uploads and clears the local store...
-    await vi.waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+    // (PROG-001: the mount also calls record_lesson_open, so count by name.)
+    await vi.waitFor(() =>
+      expect(rpc.mock.calls.filter(([fn]) => fn === "record_lesson_attempts")).toHaveLength(1),
+    );
     await vi.waitFor(() => expect(JSON.parse(window.localStorage.getItem(ATTEMPT_STORAGE_KEY)!).attempts).toEqual([]));
     // ...and the note is still there.
     expect(screen.getByText("Your best: 75%")).toBeDefined();

@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 3;
+export const EXPORT_FORMAT_VERSION = 4;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -21,6 +21,7 @@ export const EXPORT_CONTENTS = [
   "Duel history — opponents, outcomes and scores",
   "Lesson attempts — every English-course practice-block attempt and score",
   "Signup source — the course and arrival channel recorded when you signed up",
+  "Lesson opens — which English lessons you opened while signed in, and when",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -47,6 +48,15 @@ export type SignupAcquisitionRow = {
   courses: unknown;
 };
 
+export type LessonOpenRow = {
+  lesson_id: string;
+  first_opened_at: string;
+  last_opened_at: string;
+  /** Embedded `lessons(slug, title, courses(slug, title))`; null once the
+   * lesson is no longer readable to the reader (unpublished or gone). */
+  lessons: unknown;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -58,6 +68,7 @@ export type ExportSources = {
   duels: unknown[];
   lessonAttempts: LessonAttemptRow[];
   signupAcquisition: SignupAcquisitionRow | null;
+  lessonOpens: LessonOpenRow[];
 };
 
 /**
@@ -151,6 +162,29 @@ export function buildExportPayload(
     // ANON-009 (docs/decisions/0081): written once at signup, absent for an
     // account created before it shipped or under a GPC/DNT opt-out.
     signup_acquisition: src.signupAcquisition ? exportSignupAcquisition(src.signupAcquisition) : null,
+
+    // PROG-001 (docs/decisions/0101): one row per lesson opened while signed in.
+    lesson_opens: src.lessonOpens.map(exportLessonOpen),
+  };
+}
+
+/** PostgREST types an embedded resource as an array; these are to-one FKs. */
+function firstEmbedded<T>(value: unknown): T | null {
+  const embedded = Array.isArray(value) ? value[0] : value;
+  return (embedded ?? null) as T | null;
+}
+
+function exportLessonOpen(row: LessonOpenRow) {
+  const lesson = firstEmbedded<{ slug?: string; title?: string; courses?: unknown }>(row.lessons);
+  const course = firstEmbedded<{ slug?: string; title?: string }>(lesson?.courses);
+  return {
+    lesson_id: row.lesson_id,
+    lesson_slug: lesson?.slug ?? null,
+    lesson_title: lesson?.title ?? null,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    first_opened_at: row.first_opened_at,
+    last_opened_at: row.last_opened_at,
   };
 }
 

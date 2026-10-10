@@ -229,8 +229,14 @@ export function LessonPlayer({
   // effect, deliberately NOT folded into the recording effect above: that
   // one returns early when `!isSignedIn`, which would silently drop every
   // anonymous lesson_start — most of this surface's traffic.
+  //
+  // PROG-001 — the same moment records a signed-in learner's lesson open
+  // (docs/decisions/0101). On mount, not in the page's server render, so a
+  // prefetched-but-unopened lesson records nothing. Anonymous: nothing, and
+  // no extra chunk downloaded.
   useEffect(() => {
     fireFunnelEvent("lesson_start", lessonPath);
+    if (isSignedIn && lessonVersionId) void recordSignedInOpen(lessonVersionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptId]);
 
@@ -285,6 +291,20 @@ async function recordSignedInAttempt(store: AttemptStore): Promise<void> {
     await uploadPendingAttempts(store, createClient());
   } catch (err) {
     console.error("failed to record lesson attempt", err);
+  }
+}
+
+/** PROG-001 — same dynamic-import posture as `recordSignedInAttempt`: both
+ * modules load only for a signed-in learner. Failures are logged, never
+ * surfaced. Import order matters to vitest's client mock only
+ * (docs/decisions/0101, "Observation"). */
+async function recordSignedInOpen(lessonVersionId: string): Promise<void> {
+  try {
+    const { recordLessonOpen } = await import("@/lib/lessonPlayer/lessonOpen");
+    const { createClient } = await import("@/lib/supabase/client");
+    await recordLessonOpen(createClient(), lessonVersionId);
+  } catch (err) {
+    console.error("failed to record lesson open", err);
   }
 }
 

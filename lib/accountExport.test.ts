@@ -12,6 +12,7 @@ const baseSources = {
   duels: [],
   lessonAttempts: [],
   signupAcquisition: null,
+  lessonOpens: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -93,5 +94,63 @@ describe("buildExportPayload — signup_acquisition (ANON-009)", () => {
       course_title: null,
       recorded_at: "2026-10-07T12:00:00.000Z",
     });
+  });
+});
+
+describe("buildExportPayload — lesson_opens (PROG-001)", () => {
+  it("is empty when the reader has opened no lesson while signed in", () => {
+    const payload = buildExportPayload(baseSources, []);
+    expect(payload.lesson_opens).toEqual([]);
+  });
+
+  it("maps each row, flattening the embedded lesson and its course", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        lessonOpens: [
+          {
+            lesson_id: "lesson-1",
+            first_opened_at: "2026-10-08T09:00:00.000Z",
+            last_opened_at: "2026-10-09T18:30:00.000Z",
+            lessons: [{ slug: "true-or-false", title: "True or false", courses: [{ slug: "future-imperfect", title: "Future Imperfect" }] }],
+          },
+        ],
+      },
+      [],
+    );
+    expect(payload.lesson_opens).toEqual([
+      {
+        lesson_id: "lesson-1",
+        lesson_slug: "true-or-false",
+        lesson_title: "True or false",
+        course_slug: "future-imperfect",
+        course_title: "Future Imperfect",
+        first_opened_at: "2026-10-08T09:00:00.000Z",
+        last_opened_at: "2026-10-09T18:30:00.000Z",
+      },
+    ]);
+  });
+
+  it("keeps the row when the lesson is no longer readable (embed is null)", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        lessonOpens: [
+          { lesson_id: "lesson-2", first_opened_at: "2026-10-08T09:00:00.000Z", last_opened_at: "2026-10-08T09:00:00.000Z", lessons: null },
+        ],
+      },
+      [],
+    );
+    expect(payload.lesson_opens).toEqual([
+      {
+        lesson_id: "lesson-2",
+        lesson_slug: null,
+        lesson_title: null,
+        course_slug: null,
+        course_title: null,
+        first_opened_at: "2026-10-08T09:00:00.000Z",
+        last_opened_at: "2026-10-08T09:00:00.000Z",
+      },
+    ]);
   });
 });

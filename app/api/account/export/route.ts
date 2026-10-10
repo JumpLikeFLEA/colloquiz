@@ -64,7 +64,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -101,11 +101,16 @@ export async function GET() {
           .select("course_id, source, created_at, courses(slug, title)")
           .eq("user_id", user.id)
           .maybeSingle(),
+        supabase
+          .from("lesson_opens")
+          .select("lesson_id, first_opened_at, last_opened_at, lessons(slug, title, courses(slug, title))")
+          .eq("user_id", user.id)
+          .order("last_opened_at", { ascending: false }),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -124,6 +129,7 @@ export async function GET() {
         duels: duelsRes.data ?? [],
         lessonAttempts: lessonAttemptsRes.data ?? [],
         signupAcquisition: acquisitionRes.data ?? null,
+        lessonOpens: lessonOpensRes.data ?? [],
       },
       ACHIEVEMENTS,
     );

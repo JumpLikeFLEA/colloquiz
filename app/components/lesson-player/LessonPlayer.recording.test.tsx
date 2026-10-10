@@ -38,6 +38,10 @@ afterEach(() => {
   window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
 });
 
+function callsTo(name: string) {
+  return rpc.mock.calls.filter(([fn]) => fn === name);
+}
+
 async function scoreTheSelectionItem() {
   expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
   fireEvent.click(screen.getByRole("radio", { name: "She goes to school every day." }));
@@ -58,7 +62,8 @@ describe("LessonPlayer — ANON-005 attempt recording", () => {
 
     await scoreTheSelectionItem();
 
-    await vi.waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+    // PROG-001: the mount also calls record_lesson_open, so count by name.
+    await vi.waitFor(() => expect(callsTo("record_lesson_attempts")).toHaveLength(1));
     expect(rpc).toHaveBeenCalledWith("record_lesson_attempts", {
       p_attempts: [
         expect.objectContaining({
@@ -117,7 +122,8 @@ describe("LessonPlayer — ANON-005 attempt recording", () => {
       />,
     );
 
-    await vi.waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+    // PROG-001: the mount also calls record_lesson_open, so count by name.
+    await vi.waitFor(() => expect(callsTo("record_lesson_attempts")).toHaveLength(1));
     expect(rpc).toHaveBeenCalledWith("record_lesson_attempts", {
       p_attempts: [expect.objectContaining({ attempt_id: "pre-existing", block_id: "some-other-block" })],
     });
@@ -135,6 +141,46 @@ describe("LessonPlayer — ANON-005 attempt recording", () => {
 
     await scoreTheSelectionItem();
 
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("LessonPlayer — PROG-001 lesson opens", () => {
+  it("records a signed-in learner's open once on mount, before any answer", async () => {
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v1"
+        isSignedIn
+      />,
+    );
+
+    expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
+    await vi.waitFor(() => expect(callsTo("record_lesson_open")).toHaveLength(1));
+    expect(rpc).toHaveBeenCalledWith("record_lesson_open", { p_lesson_version_id: "v1" });
+
+    // Answering is not another open.
+    fireEvent.click(screen.getByRole("radio", { name: "She goes to school every day." }));
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
+    await vi.waitFor(() => expect(callsTo("record_lesson_attempts")).toHaveLength(1));
+    expect(callsTo("record_lesson_open")).toHaveLength(1);
+  });
+
+  it("records nothing for a signed-out learner", async () => {
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v1"
+        isSignedIn={false}
+      />,
+    );
+
+    expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(rpc).not.toHaveBeenCalled();
   });
