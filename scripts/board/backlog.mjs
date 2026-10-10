@@ -2666,6 +2666,26 @@ export const CARDS = [
     ],
   },
   {
+    key: 'COH-007',
+    title: 'Editor: change an enrolment\'s tier',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2507,
+    dependsOn: ['COH-003'],
+    goal:
+      'Proposed by COH-003 (docs/decisions/0107 Decision 3). 0093 "Tier change" says basic -> extended ' +
+      'updates run_enrolments.tier in place with no history, but no editor path writes it: a second invite ' +
+      'to an enrolled learner is refused (already_enrolled) on purpose, so an upgrade today needs a revoke ' +
+      'and a new invite.',
+    acceptance: [
+      'A SECURITY DEFINER RPC sets the tier of one active enrolment, gated on can_edit_course of the run\'s course; a revoked enrolment is refused. No grants on run_enrolments change.',
+      'The runs page offers the change on a claimed invite\'s row (or on AUTH-011\'s roster if that has landed), English chrome, refusal toasted through lib/courseAuthoringErrors.ts.',
+      'Full protocol: the editor of the course succeeds (positive control) and course_calls returns the run\'s calls to the learner after basic -> extended and zero rows after extended -> basic; a non-editor and an editor of another course are denied (forbidden).',
+      'Migration-number print rule (section header).',
+    ],
+  },
+  {
     key: 'ANON-012',
     title: 'Telegram sign-in button',
     milestone: 'M3',
