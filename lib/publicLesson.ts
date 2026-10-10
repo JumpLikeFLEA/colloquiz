@@ -27,6 +27,14 @@ export type PublicLesson =
     } & PublicLessonMeta)
   | ({
       state: "not_available";
+      /** COH-004 — a cohort lesson the caller is enrolled for, not yet
+       * open (058's `scheduled`, docs/decisions/0105 Decision 4). */
+      access: "scheduled";
+      /** ISO instant, `lesson_state`'s `opens_at`. */
+      opensAt: string;
+    } & PublicLessonMeta)
+  | ({
+      state: "not_available";
       access: "needs_sign_in";
       /** ANON-011 — `lesson_teaser` (055): the leading theory, cut in SQL.
        * Empty when the lesson opens with an exercise, has none, or a block
@@ -130,6 +138,12 @@ export async function readPublicLesson(
     throw new Error(`lesson_state(${lesson.id}) returned no row for a lesson RLS shows this caller`);
   }
   if (lessonState.state === "needs_entitlement") return { state: "not_available", access: "needs_entitlement", ...meta };
+  if (lessonState.state === "scheduled") {
+    // 058 sets opens_at on every scheduled row; a null one is the function
+    // breaking its own contract, not a lesson to open.
+    if (!lessonState.opens_at) throw new Error(`lesson_state(${lesson.id}) is scheduled with no opens_at`);
+    return { state: "not_available", access: "scheduled", opensAt: lessonState.opens_at, ...meta };
+  }
   if (lessonState.state === "needs_sign_in") {
     return { state: "not_available", access: "needs_sign_in", ...(await readSignInExtras(supabase, lesson.id, course.id)), ...meta };
   }

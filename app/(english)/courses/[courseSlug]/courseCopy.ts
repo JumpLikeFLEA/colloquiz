@@ -34,6 +34,30 @@ type CourseStrings = {
   lessonsTitle: string;
   noFreeLesson: string;
   noLessons: string;
+  // COH-004 (docs/decisions/0108): a cohort course.
+  /** Followed by the week number. */
+  week: string;
+  /** The group of a cohort course's lessons that have no week. */
+  openLessonsGroup: string;
+  /** Followed by the unlock moment in the viewer's local time. */
+  opensOn: string;
+  callsEyebrow: string;
+  callsTitle: string;
+  callsEmpty: string;
+  callsJoin: string;
+  callsPast: string;
+  cohortEyebrow: string;
+  cohortTitle: string;
+  cohortIntro: string;
+  /** Followed by the next run's start in the viewer's local time. */
+  nextRun: string;
+  noUpcomingRun: string;
+  tiersTitle: string;
+  tierBasic: string;
+  tierBasicDesc: string;
+  tierExtended: string;
+  tierExtendedDesc: string;
+  howToJoin: string;
 };
 
 export const courseCopy: Record<SurfaceLang, CourseStrings> = {
@@ -56,6 +80,25 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     lessonsTitle: "Уроки курса",
     noFreeLesson: "Скоро появятся бесплатные уроки",
     noLessons: "Уроки скоро появятся — загляните позже.",
+    week: "Неделя",
+    openLessonsGroup: "Открытые уроки",
+    opensOn: "Откроется",
+    callsEyebrow: "Расширенный тариф",
+    callsTitle: "Созвоны",
+    callsEmpty: "Созвоны пока не назначены.",
+    callsJoin: "Подключиться",
+    callsPast: "Прошедшие созвоны",
+    cohortEyebrow: "Курс с группой",
+    cohortTitle: "Как проходит курс",
+    cohortIntro: "Курс идёт с группой: уроки открываются по неделям, начиная с даты старта.",
+    nextRun: "Ближайший старт:",
+    noUpcomingRun: "Дата следующего старта пока не объявлена.",
+    tiersTitle: "Тарифы",
+    tierBasic: "Базовый",
+    tierBasicDesc: "Уроки по неделям и голосовые задания с письменной обратной связью.",
+    tierExtended: "Расширенный",
+    tierExtendedDesc: "Всё из базового и еженедельный созвон.",
+    howToJoin: "Как присоединиться",
   },
   en: {
     languageGroupLabel: "Language",
@@ -76,5 +119,24 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     lessonsTitle: "Lessons",
     noFreeLesson: "Free lessons are coming soon",
     noLessons: "Lessons are coming soon — check back later.",
+    week: "Week",
+    openLessonsGroup: "Open lessons",
+    opensOn: "Opens",
+    callsEyebrow: "Extended tier",
+    callsTitle: "Calls",
+    callsEmpty: "No calls scheduled yet.",
+    callsJoin: "Join",
+    callsPast: "Past calls",
+    cohortEyebrow: "Cohort course",
+    cohortTitle: "How the course runs",
+    cohortIntro: "The course runs with a group: lessons open week by week from the start date.",
+    nextRun: "Next start:",
+    noUpcomingRun: "The next start date hasn’t been announced yet.",
+    tiersTitle: "Tiers",
+    tierBasic: "Basic",
+    tierBasicDesc: "Weekly lessons and voice tasks with written feedback.",
+    tierExtended: "Extended",
+    tierExtendedDesc: "Everything in Basic, plus a weekly call.",
+    howToJoin: "How to join",
   },
 };

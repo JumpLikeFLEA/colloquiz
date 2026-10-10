@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
+import { cohortAudience } from "@/lib/cohortCoursePage";
+import { getCohortView } from "@/lib/cohortView";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getSignedInAccount } from "@/lib/signedInAccount";
@@ -16,6 +18,8 @@ import { bestScoreForLesson, courseProgress, courseTotals, firstOpenLesson } fro
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { SectionHeading } from "../../SectionHeading";
+import { CohortInfo } from "./CohortInfo";
+import { CohortLessonList } from "./CohortLessonList";
 import { courseCopy } from "./courseCopy";
 import { CourseHero } from "./CourseHero";
 import { LessonListItem } from "./LessonListItem";
@@ -44,6 +48,12 @@ import { LessonListItem } from "./LessonListItem";
  * docs/decisions/0080 — the chrome follows the EN/RU choice shared with the
  * landing page, read here from the same cookie. Authored content (title,
  * descriptions, lesson titles) renders as written in either language.
+ *
+ * COH-004 (docs/decisions/0108) — a `cohort` course groups its lessons by
+ * week, with "Opens <date>" on a `scheduled` lesson, and adds the cohort
+ * block (`CohortInfo`): calls for an extended learner, the next run and the
+ * tiers for a visitor, nothing for a basic learner. Every state is
+ * `course_lesson_states`' (058); the page only arranges it.
  */
 // SHELL-009 — og:title/og:description come from these (Next's Metadata API
 // fallback), the og:image from the co-located opengraph-image.tsx, which
@@ -70,7 +80,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
   if (course.state === "not_found") notFound();
 
-  const attempts = await getCourseAttemptSummary(course.id);
+  const isCohort = course.format === "cohort";
+  const [attempts, cohort] = await Promise.all([
+    getCourseAttemptSummary(course.id),
+    isCohort ? getCohortView(course.id) : null,
+  ]);
+  const audience = cohort ? cohortAudience(cohort.enrolments, course.lessons) : null;
+  const enrolled = audience?.kind === "extended" || audience?.kind === "basic";
   const progress = courseProgress(course.lessons, attempts);
   const totals = courseTotals(course.lessons);
   // CNT-014: the CTA, its label, the pill and the per-row badges all render
@@ -102,8 +118,16 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         account={signedIn && <AccountMenu email={signedIn.email} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           firstOpen
-            ? { href: `/courses/${courseSlug}/${firstOpen.slug}`, label: totals.allOpen ? c.startCourse : c.startFirstFree }
-            : null
+            ? {
+                href: `/courses/${courseSlug}/${firstOpen.slug}`,
+                // An enrolled learner's later weeks are `scheduled`, not
+                // open, so allOpen alone would call their course "first
+                // free lesson" (0108 Decision 5).
+                label: totals.allOpen || enrolled ? c.startCourse : c.startFirstFree,
+              }
+            : audience?.kind === "visitor" && course.howToJoinUrl
+              ? { href: course.howToJoinUrl, label: c.howToJoin }
+              : null
         }
       />
 
@@ -115,12 +139,31 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           </section>
         )}
 
+        {cohort && audience && (
+          <CohortInfo
+            lang={lang}
+            audience={audience}
+            calls={cohort.calls}
+            runs={cohort.runs}
+            howToJoinUrl={course.howToJoinUrl}
+            now={new Date()}
+          />
+        )}
+
         <section className="flex flex-col gap-6">
           <SectionHeading eyebrow={c.lessonsEyebrow} title={c.lessonsTitle} />
           {course.lessons.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               {c.noLessons}
             </p>
+          ) : isCohort ? (
+            <CohortLessonList
+              lang={lang}
+              courseSlug={courseSlug}
+              lessons={course.lessons}
+              attempts={attempts}
+              showFreeBadge={(lesson) => lesson.accessLevel === "anyone" && !totals.allFree}
+            />
           ) : (
             <ol className="flex flex-col gap-3">
               {course.lessons.map((lesson, i) => (

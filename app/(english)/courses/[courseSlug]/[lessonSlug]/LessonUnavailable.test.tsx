@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import type { TheoryBlock } from "@/lib/lessons";
 import { LessonUnavailable } from "./LessonUnavailable";
-import { signInCopy } from "./signInCopy";
+import { scheduledCopy, signInCopy } from "./signInCopy";
 
 /**
  * ANON-011 (docs/decisions/0104) — the two denied states. What SQL decides
@@ -22,6 +22,27 @@ const teaser: TheoryBlock[] = [
 const band = <header>band</header>;
 
 describe("LessonUnavailable", () => {
+  it("scheduled: says when it opens, as a <time> of that instant, with a way back and no sign-in or paid copy", () => {
+    const opensAt = "2026-11-09T17:00:00.000Z";
+    const { container } = render(
+      <LessonUnavailable
+        band={band}
+        courseSlug="cohort"
+        lessonPath="/courses/cohort/week-2"
+        state={{ access: "scheduled", opensAt }}
+      />,
+    );
+    expect(container.querySelector("[data-access]")?.getAttribute("data-access")).toBe("scheduled");
+    expect(screen.getByText(scheduledCopy.title)).toBeTruthy();
+    const time = container.querySelector("time");
+    expect(time?.getAttribute("datetime")).toBe(opensAt);
+    // The day of month in any timezone within ±12h of 17:00 UTC.
+    expect(time?.textContent).toMatch(/\b(9|10)\b/);
+    expect(screen.getByRole("link", { name: alliengllCopy.player.backToCourse }).getAttribute("href")).toBe("/courses/cohort");
+    expect(screen.queryByText(alliengllCopy.notAvailable.body)).toBeNull();
+    expect(screen.queryByRole("link", { name: signInCopy.cta })).toBeNull();
+  });
+
   it("needs_sign_in: renders the teaser, a sign-in link back to this lesson, and the open lesson", () => {
     const { container } = render(
       <LessonUnavailable

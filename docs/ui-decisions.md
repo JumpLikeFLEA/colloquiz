@@ -1233,3 +1233,25 @@ Appended to in the same commit as the change it records. Referenced from
   English, no toggle. Composed from existing classes and tokens; no new
   colours. Do not make the page claim on load: the button is how a learner
   on the wrong account notices before the link is spent.
+- Cohort course page and the scheduled state (2026-10-10, COH-004,
+  docs/decisions/0108). On a `cohort` course, `/courses/[courseSlug]`
+  groups the lesson list by week (`CohortLessonList.tsx`): "Open lessons"
+  (weekless) first, then "Week N" headings (`h3`, lesson titles drop to
+  `h4`). A `scheduled` lesson shows "Opens <date>" in a `bg-muted
+  text-muted-foreground` pill with a `CalendarClock` icon, in the week
+  header when the whole week opens at one moment, else on the row. Rows
+  keep their whole-list number and stay links; no lock icon. Above the
+  list, `CohortInfo.tsx` renders by audience: an extended learner gets a
+  "Calls" section (cards with the step-tile icon, the local date and a
+  "Join" link in the paid card's `bg-brand-subtle` button classes, past
+  calls muted below with no link); a basic learner gets nothing; a visitor
+  gets "How the course runs" with the next start, two tier cards and a
+  "How to join" link (also the hero CTA when no lesson is open). The lesson
+  page's `scheduled` state reuses the paid card: "This lesson isn't open
+  yet" / "It opens on <date>." / "Back to course". Dates render through
+  `app/(english)/LocalDateTime.tsx`: UTC in the server HTML, the viewer's
+  zone with its short name after hydration. Copy in `courseCopy.ts` (EN/RU)
+  and `signInCopy.ts` (English lesson chrome); pending partner review.
+  Composed from existing classes and tokens; no new colours. Self-paced
+  course pages are unchanged. Do not compute a lesson's state or a call's
+  visibility in TypeScript: both come from SQL (058).

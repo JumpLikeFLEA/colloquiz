@@ -20,24 +20,33 @@ function lesson(overrides: Partial<PublicCourseLesson> & { slug: string; ordinal
     estimatedMinutes: 10,
     accessLevel: "entitled",
     state: "needs_entitlement",
+    opensAt: null,
+    week: null,
     ...overrides,
   };
 }
 
 describe("attachLessonStates", () => {
   const states: LessonStateRow[] = [
-    { lesson_id: "l1", access_level: "anyone", state: "open" },
-    { lesson_id: "l2", access_level: "signed_in", state: "needs_sign_in" },
-    { lesson_id: "l3", access_level: "entitled", state: "needs_entitlement" },
+    { lesson_id: "l1", access_level: "anyone", state: "open", opens_at: null },
+    { lesson_id: "l2", access_level: "signed_in", state: "needs_sign_in", opens_at: null },
+    { lesson_id: "l3", access_level: "entitled", state: "needs_entitlement", opens_at: null },
   ];
 
   it("copies each lesson's SQL level and state onto it, in row order", () => {
     const joined = attachLessonStates([{ id: "l3" }, { id: "l1" }, { id: "l2" }], states);
     expect(joined).toEqual([
-      { id: "l3", accessLevel: "entitled", state: "needs_entitlement" },
-      { id: "l1", accessLevel: "anyone", state: "open" },
-      { id: "l2", accessLevel: "signed_in", state: "needs_sign_in" },
+      { id: "l3", accessLevel: "entitled", state: "needs_entitlement", opensAt: null },
+      { id: "l1", accessLevel: "anyone", state: "open", opensAt: null },
+      { id: "l2", accessLevel: "signed_in", state: "needs_sign_in", opensAt: null },
     ]);
+  });
+
+  it("carries a scheduled row's opens_at (COH-004)", () => {
+    const at = "2026-11-09T17:00:00+00:00";
+    expect(
+      attachLessonStates([{ id: "w2" }], [{ lesson_id: "w2", access_level: "entitled", state: "scheduled", opens_at: at }]),
+    ).toEqual([{ id: "w2", accessLevel: "entitled", state: "scheduled", opensAt: at }]);
   });
 
   it("throws rather than guess a state when a listed lesson has no state row", () => {
@@ -46,7 +55,7 @@ describe("attachLessonStates", () => {
 
   it("is empty for no rows, and ignores state rows the list doesn't show", () => {
     expect(attachLessonStates([], states)).toEqual([]);
-    expect(attachLessonStates([{ id: "l2" }], states)).toEqual([{ id: "l2", accessLevel: "signed_in", state: "needs_sign_in" }]);
+    expect(attachLessonStates([{ id: "l2" }], states)).toEqual([{ id: "l2", accessLevel: "signed_in", state: "needs_sign_in", opensAt: null }]);
   });
 });
 
@@ -183,9 +192,9 @@ describe("firstOpenLessonLink", () => {
   it("is the first row, in the order given, whose SQL state is open", () => {
     const rows = [row("l1", "a"), row("l2", "b"), row("l3", "c")];
     const states: LessonStateRow[] = [
-      { lesson_id: "l1", access_level: "signed_in", state: "needs_sign_in" },
-      { lesson_id: "l2", access_level: "anyone", state: "open" },
-      { lesson_id: "l3", access_level: "anyone", state: "open" },
+      { lesson_id: "l1", access_level: "signed_in", state: "needs_sign_in", opens_at: null },
+      { lesson_id: "l2", access_level: "anyone", state: "open", opens_at: null },
+      { lesson_id: "l3", access_level: "anyone", state: "open", opens_at: null },
     ];
     expect(firstOpenLessonLink(rows, states)).toEqual({ slug: "b", title: "Title b" });
   });
@@ -193,15 +202,15 @@ describe("firstOpenLessonLink", () => {
   it("skips draft and archived rows even when SQL calls them open (an editor's own read)", () => {
     const rows = [row("l1", "a", { published_version_id: null }), row("l2", "b", { archived_at: "2026-10-01" }), row("l3", "c")];
     const states: LessonStateRow[] = [
-      { lesson_id: "l1", access_level: "anyone", state: "open" },
-      { lesson_id: "l2", access_level: "anyone", state: "open" },
-      { lesson_id: "l3", access_level: "anyone", state: "open" },
+      { lesson_id: "l1", access_level: "anyone", state: "open", opens_at: null },
+      { lesson_id: "l2", access_level: "anyone", state: "open", opens_at: null },
+      { lesson_id: "l3", access_level: "anyone", state: "open", opens_at: null },
     ];
     expect(firstOpenLessonLink(rows, states)?.slug).toBe("c");
   });
 
   it("is null when nothing is open to the caller", () => {
-    const states: LessonStateRow[] = [{ lesson_id: "l1", access_level: "entitled", state: "needs_entitlement" }];
+    const states: LessonStateRow[] = [{ lesson_id: "l1", access_level: "entitled", state: "needs_entitlement", opens_at: null }];
     expect(firstOpenLessonLink([row("l1", "a")], states)).toBeNull();
   });
 

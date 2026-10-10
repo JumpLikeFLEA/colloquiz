@@ -49,6 +49,9 @@ export type PublicCourse =
       subtitle: string | null;
       coverImageUrl: string | null;
       level: CefrLevel;
+      /** COH-004: `cohort` courses group lessons by week (058). */
+      format: "self_paced" | "cohort";
+      howToJoinUrl: string | null;
       lessons: PublicCourseLesson[];
     };
 
@@ -60,7 +63,7 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
 
   const { data: course, error: courseErr } = await supabase
     .from("courses")
-    .select("id, title, description, subtitle, cover_image_url, level")
+    .select("id, title, description, subtitle, cover_image_url, level, format, how_to_join_url")
     .eq("slug", courseSlug)
     .maybeSingle();
   if (courseErr) throw new Error(courseErr.message);
@@ -71,7 +74,7 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
   const [{ data: lessons, error: lessonsErr }, { data: states, error: statesErr }] = await Promise.all([
     supabase
       .from("lessons")
-      .select("id, slug, title, description, published_item_count, estimated_minutes, ordinal, published_version_id, archived_at")
+      .select("id, slug, title, description, published_item_count, estimated_minutes, ordinal, week, published_version_id, archived_at")
       .eq("course_id", course.id)
       .order("ordinal", { ascending: true })
       // Ordinals aren't unique (041); the slug tiebreak keeps the list order
@@ -91,6 +94,8 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
     subtitle: course.subtitle,
     coverImageUrl: course.cover_image_url,
     level: course.level as CefrLevel,
+    format: course.format === "cohort" ? "cohort" : "self_paced",
+    howToJoinUrl: course.how_to_join_url,
     lessons: attachLessonStates(publishedLessonsOnly(lessons ?? []), (states ?? []) as LessonStateRow[]).map((l) => ({
       slug: l.slug,
       title: l.title,
@@ -99,6 +104,8 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
       estimatedMinutes: l.estimated_minutes,
       accessLevel: l.accessLevel,
       state: l.state,
+      opensAt: l.opensAt,
+      week: l.week,
       ordinal: l.ordinal,
     })),
   };

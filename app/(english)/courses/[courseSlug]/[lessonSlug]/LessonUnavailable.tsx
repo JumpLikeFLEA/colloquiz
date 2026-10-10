@@ -9,12 +9,14 @@ import {
   LESSON_READING_FRAME_CLASS,
   READING_WIDTH_CLASS,
 } from "@/app/components/lesson-player/columnLayout";
+import { LocalDateTime } from "../../../LocalDateTime";
 import { TeaserBlock } from "./TeaserBlock";
 import { SUBMIT_BUTTON_CLASS } from "@/app/components/lesson-player/practice/practiceClasses";
-import { signInCopy } from "./signInCopy";
+import { scheduledCopy, signInCopy } from "./signInCopy";
 
 export type LessonUnavailableAccess =
   | { access: "needs_entitlement" }
+  | { access: "scheduled"; opensAt: string }
   | { access: "needs_sign_in"; teaser: TheoryBlock[]; openLesson: NextLessonLink | null };
 
 const BACK_BUTTON_CLASS =
@@ -32,6 +34,9 @@ const BACK_BUTTON_CLASS =
  *   here), and, when the course has one, a link to a lesson open to this
  *   caller (0094 Decision 2). The teaser is rendered by `TeaserBlock`, over
  *   the player's own block views (see that module for `video`).
+ * - `scheduled` (COH-004, docs/decisions/0108): a cohort lesson the learner
+ *   is enrolled for, whose week hasn't opened. The same card as
+ *   `needs_entitlement`, saying when it opens, in the viewer's local time.
  *
  * Its own module since AUTH-009 so the course editor's "Visitor view"
  * renders this exact component rather than a look-alike. `access` is also
@@ -59,7 +64,19 @@ export function LessonUnavailable({
   return (
     <div className="bg-background" data-access={state.access}>
       {band}
-      {state.access === "needs_entitlement" ? (
+      {state.access === "scheduled" ? (
+        <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
+          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">{scheduledCopy.title}</h2>
+            <p className="max-w-sm text-base text-muted-foreground">
+              {scheduledCopy.opensOn} <LocalDateTime iso={state.opensAt} locale="en-GB" />.
+            </p>
+            <Link href={`/courses/${courseSlug}`} className={BACK_BUTTON_CLASS}>
+              {alliengllCopy.player.backToCourse}
+            </Link>
+          </section>
+        </div>
+      ) : state.access === "needs_entitlement" ? (
         <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
           <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
             <p className="max-w-sm text-base font-medium text-foreground">{alliengllCopy.notAvailable.body}</p>

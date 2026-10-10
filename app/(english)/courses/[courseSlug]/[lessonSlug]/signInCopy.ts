@@ -19,3 +19,14 @@ export const signInCopy = {
   /** A teaser video's facade: a link out, not an in-place embed (0104). */
   watchVideo: "Watch on YouTube",
 } as const;
+
+/**
+ * COH-004 — a cohort lesson whose week hasn't opened yet
+ * (docs/decisions/0108). English lesson chrome, same reasons as above.
+ * New copy, pending owner/partner review.
+ */
+export const scheduledCopy = {
+  title: "This lesson isn’t open yet",
+  /** Followed by the unlock moment in the viewer's local time. */
+  opensOn: "It opens on",
+} as const;

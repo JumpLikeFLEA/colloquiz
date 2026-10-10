@@ -17,9 +17,19 @@ export type { LessonAccessLevel };
  * `can_read_lesson`, the one entitlement function; TypeScript only reads it
  * (CNT-014, docs/decisions/0102).
  */
-export type LessonState = "open" | "needs_sign_in" | "needs_entitlement";
+export type LessonState = "open" | "needs_sign_in" | "needs_entitlement" | "scheduled";
 
-export type LessonStateRow = { lesson_id: string; access_level: LessonAccessLevel; state: LessonState };
+/**
+ * `opens_at` is set only on a `scheduled` row (058 §3, docs/decisions/0105
+ * Decision 4): the earliest unlock moment over the caller's non-revoked
+ * runs. NULL on every other state.
+ */
+export type LessonStateRow = {
+  lesson_id: string;
+  access_level: LessonAccessLevel;
+  state: LessonState;
+  opens_at: string | null;
+};
 
 export type PublicCourseLesson = {
   slug: string;
@@ -29,6 +39,10 @@ export type PublicCourseLesson = {
   estimatedMinutes: number | null;
   accessLevel: LessonAccessLevel;
   state: LessonState;
+  /** ISO instant, set only when `state` is `scheduled` (COH-004). */
+  opensAt: string | null;
+  /** `lessons.week` (058); null on a self-paced course's lessons. */
+  week: number | null;
   ordinal: number;
 };
 
@@ -43,12 +57,12 @@ export type PublicCourseLesson = {
 export function attachLessonStates<T extends { id: string }>(
   rows: readonly T[],
   states: readonly LessonStateRow[],
-): (T & { accessLevel: LessonAccessLevel; state: LessonState })[] {
+): (T & { accessLevel: LessonAccessLevel; state: LessonState; opensAt: string | null })[] {
   const byId = new Map(states.map((s) => [s.lesson_id, s]));
   return rows.map((row) => {
     const s = byId.get(row.id);
     if (!s) throw new Error(`course_lesson_states returned no row for listed lesson ${row.id}`);
-    return { ...row, accessLevel: s.access_level, state: s.state };
+    return { ...row, accessLevel: s.access_level, state: s.state, opensAt: s.opens_at };
   });
 }
 

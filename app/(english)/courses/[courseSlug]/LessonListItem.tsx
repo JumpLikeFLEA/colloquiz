@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { Check, ChevronRight, Clock, ListChecks } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Clock, ListChecks } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { PublicCourseLesson } from "@/lib/coursePageProgress";
 import { pluralize } from "@/lib/pluralCategory";
@@ -19,6 +20,11 @@ import { courseCopy } from "./courseCopy";
  * where it would repeat on every row. A paid lesson gets no lock: there is
  * no forced order (docs/handoff.md), and the paid preview is M3. An
  * attempted lesson (D2) gets a ✓ on its tile and its best score.
+ *
+ * COH-004 (docs/decisions/0108): `opensAt` is a `scheduled` lesson's
+ * "Opens <date>" (the page passes it only when the week header doesn't
+ * already carry the date). The row stays a link: the lesson page shows the
+ * same state. `headingTag` is `h4` under a cohort course's week headings.
  */
 export function LessonListItem({
   lang,
@@ -27,6 +33,8 @@ export function LessonListItem({
   lesson,
   showFreeBadge,
   bestPercent,
+  opensAt = null,
+  headingTag: Heading = "h3",
 }: {
   lang: SurfaceLang;
   href: string;
@@ -34,6 +42,8 @@ export function LessonListItem({
   lesson: PublicCourseLesson;
   showFreeBadge: boolean;
   bestPercent: number | null;
+  opensAt?: ReactNode;
+  headingTag?: "h3" | "h4";
 }) {
   const c = courseCopy[lang];
   const meta = (
@@ -69,10 +79,16 @@ export function LessonListItem({
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h3 className="text-sm font-semibold text-foreground sm:text-base">{lesson.title}</h3>
+            <Heading className="text-sm font-semibold text-foreground sm:text-base">{lesson.title}</Heading>
             {showFreeBadge && (
               <span className="inline-flex items-center rounded-full bg-brand-subtle px-2 py-0.5 text-xs font-medium text-brand-text">
                 {c.freeBadge}
+              </span>
+            )}
+            {opensAt && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                <CalendarClock className="size-3" aria-hidden="true" />
+                {c.opensOn} {opensAt}
               </span>
             )}
             {bestPercent !== null && (
