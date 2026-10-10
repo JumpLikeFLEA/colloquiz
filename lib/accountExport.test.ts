@@ -16,6 +16,8 @@ const baseSources = {
   courseEntitlements: [],
   runEnrolments: [],
   claimedInvites: [],
+  voiceSubmissions: [],
+  voiceAudio: {},
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -287,7 +289,76 @@ describe("buildExportPayload — claimed_invites (COH-003)", () => {
     ]);
   });
 
-  it("is format version 6", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(6);
+});
+
+describe("buildExportPayload — voice_submissions (VOICE-004)", () => {
+  const take = {
+    id: "sub-1",
+    lesson_id: "lesson-1",
+    block_id: "v1",
+    lesson_version_id: "version-1",
+    content_type: "audio/webm",
+    size_bytes: 1234,
+    submitted_at: "2026-10-12T10:00:00.000Z",
+    purged_at: null,
+    lessons: { slug: "week-1", title: "Week 1", courses: { slug: "cohort", title: "Cohort" } },
+    voice_feedback: {
+      body: { paragraphs: [{ runs: [{ text: "Good", bold: true }] }] },
+      published_at: "2026-10-13T10:00:00.000Z",
+      updated_at: "2026-10-13T11:00:00.000Z",
+    },
+  };
+
+  it("is empty when the reader sent no recording", () => {
+    expect(buildExportPayload(baseSources, []).voice_submissions).toEqual([]);
+  });
+
+  it("carries the audio copy and the published feedback", () => {
+    const payload = buildExportPayload(
+      { ...baseSources, voiceSubmissions: [take], voiceAudio: { "sub-1": "QUJD" } },
+      [],
+    );
+    expect(payload.voice_submissions).toEqual([
+      {
+        submission_id: "sub-1",
+        course_slug: "cohort",
+        course_title: "Cohort",
+        lesson_slug: "week-1",
+        lesson_title: "Week 1",
+        block_id: "v1",
+        lesson_version_id: "version-1",
+        submitted_at: "2026-10-12T10:00:00.000Z",
+        removed_at: null,
+        content_type: "audio/webm",
+        size_bytes: 1234,
+        audio_base64: "QUJD",
+        feedback: {
+          content: { paragraphs: [{ runs: [{ text: "Good", bold: true }] }] },
+          published_at: "2026-10-13T10:00:00.000Z",
+          updated_at: "2026-10-13T11:00:00.000Z",
+        },
+      },
+    ]);
+  });
+
+  it("gives a removed take no audio, and an unpublished feedback row no feedback", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        voiceSubmissions: [
+          { ...take, purged_at: "2027-05-01T00:00:00.000Z", voice_feedback: { body: {}, published_at: null } },
+        ],
+      },
+      [],
+    );
+    expect(payload.voice_submissions[0]).toMatchObject({
+      removed_at: "2027-05-01T00:00:00.000Z",
+      audio_base64: null,
+      feedback: null,
+    });
+  });
+
+  it("is format version 7", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(7);
   });
 });

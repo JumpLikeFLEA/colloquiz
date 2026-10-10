@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { ACHIEVEMENTS } from "@/lib/achievements";
-import { buildExportPayload, exportFilename } from "@/lib/accountExport";
+import { buildExportPayload, exportFilename, type VoiceSubmissionRow } from "@/lib/accountExport";
+import { VOICE_BUCKET } from "@/lib/voice/recording";
 
 /**
  * GET /api/account/export — the caller's own data, as a downloadable JSON file.
@@ -64,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -119,14 +120,38 @@ export async function GET() {
         // COH-003: run_invites has no grants; this function returns the
         // caller's own claimed invites only (059).
         supabase.rpc("my_claimed_run_invites"),
+        // VOICE-004: own takes, and only PUBLISHED feedback (060's policies).
+        supabase
+          .from("voice_submissions")
+          .select(
+            "id, lesson_id, block_id, lesson_version_id, object_name, content_type, size_bytes, submitted_at, purged_at, lessons(slug, title, courses(slug, title)), voice_feedback(body, published_at, updated_at)",
+          )
+          .eq("user_id", user.id)
+          .order("submitted_at", { ascending: false }),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
+    }
+
+    // A copy of each take's audio (privacy-policy.md section 8), downloaded
+    // under the caller's own session: the bucket's SELECT policy is the
+    // boundary, as RLS is for the rows. One at a time, to bound memory; a
+    // learner has a handful of takes per run. A failed download fails the
+    // export, for the same reason a failed section does.
+    const voiceRows = (voiceRes.data ?? []) as (VoiceSubmissionRow & { object_name: string | null })[];
+    const voiceAudio: Record<string, string> = {};
+    for (const row of voiceRows) {
+      if (!row.object_name) continue;
+      const { data: blob, error: dlError } = await supabase.storage.from(VOICE_BUCKET).download(row.object_name);
+      if (dlError || !blob) {
+        return NextResponse.json({ error: "Could not copy a voice recording." }, { status: 500 });
+      }
+      voiceAudio[row.id] = Buffer.from(await blob.arrayBuffer()).toString("base64");
     }
 
     const now = new Date();
@@ -146,6 +171,8 @@ export async function GET() {
         courseEntitlements: entitlementsRes.data ?? [],
         runEnrolments: enrolmentsRes.data ?? [],
         claimedInvites: invitesRes.data ?? [],
+        voiceSubmissions: voiceRows,
+        voiceAudio,
       },
       ACHIEVEMENTS,
     );

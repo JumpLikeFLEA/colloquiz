@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authUserFrom } from "@/lib/auth";
 import type { DeleteBlockingGroup } from "@/lib/accountDelete";
+import { removeVoiceObjects } from "@/lib/voice/storage";
 
 /**
  * POST /api/account/delete — erase the caller's account by anonymisation
@@ -27,7 +28,7 @@ export async function POST() {
     }
 
     const result = data as
-      | { ok: true }
+      | { ok: true; voice_objects?: string[] }
       | { ok: false; reason: string; groups?: DeleteBlockingGroup[] };
 
     if (!result.ok) {
@@ -50,6 +51,18 @@ export async function POST() {
     const { data: objects } = await admin.storage.from("avatars").list(user.id);
     if (objects && objects.length > 0) {
       await admin.storage.from("avatars").remove(objects.map((o) => `${user.id}/${o.name}`));
+    }
+
+    // Voice recordings live under "<course_id>/<user_id>/…" in the private
+    // voice-recordings bucket, so there is no single prefix to list. The RPC
+    // listed every object under the caller's segment, queued it and returned
+    // it (migration 060); remove them here. Anything that fails stays queued
+    // and the daily purge (app/api/cron/voice-purge) removes it.
+    if (result.voice_objects && result.voice_objects.length > 0) {
+      const { failed } = await removeVoiceObjects(admin, result.voice_objects);
+      if (failed.length > 0) {
+        console.error(`account delete: ${failed.length} voice object(s) left queued for the purge`);
+      }
     }
 
     // Ban far into the future. A hard delete of auth.users fails on the six FKs

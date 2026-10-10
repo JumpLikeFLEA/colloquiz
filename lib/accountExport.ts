@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 6;
+export const EXPORT_FORMAT_VERSION = 7;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -25,6 +25,7 @@ export const EXPORT_CONTENTS = [
   "Course access — English courses opened to you by a grant, and when (or if) that ended",
   "Cohort enrolments — the course runs you joined, your tier, and when (or if) your access ended",
   "Invites you claimed — the name and contact the course author wrote on your invite",
+  "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -91,6 +92,22 @@ export type ClaimedInviteRow = {
   revoked_at: string | null;
 };
 
+export type VoiceSubmissionRow = {
+  id: string;
+  lesson_id: string;
+  block_id: string;
+  lesson_version_id: string;
+  content_type: string;
+  size_bytes: number | null;
+  submitted_at: string;
+  purged_at: string | null;
+  /** Embedded `lessons(slug, title, courses(slug, title))`. */
+  lessons: unknown;
+  /** Embedded `voice_feedback(body, published_at, updated_at)`. RLS returns
+   * a learner only PUBLISHED feedback, so a draft never reaches the export. */
+  voice_feedback: unknown;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -106,6 +123,9 @@ export type ExportSources = {
   courseEntitlements: CourseEntitlementRow[];
   runEnrolments: RunEnrolmentRow[];
   claimedInvites: ClaimedInviteRow[];
+  voiceSubmissions: VoiceSubmissionRow[];
+  /** Submission id -> the take's audio, base64. Absent for a removed take. */
+  voiceAudio: Readonly<Record<string, string>>;
 };
 
 /**
@@ -223,6 +243,39 @@ export function buildExportPayload(
       claimed_at: row.claimed_at,
       revoked_at: row.revoked_at,
     })),
+
+    // VOICE-004 (docs/decisions/0110): every voice take this reader sent,
+    // with a copy of the audio (privacy-policy.md section 8: "The export
+    // includes a copy of your voice recordings") and the author's written
+    // feedback once published. A take removed by the 6-month purge keeps its
+    // row with removed_at set and no audio.
+    voice_submissions: src.voiceSubmissions.map((row) => exportVoiceSubmission(row, src.voiceAudio)),
+  };
+}
+
+function exportVoiceSubmission(row: VoiceSubmissionRow, audio: Readonly<Record<string, string>>) {
+  const lesson = firstEmbedded<{ slug?: string; title?: string; courses?: unknown }>(row.lessons);
+  const course = firstEmbedded<{ slug?: string; title?: string }>(lesson?.courses);
+  const feedback = firstEmbedded<{ body?: unknown; published_at?: string | null; updated_at?: string }>(
+    row.voice_feedback,
+  );
+  return {
+    submission_id: row.id,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    lesson_slug: lesson?.slug ?? null,
+    lesson_title: lesson?.title ?? null,
+    block_id: row.block_id,
+    lesson_version_id: row.lesson_version_id,
+    submitted_at: row.submitted_at,
+    removed_at: row.purged_at,
+    content_type: row.content_type,
+    size_bytes: row.size_bytes,
+    audio_base64: audio[row.id] ?? null,
+    feedback:
+      feedback && feedback.published_at
+        ? { content: feedback.body ?? null, published_at: feedback.published_at, updated_at: feedback.updated_at ?? null }
+        : null,
   };
 }
 

@@ -32,7 +32,8 @@ const isDev = process.env.NODE_ENV === "development";
 // keeping 'unsafe-inline' for the framework's and next-themes' inline scripts.
 //
 // Origins allowed beyond 'self':
-//   • Supabase — REST + Realtime websocket (connect), avatar images (img)
+//   • Supabase — REST + Realtime websocket + Storage uploads (connect), avatar
+//     images (img), voice-recording playback through signed URLs (media)
 //   • Vercel — analytics script (script) + Web Vitals beacon (connect)
 const supabaseHttps = supabaseUrl ? new URL(supabaseUrl).origin : "";
 const supabaseWss = supabaseHost ? `wss://${supabaseHost}` : "";
@@ -44,6 +45,10 @@ const csp = [
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' blob: data: ${supabaseHttps}`.trim(),
   `font-src 'self' data:`,
+  // VOICE-004: a voice take plays from a signed Storage URL on the Supabase
+  // origin; blob: is the recorder's own listen-back before sending (VOICE-005).
+  // Without this, media falls back to default-src 'self' and both are blocked.
+  `media-src 'self' blob: ${supabaseHttps}`.trim(),
   `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://vitals.vercel-insights.com https://va.vercel-scripts.com`.replace(/\s+/g, " ").trim(),
   // PLAY-001 lesson video facade: no iframe exists until the learner clicks
   // (see app/components/lesson-player/blocks/VideoBlock.tsx), so this only
