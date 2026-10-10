@@ -2479,6 +2479,28 @@ export const CARDS = [
     notes: 'Must be Done before OPS-020.',
   },
   {
+    key: 'CNT-015',
+    title: 'Migration: drop lessons.in_free_sample',
+    milestone: 'M3',
+    epic: 'CNT',
+    type: 'task',
+    rank: 2465,
+    dependsOn: ['AUTH-009', 'COH-002'],
+    goal:
+      'Proposed by AUTH-009 (docs/decisions/0103 Decision 5). After AUTH-009 no app code reads ' +
+      'in_free_sample; it survives only as the 055 mirror of access_level (docs/decisions/0099 Decision 2), ' +
+      'written by create_lesson, set_lesson_access_level and scripts/seed-local-fixtures.ts. Drop the ' +
+      'column and its CHECK. Serialised after COH-002, which rewrites create_lesson and ' +
+      'set_lesson_access_level, so their bodies are re-emitted once, from the COH-002 version.',
+    acceptance: [
+      'A migration drops lessons_in_free_sample_mirrors_access_level and lessons.in_free_sample; create_lesson and set_lesson_access_level are re-emitted from their latest bodies without the column (and the create_lesson result without its in_free_sample key).',
+      'scripts/seed-local-fixtures.ts stops writing the column; a fresh `supabase db reset` plus the seed succeeds, and per-level counts are printed with no zero cell.',
+      '`rg -n in_free_sample app lib scripts` (excluding scripts/board) prints comments only.',
+      'An editor calling create_lesson and set_lesson_access_level still succeeds (printed), and a non-editor is still denied, as the positive and negative controls.',
+      'Migration-number and re-emitted-body print rule (section header). The owner pastes the hosted per-level counts before and after applying.',
+    ],
+  },
+  {
     key: 'VOICE-003',
     title: 'The voice block in the lesson document and editor',
     milestone: 'M3',
