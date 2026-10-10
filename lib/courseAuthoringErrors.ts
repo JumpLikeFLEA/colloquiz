@@ -50,6 +50,39 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   // (docs/decisions/0094 Decision 2).
   no_open_lesson: { status: 409, message: "A published course needs at least one lesson open to anyone." },
   invalid_access_level: { status: 400, message: "Please choose a valid access level." },
+  // Cohort courses (058, docs/decisions/0093 / 0105), surfaced by AUTH-010.
+  invalid_format: { status: 400, message: "Please choose a valid format." },
+  format_locked: { status: 409, message: "The format can't change once the course has a run." },
+  invalid_url: { status: 400, message: "Enter a full link starting with https://." },
+  invalid_week: { status: 400, message: "Please choose a valid week." },
+  week_required: {
+    status: 409,
+    message: "In a cohort course, a lesson that needs a purchase must have a week before it is published.",
+  },
+  // The no-re-lock rule (0093 Decision 5, 0094 Decision 4).
+  week_frozen: {
+    status: 409,
+    message:
+      "A run is in progress, so this published lesson's week can only move earlier. Moving it later would re-lock it for learners who can already open it.",
+  },
+  access_level_frozen: {
+    status: 409,
+    message:
+      "A run is in progress, so this published lesson can't be switched to Purchase required. It would lock it for learners who can already open it.",
+  },
+  not_cohort_course: { status: 409, message: "Runs exist only on a cohort course. Set the format first." },
+  no_scheduled_lessons: {
+    status: 409,
+    message: "Give at least one Purchase-required lesson a week before creating a run.",
+  },
+  invalid_starts_at: { status: 400, message: "Please enter a valid date and time." },
+  invalid_ends_at: { status: 400, message: "A run can't end before it starts." },
+  run_not_found: { status: 404, message: "That run no longer exists." },
+  call_not_found: { status: 404, message: "That call no longer exists." },
+  run_started: { status: 409, message: "This run has started, so its start can't change and it can't be deleted." },
+  run_not_started: { status: 409, message: "This run hasn't started yet. Delete it or move its start instead." },
+  cannot_extend_started_run: { status: 409, message: "A run that has started can end earlier, never later." },
+  run_has_enrolments: { status: 409, message: "Someone has enrolled in this run, so it can't be deleted." },
 };
 
 export function courseAuthoringErrorResponse(code: string | undefined): { status: number; body: { error: string } } {

@@ -50,19 +50,19 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring";
 import { CoverImagePicker, type UploadCoverImage } from "./CoverImagePicker";
+import { CourseFormatSection, type CourseRunSummary } from "./CourseFormatSection";
+import { LessonWeekSelect } from "./LessonWeekSelect";
+import { postJson } from "./postJson";
 
-async function postJson(url: string, body: unknown, method: "POST" | "PATCH" | "DELETE" = "POST") {
-  const res = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: method === "DELETE" ? undefined : JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
-  return data;
-}
-
-export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDetail; isAdmin: boolean }) {
+export function CourseDetailView({
+  detail,
+  isAdmin,
+  runs,
+}: {
+  detail: AuthoredCourseDetail;
+  isAdmin: boolean;
+  runs: CourseRunSummary;
+}) {
   const router = useRouter();
   const { course, lessons, editors } = detail;
   const [busy, setBusy] = useState(false);
@@ -249,7 +249,20 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
         </div>
       </section>
 
-      <LessonsSection courseId={course.id} lessons={lessons} onChanged={() => router.refresh()} />
+      <CourseFormatSection
+        courseId={course.id}
+        format={course.format}
+        howToJoinUrl={course.howToJoinUrl}
+        runs={runs}
+        onChanged={() => router.refresh()}
+      />
+
+      <LessonsSection
+        courseId={course.id}
+        lessons={lessons}
+        cohort={course.format === "cohort"}
+        onChanged={() => router.refresh()}
+      />
 
       {isAdmin && <EditorsSection courseId={course.id} editors={editors} onChanged={() => router.refresh()} />}
     </div>
@@ -259,10 +272,12 @@ export function CourseDetailView({ detail, isAdmin }: { detail: AuthoredCourseDe
 function LessonsSection({
   courseId,
   lessons,
+  cohort,
   onChanged,
 }: {
   courseId: string;
   lessons: AuthoredLesson[];
+  cohort: boolean;
   onChanged: () => void;
 }) {
   const [adding, setAdding] = useState(false);
@@ -343,6 +358,21 @@ function LessonsSection({
     }
   }
 
+  // AUTH-010: set_lesson_week (058) is the authority, including the no-re-lock
+  // rule (week_frozen) while a run is in progress.
+  async function setWeek(lesson: AuthoredLesson, week: number | null) {
+    if (week === lesson.week) return;
+    setPendingId(lesson.id);
+    try {
+      await postJson(`/api/admin/courses/${courseId}/lessons/${lesson.id}/week`, { week });
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not change this lesson's week.");
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   const openToAnyone = lessonsOpenToAnyone(lessons);
 
   return (
@@ -365,7 +395,11 @@ function LessonsSection({
           <span className="font-medium text-foreground">Open to anyone:</span>{" "}
           {openToAnyone.length > 0
             ? openToAnyone.map((l) => l.title).join(", ")
-            : "no lesson yet. A course needs at least one before it can be published."}
+            : cohort
+              ? // 058 header §6: the open-lesson rule is self-paced only
+                // (0094 Decision 2), so a cohort course may have none.
+                "none."
+              : "no lesson yet. A course needs at least one before it can be published."}
         </p>
       )}
 
@@ -418,6 +452,12 @@ function LessonsSection({
                       Unpublished
                     </span>
                   )}
+                  {cohort && lesson.accessLevel === "entitled" && lesson.week === null && (
+                    // publish_lesson refuses this lesson (week_required, 058).
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-warning-subtle text-warning shrink-0">
+                      Needs a week
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5 font-mono truncate">
                   {lesson.slug}
@@ -428,7 +468,15 @@ function LessonsSection({
               {/* AUTH-009: the level control joined this row and made it
                * overflow at 390px, so the controls wrap below the title on a
                * narrow screen instead. */}
-              <div className="ml-auto flex shrink-0 items-center gap-1">
+              <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
+                {cohort && (
+                  <LessonWeekSelect
+                    lessonTitle={lesson.title}
+                    week={lesson.week}
+                    disabled={pendingId !== null}
+                    onChange={(week) => setWeek(lesson, week)}
+                  />
+                )}
                 <Select
                   value={lesson.accessLevel}
                   onValueChange={(v) => setAccessLevel(lesson, v as LessonAccessLevel)}

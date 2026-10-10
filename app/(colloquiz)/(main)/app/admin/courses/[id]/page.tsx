@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { getCourseAccess, canEditCourse } from "@/lib/courseAccess";
 import { getAuthoredCourseDetail } from "@/lib/courseAuthoring";
+import { getCourseRuns } from "@/lib/courseRuns";
+import { runPhase } from "@/lib/cohortSchedule";
 import { CourseDetailView } from "./CourseDetailView";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
@@ -27,12 +29,16 @@ export default async function AdminCourseDetailPage({
     );
   }
 
-  const detail = await getAuthoredCourseDetail(id, isAdmin);
+  const [detail, runs] = await Promise.all([getAuthoredCourseDetail(id, isAdmin), getCourseRuns(id)]);
   if (!detail) notFound();
+  // Display only (AUTH-010): which notice and locks to show. The RPCs
+  // re-check the same condition themselves (docs/decisions/0106 Decision 2).
+  const now = new Date();
+  const runSummary = { count: runs.length, inProgress: runs.some((r) => runPhase(r, now) === "in_progress") };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <CourseDetailView detail={detail} isAdmin={isAdmin} />
+      <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} />
     </div>
   );
 }

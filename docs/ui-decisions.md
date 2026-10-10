@@ -1194,3 +1194,22 @@ Appended to in the same commit as the change it records. Referenced from
   open lesson's JS (measured in 0104). Do not swap `TeaserBlock` for
   `TheoryBlockRenderer` without re-running `npm run budget`. The admin
   "Visitor view" shows the same screen.
+- Cohort authoring (2026-10-10, AUTH-010, docs/decisions/0106). The course
+  editor gains a "Format" section below the catalogue preview: a
+  Self-paced / Cohort Select, locked with its reason once the course has a
+  run. For a cohort course it also has a "How to join (link)" input with
+  Save, a `bg-warning-subtle text-warning` notice while a run is in
+  progress, and a "Runs and calls (N runs)" link. On a cohort course, each
+  lesson row gets a week Select ("No week", Week 1–8) before the access-level
+  Select, and an entitled lesson with no week gets a "Needs a week" warning
+  pill. The row's control group is now `max-w-full flex-wrap`, not
+  `shrink-0`: with the week Select it overflowed at 390px (measured). The
+  new `/app/admin/courses/[id]/runs` page lists runs as cards: title, an
+  Upcoming / In progress / Ended pill, start and end, and a calls list with
+  edit/delete. It has a New run dialog (title, start), and the start is
+  locked with its reason on a started run. A call dialog has a "Repeat
+  weekly" Select. Close-run and delete confirms use AlertDialog. Times are
+  shown in the editor's timezone, named on the page. Composed from the course
+  editor's own classes and existing tokens; no new colours. Do not remove the
+  started-run start lock: the RPC refuses the change anyway, and the lock is
+  where the editor learns why.

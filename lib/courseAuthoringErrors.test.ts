@@ -13,6 +13,38 @@ describe("courseAuthoringErrorResponse", () => {
     expect(courseAuthoringErrorResponse("invalid_access_level").status).toBe(400);
   });
 
+  // Every { ok: false, error } code 058's editor RPCs return
+  // (rg "'error', '" supabase/migrations/058_cohort_schema.sql), so none
+  // reaches the editor as "Something went wrong."
+  it.each([
+    "access_level_frozen",
+    "call_not_found",
+    "cannot_extend_started_run",
+    "format_locked",
+    "invalid_ends_at",
+    "invalid_format",
+    "invalid_starts_at",
+    "invalid_url",
+    "invalid_week",
+    "no_scheduled_lessons",
+    "not_cohort_course",
+    "run_has_enrolments",
+    "run_not_found",
+    "run_not_started",
+    "run_started",
+    "week_frozen",
+    "week_required",
+  ])("maps 058's %s to its own message", (code) => {
+    const { status, body } = courseAuthoringErrorResponse(code);
+    expect(status).not.toBe(500);
+    expect(body.error).not.toBe("Something went wrong.");
+  });
+
+  it("maps the re-lock refusals to a 409", () => {
+    expect(courseAuthoringErrorResponse("week_frozen").status).toBe(409);
+    expect(courseAuthoringErrorResponse("access_level_frozen").status).toBe(409);
+  });
+
   it("falls back to a generic 400 for an unknown code", () => {
     expect(courseAuthoringErrorResponse("not_a_code")).toEqual({
       status: 400,

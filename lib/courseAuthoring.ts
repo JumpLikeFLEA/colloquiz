@@ -34,6 +34,10 @@ export type AuthoredCourse = {
   lessonCount: number;
 };
 
+/** Cohort fields (058, docs/decisions/0093). Read only by the course editor,
+ * so they live on the detail type, not on the list rows. */
+export type CourseFormat = "self_paced" | "cohort";
+
 /** `courseIds` narrows to a non-admin editor's own courses (see header
  * comment); omitted (admin) lists every course. An empty array is a real,
  * distinct input — a granted-nothing editor — and must return no rows, not
@@ -76,6 +80,9 @@ export type AuthoredLesson = {
   archivedAt: string | null;
   publishedVersionId: string | null;
   publishedItemCount: number;
+  /** `lessons.week` (058): the cohort week, set only through
+   * `set_lesson_week` (AUTH-010). Ignored for a self-paced course. */
+  week: number | null;
 };
 
 export type CourseEditor = {
@@ -86,7 +93,7 @@ export type CourseEditor = {
 };
 
 export type AuthoredCourseDetail = {
-  course: AuthoredCourse;
+  course: AuthoredCourse & { format: CourseFormat; howToJoinUrl: string | null };
   lessons: AuthoredLesson[];
   editors: CourseEditor[];
 };
@@ -104,7 +111,7 @@ export async function getAuthoredCourseDetail(
 
   const { data: course, error: courseErr } = await supabase
     .from("courses")
-    .select("id, slug, title, description, subtitle, cover_image_url, level, status")
+    .select("id, slug, title, description, subtitle, cover_image_url, level, status, format, how_to_join_url")
     .eq("id", courseId)
     .maybeSingle();
   if (courseErr) throw new Error(courseErr.message);
@@ -113,7 +120,7 @@ export async function getAuthoredCourseDetail(
   const { data: lessons, error: lessonsErr } = await supabase
     .from("lessons")
     .select(
-      "id, slug, slug_frozen_at, ordinal, title, description, estimated_minutes, access_level, archived_at, published_version_id, published_item_count",
+      "id, slug, slug_frozen_at, ordinal, title, description, estimated_minutes, access_level, archived_at, published_version_id, published_item_count, week",
     )
     .eq("course_id", courseId)
     .order("ordinal");
@@ -144,6 +151,8 @@ export async function getAuthoredCourseDetail(
       level: course.level as CefrLevel,
       status: course.status as "draft" | "published",
       lessonCount: (lessons ?? []).length,
+      format: course.format as CourseFormat,
+      howToJoinUrl: course.how_to_join_url,
     },
     lessons: (lessons ?? []).map((l) => ({
       id: l.id,
@@ -157,6 +166,7 @@ export async function getAuthoredCourseDetail(
       archivedAt: l.archived_at,
       publishedVersionId: l.published_version_id,
       publishedItemCount: l.published_item_count,
+      week: l.week,
     })),
     editors: (editors ?? []).map((e) => {
       const profileRow = e.profiles as
