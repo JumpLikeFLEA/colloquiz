@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { bestScoreForLesson } from "@/lib/coursePageProgress";
-// Direct path, not the lesson-player barrel (docs/decisions/0059).
-import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../../AccountMenu";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
+import { LessonUnavailable } from "./LessonUnavailable";
 import { StripBackLink } from "./StripBackLink";
 
 /**
@@ -78,28 +75,11 @@ export default async function LessonPage({
   );
 
   if (lesson.state === "not_available") {
-    // docs/decisions/0079 D8: the paid, not-entitled state gets the same
-    // band as a playable lesson. Title, description, item count and
-    // minutes stay visible for every lesson (docs/handoff.md, "Preview,
-    // precisely") and now sit in the band. Below it is one card with the
-    // existing copy and a way back to the course. There is no buy CTA:
-    // the paid preview is M3, and no lesson can reach this state at launch.
-    // No min-h-svh on <main> (the root layout's sticky-footer wrapper
-    // sizes the page, docs/ui-decisions.md 2026-09-28).
+    // docs/decisions/0079 D8; the course editor's "Visitor view" renders the
+    // same component (AUTH-009).
     return (
       <main className="bg-background">
-        {band}
-        <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
-          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
-            <p className="max-w-sm text-base font-medium text-foreground">{alliengllCopy.notAvailable.body}</p>
-            <Link
-              href={`/courses/${courseSlug}`}
-              className="inline-flex min-h-11 items-center rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              {alliengllCopy.player.backToCourse}
-            </Link>
-          </section>
-        </div>
+        <LessonUnavailable band={band} courseSlug={courseSlug} access={lesson.access} />
       </main>
     );
   }

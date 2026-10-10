@@ -60,8 +60,9 @@
  * script only ever inserts new draft `lesson_versions` rows.
  *
  * Free sample is NEVER set here — see docs/decisions/0023 Decision 2. A
- * freshly imported lesson keeps `in_free_sample`'s column default (false)
- * until an editor explicitly flags it via `set_lesson_free_sample`.
+ * freshly imported lesson keeps `access_level`'s column default
+ * (`entitled`, migration 055) until an editor sets it via
+ * `set_lesson_access_level` (AUTH-009).
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/import-lesson.ts <file> [--dry-run] [--adopt]
@@ -349,8 +350,9 @@ async function run() {
           title: lesson.title,
           description: lesson.description ?? null,
           estimated_minutes: lesson.estimatedMinutes ?? null,
-          // in_free_sample deliberately omitted — column DEFAULT FALSE
-          // applies; see docs/decisions/0023 Decision 2.
+          // access_level / in_free_sample deliberately omitted — their
+          // defaults ('entitled' / false, 055) apply; see
+          // docs/decisions/0023 Decision 2.
         })
         .select("id")
         .single();

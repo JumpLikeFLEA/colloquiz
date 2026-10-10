@@ -1,4 +1,5 @@
 import { cache } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { authUserFrom } from "@/lib/auth";
 import { lessonNav, publishedLessonsOnly, type LessonStateRow } from "@/lib/coursePageProgress";
 import { createClient } from "@/lib/supabase/server";
@@ -61,8 +62,23 @@ export type PublicLesson =
 // cache(): SHELL-009's generateMetadata and the page component both call
 // this for the same slugs within one request; React dedupes it to a single
 // query (same precedent as lib/coursePage.ts's getPublicCourse).
-export const getPublicLesson = cache(async (courseSlug: string, lessonSlug: string): Promise<PublicLesson> => {
-  const supabase = await createClient();
+export const getPublicLesson = cache(
+  async (courseSlug: string, lessonSlug: string): Promise<PublicLesson> =>
+    readPublicLesson(await createClient(), courseSlug, lessonSlug),
+);
+
+/**
+ * The body of `getPublicLesson`, over a client the caller supplies. AUTH-009's
+ * "Visitor view" passes a session-less anon client (lib/supabase/anon.ts), so
+ * an editor sees what an anonymous visitor gets from this same read path,
+ * decided by the same `lesson_state` call, rather than their own (always
+ * open) editor view.
+ */
+export async function readPublicLesson(
+  supabase: SupabaseClient,
+  courseSlug: string,
+  lessonSlug: string,
+): Promise<PublicLesson> {
 
   const { data: course, error: courseErr } = await supabase
     .from("courses")
@@ -128,7 +144,7 @@ export const getPublicLesson = cache(async (courseSlug: string, lessonSlug: stri
     isSignedIn: user !== null,
     ...meta,
   };
-});
+}
 
 export type NextLessonLink = { slug: string; title: string };
 
@@ -158,8 +174,12 @@ export type LessonNavInfo = { position: number; total: number; next: NextLessonL
  * list (an archived lesson an editor can still open) — the band then shows
  * no position rather than a wrong one.
  */
-export async function getLessonNav(courseId: string, lessonSlug: string): Promise<LessonNavInfo | null> {
-  const supabase = await createClient();
+export async function getLessonNav(
+  courseId: string,
+  lessonSlug: string,
+  client?: SupabaseClient,
+): Promise<LessonNavInfo | null> {
+  const supabase = client ?? (await createClient());
 
   const { data, error } = await supabase
     .from("lessons")

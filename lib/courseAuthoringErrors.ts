@@ -45,7 +45,7 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   // other RPC error code here is mapped rather than falling through to the
   // generic 400.
   invalid_item_count: { status: 400, message: "That lesson's item count couldn't be determined." },
-  // set_lesson_access_level / set_lesson_free_sample / publish_course (055):
+  // set_lesson_access_level / publish_course (055):
   // a published course keeps at least one non-archived lesson open to anyone
   // (docs/decisions/0094 Decision 2).
   no_open_lesson: { status: 409, message: "A published course needs at least one lesson open to anyone." },

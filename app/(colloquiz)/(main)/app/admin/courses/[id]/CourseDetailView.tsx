@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Archive, ArchiveRestore, Blocks, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, Archive, ArchiveRestore, Blocks, Eye, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,12 +30,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { Switch } from "@/app/components/ui/switch";
 import Image from "next/image";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/courseLevels";
 import { COURSE_SUBTITLE_MAX_LENGTH } from "@/lib/courseCatalogue";
 import { pluralize } from "@/lib/format";
 import { isValidLessonSlugFormat } from "@/lib/lessonSlug";
+import {
+  LESSON_ACCESS_LEVELS,
+  LESSON_ACCESS_LEVEL_LABELS,
+  lessonsOpenToAnyone,
+  type LessonAccessLevel,
+} from "@/lib/lessonAccessLevels";
 import {
   LESSON_IMAGE_BUCKET,
   lessonImageObjectPath,
@@ -322,19 +327,23 @@ function LessonsSection({
     }
   }
 
-  async function toggleFreeSample(lesson: AuthoredLesson) {
+  // AUTH-009: set_lesson_access_level (055) is the authority. It refuses to
+  // leave a published course with no lesson open to anyone, and that
+  // refusal comes back here as the route's error message.
+  async function setAccessLevel(lesson: AuthoredLesson, accessLevel: LessonAccessLevel) {
+    if (accessLevel === lesson.accessLevel) return;
     setPendingId(lesson.id);
     try {
-      await postJson(`/api/admin/courses/${courseId}/lessons/${lesson.id}/free-sample`, {
-        inFreeSample: !lesson.inFreeSample,
-      });
+      await postJson(`/api/admin/courses/${courseId}/lessons/${lesson.id}/access-level`, { accessLevel });
       onChanged();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update the free-sample flag.");
+      toast.error(e instanceof Error ? e.message : "Could not change who can open this lesson.");
     } finally {
       setPendingId(null);
     }
   }
+
+  const openToAnyone = lessonsOpenToAnyone(lessons);
 
   return (
     <section className="space-y-3">
@@ -351,6 +360,15 @@ function LessonsSection({
         </button>
       </div>
 
+      {lessons.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Open to anyone:</span>{" "}
+          {openToAnyone.length > 0
+            ? openToAnyone.map((l) => l.title).join(", ")
+            : "no lesson yet. A course needs at least one before it can be published."}
+        </p>
+      )}
+
       {lessons.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-muted-foreground rounded-2xl border border-dashed border-border text-sm">
           No lessons yet.
@@ -360,7 +378,7 @@ function LessonsSection({
           {lessons.map((lesson, index) => (
             <div
               key={lesson.id}
-              className={`flex items-center gap-3 px-4 py-3 ${pendingId === lesson.id ? "opacity-60" : ""} ${
+              className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 ${pendingId === lesson.id ? "opacity-60" : ""} ${
                 lesson.archivedAt ? "opacity-60" : ""
               }`}
             >
@@ -383,7 +401,7 @@ function LessonsSection({
                 </button>
               </div>
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-48">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
                   {lesson.archivedAt && (
@@ -407,37 +425,61 @@ function LessonsSection({
                 </p>
               </div>
 
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                Free sample
-                <Switch
-                  checked={lesson.inFreeSample}
-                  onCheckedChange={() => toggleFreeSample(lesson)}
+              {/* AUTH-009: the level control joined this row and made it
+               * overflow at 390px, so the controls wrap below the title on a
+               * narrow screen instead. */}
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                <Select
+                  value={lesson.accessLevel}
+                  onValueChange={(v) => setAccessLevel(lesson, v as LessonAccessLevel)}
                   disabled={pendingId !== null}
-                />
-              </label>
+                >
+                  <SelectTrigger size="sm" className="w-40 shrink-0 text-xs" aria-label={`Who can open ${lesson.title}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LESSON_ACCESS_LEVELS.map((l) => (
+                      <SelectItem key={l} value={l} className="text-xs">
+                        {LESSON_ACCESS_LEVEL_LABELS[l]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Link
-                href={`/app/admin/courses/${courseId}/lessons/${lesson.id}`}
-                aria-label={`Edit content for ${lesson.title}`}
-                className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <Blocks size={14} />
-              </Link>
-              <button
-                onClick={() => setEditing(lesson)}
-                aria-label={`Edit ${lesson.title}`}
-                className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                onClick={() => (lesson.archivedAt ? toggleArchived(lesson) : setConfirmArchive(lesson))}
-                disabled={pendingId !== null}
-                aria-label={lesson.archivedAt ? `Restore ${lesson.title}` : `Archive ${lesson.title}`}
-                className="cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                {lesson.archivedAt ? <ArchiveRestore size={14} /> : <Archive size={14} />}
-              </button>
+                {lesson.accessLevel !== "anyone" && (
+                  <Link
+                    href={`/app/admin/courses/${courseId}/lessons/${lesson.id}/visitor`}
+                    aria-label={`What a visitor sees on ${lesson.title}`}
+                    title="Visitor view"
+                    className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <Eye size={14} />
+                  </Link>
+                )}
+
+                <Link
+                  href={`/app/admin/courses/${courseId}/lessons/${lesson.id}`}
+                  aria-label={`Edit content for ${lesson.title}`}
+                  className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <Blocks size={14} />
+                </Link>
+                <button
+                  onClick={() => setEditing(lesson)}
+                  aria-label={`Edit ${lesson.title}`}
+                  className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => (lesson.archivedAt ? toggleArchived(lesson) : setConfirmArchive(lesson))}
+                  disabled={pendingId !== null}
+                  aria-label={lesson.archivedAt ? `Restore ${lesson.title}` : `Archive ${lesson.title}`}
+                  className="cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {lesson.archivedAt ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -508,7 +550,7 @@ function LessonsSection({
           <AlertDialogHeader>
             <AlertDialogTitle>Archive {confirmArchive?.title}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This hides the lesson from the catalogue and the free sample. Existing purchasers
+              This hides the lesson from the catalogue and from visitors. Existing purchasers
               keep it — archiving never revokes access to a lesson someone already bought. You
               can restore it later.
             </AlertDialogDescription>

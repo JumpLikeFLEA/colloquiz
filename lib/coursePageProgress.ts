@@ -6,8 +6,10 @@
  * from here as a type only.
  */
 
-/** `lessons.access_level` (migration 055, docs/decisions/0094). */
-export type LessonAccessLevel = "anyone" | "signed_in" | "entitled";
+/** `lessons.access_level` (migration 055, docs/decisions/0094); one
+ * definition, in lib/lessonAccessLevels.ts (AUTH-009). */
+import type { LessonAccessLevel } from "./lessonAccessLevels";
+export type { LessonAccessLevel };
 
 /**
  * What the CALLER may do with a lesson, as `course_lesson_states` /

@@ -1,0 +1,31 @@
+-- ============================================================
+-- 057_drop_set_lesson_free_sample.sql
+--
+-- AUTH-009. Drops set_lesson_free_sample, which 055 §6b left as a wrapper
+-- over set_lesson_access_level only until the course editor stopped calling
+-- it (docs/decisions/0094 Decision 1: "deleted in CNT-014/AUTH-009, not left
+-- as aliases"; docs/decisions/0099 Decision 4). AUTH-009 replaces the
+-- editor's free-sample switch with a level control that calls
+-- set_lesson_access_level, and deletes the free-sample route, so nothing in
+-- the app calls this function any more:
+--   rg -n set_lesson_free_sample app lib scripts   -> comments only
+--
+-- Print rule (scripts/board/backlog.mjs, M3 section header), at write time
+-- and again before commit:
+--   latest migration before this one        -> 056_lesson_opens.sql
+--   latest body of the account-delete RPC   -> 056_lesson_opens.sql
+-- This migration re-emits no function body and does not touch the
+-- account-delete RPC.
+--
+-- Order against the deploy: the app stops calling the function in the same
+-- commit, so applying this before or after deploying that commit is safe.
+-- Applying it while an OLD build is still serving would make that build's
+-- free-sample switch fail with an error toast (no data is written).
+--
+-- in_free_sample itself (and 055's CHECK pinning it to access_level) is NOT
+-- dropped here. After AUTH-009 no app code reads it, but
+-- scripts/seed-local-fixtures.ts still writes it; the column drop is its own
+-- step (docs/decisions/0099 Decision 2), proposed as a separate card.
+-- ============================================================
+
+DROP FUNCTION IF EXISTS set_lesson_free_sample(UUID, BOOLEAN);

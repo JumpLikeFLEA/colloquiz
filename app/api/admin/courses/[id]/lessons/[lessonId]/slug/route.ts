@@ -9,7 +9,7 @@ const SlugSchema = z.object({ slug: z.string().regex(LESSON_SLUG_RE) });
 
 // POST { slug } → update_lesson_slug (CNT-010, migration 046). Its own
 // explicit control, separate from the lesson PATCH route — same "explicit
-// action, not a side effect" pattern as free-sample/route.ts. Refuses with
+// action, not a side effect" pattern as access-level/route.ts. Refuses with
 // slug_frozen once the lesson has ever been published, and with
 // lesson_slug_taken on a collision within the course (never silently
 // suffixed — that's create_lesson's behaviour, not an edit's).

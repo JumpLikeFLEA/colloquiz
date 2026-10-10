@@ -12,9 +12,9 @@ const UpdateLessonSchema = z.object({
 
 // PATCH { title, description?, estimatedMinutes? } → update_lesson. Rename +
 // description + estimated minutes, in one RPC (044) — deliberately separate
-// from the free-sample toggle and the archive action, each its own explicit
-// endpoint below, mirroring 0018's "explicit action, not a side effect" rule
-// for in_free_sample.
+// from the access-level control and the archive action, each its own
+// explicit endpoint, mirroring 0018's "explicit action, not a side effect"
+// rule (then for in_free_sample, now for access_level, AUTH-009).
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; lessonId: string }> },

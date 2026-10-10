@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CefrLevel } from "@/lib/courseLevels";
+import type { LessonAccessLevel } from "@/lib/lessonAccessLevels";
 
 // Read side of Admin > Courses (AUTH-001), opened to delegated editors by
 // AUTH-007 (docs/decisions/0041).
@@ -69,7 +70,9 @@ export type AuthoredLesson = {
   title: string;
   description: string | null;
   estimatedMinutes: number | null;
-  inFreeSample: boolean;
+  /** `lessons.access_level` (055, docs/decisions/0094): who may open it.
+   * Set only through `set_lesson_access_level` (AUTH-009). */
+  accessLevel: LessonAccessLevel;
   archivedAt: string | null;
   publishedVersionId: string | null;
   publishedItemCount: number;
@@ -110,7 +113,7 @@ export async function getAuthoredCourseDetail(
   const { data: lessons, error: lessonsErr } = await supabase
     .from("lessons")
     .select(
-      "id, slug, slug_frozen_at, ordinal, title, description, estimated_minutes, in_free_sample, archived_at, published_version_id, published_item_count",
+      "id, slug, slug_frozen_at, ordinal, title, description, estimated_minutes, access_level, archived_at, published_version_id, published_item_count",
     )
     .eq("course_id", courseId)
     .order("ordinal");
@@ -150,7 +153,7 @@ export async function getAuthoredCourseDetail(
       title: l.title,
       description: l.description,
       estimatedMinutes: l.estimated_minutes,
-      inFreeSample: l.in_free_sample,
+      accessLevel: l.access_level as LessonAccessLevel,
       archivedAt: l.archived_at,
       publishedVersionId: l.published_version_id,
       publishedItemCount: l.published_item_count,
@@ -168,5 +171,37 @@ export async function getAuthoredCourseDetail(
         fullName: profile?.full_name ?? null,
       };
     }),
+  };
+}
+
+export type AuthoredLessonRef = {
+  lessonId: string;
+  lessonSlug: string;
+  title: string;
+  accessLevel: LessonAccessLevel;
+  courseId: string;
+  courseSlug: string;
+};
+
+/** AUTH-009's "Visitor view": the slugs that address a lesson's public page,
+ * plus its level, read with the caller's own (editor) session. Same page-level
+ * gate as the rest of this module. */
+export async function getAuthoredLessonRef(lessonId: string): Promise<AuthoredLessonRef | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("lessons")
+    .select("id, slug, title, access_level, course_id, courses!inner(slug)")
+    .eq("id", lessonId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const course = data.courses as { slug: string } | { slug: string }[];
+  return {
+    lessonId: data.id,
+    lessonSlug: data.slug,
+    title: data.title,
+    accessLevel: data.access_level as LessonAccessLevel,
+    courseId: data.course_id,
+    courseSlug: Array.isArray(course) ? course[0].slug : course.slug,
   };
 }

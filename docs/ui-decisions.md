@@ -1166,3 +1166,17 @@ Appended to in the same commit as the change it records. Referenced from
   recorder. The lesson editor's "Add block" menu gains "Voice task" below a
   separator; its form (`VoiceTaskForm.tsx`) reuses BlockForm's field
   helpers. No new tokens or classes.
+- Course editor: per-lesson access level (2026-10-10, AUTH-009,
+  docs/decisions/0103). The lesson row's "Free sample" switch is GONE.
+  Each row now has a small Select ("Open to anyone" / "Sign-in required" /
+  "Purchase required"), which calls `set_lesson_access_level` (055) through
+  `.../access-level`. A refusal (`no_open_lesson`) shows as a toast. Above
+  the list, one line reads "Open to anyone: <titles>". Rows that are not
+  open to anyone get an eye link to a "Visitor view" page. That page
+  renders the lesson page's own `LessonBand` + `LessonUnavailable`, read as
+  an anonymous visitor (session-less anon client), inside a bordered frame.
+  The row now wraps: the controls drop below the title on a narrow screen,
+  because the Select made the row overflow at 390px. Composed from the
+  existing Select, icon-button and pill classes; no new tokens. Do not
+  bring back the switch, and do not render the visitor view from a
+  TypeScript level-to-state mapping.
