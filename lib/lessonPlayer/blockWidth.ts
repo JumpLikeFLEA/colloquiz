@@ -5,7 +5,7 @@ export type LessonBlockWidth = "reading" | "fit";
 /**
  * Which column width a lesson-player block renders at (ad-hoc adaptive-width
  * task, 2026-09-26, docs/decisions/0043). Exhaustive over every theory type
- * plus practice, mirroring `TheoryBlockRenderer`'s `never` fallback so a new
+ * plus practice and task, mirroring `TheoryBlockRenderer`'s `never` fallback so a new
  * block type is a `tsc` error here too, not a silent default.
  *
  * `table` is "fit", not "wide" (owner review, 2026-09-26): a table sizes to
@@ -19,7 +19,8 @@ export type LessonBlockWidth = "reading" | "fit";
  * block, so it was removed.
  */
 export function lessonBlockWidth(block: LessonBlock): LessonBlockWidth {
-  if (block.kind === "practice") {
+  // A voice task (VOICE-003) reads like an exercise card: reading width.
+  if (block.kind === "practice" || block.kind === "task") {
     return "reading";
   }
   switch (block.type) {

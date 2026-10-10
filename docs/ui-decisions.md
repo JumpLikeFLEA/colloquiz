@@ -1155,3 +1155,14 @@ Appended to in the same commit as the change it records. Referenced from
   under the offer, collapsed and expanded, to `/login?next=<lesson path>`.
   Composed from the offer's existing link/text classes. Do not remove: an
   existing account had no sign-in entry on a lesson at all.
+- Voice task placeholder (2026-10-10, VOICE-003, docs/decisions/0100). A
+  voice task block renders in the lesson player and the admin preview as an
+  exercise card (`PRACTICE_CARD_CLASS`, `PROMPT_TEXT_CLASS`) with a "Voice
+  task" pill in the exercise pill's tokens. It shows the prompt, "Up to
+  N min", and a disabled Record button in `SUBMIT_BUTTON_CLASS` with
+  "Recording isn't available yet." (`VoiceTaskBlock.tsx`). It gets no
+  "Exercise N of M" number and is not counted in the progress strip: it is
+  not scored. VOICE-005 replaces the disabled button with the real
+  recorder. The lesson editor's "Add block" menu gains "Voice task" below a
+  separator; its form (`VoiceTaskForm.tsx`) reuses BlockForm's field
+  helpers. No new tokens or classes.

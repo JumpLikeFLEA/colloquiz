@@ -53,4 +53,8 @@ describe("lessonBlockWidth", () => {
   it("puts a practice block at reading width", () => {
     expect(lessonBlockWidth(practiceBlock)).toBe("reading");
   });
+
+  it("puts a voice task block at reading width (VOICE-003)", () => {
+    expect(lessonBlockWidth({ id: "v1", kind: "task", type: "voice", prompt: text, maxSeconds: 180 })).toBe("reading");
+  });
 });

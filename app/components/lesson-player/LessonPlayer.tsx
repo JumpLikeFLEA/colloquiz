@@ -28,6 +28,7 @@ import { LessonCompletion } from "./LessonCompletion";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
 import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
+import { VoiceTaskBlockView } from "./blocks/VoiceTaskBlock";
 
 /** `heading` gets its own wrapper class (centred, not just reading-width) —
  * see `HEADING_WIDTH_CLASS`'s doc comment for why this lives here rather
@@ -368,26 +369,43 @@ function LessonPlayerBody({
         <div data-testid="lesson-blocks" className="contents">
           {document.map((block) => {
             const widthClass = widthClassFor(block);
-            return block.kind === "practice" ? (
-              <div key={block.id} className={widthClass}>
-                <div className={PRACTICE_CARD_CLASS}>
-                  <ExercisePill
-                    number={practiceNumber.get(block.id) ?? 0}
-                    total={practiceIds.length}
-                    answered={results[block.id] !== undefined}
-                  />
-                  {practiceRenderer ? (
-                    practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
-                  ) : (
-                    <PracticeBlockPlaceholder block={block} />
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div key={block.id} className={widthClass}>
-                <TheoryBlockRenderer block={block} />
-              </div>
-            );
+            // Exhaustive over `kind` (VOICE-003): a fourth kind is a `tsc`
+            // error here, never a block silently rendered as theory.
+            switch (block.kind) {
+              case "practice":
+                return (
+                  <div key={block.id} className={widthClass}>
+                    <div className={PRACTICE_CARD_CLASS}>
+                      <ExercisePill
+                        number={practiceNumber.get(block.id) ?? 0}
+                        total={practiceIds.length}
+                        answered={results[block.id] !== undefined}
+                      />
+                      {practiceRenderer ? (
+                        practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
+                      ) : (
+                        <PracticeBlockPlaceholder block={block} />
+                      )}
+                    </div>
+                  </div>
+                );
+              case "task":
+                return (
+                  <div key={block.id} className={widthClass}>
+                    <VoiceTaskBlockView block={block} />
+                  </div>
+                );
+              case "theory":
+                return (
+                  <div key={block.id} className={widthClass}>
+                    <TheoryBlockRenderer block={block} />
+                  </div>
+                );
+              default: {
+                const exhaustive: never = block;
+                throw new Error(`unhandled lesson block kind: ${JSON.stringify(exhaustive)}`);
+              }
+            }
           })}
         </div>
         <LessonCompletion

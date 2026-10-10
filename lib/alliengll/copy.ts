@@ -84,6 +84,12 @@ export const alliengllCopy = {
     // already attempted, so a fresh page doesn't read as lost progress.
     previousBestLabel: "Your best",
     previousBestNote: "Answer again to try to beat it. Your best score is kept.",
+    // VOICE-003: the voice task's placeholder recorder, until VOICE-005
+    // builds the real one. "Up to 3 min".
+    voiceTaskLabel: "Voice task",
+    voiceUpTo: "Up to",
+    voiceRecord: "Record",
+    voiceNotYet: "Recording isn't available yet.",
   },
 
   theory: {

@@ -57,6 +57,14 @@ describe("extractLessonImageUrls", () => {
     expect(extractLessonImageUrls(document)).toEqual([]);
   });
 
+  it("carries no image in a voice task block (VOICE-003): only the image beside it is found", () => {
+    const document = [
+      { id: "v1", kind: "task", type: "voice", prompt: [{ text: "Say it." }], maxSeconds: 60, compare: "before" },
+      { id: "i1", kind: "theory", type: "image", url: "https://example.com/a.png", alt: "a" },
+    ];
+    expect(extractLessonImageUrls(document)).toEqual(["https://example.com/a.png"]);
+  });
+
   it("skips malformed blocks instead of throwing", () => {
     const document = [null, "not an object", 42, { kind: "practice", type: "matching" /* no payload */ }];
     expect(extractLessonImageUrls(document)).toEqual([]);

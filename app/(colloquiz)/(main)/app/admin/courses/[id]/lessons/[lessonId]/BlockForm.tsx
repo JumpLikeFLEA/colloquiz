@@ -68,7 +68,7 @@ export function TextField({
   );
 }
 
-function InlineField({
+export function InlineField({
   label,
   value,
   onChange,

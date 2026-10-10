@@ -24,13 +24,21 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import { THEORY_BLOCK_TYPES, type TheoryBlock, type TheoryBlockType } from "@/lib/lessons";
+import {
+  THEORY_BLOCK_TYPES,
+  VOICE_DEFAULT_SECONDS,
+  type TheoryBlock,
+  type TheoryBlockType,
+  type VoiceTaskBlock,
+} from "@/lib/lessons";
 import type { LessonBlock } from "@/lib/lessons";
 import type { LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
 import { BlockForm } from "./BlockForm";
 import { PracticeItemForm } from "./PracticeItemForm";
+import { VoiceTaskForm } from "./VoiceTaskForm";
 import type { UploadLessonImage } from "./LessonImageUploadButton";
 
 // The block-list half of AUTH-002: add, edit (theory only — practice-block
@@ -76,8 +84,28 @@ function defaultBlockFor(type: TheoryBlockType): TheoryBlock {
   }
 }
 
+const VOICE_TASK_LABEL = "Voice task";
+
+/** VOICE-003: a new voice task, appended like every other new block and
+ * moved into place with drag or the up/down buttons. */
+function defaultVoiceTask(): VoiceTaskBlock {
+  return { id: crypto.randomUUID(), kind: "task", type: "voice", prompt: [{ text: "" }], maxSeconds: VOICE_DEFAULT_SECONDS };
+}
+
+function blockTypeLabel(block: LessonBlock): string {
+  switch (block.kind) {
+    case "practice":
+      return `Practice · ${block.item.type}`;
+    case "task":
+      return block.compare ? `${VOICE_TASK_LABEL} · ${block.compare}` : VOICE_TASK_LABEL;
+    case "theory":
+      return TYPE_LABEL[block.type];
+  }
+}
+
 function blockPreview(block: LessonBlock): string {
   if (block.kind === "practice") return `${block.item.type} item`;
+  if (block.kind === "task") return block.prompt.map((r) => r.text).join("") || "(empty)";
   switch (block.type) {
     case "heading":
     case "prose":
@@ -138,8 +166,7 @@ export function BlockList({
     onChange(next);
   }
 
-  function addBlock(type: TheoryBlockType) {
-    const block = defaultBlockFor(type);
+  function addBlock(block: LessonBlock) {
     onChange([...blocks, block]);
     setExpandedId(block.id);
   }
@@ -188,7 +215,7 @@ export function BlockList({
         <DragOverlay>
           {activeBlock && (
             <div className="rounded-lg border border-border bg-card px-4 py-3 shadow-lg text-sm">
-              {TYPE_LABEL[(activeBlock as TheoryBlock).type as TheoryBlockType] ?? "Practice item"}
+              {blockTypeLabel(activeBlock)}
             </div>
           )}
         </DragOverlay>
@@ -206,10 +233,12 @@ export function BlockList({
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {THEORY_BLOCK_TYPES.map((type) => (
-            <DropdownMenuItem key={type} onSelect={() => addBlock(type)}>
+            <DropdownMenuItem key={type} onSelect={() => addBlock(defaultBlockFor(type))}>
               {TYPE_LABEL[type]}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => addBlock(defaultVoiceTask())}>{VOICE_TASK_LABEL}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -243,7 +272,7 @@ function BlockRow({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
-  const typeLabel = block.kind === "practice" ? `Practice · ${block.item.type}` : TYPE_LABEL[block.type];
+  const typeLabel = blockTypeLabel(block);
 
   return (
     <div ref={setNodeRef} style={style} className={hasErrors ? "bg-destructive-subtle" : ""}>
@@ -299,6 +328,8 @@ function BlockRow({
               errors={blockErrors}
               onUploadImage={onUploadImage}
             />
+          ) : block.kind === "task" ? (
+            <VoiceTaskForm block={block} onChange={onChange} errors={blockErrors} />
           ) : (
             <BlockForm block={block} onChange={onChange} errors={blockErrors} onUploadImage={onUploadImage} />
           )}

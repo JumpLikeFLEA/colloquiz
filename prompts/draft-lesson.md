@@ -198,7 +198,7 @@ markup in it.
 ===== THEORY BLOCKS (kind: "theory") — lib/lessons/theoryBlocks.ts =====
 
 Every block needs a unique `id` (short kebab-case, unique WITHIN THE LESSON
-across theory AND practice blocks — not across the whole course) and
+across theory, practice AND task blocks — not across the whole course) and
 `kind: "theory"`.
 
 ```
@@ -253,6 +253,33 @@ column.
   registry, does not count toward the lesson score, and does not count as
   a practice block. It is never a substitute for a scorable exercise; use
   it only for genuinely open/ungradable content.
+
+===== TASK BLOCKS (kind: "task") — lib/lessons/taskBlocks.ts =====
+
+A task is something the learner does that a PERSON reviews. It is never
+scored, never counts as an exercise, and never counts toward the lesson
+score. One task type exists: `voice`, a spoken recording the partner
+answers in writing (docs/handoff.md, "Item types").
+
+```
+voice: { id, kind:"task", type:"voice", prompt: InlineContent,
+         maxSeconds: integer 15–600 (default 180),
+         compare?: "before"|"after" }
+```
+
+- Emit a `voice` task ONLY where the PDF asks the learner to speak or
+  record themselves ("record yourself", "say aloud and send", "speaking
+  task"). Never turn a written exercise into one, and never invent one.
+- `prompt` = the PDF's own speaking instructions. `maxSeconds` = the PDF's
+  time limit in seconds if it gives one, else 180.
+- `compare` is ONLY for a cohort course's start-of-course and end-of-course
+  recording of the same prompt. Set it only when the PDF says so outright;
+  a course has at most ONE "before" and ONE "after" across ALL its lessons
+  (publishing refuses a second). When unsure, leave it out and add a QA
+  note naming the block.
+- A speaking task that only asks the learner to say something to themselves,
+  with nothing to send, is a `self_check` with `response: "none"`, not a
+  `voice` task.
 
 ===== PRACTICE BLOCKS (kind: "practice") — lib/items/* =====
 

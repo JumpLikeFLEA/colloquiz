@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseItem, type Item } from "../items";
+import { TaskBlockSchema, type TaskBlock } from "./taskBlocks";
 import { TheoryBlockSchema, type TheoryBlock } from "./theoryBlocks";
 
 /**
@@ -44,7 +45,7 @@ export interface LessonParseError {
 const ConvertedFromSchema = z.string().min(1);
 
 export type LessonPracticeBlock = { id: string; kind: "practice"; item: Item; convertedFrom?: string };
-export type LessonBlock = TheoryBlock | LessonPracticeBlock;
+export type LessonBlock = TheoryBlock | LessonPracticeBlock | TaskBlock;
 export type LessonDocument = LessonBlock[];
 
 export type LessonParseResult =
@@ -63,10 +64,10 @@ function prefixField(label: string, field: string): string {
   return field ? `${label}: ${field}` : label;
 }
 
-function readKind(raw: unknown): "theory" | "practice" | undefined {
+function readKind(raw: unknown): "theory" | "practice" | "task" | undefined {
   if (typeof raw !== "object" || raw === null || !("kind" in raw)) return undefined;
   const kind = (raw as { kind: unknown }).kind;
-  return kind === "theory" || kind === "practice" ? kind : undefined;
+  return kind === "theory" || kind === "practice" || kind === "task" ? kind : undefined;
 }
 
 export function parseLessonDocument(input: unknown): LessonParseResult {
@@ -87,15 +88,17 @@ export function parseLessonDocument(input: unknown): LessonParseResult {
     if (kind === undefined) {
       errors.push({
         field: label,
-        message: `block has no valid "kind" (expected "theory" or "practice"), got ${JSON.stringify(
+        message: `block has no valid "kind" (expected "theory", "practice" or "task"), got ${JSON.stringify(
           (raw as { kind?: unknown })?.kind,
         )}`,
       });
       return;
     }
 
-    if (kind === "theory") {
-      const result = TheoryBlockSchema.safeParse(raw);
+    if (kind === "theory" || kind === "task") {
+      // A task block (VOICE-003) is a strict schema like a theory block, and
+      // fails the same way: one error per zod issue, prefixed by the block id.
+      const result = (kind === "theory" ? TheoryBlockSchema : TaskBlockSchema).safeParse(raw);
       if (!result.success) {
         for (const issue of result.error.issues) {
           errors.push({
@@ -153,7 +156,7 @@ export function parseLessonDocument(input: unknown): LessonParseResult {
  * will re-parse it (a save endpoint, a re-import) must serialize it back
  * through this function first; writing the parsed form directly reproduces
  * the "type: missing item type" failure this function exists to prevent.
- * Theory blocks need no conversion: `TheoryBlockSchema`'s parsed output is
+ * Theory and task blocks need no conversion: their schemas' parsed output is
  * already valid input to itself (zod fills in defaults, it does not add a
  * wrapper), so they pass through unchanged.
  */

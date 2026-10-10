@@ -3,7 +3,13 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { courseAuthoringErrorResponse } from "@/lib/courseAuthoringErrors";
-import { countPracticeBlocks, parseLessonDocument } from "@/lib/lessons";
+import {
+  countPracticeBlocks,
+  parseLessonDocument,
+  voiceCompareConflictMessage,
+  voiceCompareConflicts,
+  type OtherPublishedLesson,
+} from "@/lib/lessons";
 
 const PublishSchema = z.object({
   expectedVersionId: z.string().uuid(),
@@ -60,6 +66,20 @@ export async function POST(
     }
     const itemCount = countPracticeBlocks(parsed.document);
 
+    // VOICE-003 (docs/decisions/0100): at most one "before" and one "after"
+    // voice task per course, checked against the other lessons' PUBLISHED
+    // versions. Only read when this version has a compare slot at all, so
+    // an ordinary lesson's publish costs no extra query.
+    const hasCompareSlot = parsed.document.some((b) => b.kind === "task" && b.compare !== undefined);
+    if (hasCompareSlot) {
+      const others = await otherPublishedLessons(supabase, lessonId);
+      const conflicts = voiceCompareConflicts(lessonId, parsed.document, others);
+      if (conflicts.length > 0) {
+        // 422, not 409: PreviewClient reads any 409 as "stale, reload".
+        return NextResponse.json({ error: voiceCompareConflictMessage(conflicts[0]) }, { status: 422 });
+      }
+    }
+
     const { data, error } = await supabase.rpc("publish_lesson", {
       p_lesson_id: lessonId,
       p_expected_version_id: expectedVersionId,
@@ -78,4 +98,49 @@ export async function POST(
     console.error(e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+// The publishing lesson's course is read from the lesson row, never from the
+// URL, so a mismatched `[id]` segment cannot point the check at another
+// course. Archived lessons are included: unarchiving one must not bring back
+// a second "before". Read under the caller's session; the editor read
+// policy on lesson_versions (041) covers every version of a course they edit.
+async function otherPublishedLessons(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lessonId: string,
+): Promise<OtherPublishedLesson[]> {
+  const { data: lesson, error: lessonErr } = await supabase
+    .from("lessons")
+    .select("course_id")
+    .eq("id", lessonId)
+    .maybeSingle();
+  if (lessonErr) throw new Error(lessonErr.message);
+  if (!lesson) return [];
+
+  const { data: lessons, error: lessonsErr } = await supabase
+    .from("lessons")
+    .select("id, title, published_version_id")
+    .eq("course_id", lesson.course_id)
+    .neq("id", lessonId)
+    .not("published_version_id", "is", null);
+  if (lessonsErr) throw new Error(lessonsErr.message);
+  if (!lessons || lessons.length === 0) return [];
+
+  const versionIds = lessons.map((l) => l.published_version_id as string);
+  const { data: versions, error: versionsErr } = await supabase
+    .from("lesson_versions")
+    .select("id, document")
+    .in("id", versionIds);
+  if (versionsErr) throw new Error(versionsErr.message);
+  const documentByVersion = new Map((versions ?? []).map((v) => [v.id as string, v.document as unknown]));
+
+  // Fail closed: a published version this session cannot read would
+  // otherwise count as "no voice task" and let a second "before" through.
+  return lessons.map((l) => {
+    const document = documentByVersion.get(l.published_version_id as string);
+    if (document === undefined) {
+      throw new Error(`publish: could not read published version of lesson ${l.id} for the voice-task check`);
+    }
+    return { lessonId: l.id as string, title: l.title as string, document };
+  });
 }
