@@ -64,7 +64,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -116,11 +116,14 @@ export async function GET() {
           .select("id, run_id, tier, enrolled_at, revoked_at, course_runs(title, starts_at, ends_at, courses(slug, title))")
           .eq("user_id", user.id)
           .order("enrolled_at", { ascending: false }),
+        // COH-003: run_invites has no grants; this function returns the
+        // caller's own claimed invites only (059).
+        supabase.rpc("my_claimed_run_invites"),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -142,6 +145,7 @@ export async function GET() {
         lessonOpens: lessonOpensRes.data ?? [],
         courseEntitlements: entitlementsRes.data ?? [],
         runEnrolments: enrolmentsRes.data ?? [],
+        claimedInvites: invitesRes.data ?? [],
       },
       ACHIEVEMENTS,
     );

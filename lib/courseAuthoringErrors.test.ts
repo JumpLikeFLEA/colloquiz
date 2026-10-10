@@ -40,6 +40,27 @@ describe("courseAuthoringErrorResponse", () => {
     expect(body.error).not.toBe("Something went wrong.");
   });
 
+  // Every editor-facing { ok: false, error } code 059's invite RPCs return
+  // (rg "'error', '" supabase/migrations/059_run_invites.sql, minus the
+  // claim's own states, which the claim page renders).
+  it.each([
+    "forbidden",
+    "invalid_invitee_contact",
+    "invalid_invitee_name",
+    "invalid_tier",
+    "invite_not_found",
+    "rate_limited",
+    "run_ended",
+    "run_not_found",
+  ])("maps 059's %s to its own message", (code) => {
+    const { body } = courseAuthoringErrorResponse(code);
+    expect(body.error).not.toBe("Something went wrong.");
+  });
+
+  it("maps the invite rate limit to a 429", () => {
+    expect(courseAuthoringErrorResponse("rate_limited").status).toBe(429);
+  });
+
   it("maps the re-lock refusals to a 409", () => {
     expect(courseAuthoringErrorResponse("week_frozen").status).toBe(409);
     expect(courseAuthoringErrorResponse("access_level_frozen").status).toBe(409);

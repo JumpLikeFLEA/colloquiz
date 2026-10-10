@@ -27,7 +27,7 @@ export function StudentsView({
   }, []);
 
   const inviteUrl =
-    token && typeof window !== "undefined" ? `${window.location.origin}/invite/${token}` : "";
+    token && typeof window !== "undefined" ? `${window.location.origin}/app/invite/${token}` : "";
 
   async function copy() {
     if (!inviteUrl) return;

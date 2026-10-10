@@ -4,6 +4,7 @@ import { canEditCourse } from "@/lib/courseAccess";
 import { getAuthoredCourseDetail } from "@/lib/courseAuthoring";
 import { getCourseRuns } from "@/lib/courseRuns";
 import { runPhase } from "@/lib/cohortSchedule";
+import { getCourseRunInvites } from "@/lib/runInvitesServer";
 import { RunsView } from "./RunsView";
 
 // AUTH-010 — runs and calls of a cohort course (058, docs/decisions/0093 /
@@ -25,7 +26,13 @@ export default async function CourseRunsPage({ params }: { params: Promise<{ id:
   }
 
   // includeEditors = false: this page needs only the course row.
-  const [detail, runs] = await Promise.all([getAuthoredCourseDetail(id, false), getCourseRuns(id)]);
+  // Invites (COH-003): course_run_invites returns labels to editors only,
+  // and this page is already gated on canEditCourse(id).
+  const [detail, runs, invites] = await Promise.all([
+    getAuthoredCourseDetail(id, false),
+    getCourseRuns(id),
+    getCourseRunInvites(id),
+  ]);
   if (!detail) notFound();
 
   // Display only: which controls each run shows. The RPCs re-check the same
@@ -39,7 +46,11 @@ export default async function CourseRunsPage({ params }: { params: Promise<{ id:
         courseId={id}
         courseTitle={detail.course.title}
         format={detail.course.format}
-        runs={runs.map((r) => ({ ...r, phase: runPhase(r, now) }))}
+        runs={runs.map((r) => ({
+          ...r,
+          phase: runPhase(r, now),
+          invites: invites.filter((i) => i.runId === r.id),
+        }))}
       />
     </div>
   );

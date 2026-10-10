@@ -134,6 +134,15 @@ const ROUTES: RouteBudget[] = [
   // headroom (the PLAY-012 precedent, docs/decisions/0057) — re-derive both
   // from a real `npm run budget` run before raising it, never guess.
   { path: "/courses/future-imperfect", budgetKB: 182, guardForbiddenSignatures: true },
+  // COH-003 (docs/decisions/0107): the invite claim page. Every state is a
+  // Server Component and the Join action is a plain form POST, so the
+  // page ships only the layout's and next/link's JS; an unknown token
+  // (this path) renders the same chunks as a live one and needs no seed,
+  // only migration 059 on the target (where 059 is missing, the preview RPC
+  // errors and the page throws; assumed, not measured, to FAIL). Measured 175.3 KB on the local stack; budgetKB is that
+  // plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
+  // Re-derive both from a real `npm run budget` run before raising it.
+  { path: "/invite/00000000000000000000000000000000", budgetKB: 183, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

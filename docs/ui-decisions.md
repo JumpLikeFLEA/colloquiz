@@ -1213,3 +1213,23 @@ Appended to in the same commit as the change it records. Referenced from
   editor's own classes and existing tokens; no new colours. Do not remove the
   started-run start lock: the RPC refuses the change anyway, and the lock is
   where the editor learns why.
+- Cohort invites (2026-10-10, COH-003, docs/decisions/0107). The runs page
+  (`/app/admin/courses/[id]/runs`) gives each run card a third section,
+  "Invites (N)", below Calls, with the same header row and `+` button
+  ("New invite", hidden on an ended run). Rows show the name, a state pill
+  (Not claimed / Claimed / Expired / Revoked; Claimed in the run phase's
+  `bg-brand-subtle text-brand-text`, the rest muted), the contact, the tier
+  and the relevant date in the editor's timezone. A Revoke icon button
+  (`Ban`) on a pending or claimed invite opens an AlertDialog, whose text
+  says whether the learner loses access. `InviteDialog` (name, contact, tier
+  Select) turns into a read-only link field with Copy (the Groups invite-link
+  block's classes) after creation; the link is shown once and can't be shown
+  again. The new English route `/invite/[token]` is the claim page: a compact
+  gradient band (`BandTopBar` with the account chip, an "Invite" glass pill,
+  the course title, run and tier pills), then one card in the paid-lesson
+  card's frame, holding that state's copy and its one action. That action is
+  `SUBMIT_BUTTON_CLASS` "Join the course" (a form POST) or "Sign in or create
+  an account", or the secondary "Go to the course" / "Go to the home page".
+  English, no toggle. Composed from existing classes and tokens; no new
+  colours. Do not make the page claim on load: the button is how a learner
+  on the wrong account notices before the link is spent.

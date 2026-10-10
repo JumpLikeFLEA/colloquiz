@@ -122,7 +122,6 @@ const nextConfig: NextConfig = {
       "dashboard",
       "duels",
       "groups",
-      "invite",
       "leaderboard",
       "my-quizzes",
       "progress",
@@ -141,6 +140,17 @@ const nextConfig: NextConfig = {
         destination: `/app/${segment}/:path*`,
         permanent: true,
       })),
+      // "invite" left the list above with COH-003 (docs/decisions/0107):
+      // /invite/[token] is now the English surface's cohort-invite claim
+      // page, whose tokens are 32 hex chars. The legacy tutor invite link
+      // (/app/invite/[token], tutor_invites.token, a UUID since 006) keeps
+      // its redirect, matched by its UUID shape only, so neither kind of
+      // link can reach the other's page.
+      {
+        source: "/invite/:token([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})",
+        destination: "/app/invite/:token",
+        permanent: true,
+      },
     ];
   },
 };

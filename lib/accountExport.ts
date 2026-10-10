@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 5;
+export const EXPORT_FORMAT_VERSION = 6;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -24,6 +24,7 @@ export const EXPORT_CONTENTS = [
   "Lesson opens — which English lessons you opened while signed in, and when",
   "Course access — English courses opened to you by a grant, and when (or if) that ended",
   "Cohort enrolments — the course runs you joined, your tier, and when (or if) your access ended",
+  "Invites you claimed — the name and contact the course author wrote on your invite",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -79,6 +80,17 @@ export type RunEnrolmentRow = {
   course_runs: unknown;
 };
 
+export type ClaimedInviteRow = {
+  invite_id: string;
+  run_id: string;
+  enrolment_id: string | null;
+  tier: string;
+  invitee_name: string;
+  invitee_contact: string;
+  claimed_at: string;
+  revoked_at: string | null;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -93,6 +105,7 @@ export type ExportSources = {
   lessonOpens: LessonOpenRow[];
   courseEntitlements: CourseEntitlementRow[];
   runEnrolments: RunEnrolmentRow[];
+  claimedInvites: ClaimedInviteRow[];
 };
 
 /**
@@ -195,6 +208,21 @@ export function buildExportPayload(
     // kept, with their revoked_at: they are part of the reader's record.
     course_entitlements: src.courseEntitlements.map(exportCourseEntitlement),
     cohort_enrolments: src.runEnrolments.map(exportRunEnrolment),
+
+    // COH-003 (docs/decisions/0107): the invites this reader claimed, with
+    // the contact label the author wrote (privacy-policy.md section 8: "an
+    // invite contact label is included once you have claimed it"). Read
+    // through my_claimed_run_invites (059); run_invites has no grants.
+    claimed_invites: src.claimedInvites.map((row) => ({
+      invite_id: row.invite_id,
+      run_id: row.run_id,
+      enrolment_id: row.enrolment_id,
+      tier: row.tier,
+      invitee_name: row.invitee_name,
+      invitee_contact: row.invitee_contact,
+      claimed_at: row.claimed_at,
+      revoked_at: row.revoked_at,
+    })),
   };
 }
 

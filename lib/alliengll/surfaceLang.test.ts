@@ -34,7 +34,12 @@ describe("footerLangForPath", () => {
     expect(footerLangForPath("/courses/future-imperfect/true-or-false/", saved)).toBe("en");
   });
 
-  it.each([["/courses"], ["/courses/a/b/c"], ["/privacy"], ["/no-such-page"]])(
+  it.each([["ru"], ["en"]] as const)("is always English on the invite claim page, whatever was saved (%s)", (saved) => {
+    expect(footerLangForPath("/invite/2f3ea82e286ca70dbcb775895b09d9ca", saved)).toBe("en");
+    expect(pageLangForPath("/invite/2f3ea82e286ca70dbcb775895b09d9ca/", saved)).toBe("en");
+  });
+
+  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/privacy"], ["/no-such-page"]])(
     "stays Russian anywhere else (%s)",
     (path) => {
       expect(footerLangForPath(path, "en")).toBe("ru");

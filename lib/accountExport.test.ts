@@ -15,6 +15,7 @@ const baseSources = {
   lessonOpens: [],
   courseEntitlements: [],
   runEnrolments: [],
+  claimedInvites: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -245,5 +246,48 @@ describe("buildExportPayload — course_entitlements and cohort_enrolments (COH-
       [],
     );
     expect(payload.cohort_enrolments[0]).toMatchObject({ enrolment_id: "enrolment-2", run_title: null, course_slug: null, tier: "basic" });
+  });
+});
+
+describe("buildExportPayload — claimed_invites (COH-003)", () => {
+  it("is empty when the reader claimed no invite", () => {
+    expect(buildExportPayload(baseSources, []).claimed_invites).toEqual([]);
+  });
+
+  it("carries the contact label of a claimed invite, revoked ones included", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        claimedInvites: [
+          {
+            invite_id: "invite-1",
+            run_id: "run-1",
+            enrolment_id: "enrolment-1",
+            tier: "extended",
+            invitee_name: "Learner One",
+            invitee_contact: "@learner_one",
+            claimed_at: "2026-10-10T10:00:00.000Z",
+            revoked_at: "2026-10-11T10:00:00.000Z",
+          },
+        ],
+      },
+      [],
+    );
+    expect(payload.claimed_invites).toEqual([
+      {
+        invite_id: "invite-1",
+        run_id: "run-1",
+        enrolment_id: "enrolment-1",
+        tier: "extended",
+        invitee_name: "Learner One",
+        invitee_contact: "@learner_one",
+        claimed_at: "2026-10-10T10:00:00.000Z",
+        revoked_at: "2026-10-11T10:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("is format version 6", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(6);
   });
 });

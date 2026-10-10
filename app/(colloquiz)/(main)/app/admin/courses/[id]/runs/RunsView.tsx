@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, CircleStop, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, CircleStop, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +18,12 @@ import {
 import type { RunPhase } from "@/lib/cohortSchedule";
 import type { CourseFormat } from "@/lib/courseAuthoring";
 import type { CourseCall, CourseRun } from "@/lib/courseRuns";
+import type { CourseRunInvite, InviteEditorState } from "@/lib/runInvites";
 import { pluralize } from "@/lib/format";
 import { LocalTime, LocalTimeZone } from "../LocalTime";
 import { postJson } from "../postJson";
 import { CallDialog } from "./CallDialog";
+import { InviteDialog, TIER_LABELS } from "./InviteDialog";
 import { RunDialog } from "./RunDialog";
 
 // AUTH-010 — the runs page. Composed from the course editor's own classes
@@ -29,7 +31,7 @@ import { RunDialog } from "./RunDialog";
 // confirms); no new tokens. `phase` only picks which controls a run shows;
 // each RPC enforces the same rule and its refusal is toasted.
 
-export type RunWithPhase = CourseRun & { phase: RunPhase };
+export type RunWithPhase = CourseRun & { phase: RunPhase; invites: CourseRunInvite[] };
 
 const PHASE_LABEL: Record<RunPhase, string> = {
   upcoming: "Upcoming",
@@ -43,10 +45,27 @@ const PHASE_PILL: Record<RunPhase, string> = {
   ended: "bg-muted text-muted-foreground",
 };
 
+// COH-003: an invite's state comes from course_run_invites (059); these
+// only name it. Same pill vocabulary as the run phases above.
+const INVITE_LABEL: Record<InviteEditorState, string> = {
+  pending: "Not claimed",
+  claimed: "Claimed",
+  expired: "Expired",
+  revoked: "Revoked",
+};
+
+const INVITE_PILL: Record<InviteEditorState, string> = {
+  pending: "bg-muted text-muted-foreground",
+  claimed: "bg-brand-subtle text-brand-text",
+  expired: "bg-muted text-muted-foreground",
+  revoked: "bg-muted text-muted-foreground",
+};
+
 type Confirm =
   | { kind: "close-run"; run: RunWithPhase }
   | { kind: "delete-run"; run: RunWithPhase }
-  | { kind: "delete-call"; call: CourseCall };
+  | { kind: "delete-call"; call: CourseCall }
+  | { kind: "revoke-invite"; invite: CourseRunInvite };
 
 const ICON_BUTTON =
   "cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50";
@@ -66,6 +85,7 @@ export function RunsView({
   const [busy, setBusy] = useState(false);
   const [runDialog, setRunDialog] = useState<{ run: RunWithPhase | null } | null>(null);
   const [callDialog, setCallDialog] = useState<{ runId: string; call: CourseCall | null } | null>(null);
+  const [inviteDialog, setInviteDialog] = useState<{ runId: string; runTitle: string } | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
   async function act(url: string, method: "POST" | "DELETE", success: string) {
@@ -86,6 +106,12 @@ export function RunsView({
       act(`/api/admin/courses/${courseId}/runs/${c.run.id}/close`, "POST", "Run closed.");
     } else if (c.kind === "delete-run") {
       act(`/api/admin/courses/${courseId}/runs/${c.run.id}`, "DELETE", "Run deleted.");
+    } else if (c.kind === "revoke-invite") {
+      act(
+        `/api/admin/courses/${courseId}/invites/${c.invite.id}/revoke`,
+        "POST",
+        c.invite.state === "claimed" ? "Invite revoked. The learner's access to this run has ended." : "Invite revoked.",
+      );
     } else {
       act(`/api/admin/courses/${courseId}/calls/${c.call.id}`, "DELETE", "Call deleted.");
     }
@@ -248,6 +274,72 @@ export function RunsView({
                     </div>
                   )}
                 </div>
+
+                <div className="border-t border-border px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-foreground">
+                      Invites{" "}
+                      <span className="text-muted-foreground font-normal">
+                        ({pluralize(run.invites.length, "invite")})
+                      </span>
+                    </h3>
+                    {run.phase !== "ended" && (
+                      <button
+                        onClick={() => setInviteDialog({ runId: run.id, runTitle: run.title || "this run" })}
+                        disabled={busy}
+                        className="cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                      >
+                        <Plus className="size-3" />
+                        New invite
+                      </button>
+                    )}
+                  </div>
+                  {run.invites.length > 0 && (
+                    <div className="rounded-xl border border-border divide-y divide-border">
+                      {run.invites.map((invite) => (
+                        <div key={invite.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+                          <div className="flex-1 min-w-48">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm text-foreground">{invite.inviteeName}</p>
+                              <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${INVITE_PILL[invite.state]}`}>
+                                {INVITE_LABEL[invite.state]}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5 break-all">
+                              {invite.inviteeContact} · {TIER_LABELS[invite.tier]} ·{" "}
+                              {invite.state === "claimed" && invite.claimedAt ? (
+                                <>
+                                  claimed <LocalTime iso={invite.claimedAt} />
+                                </>
+                              ) : invite.state === "revoked" && invite.revokedAt ? (
+                                <>
+                                  revoked <LocalTime iso={invite.revokedAt} />
+                                </>
+                              ) : (
+                                <>
+                                  {invite.state === "expired" ? "expired" : "expires"} <LocalTime iso={invite.expiresAt} />
+                                </>
+                              )}
+                            </p>
+                          </div>
+                          {(invite.state === "pending" || invite.state === "claimed") && (
+                            <div className="ml-auto flex shrink-0 items-center gap-1">
+                              <button
+                                onClick={() => setConfirm({ kind: "revoke-invite", invite })}
+                                disabled={busy}
+                                aria-label={`Revoke the invite for ${invite.inviteeName}`}
+                                title="Revoke"
+                                className={`${ICON_BUTTON} hover:text-destructive-text`}
+                              >
+                                <Ban size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))
           )}
@@ -279,6 +371,16 @@ export function RunsView({
         />
       )}
 
+      {inviteDialog && (
+        <InviteDialog
+          courseId={courseId}
+          runId={inviteDialog.runId}
+          runTitle={inviteDialog.runTitle}
+          onClose={() => setInviteDialog(null)}
+          onCreated={() => router.refresh()}
+        />
+      )}
+
       <AlertDialog open={confirm !== null} onOpenChange={(open) => { if (!open) setConfirm(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -287,14 +389,20 @@ export function RunsView({
                 ? "Close this run now?"
                 : confirm?.kind === "delete-run"
                   ? "Delete this run?"
-                  : "Delete this call?"}
+                  : confirm?.kind === "revoke-invite"
+                    ? `Revoke the invite for ${confirm.invite.inviteeName}?`
+                    : "Delete this call?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm?.kind === "close-run"
                 ? "The run ends now, and every lesson opens for its learners. A run can't be reopened or extended afterwards."
                 : confirm?.kind === "delete-run"
                   ? "Only a run that hasn't started and that nobody has enrolled in can be deleted."
-                  : "Learners on the extended tier will no longer see it."}
+                  : confirm?.kind === "revoke-invite"
+                    ? confirm.invite.state === "claimed"
+                      ? "The learner who claimed it loses access to this run. Access through any other run stays. Use this after a refund or a chargeback. It can't be undone; a new invite enrols them again."
+                      : "The link stops working. It can't be undone; create a new invite if needed."
+                    : "Learners on the extended tier will no longer see it."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -306,7 +414,7 @@ export function RunsView({
               }}
               className="rounded-xl"
             >
-              {confirm?.kind === "close-run" ? "Close run" : "Delete"}
+              {confirm?.kind === "close-run" ? "Close run" : confirm?.kind === "revoke-invite" ? "Revoke" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

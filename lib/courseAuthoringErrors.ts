@@ -83,6 +83,18 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   run_not_started: { status: 409, message: "This run hasn't started yet. Delete it or move its start instead." },
   cannot_extend_started_run: { status: 409, message: "A run that has started can end earlier, never later." },
   run_has_enrolments: { status: 409, message: "Someone has enrolled in this run, so it can't be deleted." },
+  // Invites (059, docs/decisions/0107), surfaced by COH-003. The claim's own
+  // refusals (used, expired, revoked, ...) are the claim page's states, not
+  // editor errors, so they are not here.
+  invalid_tier: { status: 400, message: "Please choose a tier." },
+  invalid_invitee_name: { status: 400, message: "Enter the learner's name (up to 120 characters)." },
+  invalid_invitee_contact: {
+    status: 400,
+    message: "Enter an email address or a Telegram username starting with @ (5–32 letters, digits or _).",
+  },
+  run_ended: { status: 409, message: "This run has ended, so nobody can join it." },
+  invite_not_found: { status: 404, message: "That invite no longer exists." },
+  rate_limited: { status: 429, message: "Too many invites in the last hour. Try again later." },
 };
 
 export function courseAuthoringErrorResponse(code: string | undefined): { status: number; body: { error: string } } {
