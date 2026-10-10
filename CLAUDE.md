@@ -154,10 +154,10 @@ refactor.
   - `lib/entitlement.ts` — the client-side MIRROR of the entitlement SQL
     function. Mirror only; the function is the authority. **Planned (M3).**
 - `supabase/migrations/NNN_*.sql` — schema. Numbered, applied by me, never by
-  a session. Latest applied: 049 (owner-applied to the hosted project
-  2026-09-27, confirmed by the anon/authenticated denial checks in #121's
-  closing comment — this line was stale before: it still read 045 after 046
-  through 049 had gone in. Re-derive by probing PostgREST or ask, never carry
+  a session. Latest applied: 055 (owner-confirmed 2026-10-10 that every
+  migration through 055 is applied to the hosted project; 055's hosted
+  before/after counts are in #150's comments. This line had read 049 while
+  050 through 055 went in. Re-derive by probing PostgREST or ask, never carry
   this number forward by assumption).
 - `scripts/`
   - `scripts/board/` — `backlog.mjs` (board data, incl. `rankOf()`),
