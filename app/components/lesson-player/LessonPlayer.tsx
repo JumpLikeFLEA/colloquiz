@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { Check } from "lucide-react";
 import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/lessons";
 import { parseLessonDocument } from "@/lib/lessons";
@@ -17,6 +18,7 @@ import { fireFunnelEvent } from "@/lib/funnelSource";
 import { bestPercentForVersion, higherPercent } from "@/lib/lessonPlayer/previousBest";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import {
   FIT_WIDTH_CLASS,
   HEADING_WIDTH_CLASS,
@@ -28,7 +30,15 @@ import { LessonCompletion } from "./LessonCompletion";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
 import { TheoryBlockRenderer } from "./TheoryBlockRenderer";
-import { VoiceTaskBlockView } from "./blocks/VoiceTaskBlock";
+
+// VOICE-005 (docs/decisions/0111) — the voice block, its recorder and its
+// strings are one chunk, loaded only when a lesson has a voice task. A
+// lesson without one downloads none of it. The skeleton reserves the card's
+// height for the moment the chunk is in flight, like the practice renderers'
+// (0058 Decision 3).
+const VoiceTaskBlockView = dynamic(() => import("./blocks/VoiceTaskBlock").then((m) => m.VoiceTaskBlockView), {
+  loading: () => <div className={`${PRACTICE_CARD_CLASS} h-40 animate-pulse`} />,
+});
 
 /** `heading` gets its own wrapper class (centred, not just reading-width) —
  * see `HEADING_WIDTH_CLASS`'s doc comment for why this lives here rather
@@ -123,6 +133,10 @@ export interface LessonPlayerProps {
    * the server can't see yet right after a sign-in from the lesson's end.
    * Defaults to null; the admin preview and the demo pass nothing. */
   previousBestPercent?: number | null;
+  /** VOICE-005 — what the voice blocks may do (docs/decisions/0111). The
+   * lesson page passes it when the lesson has a voice task; the admin
+   * preview, the demo and tests pass nothing and get the placeholder. */
+  voiceTasks?: VoiceTasksContext;
 }
 
 const NEVER_CHANGES = () => () => {};
@@ -202,6 +216,7 @@ export function LessonPlayer({
   lessonPath = "",
   renderProgress,
   previousBestPercent = null,
+  voiceTasks,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
 
@@ -276,6 +291,7 @@ export function LessonPlayer({
       isSignedIn={isSignedIn}
       renderProgress={renderProgress}
       previousBest={previousBest}
+      voiceTasks={voiceTasks}
     />
   );
 }
@@ -320,6 +336,7 @@ function LessonPlayerBody({
   isSignedIn,
   renderProgress,
   previousBest,
+  voiceTasks,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
@@ -332,6 +349,7 @@ function LessonPlayerBody({
   isSignedIn: boolean;
   renderProgress?: (progress: LessonProgress) => ReactNode;
   previousBest: number | null;
+  voiceTasks?: VoiceTasksContext;
 }) {
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
@@ -412,7 +430,7 @@ function LessonPlayerBody({
               case "task":
                 return (
                   <div key={block.id} className={widthClass}>
-                    <VoiceTaskBlockView block={block} />
+                    <VoiceTaskBlockView block={block} context={voiceTasks} />
                   </div>
                 );
               case "theory":

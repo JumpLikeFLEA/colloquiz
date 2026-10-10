@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { LessonProgressStrip } from "./LessonProgressStrip";
 
 /**
@@ -44,6 +45,7 @@ export function LessonPageClient({
   isSignedIn,
   lessonPath,
   previousBestPercent,
+  voiceTasks,
 }: {
   header: ReactNode;
   backLink: ReactNode;
@@ -56,6 +58,8 @@ export function LessonPageClient({
   lessonPath: string;
   /** docs/decisions/0088 — the server's best score for this learner, or null. */
   previousBestPercent: number | null;
+  /** VOICE-005 — set when the lesson has a voice task (docs/decisions/0111). */
+  voiceTasks?: VoiceTasksContext;
 }) {
   return (
     <div className="pb-8">
@@ -70,6 +74,7 @@ export function LessonPageClient({
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}
         previousBestPercent={previousBestPercent}
+        voiceTasks={voiceTasks}
         renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
       />
     </div>

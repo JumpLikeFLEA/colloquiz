@@ -1255,3 +1255,25 @@ Appended to in the same commit as the change it records. Referenced from
   Composed from existing classes and tokens; no new colours. Self-paced
   course pages are unchanged. Do not compute a lesson's state or a call's
   visibility in TypeScript: both come from SQL (058).
+- Voice recorder (2026-10-10, VOICE-005, docs/decisions/0111), replacing
+  the VOICE-003 placeholder on the lesson page. Inside the same voice-task
+  card: Record (`SUBMIT_BUTTON_CLASS`) → a pulsing `bg-destructive` dot
+  with "Recording 0:12 / 3:00" and Stop → a native `<audio controls>` of
+  the take, Send (primary) and Record again (the paid card's "Back to
+  course" button classes). Sending shows a `bg-brand` bar in a `bg-muted`
+  track with "Sending N%"; a failure shows a `destructive-subtle` notice
+  and the primary button becomes "Try again". Sent: the learner's own
+  playback and "Sent. Waiting for feedback."; recording again offers Send
+  with "Recording again and sending replaces the recording you sent."
+  Feedback published: a `bg-brand-subtle` box headed "Feedback" under the
+  recording, bold runs as `<strong>`, then "Your recording has feedback,
+  so it can't be replaced." and no record controls. Practice (anonymous,
+  free, not enrolled): the same recorder without Send, and "Practice only:
+  your recording stays on this device and isn't sent." No MediaRecorder or
+  getUserMedia: "Recording doesn't work in this browser. Open this page in
+  Safari or Chrome." with a Copy link button. English lesson chrome, in
+  `lib/alliengll/voiceCopy.ts`, not copy.ts (bundle, 0111 Decision 1). The
+  admin preview and the demo keep the disabled Record button; its note is
+  now "Learners record here on the lesson page." Composed from existing
+  classes and tokens; no new colours. Do not import the recorder or
+  voiceCopy statically into LessonPlayer.

@@ -98,7 +98,25 @@ const nextConfig: NextConfig = {
       : [],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // VOICE-005 (docs/decisions/0111): the voice recorder needs the
+      // microphone on the lesson page, and only there. The rule above sends
+      // microphone=() everywhere; when two rules set the same key the later
+      // one wins (Next headers docs), so this overrides it for
+      // /courses/<course>/<lesson> alone. The course page has one segment
+      // fewer, and its og:image route (/courses/<course>/opengraph-image)
+      // is excluded by the lookahead.
+      {
+        source: "/courses/:courseSlug/:lessonSlug((?!opengraph-image$)[^/]+)",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
+          },
+        ],
+      },
+    ];
   },
   // SHELL-001: Colloquiz moved wholesale under /app so the English surface
   // (planned M2) can own the clean top-level URLs. Every route that used to

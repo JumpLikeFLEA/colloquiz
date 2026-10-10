@@ -4,6 +4,7 @@ import { getLessonNav, getPublicLesson } from "@/lib/publicLesson";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { bestScoreForLesson } from "@/lib/coursePageProgress";
+import { getVoiceTasksContext } from "@/lib/voiceTaskContext";
 import { AccountMenu } from "../../../AccountMenu";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
@@ -102,6 +103,13 @@ export default async function LessonPage({
     }
   }
 
+  // VOICE-005 (docs/decisions/0111) — read only when the lesson has a voice
+  // task, so every other lesson pays nothing for it.
+  const hasVoiceTask = lesson.document.some(
+    (block) => typeof block === "object" && block !== null && (block as { kind?: unknown }).kind === "task",
+  );
+  const voiceTasks = hasVoiceTask ? await getVoiceTasksContext(lesson.lessonId, lesson.courseId) : undefined;
+
   return (
     <LessonPageClient
       header={band}
@@ -114,6 +122,7 @@ export default async function LessonPage({
       isSignedIn={lesson.isSignedIn}
       lessonPath={`/courses/${courseSlug}/${lessonSlug}`}
       previousBestPercent={previousBestPercent}
+      voiceTasks={voiceTasks}
     />
   );
 }

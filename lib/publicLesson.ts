@@ -47,6 +47,8 @@ export type PublicLesson =
   | ({
       state: "ok";
       document: unknown[];
+      /** VOICE-005 — what a voice take is submitted against. */
+      lessonId: string;
       lessonVersionId: string;
       isSignedIn: boolean;
     } & PublicLessonMeta);
@@ -169,6 +171,7 @@ export async function readPublicLesson(
   return {
     state: "ok",
     document: version.document as unknown[],
+    lessonId: lesson.id,
     lessonVersionId: lesson.published_version_id,
     isSignedIn: user !== null,
     ...meta,
