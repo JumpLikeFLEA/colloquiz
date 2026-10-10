@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { getPublicCourse } from "@/lib/coursePage";
-import { firstFreeLesson } from "@/lib/coursePageProgress";
+import { firstOpenLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
@@ -19,9 +19,11 @@ import { LandingContent } from "./LandingContent";
  *
  * "From the bio link to the first free lesson takes at most one tap after /
  * loads" (acceptance): the hero's primary CTA does NOT go to the catalogue
- * first — it links straight to the FIRST published course's first
- * free-sample lesson (firstFreeLesson, the same SHELL-008 helper the course
- * page's own "one tap" CTA already uses), so tapping it once from `/` is a
+ * first — it links straight to the FIRST published course's first lesson
+ * whose SQL state for the caller is open (firstOpenLesson over
+ * course_lesson_states, CNT-014 / docs/decisions/0102 — for an anonymous
+ * visitor, the first lesson open to anyone; the same helper the course
+ * page's own "one tap" CTA uses), so tapping it once from `/` is a
  * complete reel-to-lesson path. Which course is "first" is
  * getPublishedCourses' created_at order; at one-course-today
  * (docs/handoff.md, "Launch bar") there is no ambiguity to resolve. The
@@ -33,7 +35,7 @@ export default async function EnglishLandingPage() {
 
   const featured = courses.length > 0 ? await getPublicCourse(courses[0].slug) : null;
   const heroLesson =
-    featured && featured.state === "ok" ? firstFreeLesson(featured.lessons) : null;
+    featured && featured.state === "ok" ? firstOpenLesson(featured.lessons) : null;
   const heroHref = heroLesson ? `/courses/${courses[0].slug}/${heroLesson.slug}` : "#catalogue";
 
   // Read on the server so a returning visitor who picked RU gets it in the

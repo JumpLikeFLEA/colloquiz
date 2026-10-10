@@ -5,7 +5,7 @@ import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLa
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getSignedInAccount } from "@/lib/signedInAccount";
-import { bestScoreForLesson, courseProgress, courseTotals, firstFreeLesson } from "@/lib/coursePageProgress";
+import { bestScoreForLesson, courseProgress, courseTotals, firstOpenLesson } from "@/lib/coursePageProgress";
 // Direct path, not the `@/app/components/lesson-player` barrel: that barrel
 // also re-exports LessonPlayer + practiceRenderer (dnd-kit and every
 // per-type practice renderer, PLAY-012), which this route never uses but a
@@ -73,7 +73,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const attempts = await getCourseAttemptSummary(course.id);
   const progress = courseProgress(course.lessons, attempts);
   const totals = courseTotals(course.lessons);
-  const firstFree = firstFreeLesson(course.lessons);
+  // CNT-014: the CTA, its label, the pill and the per-row badges all render
+  // from course_lesson_states (docs/decisions/0102), never a column read.
+  const firstOpen = firstOpenLesson(course.lessons);
   const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
   const c = courseCopy[lang];
   // SHELL-019 (docs/decisions/0086): the account chip, in the saved language.
@@ -99,8 +101,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         progress={progress}
         account={signedIn && <AccountMenu email={signedIn.email} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
-          firstFree
-            ? { href: `/courses/${courseSlug}/${firstFree.slug}`, label: totals.allFree ? c.startCourse : c.startFirstFree }
+          firstOpen
+            ? { href: `/courses/${courseSlug}/${firstOpen.slug}`, label: totals.allOpen ? c.startCourse : c.startFirstFree }
             : null
         }
       />
@@ -128,7 +130,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                   href={`/courses/${courseSlug}/${lesson.slug}`}
                   position={i + 1}
                   lesson={lesson}
-                  showFreeBadge={lesson.inFreeSample && !totals.allFree}
+                  showFreeBadge={lesson.accessLevel === "anyone" && !totals.allFree}
                   bestPercent={bestScoreForLesson(lesson.slug, attempts)}
                 />
               ))}

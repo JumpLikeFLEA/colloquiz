@@ -6,28 +6,61 @@
  * from here as a type only.
  */
 
+/** `lessons.access_level` (migration 055, docs/decisions/0094). */
+export type LessonAccessLevel = "anyone" | "signed_in" | "entitled";
+
+/**
+ * What the CALLER may do with a lesson, as `course_lesson_states` /
+ * `lesson_state` (migration 055) return it. Derived in SQL from
+ * `can_read_lesson`, the one entitlement function; TypeScript only reads it
+ * (CNT-014, docs/decisions/0102).
+ */
+export type LessonState = "open" | "needs_sign_in" | "needs_entitlement";
+
+export type LessonStateRow = { lesson_id: string; access_level: LessonAccessLevel; state: LessonState };
+
 export type PublicCourseLesson = {
   slug: string;
   title: string;
   description: string | null;
   itemCount: number;
   estimatedMinutes: number | null;
-  inFreeSample: boolean;
+  accessLevel: LessonAccessLevel;
+  state: LessonState;
   ordinal: number;
 };
 
 /**
- * "One tap from this page to the first free lesson" (SHELL-008 acceptance).
- * Lowest-ordinal free-sample lesson among whatever `getPublicCourse` already
- * returned — never re-derives "free" from position (docs/handoff.md,
- * "Ordinal-derived free samples" failure mode): `inFreeSample` is the
- * author's explicit flag, ordinal only picks among the lessons that already
- * carry it. `null` when a course has no free-sample lesson at all (shouldn't
- * happen given "the first course(s) are entirely free" at launch, but a
- * data invariant this module doesn't own isn't one it should assume).
+ * Joins each lesson row to its `course_lesson_states` row by id. Every row
+ * the course page lists has one: the state function's rows are "listed OR
+ * readable by the caller" (055 §4), a superset of what `publishedLessonsOnly`
+ * keeps. A missing row means the two disagree, which is an invariant break,
+ * not a state to render — so it throws (lib/publicLesson.ts precedent)
+ * rather than guessing one.
  */
-export function firstFreeLesson(lessons: readonly PublicCourseLesson[]): PublicCourseLesson | null {
-  return [...lessons].filter((l) => l.inFreeSample).sort((a, b) => a.ordinal - b.ordinal)[0] ?? null;
+export function attachLessonStates<T extends { id: string }>(
+  rows: readonly T[],
+  states: readonly LessonStateRow[],
+): (T & { accessLevel: LessonAccessLevel; state: LessonState })[] {
+  const byId = new Map(states.map((s) => [s.lesson_id, s]));
+  return rows.map((row) => {
+    const s = byId.get(row.id);
+    if (!s) throw new Error(`course_lesson_states returned no row for listed lesson ${row.id}`);
+    return { ...row, accessLevel: s.access_level, state: s.state };
+  });
+}
+
+/**
+ * The course page's and the landing's one-tap CTA target (SHELL-008,
+ * SHELL-010): the lowest-ordinal lesson whose SQL state for the caller is
+ * `open` — for an anonymous visitor, exactly the lessons open to anyone.
+ * Never re-derives "free" from position (docs/handoff.md, "Ordinal-derived
+ * free samples"): ordinal only picks among lessons SQL already opened.
+ * `null` when nothing is open to the caller (a cohort course a visitor
+ * isn't enrolled in, from COH-002).
+ */
+export function firstOpenLesson(lessons: readonly PublicCourseLesson[]): PublicCourseLesson | null {
+  return [...lessons].filter((l) => l.state === "open").sort((a, b) => a.ordinal - b.ordinal)[0] ?? null;
 }
 
 /**
@@ -80,7 +113,13 @@ export function publishedLessonsOnly<T extends { published_version_id: string | 
   return rows.filter((r) => r.published_version_id !== null && r.archived_at === null);
 }
 
-export type CourseTotals = { lessonCount: number; exerciseCount: number; totalMinutes: number | null; allFree: boolean };
+export type CourseTotals = {
+  lessonCount: number;
+  exerciseCount: number;
+  totalMinutes: number | null;
+  allFree: boolean;
+  allOpen: boolean;
+};
 
 /**
  * The course page hero's size line and "whole course is free" flag
@@ -88,19 +127,25 @@ export type CourseTotals = { lessonCount: number; exerciseCount: number; totalMi
  * `published_item_count` (= its practice-block count). `totalMinutes` follows
  * lib/catalogueSummary.ts's rule — null rather than a partial sum when any
  * lesson has no estimate, so the hero never understates the course and
- * never disagrees with the catalogue card that led here. `allFree` is false
- * for a course with no lessons: "the whole course is free" about nothing
- * would be a claim with no evidence behind it.
+ * never disagrees with the catalogue card that led here.
+ *
+ * `allFree` (the "whole course free" pill) is about the course, not the
+ * caller: every lesson's SQL `access_level` is `anyone`. `allOpen` is about
+ * the caller: every lesson's SQL `state` is `open` — it picks the CTA label,
+ * so an entitled learner on a paid course isn't told "first free lesson".
+ * For an anonymous visitor the two coincide. Both are false for a course
+ * with no lessons: a claim about nothing has no evidence behind it.
  */
 export function courseTotals(lessons: readonly PublicCourseLesson[]): CourseTotals {
   const lessonCount = lessons.length;
-  const allFree = lessonCount > 0 && lessons.every((l) => l.inFreeSample);
+  const allFree = lessonCount > 0 && lessons.every((l) => l.accessLevel === "anyone");
+  const allOpen = lessonCount > 0 && lessons.every((l) => l.state === "open");
   const totalMinutes =
     lessonCount > 0 && lessons.every((l) => l.estimatedMinutes !== null)
       ? lessons.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0)
       : null;
   const exerciseCount = lessons.reduce((sum, l) => sum + l.itemCount, 0);
-  return { lessonCount, exerciseCount, totalMinutes, allFree };
+  return { lessonCount, exerciseCount, totalMinutes, allFree, allOpen };
 }
 
 export type LessonNav<T> = { position: number; total: number; next: T | null };

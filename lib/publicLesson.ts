@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { authUserFrom } from "@/lib/auth";
-import { lessonNav, publishedLessonsOnly } from "@/lib/coursePageProgress";
+import { lessonNav, publishedLessonsOnly, type LessonStateRow } from "@/lib/coursePageProgress";
 import { createClient } from "@/lib/supabase/server";
 
 export type PublicLessonMeta = {
@@ -17,7 +17,12 @@ export type PublicLessonMeta = {
 
 export type PublicLesson =
   | { state: "not_found" }
-  | ({ state: "not_available" } & PublicLessonMeta)
+  | ({
+      state: "not_available";
+      /** What the caller still needs, as `lesson_state` (055) returned it —
+       * for ANON-011's sign-in prompt; the page renders one screen today. */
+      access: Exclude<LessonStateRow["state"], "open">;
+    } & PublicLessonMeta)
   | ({
       state: "ok";
       document: unknown[];
@@ -31,9 +36,10 @@ export type PublicLesson =
  * is decided by two things only, and this module never re-derives either:
  * the "lessons: published read" / "editor read" RLS policies (migration 041,
  * widened by 044) decide whether the METADATA row is visible at all, and
- * `can_read_lesson()` (the one entitlement function, migration 041/044) is
- * called directly — never inferred from a null `lesson_versions` read — to
- * decide whether the CONTENT is. `createClient()` is the same cookie-aware
+ * `lesson_state()` (migration 055, the single-lesson form of
+ * `course_lesson_states`, whose `open` is `can_read_lesson()` itself — CNT-014,
+ * docs/decisions/0102) is called directly — never inferred from a null
+ * `lesson_versions` read — to decide whether the CONTENT is. `createClient()` is the same cookie-aware
  * SSR client used everywhere else: with no session it runs as anon, with one
  * it runs as that caller, so anonymous, signed-in and entitled callers all
  * go through this exact code path.
@@ -84,11 +90,18 @@ export const getPublicLesson = cache(async (courseSlug: string, lessonSlug: stri
     courseTitle: course.title,
   };
 
-  const { data: canRead, error: canReadErr } = await supabase.rpc("can_read_lesson", {
-    p_lesson_id: lesson.id,
-  });
-  if (canReadErr) throw new Error(canReadErr.message);
-  if (canRead !== true) return { state: "not_available", ...meta };
+  const { data: stateRows, error: stateErr } = await supabase.rpc("lesson_state", { p_lesson_id: lesson.id });
+  if (stateErr) throw new Error(stateErr.message);
+  const lessonState = ((stateRows ?? []) as LessonStateRow[])[0];
+  if (!lessonState) {
+    // Every lesson whose metadata row RLS just returned with a published
+    // version is either listed or readable by this caller (044's "lessons:
+    // published read" and 041's "editor read" against 055 §4's row rule), so
+    // lesson_state always has its row. An empty result is the two
+    // disagreeing — an invariant break, not a "paid" screen.
+    throw new Error(`lesson_state(${lesson.id}) returned no row for a lesson RLS shows this caller`);
+  }
+  if (lessonState.state !== "open") return { state: "not_available", access: lessonState.state, ...meta };
 
   const { data: version, error: versionErr } = await supabase
     .from("lesson_versions")
@@ -97,8 +110,8 @@ export const getPublicLesson = cache(async (courseSlug: string, lessonSlug: stri
     .maybeSingle();
   if (versionErr) throw new Error(versionErr.message);
   if (!version) {
-    // can_read_lesson said yes, but the published version row itself came
-    // back empty. RLS grants this exact row whenever can_read_lesson is true
+    // lesson_state said open (= can_read_lesson), but the published
+    // version row itself came back empty. RLS grants this exact row whenever can_read_lesson is true
     // (migration 041 §8's "lesson_versions: published content read" policy
     // IS can_read_lesson plus an id match) — the two disagreeing is a real
     // invariant break, not a "paid, not entitled" state, and must not be
