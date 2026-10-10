@@ -62,7 +62,8 @@ export default async function LessonVisitorViewPage({
             />
           }
           courseSlug={ref.courseSlug}
-          access={visitor.access}
+          lessonPath={publicPath}
+          state={visitor}
         />
       </div>
     );

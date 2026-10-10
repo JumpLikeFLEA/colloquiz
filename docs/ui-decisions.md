@@ -1180,3 +1180,17 @@ Appended to in the same commit as the change it records. Referenced from
   existing Select, icon-button and pill classes; no new tokens. Do not
   bring back the switch, and do not render the visitor view from a
   TypeScript level-to-state mapping.
+- Sign-in lesson screen (2026-10-10, ANON-011, docs/decisions/0104). A
+  visitor on a lesson marked "Sign-in required" sees the lesson band, then
+  the lesson's leading theory (as `lesson_teaser` cut it), then a card:
+  "Sign in to open this lesson", "It's free. All you need is an account.",
+  a "Sign in or create an account" button to `/login?next=<this lesson>`,
+  "Or start with an open lesson: <title>" when the course has one, and
+  "Back to course". English, like the rest of the lesson chrome. The paid
+  state is unchanged. Composed from the paid card's frame and padding,
+  `SUBMIT_BUTTON_CLASS` and the player's own block views; no new tokens or
+  classes. A teaser VIDEO is a link to YouTube in a new tab, not the
+  in-place embed: the player's video component, rendered here, grew every
+  open lesson's JS (measured in 0104). Do not swap `TeaserBlock` for
+  `TheoryBlockRenderer` without re-running `npm run budget`. The admin
+  "Visitor view" shows the same screen.

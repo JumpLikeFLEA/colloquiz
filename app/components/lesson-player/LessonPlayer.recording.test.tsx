@@ -129,6 +129,42 @@ describe("LessonPlayer — ANON-005 attempt recording", () => {
     });
   });
 
+  it("ANON-011: flushes another lesson's anonymous attempts on mount (open lesson first, then a sign-in lesson)", async () => {
+    window.localStorage.setItem(
+      ATTEMPT_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        attempts: [
+          {
+            attemptId: "anon-on-open-lesson",
+            lessonVersionId: "v-open-lesson",
+            blockId: "b1",
+            earned: 1,
+            possible: 2,
+            recordedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+
+    // The sign-in lesson, reloaded signed in after /login?next=… (its own
+    // version id differs from the attempt's).
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v-sign-in-lesson"
+        isSignedIn
+      />,
+    );
+
+    await vi.waitFor(() => expect(callsTo("record_lesson_attempts")).toHaveLength(1));
+    expect(rpc).toHaveBeenCalledWith("record_lesson_attempts", {
+      p_attempts: [expect.objectContaining({ attempt_id: "anon-on-open-lesson", lesson_version_id: "v-open-lesson" })],
+    });
+  });
+
   it("does not record when isSignedIn is true but no lessonVersionId is supplied (preview/demo callers)", async () => {
     render(
       <LessonPlayer

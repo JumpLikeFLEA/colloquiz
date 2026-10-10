@@ -66,6 +66,21 @@ export function firstOpenLesson(lessons: readonly PublicCourseLesson[]): PublicC
 }
 
 /**
+ * ANON-011 — the sign-in screen's "start with an open lesson" link
+ * (docs/decisions/0094 Decision 2, option C's residual gap). Same rule as
+ * `firstOpenLesson`, over raw rows: published, not archived, state `open`
+ * from `course_lesson_states`, first in the order the rows arrive (the
+ * caller reads them ordinal-then-slug, the course page's order). `null` when
+ * no lesson is open to the caller.
+ */
+export function firstOpenLessonLink<
+  T extends { id: string; slug: string; title: string; published_version_id: string | null; archived_at: string | null },
+>(rows: readonly T[], states: readonly LessonStateRow[]): { slug: string; title: string } | null {
+  const open = attachLessonStates(publishedLessonsOnly(rows), states).find((l) => l.state === "open");
+  return open ? { slug: open.slug, title: open.title } : null;
+}
+
+/**
  * Per-lesson best score and course-wide progress, kept as pure functions
  * over an explicit attempts map rather than a live query — ANON-002
  * (localStorage store) and ANON-003 (`lesson_attempts` table + RPC) are

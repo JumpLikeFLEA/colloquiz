@@ -75,11 +75,16 @@ export default async function LessonPage({
   );
 
   if (lesson.state === "not_available") {
-    // docs/decisions/0079 D8; the course editor's "Visitor view" renders the
-    // same component (AUTH-009).
+    // docs/decisions/0079 D8; ANON-011's sign-in prompt (0104). The course
+    // editor's "Visitor view" renders the same component (AUTH-009).
     return (
       <main className="bg-background">
-        <LessonUnavailable band={band} courseSlug={courseSlug} access={lesson.access} />
+        <LessonUnavailable
+          band={band}
+          courseSlug={courseSlug}
+          lessonPath={`/courses/${courseSlug}/${lessonSlug}`}
+          state={lesson}
+        />
       </main>
     );
   }

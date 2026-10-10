@@ -1,7 +1,9 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authUserFrom } from "@/lib/auth";
-import { lessonNav, publishedLessonsOnly, type LessonStateRow } from "@/lib/coursePageProgress";
+import { firstOpenLessonLink, lessonNav, publishedLessonsOnly, type LessonStateRow } from "@/lib/coursePageProgress";
+import type { TheoryBlock } from "@/lib/lessons";
+import { parseLessonTeaser, type LessonTeaserRow } from "@/lib/lessonTeaser";
 import { createClient } from "@/lib/supabase/server";
 
 export type PublicLessonMeta = {
@@ -20,9 +22,19 @@ export type PublicLesson =
   | { state: "not_found" }
   | ({
       state: "not_available";
-      /** What the caller still needs, as `lesson_state` (055) returned it —
-       * for ANON-011's sign-in prompt; the page renders one screen today. */
-      access: Exclude<LessonStateRow["state"], "open">;
+      /** What the caller still needs, as `lesson_state` (055) returned it. */
+      access: "needs_entitlement";
+    } & PublicLessonMeta)
+  | ({
+      state: "not_available";
+      access: "needs_sign_in";
+      /** ANON-011 — `lesson_teaser` (055): the leading theory, cut in SQL.
+       * Empty when the lesson opens with an exercise, has none, or a block
+       * failed to parse (docs/decisions/0104 Decision 3). */
+      teaser: TheoryBlock[];
+      /** The course's first lesson open to this caller, for "start with an
+       * open lesson" (0094 Decision 2); null when there is none. */
+      openLesson: NextLessonLink | null;
     } & PublicLessonMeta)
   | ({
       state: "ok";
@@ -117,7 +129,10 @@ export async function readPublicLesson(
     // disagreeing — an invariant break, not a "paid" screen.
     throw new Error(`lesson_state(${lesson.id}) returned no row for a lesson RLS shows this caller`);
   }
-  if (lessonState.state !== "open") return { state: "not_available", access: lessonState.state, ...meta };
+  if (lessonState.state === "needs_entitlement") return { state: "not_available", access: "needs_entitlement", ...meta };
+  if (lessonState.state === "needs_sign_in") {
+    return { state: "not_available", access: "needs_sign_in", ...(await readSignInExtras(supabase, lesson.id, course.id)), ...meta };
+  }
 
   const { data: version, error: versionErr } = await supabase
     .from("lesson_versions")
@@ -147,6 +162,47 @@ export async function readPublicLesson(
 }
 
 export type NextLessonLink = { slug: string; title: string };
+
+/**
+ * ANON-011 — what the sign-in screen adds to the title and description: the
+ * teaser and an open lesson of the same course. Both decided in SQL
+ * (`lesson_teaser`, `course_lesson_states`, migration 055); the three reads
+ * run in parallel, and only on this screen, so an open lesson makes no new
+ * round trip.
+ */
+async function readSignInExtras(
+  supabase: SupabaseClient,
+  lessonId: string,
+  courseId: string,
+): Promise<{ teaser: TheoryBlock[]; openLesson: NextLessonLink | null }> {
+  const [teaserRes, lessonsRes, statesRes] = await Promise.all([
+    supabase.rpc("lesson_teaser", { p_lesson_id: lessonId }),
+    supabase
+      .from("lessons")
+      .select("id, slug, title, published_version_id, archived_at")
+      .eq("course_id", courseId)
+      .order("ordinal", { ascending: true })
+      .order("slug", { ascending: true }),
+    supabase.rpc("course_lesson_states", { p_course_id: courseId }),
+  ]);
+  if (teaserRes.error) throw new Error(teaserRes.error.message);
+  if (lessonsRes.error) throw new Error(lessonsRes.error.message);
+  if (statesRes.error) throw new Error(statesRes.error.message);
+
+  let teaser: TheoryBlock[] = [];
+  try {
+    teaser = parseLessonTeaser((teaserRes.data ?? []) as LessonTeaserRow[]);
+  } catch (err) {
+    // A published block the theory schema now rejects: show the title and
+    // description only (0094's own fallback), not a broken page.
+    console.error(`lesson_teaser(${lessonId}) returned an unrenderable block`, err);
+  }
+
+  return {
+    teaser,
+    openLesson: firstOpenLessonLink(lessonsRes.data ?? [], (statesRes.data ?? []) as LessonStateRow[]),
+  };
+}
 
 export type LessonNavInfo = { position: number; total: number; next: NextLessonLink | null };
 

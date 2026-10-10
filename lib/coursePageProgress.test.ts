@@ -5,6 +5,7 @@ import {
   courseProgress,
   courseTotals,
   firstOpenLesson,
+  firstOpenLessonLink,
   lessonNav,
   publishedLessonsOnly,
   type LessonStateRow,
@@ -166,5 +167,45 @@ describe("lessonNav", () => {
 
   it("is null for a slug that isn't in the list", () => {
     expect(lessonNav(lessons, "missing")).toBeNull();
+  });
+});
+
+describe("firstOpenLessonLink", () => {
+  const row = (id: string, slug: string, extra: { published_version_id?: string | null; archived_at?: string | null } = {}) => ({
+    id,
+    slug,
+    title: `Title ${slug}`,
+    published_version_id: "v",
+    archived_at: null,
+    ...extra,
+  });
+
+  it("is the first row, in the order given, whose SQL state is open", () => {
+    const rows = [row("l1", "a"), row("l2", "b"), row("l3", "c")];
+    const states: LessonStateRow[] = [
+      { lesson_id: "l1", access_level: "signed_in", state: "needs_sign_in" },
+      { lesson_id: "l2", access_level: "anyone", state: "open" },
+      { lesson_id: "l3", access_level: "anyone", state: "open" },
+    ];
+    expect(firstOpenLessonLink(rows, states)).toEqual({ slug: "b", title: "Title b" });
+  });
+
+  it("skips draft and archived rows even when SQL calls them open (an editor's own read)", () => {
+    const rows = [row("l1", "a", { published_version_id: null }), row("l2", "b", { archived_at: "2026-10-01" }), row("l3", "c")];
+    const states: LessonStateRow[] = [
+      { lesson_id: "l1", access_level: "anyone", state: "open" },
+      { lesson_id: "l2", access_level: "anyone", state: "open" },
+      { lesson_id: "l3", access_level: "anyone", state: "open" },
+    ];
+    expect(firstOpenLessonLink(rows, states)?.slug).toBe("c");
+  });
+
+  it("is null when nothing is open to the caller", () => {
+    const states: LessonStateRow[] = [{ lesson_id: "l1", access_level: "entitled", state: "needs_entitlement" }];
+    expect(firstOpenLessonLink([row("l1", "a")], states)).toBeNull();
+  });
+
+  it("throws when a listed row has no state row (attachLessonStates' invariant)", () => {
+    expect(() => firstOpenLessonLink([row("l1", "a")], [])).toThrow(/no row for listed lesson l1/);
   });
 });
