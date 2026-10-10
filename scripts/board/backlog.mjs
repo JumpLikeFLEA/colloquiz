@@ -2501,6 +2501,28 @@ export const CARDS = [
     ],
   },
   {
+    key: 'CNT-016',
+    title: 'Archiving keeps a published course’s open lesson',
+    milestone: 'M3',
+    epic: 'CNT',
+    type: 'task',
+    rank: 2467,
+    dependsOn: ['CNT-012', 'COH-002'],
+    goal:
+      'Proposed by CNT-012 (docs/decisions/0099 Decision 3). 055 enforces "a published self-paced course ' +
+      'keeps at least one non-archived lesson open to anyone" in publish_course and set_lesson_access_level, ' +
+      'but set_lesson_archived (044:329) can still archive that last lesson, leaving the reel funnel with no ' +
+      'entry point. Serialised after COH-002, so the self_paced condition from courses.format is written ' +
+      'once rather than retrofitted.',
+    acceptance: [
+      'set_lesson_archived is re-emitted from its latest body and refuses, with no_open_lesson, to archive the last non-archived anyone lesson of a published self-paced course; the course row is locked FOR UPDATE, the set_lesson_access_level precedent.',
+      'Printed with controls on seeded data: archiving a non-last anyone lesson succeeds; archiving the last one is refused; the same archive succeeds once another lesson is anyone; restoring is never refused; a cohort course and a draft course are not subject to the rule.',
+      'A non-editor is still denied (forbidden), with an editor succeeding as the positive control.',
+      'The editor shows the refusal as a toast through lib/courseAuthoringErrors.ts (no_open_lesson is already mapped).',
+      'Migration-number and re-emitted-body print rule (section header).',
+    ],
+  },
+  {
     key: 'VOICE-003',
     title: 'The voice block in the lesson document and editor',
     milestone: 'M3',
