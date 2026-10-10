@@ -2590,7 +2590,7 @@ export const CARDS = [
     epic: 'VOICE',
     type: 'task',
     rank: 2490,
-    dependsOn: ['VOICE-004', 'SHELL-020'],
+    dependsOn: ['VOICE-004', 'SHELL-020', 'COH-008'],
     goal: 'Where the partner listens to submissions and writes feedback, and the final comment.',
     acceptance: [
       'Per run and week: submissions without published feedback, oldest first, with the audio player and the VOICE-002 editor. Save a draft, publish, and edit after publishing (the learner sees the latest version).',
@@ -2622,7 +2622,7 @@ export const CARDS = [
     epic: 'COH',
     type: 'task',
     rank: 2495,
-    dependsOn: ['VOICE-005', 'VOICE-006', 'COH-003'],
+    dependsOn: ['VOICE-005', 'VOICE-006', 'COH-003', 'COH-008'],
     goal: 'The same prompt recorded at the start and at the end, compared on one screen.',
     acceptance: [
       'For an enrolled learner of a run: the before and after recordings side by side, plus the partner\'s final comment.',
@@ -2684,6 +2684,44 @@ export const CARDS = [
       'The runs page offers the change on a claimed invite\'s row (or on AUTH-011\'s roster if that has landed), English chrome, refusal toasted through lib/courseAuthoringErrors.ts.',
       'Full protocol: the editor of the course succeeds (positive control) and course_calls returns the run\'s calls to the learner after basic -> extended and zero rows after extended -> basic; a non-editor and an editor of another course are denied (forbidden).',
       'Migration-number print rule (section header).',
+    ],
+  },
+  {
+    key: 'COH-008',
+    title: 'Migration: final comment storage',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2488,
+    dependsOn: ['VOICE-004'],
+    goal:
+      'Proposed by VOICE-004 (docs/decisions/0110, "Not in this card"). VOICE-006 writes COH-005\'s final ' +
+      'comment and COH-005 renders it, but no card creates its storage. privacy-policy.md already lists it ' +
+      '(export, erasure, "until you close your account").',
+    acceptance: [
+      'One final comment per run enrolment, in VOICE-002\'s FeedbackContent shape with the same 5,000-character cap (FEEDBACK_CONTENT_MAX_CHARS); draft / published, one-way publish, edits after publishing are live (060\'s voice_feedback precedent).',
+      'Written only by can_edit_course of the run\'s course through a SECURITY DEFINER RPC; the learner reads their own once published; no write grants.',
+      'Export includes it (published only); delete_my_account re-emitted from the latest body deletes it.',
+      'Full protocol: owner / another learner / editor / editor of another course / anon x read, write; positive controls: the editor writes, the learner reads after publish and not before.',
+      'Migration-number and re-emitted-body print rule (section header).',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
+    ],
+  },
+  {
+    key: 'OPS-023',
+    title: 'Account export size with voice recordings on Vercel',
+    milestone: 'M3',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2493,
+    dependsOn: ['VOICE-004'],
+    goal:
+      'Proposed by VOICE-004 (docs/decisions/0110 Decision 6). The export embeds each voice take as base64 ' +
+      '(privacy-policy.md section 8: "includes a copy"). Vercel caps a non-streamed function response at ' +
+      '4.5 MB (a hypothesis, not measured here); six 3-minute takes at 32 kbps are about 5.8 MB in base64.',
+    acceptance: [
+      'On a Vercel preview, a seeded account with six 3-minute takes exports successfully; the response size is printed.',
+      'If it fails, the export streams its body or moves the audio into an archive, and the same account then exports successfully; the privacy text still holds.',
     ],
   },
   {
