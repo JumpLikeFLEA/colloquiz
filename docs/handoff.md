@@ -67,6 +67,23 @@ One Next.js app, one Supabase project, one account per person.
 `/` is the English landing. Colloquiz lives under `/app` (SHELL-001, decision
 0005), so the English surface owns the clean URLs.
 
+**Studio (owner, 2026-10-10, docs/decisions/0109)** is the author's workspace
+at `/studio`. It holds:
+
+- course editing, moved from `/app/admin/courses`;
+- the voice review queue;
+- the learners roster;
+- an inbox of what needs attention.
+
+It is author-only: anyone with `can_edit_course`. It has its own root
+layout, its chrome is English, and it has no JS budget of its own. Nothing
+from it may reach an English route. It is a tool, not a third product
+surface. The Colloquiz admin tools stay at `/app/admin`.
+
+Course creation stays on the PDF -> JSON -> import path. A learner home
+(PROG-002) will live on the English surface at `/my`, under that surface's
+budget, reusing Studio's components but not its shell.
+
 ## Course and lesson shape
 
 The rules below describe the free mini-courses. A cohort course runs four

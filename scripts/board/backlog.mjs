@@ -2590,12 +2590,13 @@ export const CARDS = [
     epic: 'VOICE',
     type: 'task',
     rank: 2490,
-    dependsOn: ['VOICE-004'],
+    dependsOn: ['VOICE-004', 'SHELL-020'],
     goal: 'Where the partner listens to submissions and writes feedback, and the final comment.',
     acceptance: [
       'Per run and week: submissions without published feedback, oldest first, with the audio player and the VOICE-002 editor. Save a draft, publish, and edit after publishing (the learner sees the latest version).',
       'The final comment for COH-005 is written here (VOICE-002\'s shape).',
-      'Status per learner and week. Under /app/admin/courses/[id]/..., gated on canEditCourse(id). English chrome.',
+      'Status per learner and week. One cross-course queue at /studio/reviews, filtered by course, run, week and status; per-course pages link into it pre-filtered (docs/decisions/0109 Decision 7).',
+      'Each submission is gated by can_edit_course in SQL; the cross-course page uses the getCourseAccess() gate. Full protocol: an editor of course A sees no submission of course B. English chrome. Listening and writing feedback work at 360px.',
     ],
   },
   {
@@ -2655,12 +2656,12 @@ export const CARDS = [
     epic: 'AUTH',
     type: 'task',
     rank: 2505,
-    dependsOn: ['COH-003', 'VOICE-004', 'PROG-001', 'OPS-022'],
+    dependsOn: ['COH-003', 'VOICE-004', 'PROG-001', 'OPS-022', 'SHELL-020'],
     goal: 'The partner sees who her learners are, where they came from and what they have done.',
     acceptance: [
       'One SECURITY DEFINER RPC returning only learners of courses the caller edits. Columns: email from auth.users; the invite\'s contact label; acquisition course + channel (signup_acquisitions, 053); run and tier; lessons opened and completed; last activity; voices sent and answered.',
       'Telegram username: present if ANON-012 is Done when this card is worked; otherwise out of scope, and the closing comment says so.',
-      'Filters: course, run. English chrome; the cross-course page uses the getCourseAccess() gate.',
+      'Filters: course, run. At /studio/learners, usable at 360px (docs/decisions/0109). English chrome; the cross-course page uses the getCourseAccess() gate.',
       'Full protocol: a non-editor gets zero rows, and an editor of course A sees no learner who only touched course B; positive control: the editor of course A sees at least one seeded learner of A.',
       'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
     ],
@@ -2684,6 +2685,59 @@ export const CARDS = [
       'Full protocol: the editor of the course succeeds (positive control) and course_calls returns the run\'s calls to the learner after basic -> extended and zero rows after extended -> basic; a non-editor and an editor of another course are denied (forbidden).',
       'Migration-number print rule (section header).',
     ],
+  },
+  {
+    key: 'SHELL-020',
+    title: 'Studio shell and the move of course authoring',
+    milestone: 'M3',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2486,
+    dependsOn: [],
+    goal:
+      'One place for the author\'s course work, apart from Colloquiz (docs/decisions/0109 Decisions 1-3, 11). ' +
+      'Course authoring moves out of the Colloquiz shell into /studio, before VOICE-006 and AUTH-011 are built there.',
+    acceptance: [
+      'app/(studio)/ is its own root layout: ThemeProvider and Toaster as in (colloquiz), Geist Sans, a Studio nav built from ui/sidebar (Courses; "View site" to /; sign-out; /app/admin for admins only). No KaTeX CSS, no Analytics, nothing from the Colloquiz shell. English chrome.',
+      'Every page under /app/admin/courses/** (list, editor, runs, lesson editor, preview, visitor view) moves to /studio/courses/** unchanged; /app/admin/courses/** 308s to the same path under /studio. app/api/admin/courses/** does not move. `rg -n "/app/admin/courses"` printed before and after: only the redirect rule remains.',
+      'Gate: a signed-out visitor to /studio/** is sent to /login?next=<path> (proxy.ts, the /app rule extended); a signed-in non-editor gets a 404 (getCourseAccess()). Full protocol: positive controls are an editor and an admin opening the same page.',
+      '/studio redirects to /studio/courses until AUTH-012 lands. The Colloquiz sidebar\'s Admin "Courses" and "Course editing" entries point to /studio.',
+      '`npm run budget` before and after: every English route unchanged; OPS-013\'s commons-chunk guard green.',
+      'A docs/ui-decisions.md entry in the same commit. No new tokens or hex literals.',
+    ],
+  },
+  {
+    key: 'SHELL-021',
+    title: 'Studio entry points: account chip and post-login landing',
+    milestone: 'M3',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2487,
+    dependsOn: ['SHELL-020'],
+    goal: 'An author reaches Studio from where she already is (docs/decisions/0109 Decision 4).',
+    acceptance: [
+      'AccountMenu shows a "Studio" link to /studio only to a caller who can edit at least one course. Still a Server Component, no client JS; no extra query for an anonymous visitor. `npm run budget` before and after for /, a free course page and a free lesson.',
+      'An editor who signs in with `next` absent or "/" lands on /studio; an explicit deeper `next` wins; a non-editor lands where they do today. The rule is a pure function in lib/ under vitest, applied on the password sign-in and the OAuth callback; ANON-012\'s Telegram path is named in that card\'s closing comment if it has landed, else left to ANON-012.',
+      'Shown in a browser: an editor signing in from the landing "Log in" lands on /studio; a learner lands on /; an editor with next=<lesson> lands on the lesson. ANON-016\'s chains unchanged (its tests green).',
+      'docs/handoff.md\'s "Signed-in users land on / after login" is updated in the same commit.',
+    ],
+  },
+  {
+    key: 'AUTH-012',
+    title: 'Studio inbox: what needs attention',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2491,
+    dependsOn: ['SHELL-020', 'VOICE-006'],
+    goal: 'Studio opens on what needs doing, across every course the author edits (docs/decisions/0109 Decision 5).',
+    acceptance: [
+      '/studio lists: submissions waiting for feedback per course, run and week (count and the oldest\'s age), linking into /studio/reviews pre-filtered; unpublished feedback drafts; calls in the next 7 days, linking to the runs page.',
+      'A waiting-count badge on the Studio nav, from the same SQL source as the list, not a second count.',
+      'Full protocol: seeded submissions in courses A and B; an editor of A sees only A\'s; the empty state is shown only against a seeded positive control.',
+      'Usable at 360px. English chrome. A docs/ui-decisions.md entry.',
+    ],
+    notes: 'The count is the only author alert: no push, Telegram or email (0109 Decision 5).',
   },
   {
     key: 'ANON-012',
@@ -2729,7 +2783,7 @@ export const CARDS = [
       'ANON-016', 'CNT-011', 'COH-001', 'OPS-019', 'VOICE-002', 'VOICE-001', 'ANON-010', 'OPS-018',
       'CNT-012', 'CNT-014', 'AUTH-009', 'ANON-011', 'COH-002', 'AUTH-010', 'COH-003', 'COH-004',
       'CNT-013', 'VOICE-003', 'VOICE-004', 'VOICE-005', 'VOICE-006', 'VOICE-007', 'COH-005', 'PROG-001',
-      'AUTH-011', 'ANON-012', 'OPS-010',
+      'AUTH-011', 'ANON-012', 'OPS-010', 'SHELL-020', 'SHELL-021', 'AUTH-012',
     ],
     goal: 'Rehearse a whole cohort on production with test accounts on real phones.',
     acceptance: [
@@ -2742,6 +2796,63 @@ export const CARDS = [
     notes:
       'Writes to production: owner-run, or explicitly authorised at the time (a stop under CLAUDE.md). ' +
       'COH-006 is deliberately not a dependency.',
+  },
+  // ------------------------------------------- M4 (progression & polish) ---
+  // M3's shared rules (full protocol, migration numbering, budgets, legal
+  // text) apply here unchanged.
+  {
+    key: 'AUTH-013',
+    title: 'Studio learner page: activity and recordings',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2600,
+    dependsOn: ['AUTH-011', 'VOICE-006'],
+    goal: 'One page per learner with everything the author may see about them (docs/decisions/0109 Decisions 8, 13).',
+    acceptance: [
+      '/studio/learners/[userId], opened from the roster: AUTH-011\'s columns broken down per lesson, for courses the caller edits only. No scores (0109 Decision 8).',
+      'Every recording of that learner in those courses with its feedback and its draft/published state; before/after side by side where the voice block sets `compare`; a purged recording renders as removed (COH-005\'s rule). Signed-URL playback with VOICE-004\'s expiry; no download control.',
+      'Full protocol: an editor of course B gets a 404 and zero rows for a learner who only touched course A; positive control: the editor of A sees them.',
+      'Usable at 360px. English chrome. A docs/ui-decisions.md entry.',
+      'The live legal text describes what this card does; if it doesn\'t, stop and ask.',
+    ],
+  },
+  {
+    key: 'AUTH-014',
+    title: 'Studio course stats: lesson funnel and per-exercise averages',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2610,
+    dependsOn: ['SHELL-020'],
+    goal:
+      'Show the author which lesson loses learners and which exercise is broken or too hard, ' +
+      'without identifying anyone (docs/decisions/0109 Decision 9).',
+    acceptance: [
+      'One SQL function gated on can_edit_course, for one course: per lesson, distinct signed-in learners who opened it (lesson_opens) and who attempted it (lesson_attempts); per practice block, the average earned/possible across distinct learners, NULL when fewer than 5 distinct learners attempted it. How lesson versions are combined is decided and recorded.',
+      'The threshold is enforced in SQL, not the UI. Full protocol: a seeded block with 4 learners returns no average and one with 5 returns it; a non-editor and an editor of another course get zero rows; positive control: the editor of the course.',
+      'At /studio/courses/[id]/stats. The page says the averages cover signed-in learners only (anonymous attempts stay in the browser). English chrome.',
+      'privacy-policy.md:287 ("nothing else in the Service reads another learner\'s attempts") is revised to cover aggregates, with a materiality check under section 13 (the OPS-019 precedent). Stop and ask before the text changes.',
+    ],
+  },
+  {
+    key: 'PROG-002',
+    title: 'Learner home: my courses, progress and feedback',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 2620,
+    dependsOn: ['SHELL-021', 'VOICE-005'],
+    goal:
+      'A signed-in learner sees their courses in one place, on the English surface, reusing Studio\'s ' +
+      'components but not its shell (docs/decisions/0109 Decision 2).',
+    acceptance: [
+      '/my lists the learner\'s courses: self-paced courses they attempted, cohort runs they are enrolled in, and granted courses. Per course, the two progress numbers (lessons attempted of total; average over attempted lessons), never blended.',
+      'Published feedback received, and the next call for an extended enrolee, read through the existing SQL paths (course_calls, the submission read path); no access rule decided in TypeScript.',
+      'Under the English root layout, with its own auth guard (0049\'s revisit clause): a signed-out visitor goes to /login?next=/my. `/my` is checked against next.config.ts\'s 308 list.',
+      'AccountMenu links to /my for every signed-in learner, with no client JS. A new budget entry for /my with its `npm run budget` figure; /, a free course page and a free lesson unchanged.',
+      'Chrome language: stop and ask (docs/handoff.md, "Audience and language", forbids extending the toggle without asking).',
+    ],
   },
   // ------------------------------------------------ milestone-less chores ---
   {

@@ -134,6 +134,11 @@ refactor.
     boundary in `docs/handoff.md`, which is enforced with a First Load JS
     budget per route. **Planned (M2), not yet present; route namespacing is
     an open decision that blocks it.**
+  - `app/(studio)/` — the author's workspace at `/studio` (docs/decisions/
+    0109): course editing (moved from `/app/admin/courses`), the review
+    queue, learners, the inbox. Its own root layout, author-only
+    (`can_edit_course`), English chrome; nothing from it reaches an English
+    route. **Planned (M3, SHELL-020).**
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
   - `app/components/` — shared components. `ui/**` (vendored shadcn/Radix) and
