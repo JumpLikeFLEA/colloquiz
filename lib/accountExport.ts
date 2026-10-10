@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 4;
+export const EXPORT_FORMAT_VERSION = 5;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -22,6 +22,8 @@ export const EXPORT_CONTENTS = [
   "Lesson attempts — every English-course practice-block attempt and score",
   "Signup source — the course and arrival channel recorded when you signed up",
   "Lesson opens — which English lessons you opened while signed in, and when",
+  "Course access — English courses opened to you by a grant, and when (or if) that ended",
+  "Cohort enrolments — the course runs you joined, your tier, and when (or if) your access ended",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -57,6 +59,26 @@ export type LessonOpenRow = {
   lessons: unknown;
 };
 
+export type CourseEntitlementRow = {
+  course_id: string;
+  granted_at: string;
+  source: string;
+  source_ref: string | null;
+  revoked_at: string | null;
+  /** Embedded `courses(slug, title)`; null once the course is not readable to the reader. */
+  courses: unknown;
+};
+
+export type RunEnrolmentRow = {
+  id: string;
+  run_id: string;
+  tier: string;
+  enrolled_at: string;
+  revoked_at: string | null;
+  /** Embedded `course_runs(title, starts_at, ends_at, courses(slug, title))`. */
+  course_runs: unknown;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -69,6 +91,8 @@ export type ExportSources = {
   lessonAttempts: LessonAttemptRow[];
   signupAcquisition: SignupAcquisitionRow | null;
   lessonOpens: LessonOpenRow[];
+  courseEntitlements: CourseEntitlementRow[];
+  runEnrolments: RunEnrolmentRow[];
 };
 
 /**
@@ -165,6 +189,12 @@ export function buildExportPayload(
 
     // PROG-001 (docs/decisions/0101): one row per lesson opened while signed in.
     lesson_opens: src.lessonOpens.map(exportLessonOpen),
+
+    // COH-002 (docs/decisions/0093, 0105): course-level grants (comps, test
+    // accounts, future purchases) and cohort run enrolments. Revoked rows are
+    // kept, with their revoked_at: they are part of the reader's record.
+    course_entitlements: src.courseEntitlements.map(exportCourseEntitlement),
+    cohort_enrolments: src.runEnrolments.map(exportRunEnrolment),
   };
 }
 
@@ -185,6 +215,36 @@ function exportLessonOpen(row: LessonOpenRow) {
     course_title: course?.title ?? null,
     first_opened_at: row.first_opened_at,
     last_opened_at: row.last_opened_at,
+  };
+}
+
+function exportCourseEntitlement(row: CourseEntitlementRow) {
+  const course = firstEmbedded<{ slug?: string; title?: string }>(row.courses);
+  return {
+    course_id: row.course_id,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    source: row.source,
+    source_ref: row.source_ref,
+    granted_at: row.granted_at,
+    revoked_at: row.revoked_at,
+  };
+}
+
+function exportRunEnrolment(row: RunEnrolmentRow) {
+  const run = firstEmbedded<{ title?: string | null; starts_at?: string; ends_at?: string; courses?: unknown }>(row.course_runs);
+  const course = firstEmbedded<{ slug?: string; title?: string }>(run?.courses);
+  return {
+    enrolment_id: row.id,
+    run_id: row.run_id,
+    run_title: run?.title ?? null,
+    run_starts_at: run?.starts_at ?? null,
+    run_ends_at: run?.ends_at ?? null,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    tier: row.tier,
+    enrolled_at: row.enrolled_at,
+    revoked_at: row.revoked_at,
   };
 }
 

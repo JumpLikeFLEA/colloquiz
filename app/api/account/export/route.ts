@@ -64,7 +64,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -106,11 +106,21 @@ export async function GET() {
           .select("lesson_id, first_opened_at, last_opened_at, lessons(slug, title, courses(slug, title))")
           .eq("user_id", user.id)
           .order("last_opened_at", { ascending: false }),
+        supabase
+          .from("course_entitlements")
+          .select("course_id, granted_at, source, source_ref, revoked_at, courses(slug, title)")
+          .eq("user_id", user.id)
+          .order("granted_at", { ascending: false }),
+        supabase
+          .from("run_enrolments")
+          .select("id, run_id, tier, enrolled_at, revoked_at, course_runs(title, starts_at, ends_at, courses(slug, title))")
+          .eq("user_id", user.id)
+          .order("enrolled_at", { ascending: false }),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -130,6 +140,8 @@ export async function GET() {
         lessonAttempts: lessonAttemptsRes.data ?? [],
         signupAcquisition: acquisitionRes.data ?? null,
         lessonOpens: lessonOpensRes.data ?? [],
+        courseEntitlements: entitlementsRes.data ?? [],
+        runEnrolments: enrolmentsRes.data ?? [],
       },
       ACHIEVEMENTS,
     );

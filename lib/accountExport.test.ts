@@ -13,6 +13,8 @@ const baseSources = {
   lessonAttempts: [],
   signupAcquisition: null,
   lessonOpens: [],
+  courseEntitlements: [],
+  runEnrolments: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -152,5 +154,96 @@ describe("buildExportPayload — lesson_opens (PROG-001)", () => {
         last_opened_at: "2026-10-08T09:00:00.000Z",
       },
     ]);
+  });
+});
+
+describe("buildExportPayload — course_entitlements and cohort_enrolments (COH-002)", () => {
+  it("are empty when the reader has no grant and no enrolment", () => {
+    const payload = buildExportPayload(baseSources, []);
+    expect(payload.course_entitlements).toEqual([]);
+    expect(payload.cohort_enrolments).toEqual([]);
+  });
+
+  it("maps a grant, keeping a revoked one with its revoked_at", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        courseEntitlements: [
+          {
+            course_id: "course-1",
+            granted_at: "2026-10-01T10:00:00.000Z",
+            source: "grant",
+            source_ref: null,
+            revoked_at: "2026-10-05T10:00:00.000Z",
+            courses: [{ slug: "speak-up", title: "Speak Up" }],
+          },
+        ],
+      },
+      [],
+    );
+    expect(payload.course_entitlements).toEqual([
+      {
+        course_id: "course-1",
+        course_slug: "speak-up",
+        course_title: "Speak Up",
+        source: "grant",
+        source_ref: null,
+        granted_at: "2026-10-01T10:00:00.000Z",
+        revoked_at: "2026-10-05T10:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("maps an enrolment, flattening the embedded run and its course", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        runEnrolments: [
+          {
+            id: "enrolment-1",
+            run_id: "run-1",
+            tier: "extended",
+            enrolled_at: "2026-10-02T08:00:00.000Z",
+            revoked_at: null,
+            course_runs: [
+              {
+                title: "November",
+                starts_at: "2026-11-02T09:00:00.000Z",
+                ends_at: "2026-11-30T09:00:00.000Z",
+                courses: [{ slug: "speak-up", title: "Speak Up" }],
+              },
+            ],
+          },
+        ],
+      },
+      [],
+    );
+    expect(payload.cohort_enrolments).toEqual([
+      {
+        enrolment_id: "enrolment-1",
+        run_id: "run-1",
+        run_title: "November",
+        run_starts_at: "2026-11-02T09:00:00.000Z",
+        run_ends_at: "2026-11-30T09:00:00.000Z",
+        course_slug: "speak-up",
+        course_title: "Speak Up",
+        tier: "extended",
+        enrolled_at: "2026-10-02T08:00:00.000Z",
+        revoked_at: null,
+      },
+    ]);
+  });
+
+  it("keeps the enrolment when its run is not embedded (null)", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        runEnrolments: [
+          { id: "enrolment-2", run_id: "run-2", tier: "basic", enrolled_at: "2026-10-02T08:00:00.000Z", revoked_at: null, course_runs: null },
+        ],
+      },
+      [],
+    );
+    expect(payload.cohort_enrolments[0]).toMatchObject({ enrolment_id: "enrolment-2", run_title: null, course_slug: null, tier: "basic" });
   });
 });
