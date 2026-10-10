@@ -2,7 +2,7 @@
  * PLAY-006's local verification fixtures, as a committed, idempotent script
  * rather than the throwaway psql/GoTrue-admin-API calls the card was
  * originally verified with (docs/decisions/0056). Creates one published
- * course (`play-006-smoke`) with a free, paid, draft and archived lesson
+ * course (`play-006-smoke`) with a free, paid, draft, archived and sign-in lesson
  * plus an invalid-stored-document lesson, three real GoTrue users
  * (signed-in / entitled / editor — anon needs none), one course_entitlements
  * row and one course_editors grant.
@@ -95,6 +95,26 @@ const VALID_DOCUMENT = [
   },
 ];
 
+// CNT-012's teaser fixture (docs/decisions/0094 Decision 3): three
+// whitelisted theory blocks, then a self_check (the cut: it carries a
+// modelAnswer), then more theory and a practice block that must never reach
+// lesson_teaser's caller either.
+const SIGNIN_DOCUMENT = [
+  { id: "h1", kind: "theory", type: "heading", level: 1, text: [{ text: "Teaser heading" }] },
+  { id: "p1", kind: "theory", type: "prose", text: [{ text: "Teaser prose." }] },
+  { id: "c1", kind: "theory", type: "callout", variant: "tip", text: [{ text: "Teaser callout." }] },
+  {
+    id: "s1",
+    kind: "theory",
+    type: "self_check",
+    prompt: [{ text: "Say it aloud." }],
+    response: "none",
+    modelAnswer: [{ text: "SECRET-MODEL-ANSWER" }],
+  },
+  { id: "p2", kind: "theory", type: "prose", text: [{ text: "After the cut." }] },
+  VALID_DOCUMENT[1],
+];
+
 // Deliberately not a valid lesson document (PLAY-006's "invalid stored
 // document renders a visible author error, not a crash" acceptance line) —
 // an unrecognized block kind, so lib/lessons/parseLessonDocument.ts rejects
@@ -122,7 +142,7 @@ type LessonFixture = {
   slug: string;
   title: string;
   description: string;
-  inFreeSample: boolean;
+  accessLevel: "anyone" | "signed_in" | "entitled";
   ordinal: number;
   document: unknown[] | null;
   archived: boolean;
@@ -138,7 +158,10 @@ async function upsertLessons(courseId: string, lessons: LessonFixture[]): Promis
           slug: lesson.slug,
           title: lesson.title,
           description: lesson.description,
-          in_free_sample: lesson.inFreeSample,
+          access_level: lesson.accessLevel,
+          // Mirror of access_level until CNT-014 drops it; migration 055's
+          // CHECK refuses a row where the two disagree.
+          in_free_sample: lesson.accessLevel === "anyone",
           ordinal: lesson.ordinal,
           published_item_count: lesson.document ? countPracticeBlocks(lesson.document as never) : 0,
         },
@@ -223,7 +246,7 @@ async function main() {
       slug: "free-lesson",
       title: "Free lesson",
       description: "The free-sample lesson.",
-      inFreeSample: true,
+      accessLevel: "anyone",
       ordinal: 1,
       document: VALID_DOCUMENT,
       archived: false,
@@ -232,7 +255,7 @@ async function main() {
       slug: "paid-lesson",
       title: "Paid lesson",
       description: "A paid, not-entitled-by-default lesson.",
-      inFreeSample: false,
+      accessLevel: "entitled",
       ordinal: 2,
       document: VALID_DOCUMENT,
       archived: false,
@@ -241,7 +264,7 @@ async function main() {
       slug: "draft-lesson",
       title: "Draft lesson",
       description: "Never published.",
-      inFreeSample: false,
+      accessLevel: "entitled",
       ordinal: 3,
       document: null,
       archived: false,
@@ -250,7 +273,7 @@ async function main() {
       slug: "archived-lesson",
       title: "Archived lesson",
       description: "Published once, now archived.",
-      inFreeSample: false,
+      accessLevel: "entitled",
       ordinal: 4,
       document: VALID_DOCUMENT,
       archived: true,
@@ -259,9 +282,18 @@ async function main() {
       slug: "broken-lesson",
       title: "Broken lesson",
       description: "Invalid stored document.",
-      inFreeSample: true,
+      accessLevel: "anyone",
       ordinal: 5,
       document: INVALID_DOCUMENT,
+      archived: false,
+    },
+    {
+      slug: "signin-lesson",
+      title: "Sign-in lesson",
+      description: "Open to any signed-in account.",
+      accessLevel: "signed_in",
+      ordinal: 6,
+      document: SIGNIN_DOCUMENT,
       archived: false,
     },
   ];
@@ -340,7 +372,7 @@ async function seedRealLessonFixture(editorId: string): Promise<void> {
       slug: firstLesson.slug,
       title: firstLesson.title,
       description: firstLesson.description ?? "",
-      inFreeSample: true,
+      accessLevel: "anyone",
       ordinal: 1,
       document: firstLesson.document,
       archived: false,
@@ -349,7 +381,7 @@ async function seedRealLessonFixture(editorId: string): Promise<void> {
       slug: dragHeavyLesson.slug,
       title: dragHeavyLesson.title,
       description: dragHeavyLesson.description ?? "",
-      inFreeSample: true,
+      accessLevel: "anyone",
       ordinal: 2,
       document: dragHeavyLesson.document,
       archived: false,
