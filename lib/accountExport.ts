@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 7;
+export const EXPORT_FORMAT_VERSION = 8;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -26,6 +26,7 @@ export const EXPORT_CONTENTS = [
   "Cohort enrolments — the course runs you joined, your tier, and when (or if) your access ended",
   "Invites you claimed — the name and contact the course author wrote on your invite",
   "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
+  "Final comments — the author's published closing comment for each course run you joined",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -108,6 +109,18 @@ export type VoiceSubmissionRow = {
   voice_feedback: unknown;
 };
 
+export type FinalCommentRow = {
+  enrolment_id: string;
+  run_id: string;
+  body: unknown;
+  published_at: string | null;
+  updated_at: string;
+  /** Embedded `course_runs(title, starts_at, ends_at)`. */
+  course_runs: unknown;
+  /** Embedded `courses(slug, title)`. */
+  courses: unknown;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -126,6 +139,7 @@ export type ExportSources = {
   voiceSubmissions: VoiceSubmissionRow[];
   /** Submission id -> the take's audio, base64. Absent for a removed take. */
   voiceAudio: Readonly<Record<string, string>>;
+  finalComments: FinalCommentRow[];
 };
 
 /**
@@ -250,6 +264,29 @@ export function buildExportPayload(
     // feedback once published. A take removed by the 6-month purge keeps its
     // row with removed_at set and no audio.
     voice_submissions: src.voiceSubmissions.map((row) => exportVoiceSubmission(row, src.voiceAudio)),
+
+    // COH-008 (docs/decisions/0112): the author's final comment per run
+    // enrolment, published only. RLS returns a learner only published rows,
+    // but an editor of the course also reads drafts (061), so a learner who
+    // edits the course they joined would otherwise export a draft.
+    final_comments: src.finalComments.filter((row) => row.published_at).map(exportFinalComment),
+  };
+}
+
+function exportFinalComment(row: FinalCommentRow) {
+  const run = firstEmbedded<{ title?: string | null; starts_at?: string; ends_at?: string }>(row.course_runs);
+  const course = firstEmbedded<{ slug?: string; title?: string }>(row.courses);
+  return {
+    enrolment_id: row.enrolment_id,
+    run_id: row.run_id,
+    run_title: run?.title ?? null,
+    run_starts_at: run?.starts_at ?? null,
+    run_ends_at: run?.ends_at ?? null,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    content: row.body ?? null,
+    published_at: row.published_at,
+    updated_at: row.updated_at,
   };
 }
 

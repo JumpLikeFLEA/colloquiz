@@ -18,6 +18,7 @@ const baseSources = {
   claimedInvites: [],
   voiceSubmissions: [],
   voiceAudio: {},
+  finalComments: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -358,7 +359,50 @@ describe("buildExportPayload — voice_submissions (VOICE-004)", () => {
     });
   });
 
-  it("is format version 7", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(7);
+});
+
+describe("buildExportPayload — final_comments (COH-008)", () => {
+  const comment = {
+    enrolment_id: "enr-1",
+    run_id: "run-1",
+    body: { paragraphs: [{ runs: [{ text: "Well done", bold: true }] }] },
+    published_at: "2026-11-10T10:00:00.000Z",
+    updated_at: "2026-11-11T10:00:00.000Z",
+    course_runs: { title: "November run", starts_at: "2026-10-12T00:00:00.000Z", ends_at: "2026-11-09T00:00:00.000Z" },
+    courses: { slug: "cohort", title: "Cohort" },
+  };
+
+  it("is empty when the reader has no final comment", () => {
+    expect(buildExportPayload(baseSources, []).final_comments).toEqual([]);
+  });
+
+  it("maps a published comment with its run and course", () => {
+    const payload = buildExportPayload({ ...baseSources, finalComments: [comment] }, []);
+    expect(payload.final_comments).toEqual([
+      {
+        enrolment_id: "enr-1",
+        run_id: "run-1",
+        run_title: "November run",
+        run_starts_at: "2026-10-12T00:00:00.000Z",
+        run_ends_at: "2026-11-09T00:00:00.000Z",
+        course_slug: "cohort",
+        course_title: "Cohort",
+        content: { paragraphs: [{ runs: [{ text: "Well done", bold: true }] }] },
+        published_at: "2026-11-10T10:00:00.000Z",
+        updated_at: "2026-11-11T10:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("drops a draft, which an editor enrolled in their own course could read", () => {
+    const payload = buildExportPayload(
+      { ...baseSources, finalComments: [{ ...comment, enrolment_id: "enr-2", published_at: null }, comment] },
+      [],
+    );
+    expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
+  });
+
+  it("is format version 8", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(8);
   });
 });

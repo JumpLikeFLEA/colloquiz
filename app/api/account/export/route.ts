@@ -65,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -128,11 +128,19 @@ export async function GET() {
           )
           .eq("user_id", user.id)
           .order("submitted_at", { ascending: false }),
+        // COH-008: the author's final comment per enrolment, PUBLISHED only
+        // (061's owner policy; the filter also keeps an editor's own drafts out).
+        supabase
+          .from("run_final_comments")
+          .select("enrolment_id, run_id, body, published_at, updated_at, course_runs(title, starts_at, ends_at), courses(slug, title)")
+          .eq("user_id", user.id)
+          .not("published_at", "is", null)
+          .order("published_at", { ascending: false }),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -173,6 +181,7 @@ export async function GET() {
         claimedInvites: invitesRes.data ?? [],
         voiceSubmissions: voiceRows,
         voiceAudio,
+        finalComments: finalCommentsRes.data ?? [],
       },
       ACHIEVEMENTS,
     );
