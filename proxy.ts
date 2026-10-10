@@ -78,7 +78,16 @@ export async function proxy(request: NextRequest) {
   // exists or app/global-not-found.tsx (docs/decisions/0046) if not — the
   // only way that 404 is ever reachable by the anonymous visitors the
   // English surface exists for (docs/decisions/0049).
-  const isProtectedRoute = pathname === '/app' || pathname.startsWith('/app/')
+  //
+  // /studio (SHELL-020, docs/decisions/0109) is the second gated namespace:
+  // author-only, so a signed-out visitor goes to /login with `next` the same
+  // way. Whether a signed-in user may use it is app/(studio)/studio/layout.tsx's
+  // call (404 for a non-editor), not this proxy's.
+  const isProtectedRoute =
+    pathname === '/app' ||
+    pathname.startsWith('/app/') ||
+    pathname === '/studio' ||
+    pathname.startsWith('/studio/')
 
   if (!user && !isAuthRoute && isProtectedRoute && request.nextUrl.searchParams.has('code')) {
     // A Supabase OAuth/PKCE code landed on a non-callback path (e.g. Supabase

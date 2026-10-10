@@ -8,7 +8,7 @@ import { CourseDetailView } from "./CourseDetailView";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
 // (AUTH-007, docs/decisions/0041, reopening 0025 Decision 1). See
-// app/(main)/app/admin/courses/page.tsx's header comment.
+// app/(studio)/studio/courses/page.tsx's header comment.
 export default async function AdminCourseDetailPage({
   params,
 }: {

@@ -202,7 +202,7 @@ export function LessonContentEditor({
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link
-            href={`/app/admin/courses/${courseId}`}
+            href={`/studio/courses/${courseId}`}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft size={12} />
@@ -218,7 +218,7 @@ export function LessonContentEditor({
         <div className="flex items-center gap-2 shrink-0">
           {baseVersionId && (
             <Link
-              href={`/app/admin/courses/${courseId}/lessons/${draft.lessonId}/preview?version=${baseVersionId}`}
+              href={`/studio/courses/${courseId}/lessons/${draft.lessonId}/preview?version=${baseVersionId}`}
               className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors"
             >
               <Eye size={14} />

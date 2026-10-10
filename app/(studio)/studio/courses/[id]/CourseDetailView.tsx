@@ -496,7 +496,7 @@ function LessonsSection({
 
                 {lesson.accessLevel !== "anyone" && (
                   <Link
-                    href={`/app/admin/courses/${courseId}/lessons/${lesson.id}/visitor`}
+                    href={`/studio/courses/${courseId}/lessons/${lesson.id}/visitor`}
                     aria-label={`What a visitor sees on ${lesson.title}`}
                     title="Visitor view"
                     className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -506,7 +506,7 @@ function LessonsSection({
                 )}
 
                 <Link
-                  href={`/app/admin/courses/${courseId}/lessons/${lesson.id}`}
+                  href={`/studio/courses/${courseId}/lessons/${lesson.id}`}
                   aria-label={`Edit content for ${lesson.title}`}
                   className="cursor-pointer shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                 >

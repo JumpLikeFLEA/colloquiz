@@ -132,7 +132,7 @@ export function CourseFormatSection({
           )}
 
           <Link
-            href={`/app/admin/courses/${courseId}/runs`}
+            href={`/studio/courses/${courseId}/runs`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
           >
             <CalendarClock className="size-3.5" />

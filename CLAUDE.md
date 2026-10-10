@@ -138,7 +138,9 @@ refactor.
     0109): course editing (moved from `/app/admin/courses`), the review
     queue, learners, the inbox. Its own root layout, author-only
     (`can_edit_course`), English chrome; nothing from it reaches an English
-    route. **Planned (M3, SHELL-020).**
+    route. The shell and course editing are built (SHELL-020,
+    docs/decisions/0113); the review queue, learners and inbox are
+    **planned** (VOICE-006, AUTH-011, AUTH-012).
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
   - `app/components/` — shared components. `ui/**` (vendored shadcn/Radix) and

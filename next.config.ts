@@ -155,6 +155,16 @@ const nextConfig: NextConfig = {
       "students",
     ];
     return [
+      // SHELL-020 (docs/decisions/0109 Decision 3): course authoring moved
+      // into Studio. Listed BEFORE the segment list below, which would never
+      // match /app/... anyway, so order is for the reader. API routes under
+      // /api/admin/courses did not move. Bare /app/admin/courses is matched
+      // by :path* (zero or more segments).
+      {
+        source: "/app/admin/courses/:path*",
+        destination: "/studio/courses/:path*",
+        permanent: true,
+      },
       // SHELL-013's temporary `/` → `/app` 307 is REMOVED here: SHELL-010
       // gave `/` a real page (app/(english)/page.tsx), so it no longer needs
       // a redirect at all — `curl -I /` returns 200 straight from that route.

@@ -71,7 +71,7 @@ export function PreviewClient({
       <div className={`${LESSON_HEADER_COLUMN_CLASS} mb-4 flex items-start justify-between gap-4`}>
         <div>
           <Link
-            href={`/app/admin/courses/${courseId}/lessons/${lessonId}`}
+            href={`/studio/courses/${courseId}/lessons/${lessonId}`}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft size={12} />

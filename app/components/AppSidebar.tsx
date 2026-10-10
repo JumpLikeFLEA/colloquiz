@@ -96,14 +96,15 @@ const authorItems = [
 ];
 
 // Non-admin course_editors delegates (AUTH-007, docs/decisions/0041): the
-// same /app/admin/courses route as adminItems' "Courses" entry, but surfaced
-// under its own section since these users aren't admins and the page itself
-// scopes to only the course(s) they were granted — see
-// app/(main)/app/admin/courses/page.tsx.
+// same destination as adminItems' "Courses" entry, but surfaced under its
+// own section since these users aren't admins and the page itself scopes to
+// only the course(s) they were granted. Both point into Studio, where course
+// authoring moved (SHELL-020, docs/decisions/0109) — see
+// app/(studio)/studio/courses/page.tsx.
 const courseEditorItems: NavItem[] = [
   {
     label: "Courses",
-    href: "/app/admin/courses",
+    href: "/studio",
     icon: Library,
   },
 ];
@@ -116,7 +117,7 @@ const adminItems: NavItem[] = [
   },
   {
     label: "Courses",
-    href: "/app/admin/courses",
+    href: "/studio",
     icon: Library,
   },
   {

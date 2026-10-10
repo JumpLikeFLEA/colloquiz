@@ -57,7 +57,7 @@ export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[
       setSlug("");
       setTitle("");
       setDescription("");
-      router.push(`/app/admin/courses/${data.courseId}`);
+      router.push(`/studio/courses/${data.courseId}`);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -95,7 +95,7 @@ export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[
           {courses.map((c) => (
             <Link
               key={c.id}
-              href={`/app/admin/courses/${c.id}`}
+              href={`/studio/courses/${c.id}`}
               className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-card hover:bg-accent transition-colors"
             >
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-accent flex items-center justify-center text-white text-xs font-medium shrink-0">

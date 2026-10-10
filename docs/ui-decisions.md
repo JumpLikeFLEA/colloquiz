@@ -1277,3 +1277,29 @@ Appended to in the same commit as the change it records. Referenced from
   now "Learners record here on the lesson page." Composed from existing
   classes and tokens; no new colours. Do not import the recorder or
   voiceCopy statically into LessonPlayer.
+- Studio shell (2026-10-10, SHELL-020, docs/decisions/0109 + 0113). Course
+  authoring (the list, the editor, runs, the lesson editor, preview and the
+  visitor view) moved from `/app/admin/courses/**` to `/studio/courses/**`
+  with its pages unchanged. `/app/admin/courses/**` 308s there.
+  `app/(studio)/` is a third root layout: ThemeProvider, Toaster, Geist Sans,
+  and Geist Mono unpreloaded for the editor's `font-mono` slugs. It has no
+  KaTeX CSS, no Analytics and nothing from the Colloquiz shell.
+  - The nav is `StudioSidebar.tsx`, built from `ui/sidebar` (offcanvas) with
+    AppSidebar's link classes: a "Studio / Course workspace" header in the
+    same brand-gradient tile, "Courses", then a "Leave Studio" group with
+    "View site" (`/`) and, for admins only, "Colloquiz admin"
+    (`/app/admin/review`; `/app/admin` has no index page).
+  - Sign-out is a form POST to `/auth/sign-out` with `next=/`.
+  - A small top bar holds the `SidebarTrigger`, which is the way into the nav
+    at 360px.
+  - A signed-in non-editor gets Studio's own 404 (`app/(studio)/not-found.tsx`,
+    the Colloquiz 404's markup) on every Studio path. The moved pages' own
+    per-course "Forbidden" screen is unchanged.
+  - `/studio` redirects to `/studio/courses` until the inbox (AUTH-012)
+    lands.
+  - SUPERSEDES the destination in the 2026-09-24 AppSidebar "Course editing"
+    entry: both that entry's "Courses" link and the Admin section's
+    "Courses" link now go to `/studio`.
+  - No new tokens or hex literals. Do not move Studio back under the
+    Colloquiz shell, and do not import AppSidebar, Topbar or the duel badge
+    into it.

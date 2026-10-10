@@ -121,7 +121,7 @@ export function RunsView({
     <div className="space-y-8">
       <div>
         <Link
-          href={`/app/admin/courses/${courseId}`}
+          href={`/studio/courses/${courseId}`}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-3.5" />
@@ -137,7 +137,7 @@ export function RunsView({
       {format !== "cohort" ? (
         <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground rounded-2xl border border-dashed border-border text-sm text-center px-4">
           <p>This course is self-paced. Runs exist only on a cohort course.</p>
-          <Link href={`/app/admin/courses/${courseId}`} className="text-foreground underline underline-offset-2">
+          <Link href={`/studio/courses/${courseId}`} className="text-foreground underline underline-offset-2">
             Set the format on the course page
           </Link>
         </div>
