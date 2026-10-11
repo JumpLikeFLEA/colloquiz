@@ -327,3 +327,7 @@ long as the other session's transaction).
   caller can no longer archive a lesson or unpublish a course it doesn't
   administer full-stop, OR an audited/notified path exists — the M3 owner's
   call at that time.
+  **Closed by CNT-013 (#158, docs/decisions/0124):** the owner replaced the
+  `is_admin` gate with an invariant: no editor-callable function removes
+  access from an entitled learner, except the deliberate revoke. Archive and
+  unpublish stay editor-gated.

@@ -106,6 +106,10 @@ the risk any closer (it doesn't change who the RPCs admit, only who can
 reach them through a page); it inherits 0025's existing revisit trigger
 rather than creating a new one.
 
+**Closed by CNT-013 (#158, docs/decisions/0124):** the proposed card was
+replaced by an invariant instead of an `is_admin` gate. Archive and
+unpublish stay editor-gated.
+
 ## Decision 4 — "New course" and the Editors (grant/revoke) section stay admin-only in the UI
 
 `create_course` and `grant_course_editor`/`revoke_course_editor` are
