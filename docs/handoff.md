@@ -87,8 +87,9 @@ Studio: create a course, add exercises from the lesson editor, group a
 lesson's blocks into chapters (a chapter is a level-1 heading, so a lesson
 is still one flat block list), and delete a draft course nobody has
 played. Creating a course is built (AUTH-015, docs/decisions/0126,
-migration 067), and so is adding exercises from the lesson editor
-(AUTH-016, docs/decisions/0127). The learner home
+migration 067), and so are adding exercises from the lesson editor
+(AUTH-016, docs/decisions/0127) and the chapter outline (AUTH-017,
+docs/decisions/0128). The learner home
 (PROG-002, docs/decisions/0120) lives on the English surface at `/my`,
 under that surface's budget, reusing Studio's components but not its
 shell: the learner's courses with the two progress numbers, the next call

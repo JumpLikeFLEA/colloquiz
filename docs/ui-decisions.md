@@ -1535,3 +1535,32 @@ Appended to in the same commit as the change it records. Referenced from
   matching form open: `scrollWidth/innerWidth 360/360`. Composed from
   existing classes and tokens; no new colours. Do not add a placeholder
   exercise that passes validation: placeholder text can be published.
+- Lesson editor: chapter outline (2026-10-11, AUTH-017, docs/decisions/0125
+  D1/D7 + 0128). The block list is now an outline. Each level-1 heading
+  heads a chapter card (the block list's own `rounded-2xl border bg-card
+  divide-y` card). The card's header row is in `bg-muted` and holds:
+  - a collapse chevron (`aria-expanded`);
+  - the chapter's ↑↓ ("Move chapter up/down"; disabled at the edges);
+  - the title (`font-semibold`, truncated) over "Chapter · N blocks";
+    tapping it opens the heading's form;
+  - a delete icon.
+
+  Delete opens an AlertDialog that gives the number of blocks removed.
+  Under the header come the chapter's block rows, unchanged, then a footer
+  row with that chapter's own "Add block". Blocks before the first chapter
+  sit in a card labelled "Before the first chapter", shown only when the
+  card has blocks. A lesson with no level-1 heading looks exactly as
+  before. "+ Add chapter" sits under the outline. It opens an inline
+  "Chapter title" field whose "Add chapter" button (the editor's primary
+  `bg-brand` button) stays disabled until there is a title.
+
+  Header rows have no grip: a chapter heading is never dragged on its own.
+  Blocks drag within and across chapters, and a block dropped on a header
+  from above becomes that chapter's first block. The Add-block menu's
+  heading entry is now "Subheading" (level 2); chapters come only from
+  "+ Add chapter". The player and the lesson document are unchanged.
+  Measured at 360px (outline loaded, title field open, chapter added,
+  delete confirm open): `scrollWidth/innerWidth 360/360`. Composed from
+  existing classes and tokens; no new colours. Do not give the header row
+  a drag handle, and do not store chapters anywhere but the flat block
+  array.
