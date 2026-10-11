@@ -49,7 +49,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       <section className={GRADIENT_BAND_CLASS}>
         <GradientBackdrop />
         <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
-          <BandTopBar account={signedIn && <AccountMenu email={signedIn.email} lang="en" next={here} />} />
+          <BandTopBar account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} lang="en" next={here} />} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={GLASS_PILL_CLASS}>{inviteCopy.eyebrow}</span>
             {preview.state === "not_found" ? (

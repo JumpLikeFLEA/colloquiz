@@ -5,6 +5,8 @@ import { extractClientIp } from '@/lib/pendingClaims'
 import { recordServerFunnelEvent } from '@/lib/funnelEventServer'
 import { isFunnelSource } from '@/lib/funnelSource'
 import { recordSignupAcquisition } from '@/lib/signupAcquisitionServer'
+import { postSignInDest, signInDestDependsOnRole } from '@/lib/postSignInDest'
+import { isStudioEditor } from '@/lib/studioEditor'
 
 // OPS-008 (docs/decisions/0069) — how fresh `created_at` must be to count an
 // OAuth sign-in as a new signup rather than an existing user re-authenticating.
@@ -40,7 +42,12 @@ export async function GET(request: NextRequest) {
           await recordSignupAcquisition(supabase, { source, next })
         }
       }
-      return NextResponse.redirect(`${origin}${next}`)
+      // SHELL-021 (docs/decisions/0109 Decision 4): an editor with no
+      // deeper `next` lands on /studio. Asked only when it can matter, so a
+      // sign-in with a lesson or invite `next` pays no extra read. The
+      // funnel event and acquisition above keep the original `next`.
+      const isEditor = user && signInDestDependsOnRole(next) ? await isStudioEditor(supabase, user.id) : false
+      return NextResponse.redirect(`${origin}${postSignInDest(next, isEditor)}`)
     }
   }
 

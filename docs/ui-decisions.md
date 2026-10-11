@@ -1372,3 +1372,13 @@ Appended to in the same commit as the change it records. Referenced from
   authors" list. Composed from existing classes and tokens; no new
   colours. Do not add a score column without a legal revision first
   (0109 Decision 8).
+- Studio entry points (2026-10-11, SHELL-021, docs/decisions/0109
+  Decision 4 + 0117). The English `AccountMenu` gains a "Studio" link
+  (`/studio`, `PenTool` icon, the Sign out button's classes, above Sign
+  out) for an admin or a holder of a `course_editors` grant; a learner's
+  menu is unchanged. "Studio" in both languages: it is Studio's name. A
+  plain `<a>`, still zero client JS. An editor who signs in with `next`
+  absent or `/` (the landing's "Log in") lands on `/studio`; a deeper
+  `next` wins. Do not move the editor check into the client: it lives in
+  `lib/studioEditor.ts`, and the password sign-in reaches it through
+  `/auth/after-sign-in`.

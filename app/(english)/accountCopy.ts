@@ -18,6 +18,10 @@ type AccountStrings = {
   /** When the session carries no email. */
   signedIn: string;
   signOut: string;
+  /** The editor-only link to /studio (SHELL-021). Studio's own chrome is
+   * English (docs/decisions/0109), and "Studio" is its name, so both
+   * languages use it. */
+  studio: string;
 };
 
 export const accountCopy: Record<SurfaceLang, AccountStrings> = {
@@ -25,10 +29,12 @@ export const accountCopy: Record<SurfaceLang, AccountStrings> = {
     signedInAs: "Вы вошли как",
     signedIn: "Вы вошли в аккаунт",
     signOut: "Выйти",
+    studio: "Studio",
   },
   en: {
     signedInAs: "Signed in as",
     signedIn: "You are signed in",
     signOut: "Sign out",
+    studio: "Studio",
   },
 };

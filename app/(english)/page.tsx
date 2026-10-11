@@ -55,8 +55,8 @@ export default async function EnglishLandingPage() {
   const signedIn = await getSignedInAccount();
   const account = signedIn
     ? {
-        en: <AccountMenu email={signedIn.email} lang="en" next="/" />,
-        ru: <AccountMenu email={signedIn.email} lang="ru" next="/" />,
+        en: <AccountMenu email={signedIn.email} studio={signedIn.isEditor} lang="en" next="/" />,
+        ru: <AccountMenu email={signedIn.email} studio={signedIn.isEditor} lang="ru" next="/" />,
       }
     : null;
 

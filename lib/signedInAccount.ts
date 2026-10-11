@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { isStudioEditor } from "@/lib/studioEditor";
 
 /**
  * SHELL-019 (docs/decisions/0086) — who, if anyone, is signed in, for the
@@ -17,10 +18,14 @@ import { createClient } from "@/lib/supabase/server";
  * second call in the same request free; it does not dedupe against those
  * two, which build their own clients.
  *
- * Only `email` is returned: it is in the JWT, so it costs no profiles read.
+ * `email` is in the JWT, so it costs no profiles read. `isEditor` (SHELL-021,
+ * docs/decisions/0109 Decision 4) drives the menu's "Studio" link: two
+ * parallel reads (lib/studioEditor.ts), made only once a user is known, so
+ * an anonymous visitor still pays nothing.
  */
-export const getSignedInAccount = cache(async (): Promise<{ email: string | null } | null> => {
+export const getSignedInAccount = cache(async (): Promise<{ email: string | null; isEditor: boolean } | null> => {
   const supabase = await createClient();
   const user = await authUserFrom(supabase);
-  return user ? { email: user.email } : null;
+  if (!user) return null;
+  return { email: user.email, isEditor: await isStudioEditor(supabase, user.id) };
 });

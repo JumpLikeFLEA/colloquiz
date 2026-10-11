@@ -12,6 +12,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
 import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo } from "@/lib/authRedirect";
+import { signInDestDependsOnRole } from "@/lib/postSignInDest";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -287,6 +288,15 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
         }
       }
 
+      // SHELL-021 (docs/decisions/0109 Decision 4): an editor signing in
+      // with no deeper `next` lands on /studio. Only the server can tell an
+      // editor apart, so that one case takes a full navigation through
+      // /auth/after-sign-in (app/auth/after-sign-in/route.ts); a deeper
+      // `next`, and a new signup (who holds no grant yet), go straight there.
+      if (mode === "login" && signInDestDependsOnRole(dest)) {
+        window.location.assign(`/auth/after-sign-in?${new URLSearchParams({ next: dest }).toString()}`);
+        return;
+      }
       router.push(dest);
       router.refresh();
     } catch {

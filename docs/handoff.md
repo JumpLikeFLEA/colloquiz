@@ -474,7 +474,11 @@ sales of evergreen courses are wanted.
   on their Colloquiz home.~~ **Answered (owner, 2026-09-24):** a footer link
   only. Main content and navigation belong entirely to the English surface,
   both to avoid distracting newcomers and to keep it lightweight. Signed-in
-  users land on `/` after login, not on `/app`.
+  users land on `/` after login, not on `/app`. **Except an author
+  (2026-10-11, SHELL-021, docs/decisions/0109 Decision 4 + 0117):** a user
+  who can edit at least one course and signs in with `next` absent or `/`
+  lands on `/studio`. An explicit deeper `next` (a lesson, an invite) still
+  wins, and a learner still lands on `/`.
 - The partner's role beyond content and promotion — revenue split, capital,
   whether this stays one codebase under one owner. Named as valid, not yet
   answered. Content ownership and purchaser access ARE settled; the commercial

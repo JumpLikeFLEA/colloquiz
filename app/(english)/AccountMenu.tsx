@@ -1,4 +1,4 @@
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, PenTool, UserRound } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { accountInitial } from "@/lib/accountInitial";
 import { accountCopy } from "./accountCopy";
@@ -18,13 +18,28 @@ import { accountCopy } from "./accountCopy";
  * - Sign-out is a plain form POST to /auth/sign-out (app/auth/sign-out/
  *   route.ts), which 303s back to `next`, the page this menu is on.
  *
+ * An editor (`studio`, from getSignedInAccount's `isEditor`) also gets a
+ * "Studio" link to /studio above Sign out (SHELL-021, docs/decisions/0109
+ * Decision 4); a learner sees nothing new. A plain `<a>`, not next/link:
+ * Studio is another root layout, so the navigation is a full load anyway.
+ *
  * The band is `overflow-hidden` with no transform, so the `fixed` layer
  * still covers the viewport, and the card is tall enough to fit inside even
  * the compact lesson band. The card uses the popover tokens, not the
  * band's translucent white: it has to be readable over the gradient and
  * over the page content alike.
  */
-export function AccountMenu({ email, lang, next }: { email: string | null; lang: SurfaceLang; next: string }) {
+export function AccountMenu({
+  email,
+  lang,
+  next,
+  studio,
+}: {
+  email: string | null;
+  lang: SurfaceLang;
+  next: string;
+  studio: boolean;
+}) {
   const a = accountCopy[lang];
   const initial = accountInitial(email);
   const status = email ? `${a.signedInAs} ${email}` : a.signedIn;
@@ -51,6 +66,15 @@ export function AccountMenu({ email, lang, next }: { email: string | null; lang:
           </p>
         ) : (
           <p className="text-sm font-medium">{a.signedIn}</p>
+        )}
+        {studio && (
+          <a
+            href="/studio"
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <PenTool className="size-4" aria-hidden="true" />
+            {a.studio}
+          </a>
         )}
         <form method="post" action="/auth/sign-out">
           <input type="hidden" name="next" value={next} />

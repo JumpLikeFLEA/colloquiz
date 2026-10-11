@@ -116,7 +116,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         coverImageUrl={course.coverImageUrl}
         totals={totals}
         progress={progress}
-        account={signedIn && <AccountMenu email={signedIn.email} lang={lang} next={`/courses/${courseSlug}`} />}
+        account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           firstOpen
             ? {
