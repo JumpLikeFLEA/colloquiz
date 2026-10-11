@@ -1329,3 +1329,29 @@ Appended to in the same commit as the change it records. Referenced from
   link, both pre-filtered. Composed from existing classes and tokens; no new
   colours. Do not let the editor's Ctrl+B reach the window: `ui/sidebar`
   toggles the nav on it.
+- Before/after screen (2026-10-11, COH-005, docs/decisions/0115). The new
+  English route `/runs/[runId]` uses the invite page's band: `BandTopBar`
+  with "← Back to course" and the account chip, a "Before and after" glass
+  pill, the course title and a run-title pill. Under it, at reading width:
+  - the intro line and the shared prompt;
+  - two cards side by side at `sm`, stacked on a phone, each topped by a
+    "Before" / "After" pill in `bg-brand-subtle text-brand-text`;
+  - a "Final comment" card.
+
+  A card shows one of four things:
+  - a native player (`SignedAudio`, moved from Studio's `ReviewAudio` to
+    `app/components/voice/`, unchanged);
+  - "removed after the course ended. You did record it.";
+  - "You haven't sent a recording for this task yet. Record it in
+    <lesson>.";
+  - "isn't open yet" / "opens near the end of the course".
+
+  The comment uses the weekly feedback box (`bg-brand-subtle`,
+  `FeedbackContentView`), or a muted "isn't ready yet" line. Signed out:
+  one card in the paid-lesson card's frame with "Sign in"
+  (`SUBMIT_BUTTON_CLASS`). English, no toggle; the footer follows
+  (`pageLangForPath`). The cohort course page gains a "Your before and
+  after" row for an enrolled learner, below the cohort block, in the calls
+  card's shape (step-tile `Mic` icon, the Join button's classes, "Open"),
+  EN/RU. Composed from existing classes and tokens; no new colours. Do not
+  render a purged take as "missing": the row says it was recorded.

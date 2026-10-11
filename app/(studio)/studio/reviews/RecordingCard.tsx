@@ -5,7 +5,7 @@ import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { learnerLabel, type ReviewRow } from "@/lib/reviews/queue";
 import { FeedbackEditor } from "./FeedbackEditor";
-import { ReviewAudio } from "./ReviewAudio";
+import { SignedAudio } from "@/app/components/voice/SignedAudio";
 import { STATUS_LABEL, STATUS_PILL, weekLabel } from "./statusLabels";
 
 // One row of review_queue() (062): a learner's voice task in one week. A
@@ -62,7 +62,7 @@ export function RecordingCard({ row }: { row: RecordingCardRow }) {
               This recording was removed: recordings are deleted 6 months after the run ends.
             </p>
           ) : (
-            <ReviewAudio submissionId={row.submissionId} initialUrl={row.playbackUrl} />
+            <SignedAudio submissionId={row.submissionId} initialUrl={row.playbackUrl} />
           )}
           <FeedbackEditor
             initial={row.feedbackBody}

@@ -143,6 +143,15 @@ const ROUTES: RouteBudget[] = [
   // plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
   // Re-derive both from a real `npm run budget` run before raising it.
   { path: "/invite/00000000000000000000000000000000", budgetKB: 183, guardForbiddenSignatures: true },
+  // COH-005 (docs/decisions/0115): the before/after screen, signed out (its
+  // sign-in card) — the run is scripts/seed-local-fixtures.ts's cohort
+  // fixture at a fixed id; without that seed the page 404s, a hard FAIL.
+  // Measured 176.3 KB on the local stack, and 176.3 KB again for a signed-in
+  // learner with a player on the page (0115 "Budget"): SignedAudio is a
+  // static import, so the signed-out route already ships it. budgetKB is
+  // that plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
+  // Re-derive both from a real `npm run budget` run before raising it.
+  { path: "/runs/c0050000-0000-4000-8000-00000000f1a0", budgetKB: 184, guardForbiddenSignatures: true },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

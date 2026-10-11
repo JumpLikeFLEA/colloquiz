@@ -58,6 +58,11 @@ type CourseStrings = {
   tierExtended: string;
   tierExtendedDesc: string;
   howToJoin: string;
+  // COH-005 (docs/decisions/0115): an enrolled learner's link to the
+  // before/after screen.
+  beforeAfterTitle: string;
+  beforeAfterDesc: string;
+  beforeAfterOpen: string;
 };
 
 export const courseCopy: Record<SurfaceLang, CourseStrings> = {
@@ -99,6 +104,9 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     tierExtended: "Расширенный",
     tierExtendedDesc: "Всё из базового и еженедельный созвон.",
     howToJoin: "Как присоединиться",
+    beforeAfterTitle: "Ваши «до» и «после»",
+    beforeAfterDesc: "Одно и то же задание в начале и в конце курса и итоговый комментарий преподавателя.",
+    beforeAfterOpen: "Открыть",
   },
   en: {
     languageGroupLabel: "Language",
@@ -138,5 +146,8 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     tierExtended: "Extended",
     tierExtendedDesc: "Everything in Basic, plus a weekly call.",
     howToJoin: "How to join",
+    beforeAfterTitle: "Your before and after",
+    beforeAfterDesc: "The same task at the start and the end of the course, and your teacher's final comment.",
+    beforeAfterOpen: "Open",
   },
 };

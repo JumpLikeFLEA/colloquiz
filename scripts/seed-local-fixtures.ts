@@ -146,6 +146,8 @@ type LessonFixture = {
   ordinal: number;
   document: unknown[] | null;
   archived: boolean;
+  /** A cohort course's week (058); absent for a self-paced lesson. */
+  week?: number;
 };
 
 async function upsertLessons(courseId: string, lessons: LessonFixture[]): Promise<void> {
@@ -163,6 +165,7 @@ async function upsertLessons(courseId: string, lessons: LessonFixture[]): Promis
           // CHECK refuses a row where the two disagree.
           in_free_sample: lesson.accessLevel === "anyone",
           ordinal: lesson.ordinal,
+          ...(lesson.week !== undefined ? { week: lesson.week } : {}),
           published_item_count: lesson.document ? countPracticeBlocks(lesson.document as never) : 0,
         },
         { onConflict: "course_id,slug" },
@@ -301,6 +304,7 @@ async function main() {
   await upsertLessons(courseId, lessons);
 
   await seedRealLessonFixture(editorId);
+  await seedCohortRunFixture(editorId);
 
   console.log("Done.");
 }
@@ -387,6 +391,78 @@ async function seedRealLessonFixture(editorId: string): Promise<void> {
       archived: false,
     },
   ]);
+}
+
+// COH-005 (docs/decisions/0115): a cohort course with one run at a FIXED id,
+// so `scripts/budget.ts` can measure `/runs/<id>` — the before/after screen,
+// which a visitor reaches signed out (its sign-in card). A third course, not
+// a conversion of the PLAY-006 one: 058's format guard locks a course's
+// format once it has a run. The run is inserted once and never updated: 058
+// derives its end from the lessons' weeks, and refuses to move a started
+// run's start.
+const COHORT_FIXTURE_RUN_ID = "c0050000-0000-4000-8000-00000000f1a0";
+
+async function seedCohortRunFixture(editorId: string): Promise<void> {
+  const { data: course, error: courseErr } = await supabase
+    .from("courses")
+    .upsert(
+      {
+        slug: "coh005-fixture",
+        title: "COH-005 cohort fixture",
+        subtitle: "A fixture cohort course for the before/after screen",
+        subject: "english",
+        status: "published",
+        format: "cohort",
+        level: "B1",
+        cover_image_url: `${url}/storage/v1/object/public/lesson-images/fixture-cover.png`,
+        author_id: editorId,
+      },
+      { onConflict: "slug" },
+    )
+    .select("id")
+    .single();
+  if (courseErr) throw new Error(`cohort-course upsert failed: ${courseErr.message}`);
+  const courseId = course.id as string;
+
+  const voice = (id: string, compare: "before" | "after") => ({
+    id,
+    kind: "task",
+    type: "voice",
+    prompt: [{ text: "Tell us about your favourite place." }],
+    maxSeconds: 180,
+    compare,
+  });
+  await upsertLessons(courseId, [
+    {
+      slug: "week-one",
+      title: "Week one",
+      description: "Holds the before recording.",
+      accessLevel: "entitled",
+      ordinal: 1,
+      document: [VALID_DOCUMENT[0], voice("vb", "before")],
+      archived: false,
+      week: 1,
+    },
+    {
+      slug: "week-four",
+      title: "Week four",
+      description: "Holds the after recording.",
+      accessLevel: "entitled",
+      ordinal: 2,
+      document: [VALID_DOCUMENT[0], voice("va", "after")],
+      archived: false,
+      week: 4,
+    },
+  ]);
+
+  const { error: runErr } = await supabase
+    .from("course_runs")
+    .upsert(
+      { id: COHORT_FIXTURE_RUN_ID, course_id: courseId, title: "Fixture run", starts_at: "2026-11-02T09:00:00Z" },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+  if (runErr) throw new Error(`cohort run insert failed: ${runErr.message}`);
+  console.log("Cohort course:", courseId, "run:", COHORT_FIXTURE_RUN_ID);
 }
 
 main().catch((e) => {

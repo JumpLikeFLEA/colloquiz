@@ -39,7 +39,12 @@ describe("footerLangForPath", () => {
     expect(pageLangForPath("/invite/2f3ea82e286ca70dbcb775895b09d9ca/", saved)).toBe("en");
   });
 
-  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/privacy"], ["/no-such-page"]])(
+  it.each([["ru"], ["en"]] as const)("is always English on the before/after screen, whatever was saved (%s)", (saved) => {
+    expect(footerLangForPath("/runs/c0050000-0000-4000-8000-0000000000e1", saved)).toBe("en");
+    expect(pageLangForPath("/runs/c0050000-0000-4000-8000-0000000000e1/", saved)).toBe("en");
+  });
+
+  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/runs"], ["/runs/a/b"], ["/privacy"], ["/no-such-page"]])(
     "stays Russian anywhere else (%s)",
     (path) => {
       expect(footerLangForPath(path, "en")).toBe("ru");

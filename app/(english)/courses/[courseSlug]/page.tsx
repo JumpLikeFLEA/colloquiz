@@ -18,6 +18,7 @@ import { bestScoreForLesson, courseProgress, courseTotals, firstOpenLesson } fro
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { SectionHeading } from "../../SectionHeading";
+import { BeforeAfterLinks } from "./BeforeAfterLinks";
 import { CohortInfo } from "./CohortInfo";
 import { CohortLessonList } from "./CohortLessonList";
 import { courseCopy } from "./courseCopy";
@@ -149,6 +150,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
             now={new Date()}
           />
         )}
+
+        {cohort && enrolled && <BeforeAfterLinks lang={lang} enrolments={cohort.enrolments} runs={cohort.runs} />}
 
         <section className="flex flex-col gap-6">
           <SectionHeading eyebrow={c.lessonsEyebrow} title={c.lessonsTitle} />
