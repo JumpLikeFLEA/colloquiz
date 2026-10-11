@@ -80,7 +80,14 @@ layout, its chrome is English, and it has no JS budget of its own. Nothing
 from it may reach an English route. It is a tool, not a third product
 surface. The Colloquiz admin tools stay at `/app/admin`.
 
-Course creation stays on the PDF -> JSON -> import path. The learner home
+The PDF -> JSON -> import path stays, run by the maintainer, with no
+Studio UI. **Planned (owner, 2026-10-11, docs/decisions/0125, AUTH-015 to
+AUTH-018):** an author who already edits a course can also build one in
+Studio: create a course, add exercises from the lesson editor, group a
+lesson's blocks into chapters (a chapter is a level-1 heading, so a lesson
+is still one flat block list), and delete a draft course nobody has
+played. Until those cards land, a new course is still admin-created or
+imported. The learner home
 (PROG-002, docs/decisions/0120) lives on the English surface at `/my`,
 under that surface's budget, reusing Studio's components but not its
 shell: the learner's courses with the two progress numbers, the next call
@@ -425,8 +432,9 @@ sales of evergreen courses are wanted.
   her written feedback, and the before/after screen. It also carries the
   free-funnel changes from the same spec: Telegram sign-in, lessons that need
   a sign-in (the partner marks which lessons stay open; see "Open
-  questions"), and learner stats. Merchant-of-record checkout moves to a
-  later, not-yet-numbered milestone.
+  questions"), and learner stats. It also carries authors building courses
+  in Studio (added 2026-10-11, docs/decisions/0125). Merchant-of-record
+  checkout moves to a later, not-yet-numbered milestone.
 - **M4 — progression & polish**, including content export.
 
 ## Deliberately out of scope for v1

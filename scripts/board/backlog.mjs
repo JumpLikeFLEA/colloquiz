@@ -2810,6 +2810,85 @@ export const CARDS = [
       'Output: a decision file and proposed build cards, with their milestone left to the owner.',
     ],
   },
+  // Authors build a course in Studio (owner, 2026-10-11, docs/decisions/0125).
+  {
+    key: 'AUTH-015',
+    title: 'Editors create courses',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2516,
+    dependsOn: ['SHELL-020'],
+    goal:
+      'An author who already edits a course can create a new one in Studio and edit it at once ' +
+      '(docs/decisions/0125 Decisions 2 and 4).',
+    acceptance: [
+      'A migration redefines create_course: allowed for is_admin OR a caller with at least one course_editors row; a non-admin creator gets a course_editors row (granted_by = self) in the same transaction, an admin gets none. Grant and revoke stay admin-only. Written, not applied.',
+      'Full protocol, as a rollback-wrapped SQL for the owner: a signed-in user with no grant gets forbidden; an editor of another course gets ok and the row exists; an admin gets ok and no row; anon has no EXECUTE; positive control: the creator reads the new course through "courses: editor read".',
+      '"New course" in /studio/courses shows for every Studio user. The slug fills from the title (slugifyLessonTitle) until the author edits it; slug_taken shows inline.',
+      'The new editor can upload a cover for the new course: the lesson-images upload policy is checked and its rule cited.',
+      'docs/ui-decisions.md entry; the CLAUDE.md Studio repo-map line updated.',
+    ],
+  },
+  {
+    key: 'AUTH-016',
+    title: 'Lesson editor: add exercises',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2517,
+    dependsOn: ['AUTH-015'],
+    goal:
+      'An author adds any of the five item types from the lesson editor, so a course built in Studio ' +
+      'has exercises (docs/decisions/0125 Decisions 5 and 6).',
+    acceptance: [
+      '"Add block" has an Exercise group: Multiple choice, True / False (options prefilled), True/False statements, Put in order, Match pairs, Sort into groups, Fill the gaps, Drag words into gaps. Templates live in a pure lib/studio module.',
+      'Tests: every empty template fails parseItem at the fields the form flags, and each template filled with minimal real content parses.',
+      'The matching form gets a "Show as: Pairs / Sort into groups" Select bound to payload.presentation.',
+      'Block rows use the same friendly labels instead of the raw item type.',
+      'An unfinished exercise blocks Save with its errors in place; no placeholder content and no lenient drafts.',
+      'An RTL test adds, fills and saves one variant of each type. Checked at 360px. docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'AUTH-017',
+    title: 'Lesson editor: chapter outline',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2518,
+    dependsOn: ['AUTH-016'],
+    goal:
+      'The lesson editor groups blocks into chapters, a chapter being a level-1 heading and the blocks ' +
+      'under it. No schema or player change (docs/decisions/0125 Decisions 1 and 7).',
+    acceptance: [
+      'Grouping and the chapter operations (insert into a chapter, move a chapter, delete a chapter, add a chapter) are pure functions over the flat block array in lib/studio, with tests: order round-trips, edge moves are no-ops, the intro group never moves, delete removes exactly the chapter\'s blocks, level-2 headings stay inside their chapter.',
+      'The editor shows collapsible chapters with ↑↓, a per-chapter "+ Add block", delete with a confirm that gives the block count, and "+ Add chapter" that asks for the title first.',
+      'Ordinary blocks drag within and across chapters; a level-1 heading row is not dragged on its own.',
+      'An imported lesson that already uses level-1 headings renders as chapters. The player and the lesson document are unchanged.',
+      'An RTL test drags a block across chapters, moves a chapter and deletes one. Checked at 360px. docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'AUTH-018',
+    title: 'Delete a draft course',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2519,
+    dependsOn: ['AUTH-015'],
+    goal:
+      'An editor deletes a draft course nobody has played, so test and abandoned courses can be cleaned ' +
+      'up (docs/decisions/0125 Decision 8).',
+    acceptance: [
+      'A migration adds a blocker function (gated by can_edit_course, a named reason per blocker) and delete_course(course, confirm title), which locks the course row, re-checks the blockers and deletes. Written, not applied.',
+      'Blockers: status published, and a row in any table that references the course, its lessons, versions or runs. The table list is derived with rg over the migrations (CASCADE and SET NULL alike) and printed in the evidence.',
+      'Full protocol, as a rollback-wrapped SQL for the owner: one seeded row per blocker table returns its reason and the course survives; a published course is refused; a non-editor gets forbidden; a clean draft deletes; row counts printed before and after.',
+      'delete_course is added to docs/decisions/0124\'s inventory: it never removes an entitled learner\'s access, because entitlements and enrolments block it.',
+      'The route purges the course\'s lesson-images folder after the RPC succeeds (service-role client, the account-delete precedent); the course-id path prefix is verified first.',
+      'A danger zone in the course editor: while deletable, a dialog that asks for the course title, then back to /studio/courses; otherwise a muted line naming the blocker. docs/ui-decisions.md entry.',
+    ],
+  },
   {
     key: 'OPS-020',
     title: 'Cohort dry run on production (M3 exit)',
