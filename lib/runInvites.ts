@@ -22,6 +22,9 @@ export type CourseRunInvite = {
   expiresAt: string;
   claimedAt: string | null;
   revokedAt: string | null;
+  /** The enrolment a claim created (066); null until claimed. What a tier
+   * change (`set_enrolment_tier`) is keyed on. */
+  enrolmentId: string | null;
 };
 
 export type CourseRunInviteRow = {
@@ -35,6 +38,7 @@ export type CourseRunInviteRow = {
   expires_at: string;
   claimed_at: string | null;
   revoked_at: string | null;
+  enrolment_id: string | null;
 };
 
 export function toCourseRunInvite(row: CourseRunInviteRow): CourseRunInvite {
@@ -49,6 +53,7 @@ export function toCourseRunInvite(row: CourseRunInviteRow): CourseRunInvite {
     expiresAt: row.expires_at,
     claimedAt: row.claimed_at,
     revokedAt: row.revoked_at,
+    enrolmentId: row.enrolment_id,
   };
 }
 

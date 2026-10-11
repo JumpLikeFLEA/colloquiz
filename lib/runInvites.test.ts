@@ -69,6 +69,7 @@ describe("toCourseRunInvite", () => {
         expires_at: "e",
         claimed_at: null,
         revoked_at: null,
+        enrolment_id: null,
       }),
     ).toEqual({
       id: "i",
@@ -81,7 +82,25 @@ describe("toCourseRunInvite", () => {
       expiresAt: "e",
       claimedAt: null,
       revokedAt: null,
+      enrolmentId: null,
     });
+  });
+
+  it("carries a claimed invite's enrolment id (066)", () => {
+    const invite = toCourseRunInvite({
+      invite_id: "i",
+      run_id: "r",
+      tier: "basic",
+      invitee_name: "Proto L",
+      invitee_contact: "@proto_learner",
+      state: "claimed",
+      created_at: "c",
+      expires_at: "e",
+      claimed_at: "cl",
+      revoked_at: null,
+      enrolment_id: "en",
+    });
+    expect(invite.enrolmentId).toBe("en");
   });
 });
 

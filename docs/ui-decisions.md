@@ -1479,3 +1479,16 @@ Appended to in the same commit as the change it records. Referenced from
   `scrollWidth/innerWidth 360/360`. Composed from existing classes and
   tokens; no new colours. Do not compute or threshold the average in
   TypeScript: `course_stats()` (065) returns NULL below 5 learners.
+- Runs page: change a claimed learner's tier (2026-10-11, COH-007,
+  docs/decisions/0122). A claimed invite's row on
+  `/studio/courses/[id]/runs` gains a "Change tier" icon button
+  (`ArrowUpDown`, the row's `ICON_BUTTON` class) beside Revoke. It opens the
+  page's AlertDialog: "Move <name> to Extended (calls)?" / "Move <name> to
+  Basic?", with what the learner gains or loses (the run's calls on the
+  course page; lesson access unchanged), confirmed by "Change tier". The
+  success toast is "<name> is now on <tier>.", and the row's tier text
+  updates, because `set_enrolment_tier` (066) also sets the invite's tier.
+  Pending, expired and revoked rows get no button. Measured at 360px:
+  `scrollWidth/innerWidth 360/360`. Composed from existing classes and
+  tokens; no new colours. Do not add a tier Select here while tier is
+  binary.

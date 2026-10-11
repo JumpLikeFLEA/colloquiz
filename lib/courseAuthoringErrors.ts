@@ -101,10 +101,14 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
     status: 400,
     message: "Feedback must have some text and be 5,000 characters or fewer.",
   },
+  // Shared with set_enrolment_tier (066, COH-007), so it names the state,
+  // not one action.
   enrolment_revoked: {
     status: 409,
-    message: "This learner's access was revoked, so they can't get a final comment.",
+    message: "This learner's access to the run was revoked, so this can't be changed.",
   },
+  // Tier change (066, COH-007).
+  enrolment_not_found: { status: 404, message: "That enrolment no longer exists." },
 };
 
 export function courseAuthoringErrorResponse(code: string | undefined): { status: number; body: { error: string } } {
