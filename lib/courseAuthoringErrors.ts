@@ -109,6 +109,9 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   },
   // Tier change (066, COH-007).
   enrolment_not_found: { status: 404, message: "That enrolment no longer exists." },
+  // Course delete (068, AUTH-018). not_deletable is answered by the route
+  // itself, from its blockers (lib/courseDelete.ts).
+  title_mismatch: { status: 400, message: "The title you typed doesn't match the course title." },
 };
 
 export function courseAuthoringErrorResponse(code: string | undefined): { status: number; body: { error: string } } {

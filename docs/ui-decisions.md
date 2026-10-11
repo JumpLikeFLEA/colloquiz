@@ -1564,3 +1564,21 @@ Appended to in the same commit as the change it records. Referenced from
   existing classes and tokens; no new colours. Do not give the header row
   a drag handle, and do not store chapters anywhere but the flat block
   array.
+- Course editor: delete a draft course (2026-10-11, AUTH-018,
+  docs/decisions/0125 D8 + 0129). A "Delete course" section is the editor's
+  last section (`DeleteCourseSection.tsx`), shown to every editor of the
+  course. When `course_delete_blockers` (068) returns none, it shows the
+  Settings > Data and privacy danger zone: a `border-destructive-border
+  bg-destructive-subtle` card with an `AlertTriangle` note that says what
+  goes with the course, and an outlined destructive "Delete course" button.
+  That button opens a Dialog that asks for the course title (trimmed,
+  case-sensitive, as in SQL), with a `bg-destructive` "Delete course"
+  button that stays disabled until the title matches. On success: a toast,
+  then `/studio/courses`. Otherwise the section is one muted line naming
+  the first blocker ("This course can't be deleted because it is
+  published. Unpublish it first."), with no button. If the blocker call
+  fails, the section is absent. Measured at 360px with the dialog open:
+  `scrollWidth/innerWidth 360/360`. Composed from existing classes and
+  tokens; no new colours. Do not decide deletability in TypeScript:
+  `course_delete_blockers` decides, and `delete_course` re-checks it under
+  row locks.

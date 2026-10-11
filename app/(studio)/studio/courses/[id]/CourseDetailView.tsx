@@ -51,6 +51,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring";
 import { CoverImagePicker, type UploadCoverImage } from "./CoverImagePicker";
 import { CourseFormatSection, type CourseRunSummary } from "./CourseFormatSection";
+import { DeleteCourseSection } from "./DeleteCourseSection";
 import { LessonWeekSelect } from "./LessonWeekSelect";
 import { postJson } from "./postJson";
 
@@ -58,10 +59,12 @@ export function CourseDetailView({
   detail,
   isAdmin,
   runs,
+  deleteBlockers,
 }: {
   detail: AuthoredCourseDetail;
   isAdmin: boolean;
   runs: CourseRunSummary;
+  deleteBlockers: string[] | null;
 }) {
   const router = useRouter();
   const { course, lessons, editors } = detail;
@@ -273,6 +276,10 @@ export function CourseDetailView({
       />
 
       {isAdmin && <EditorsSection courseId={course.id} editors={editors} onChanged={() => router.refresh()} />}
+
+      {deleteBlockers && (
+        <DeleteCourseSection courseId={course.id} courseTitle={course.title} blockers={deleteBlockers} />
+      )}
     </div>
   );
 }

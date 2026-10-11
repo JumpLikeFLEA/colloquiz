@@ -33,6 +33,17 @@ rows).
 | Enrolment | `create_run_invite`, `revoke_run_invite`, `set_enrolment_tier` |
 | Feedback | `save_voice_feedback`, `save_final_comment` |
 
+**Added later.** `delete_course` (068, AUTH-018, docs/decisions/0129)
+deletes a course, its lessons and its versions, so it is the "function that
+deletes a lesson, a course or a version" the revisit list below warns
+about. It never removes an entitled learner's access, because any
+`course_entitlements` or `run_enrolments` row for the course, revoked or
+not, is a blocker and the delete is refused. So is a published course.
+The blockers are re-checked under row locks that stop a new entitlement or
+enrolment from being inserted before the delete. Shown by
+`supabase/verify/068_delete_course.sql` (the `entitlements` and
+`enrolments` cases; output in #186).
+
 The card's named categories that have **no function at all**, by `rg` over
 `supabase/migrations`:
 
@@ -127,8 +138,10 @@ The invariant replaces "gate on `is_admin`". 0025 and 0041 now point here.
   the inventory and the before/after protocol. Nothing enforces this
   automatically (see the proposed card in #158).
 - A function that deletes a lesson, a course or a version, or sets
-  `published_version_id` to NULL. None exists, and the entitled branches
-  require `published_version_id IS NOT NULL`, so one would revoke access.
+  `published_version_id` to NULL. The entitled branches require
+  `published_version_id IS NOT NULL`, so one would revoke access. The only
+  one is `delete_course` (068), which refuses any course with an
+  entitlement or an enrolment (see "Added later" above).
 - The owner deciding that an enrollee of an upcoming run must keep early
   access to a lesson raised to `entitled` (Decision 2). The fix would be
   extending the freeze in `set_lesson_access_level` and

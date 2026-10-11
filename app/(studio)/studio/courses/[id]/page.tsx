@@ -4,6 +4,7 @@ import { getCourseAccess, canEditCourse } from "@/lib/courseAccess";
 import { getAuthoredCourseDetail } from "@/lib/courseAuthoring";
 import { getCourseRuns } from "@/lib/courseRuns";
 import { runPhase } from "@/lib/cohortSchedule";
+import { createClient } from "@/lib/supabase/server";
 import { CourseDetailView } from "./CourseDetailView";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
@@ -29,7 +30,11 @@ export default async function AdminCourseDetailPage({
     );
   }
 
-  const [detail, runs] = await Promise.all([getAuthoredCourseDetail(id, isAdmin), getCourseRuns(id)]);
+  const [detail, runs, deleteBlockers] = await Promise.all([
+    getAuthoredCourseDetail(id, isAdmin),
+    getCourseRuns(id),
+    getDeleteBlockers(id),
+  ]);
   if (!detail) notFound();
   // Display only (AUTH-010): which notice and locks to show. The RPCs
   // re-check the same condition themselves (docs/decisions/0106 Decision 2).
@@ -38,7 +43,20 @@ export default async function AdminCourseDetailPage({
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} />
+      <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} deleteBlockers={deleteBlockers} />
     </div>
   );
+}
+
+// AUTH-018: course_delete_blockers (068). null when the call fails, so the
+// editor still renders and simply shows no delete section.
+async function getDeleteBlockers(courseId: string): Promise<string[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("course_delete_blockers", { p_course_id: courseId });
+  if (error) {
+    console.error("course_delete_blockers:", error.message);
+    return null;
+  }
+  const result = data as { ok: boolean; blockers?: string[] };
+  return result.ok ? (result.blockers ?? []) : null;
 }
