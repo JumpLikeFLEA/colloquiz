@@ -44,7 +44,12 @@ describe("footerLangForPath", () => {
     expect(pageLangForPath("/runs/c0050000-0000-4000-8000-0000000000e1/", saved)).toBe("en");
   });
 
-  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/runs"], ["/runs/a/b"], ["/privacy"], ["/no-such-page"]])(
+  it.each([["ru"], ["en"]] as const)("follows the saved choice (%s) on the learner home", (saved) => {
+    expect(footerLangForPath("/my", saved)).toBe(saved);
+    expect(pageLangForPath("/my/", saved)).toBe(saved);
+  });
+
+  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/runs"], ["/runs/a/b"], ["/my/x"], ["/mya"], ["/privacy"], ["/no-such-page"]])(
     "stays Russian anywhere else (%s)",
     (path) => {
       expect(footerLangForPath(path, "en")).toBe("ru");
@@ -79,7 +84,7 @@ describe("pageLangForPath", () => {
   });
 
   it("agrees with the footer on every route but /", () => {
-    for (const path of ["/courses/x", "/courses/x/y", "/privacy", "/no-such-page"]) {
+    for (const path of ["/courses/x", "/courses/x/y", "/my", "/privacy", "/no-such-page"]) {
       for (const saved of ["ru", "en"] as const) {
         expect(footerLangForPath(path, saved)).toBe(pageLangForPath(path, saved));
       }

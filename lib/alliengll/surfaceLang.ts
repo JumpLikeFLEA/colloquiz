@@ -32,6 +32,7 @@ const COURSE_PAGE = /^\/courses\/[^/]+$/;
 const LESSON_PAGE = /^\/courses\/[^/]+\/[^/]+$/;
 const INVITE_PAGE = /^\/invite\/[^/]+$/;
 const RUN_PAGE = /^\/runs\/[^/]+$/;
+const MY_PAGE = "/my";
 
 /** The 404 and the error boundary's chrome is Russian on every path they
  * can appear on (docs/handoff.md, "Audience and language"). They render on
@@ -50,6 +51,8 @@ function trimPath(pathname: string): string {
  *
  *   /                       → the saved choice (the landing has the toggle)
  *   /courses/<course>       → the saved choice (the page has the toggle)
+ *   /my                     → the saved choice, with no toggle of its own
+ *                             (PROG-002, owner 2026-10-11, docs/decisions/0120)
  *   /courses/<c>/<lesson>   → "en" (lesson chrome is always English)
  *   /invite/<token>         → "en" (the claim page, COH-003, no toggle)
  *   /runs/<run>             → "en" (the before/after screen, COH-005, no toggle)
@@ -57,7 +60,7 @@ function trimPath(pathname: string): string {
  */
 export function pageLangForPath(pathname: string, savedLang: SurfaceLang): SurfaceLang {
   const path = trimPath(pathname);
-  if (path === "/" || COURSE_PAGE.test(path)) return savedLang;
+  if (path === "/" || path === MY_PAGE || COURSE_PAGE.test(path)) return savedLang;
   if (LESSON_PAGE.test(path) || INVITE_PAGE.test(path) || RUN_PAGE.test(path)) return "en";
   return BOUNDARY_LANG;
 }

@@ -86,7 +86,18 @@ function killProcessTree(proc: ChildProcess): void {
 // only English-surface routes are checked for FORBIDDEN_SIGNATURES. A
 // Colloquiz route like /login legitimately ships @supabase/ssr — flagging it
 // there would be a false positive, not a leak.
-type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: boolean };
+//
+// `signInAs` (PROG-002, docs/decisions/0120) measures a route as a signed-in
+// user: one of scripts/seed-local-fixtures.ts's local-only fixture accounts,
+// signed in through the real /login form in a throwaway context. Only the
+// cookies carry over into the measured context, which is otherwise as cold
+// as every other route's (the 0115 "Budget" method, now scripted). For a
+// page that redirects a signed-out visitor, a signed-out measurement would
+// measure the redirect's target instead.
+type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: boolean; signInAs?: string };
+
+/** scripts/seed-local-fixtures.ts's PASSWORD: local-stack fixtures only. */
+const FIXTURE_PASSWORD = "password123!";
 
 const ROUTES: RouteBudget[] = [
   { path: "/login", budgetKB: 380, guardForbiddenSignatures: false },
@@ -152,6 +163,15 @@ const ROUTES: RouteBudget[] = [
   // that plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
   // Re-derive both from a real `npm run budget` run before raising it.
   { path: "/runs/c0050000-0000-4000-8000-00000000f1a0", budgetKB: 184, guardForbiddenSignatures: true },
+  // PROG-002 (docs/decisions/0120): the learner home, signed in as the seed's
+  // learner-home fixture (an attempt, an extended enrolment with a call, a
+  // published feedback), so every section renders. Signed out it redirects
+  // to /login. Needs `scripts/seed-local-fixtures.ts` on the target; without
+  // the account the sign-in fails, a hard FAIL. Measured 171.5 KB on the
+  // local stack; budgetKB is that plus ~4.5% headroom (the PLAY-012
+  // precedent, docs/decisions/0057). Re-derive both from a real
+  // `npm run budget` run before raising it.
+  { path: "/my", budgetKB: 180, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────
@@ -271,15 +291,42 @@ type RouteResult =
   | { path: string; ok: true; scriptKB: number; leaks: string[] }
   | { path: string; ok: false; reason: string };
 
+type BrowserCookie = Awaited<ReturnType<import("@playwright/test").BrowserContext["cookies"]>>[number];
+
+/** Signs `email` in through /login and returns the session cookies. */
+async function signInCookies(
+  browser: import("@playwright/test").Browser,
+  origin: string,
+  email: string,
+): Promise<BrowserCookie[]> {
+  const context = await browser.newContext();
+  try {
+    const page = await context.newPage();
+    await page.goto(`${origin}/login`, { waitUntil: "networkidle", timeout: 15_000 });
+    await page.fill("#email", email);
+    await page.fill("#password", FIXTURE_PASSWORD);
+    await Promise.all([
+      page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 15_000 }),
+      page.click("button[type=submit]"),
+    ]);
+    return await context.cookies();
+  } finally {
+    await context.close();
+  }
+}
+
 async function measureRoute(
   browser: import("@playwright/test").Browser,
   origin: string,
   path: string,
   guardForbiddenSignatures: boolean,
+  cookies: BrowserCookie[] = [],
 ): Promise<RouteResult> {
-  // A fresh, cache-disabled context per route: no cookies, no storage, no
-  // cache carried over from a previous route or a previous run.
+  // A fresh, cache-disabled context per route: no storage and no cache
+  // carried over from a previous route or a previous run. Cookies only for a
+  // `signInAs` route, and only the session's.
   const context = await browser.newContext();
+  if (cookies.length > 0) await context.addCookies(cookies);
   const page = await context.newPage();
 
   let pageError: string | undefined;
@@ -325,6 +372,11 @@ async function measureRoute(
     if (!response || !response.ok()) {
       return { path, ok: false, reason: `navigation returned ${response ? response.status() : "no response"}` };
     }
+    // A redirect (a signed-out /my → /login) would measure another page.
+    const landed = new URL(page.url()).pathname;
+    if (landed !== path) {
+      return { path, ok: false, reason: `redirected to ${landed}` };
+    }
     if (pageError) {
       return { path, ok: false, reason: `page error: ${pageError}` };
     }
@@ -368,7 +420,17 @@ async function main() {
     console.log("\nroute | KB | budget");
     console.log("-".repeat(40));
     for (const route of ROUTES) {
-      const result = await measureRoute(browser, origin, route.path, route.guardForbiddenSignatures);
+      let cookies: BrowserCookie[] = [];
+      if (route.signInAs) {
+        try {
+          cookies = await signInCookies(browser, origin, route.signInAs);
+        } catch (e) {
+          anyFailed = true;
+          console.log(`${route.path} | FAIL (sign-in as ${route.signInAs}: ${(e as Error).message.split("\n")[0]}) | ${route.budgetKB}`);
+          continue;
+        }
+      }
+      const result = await measureRoute(browser, origin, route.path, route.guardForbiddenSignatures, cookies);
       if (!result.ok) {
         anyFailed = true;
         console.log(`${route.path} | FAIL (${result.reason}) | ${route.budgetKB}`);

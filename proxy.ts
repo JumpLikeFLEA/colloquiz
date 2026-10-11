@@ -83,11 +83,16 @@ export async function proxy(request: NextRequest) {
   // author-only, so a signed-out visitor goes to /login with `next` the same
   // way. Whether a signed-in user may use it is app/(studio)/studio/layout.tsx's
   // call (404 for a non-editor), not this proxy's.
+  //
+  // /my (PROG-002, docs/decisions/0120) is the learner home on the English
+  // surface: any signed-in user, so a signed-out visitor goes to
+  // /login?next=/my. Exact path only: nothing lives under it.
   const isProtectedRoute =
     pathname === '/app' ||
     pathname.startsWith('/app/') ||
     pathname === '/studio' ||
-    pathname.startsWith('/studio/')
+    pathname.startsWith('/studio/') ||
+    pathname === '/my'
 
   if (!user && !isAuthRoute && isProtectedRoute && request.nextUrl.searchParams.has('code')) {
     // A Supabase OAuth/PKCE code landed on a non-callback path (e.g. Supabase

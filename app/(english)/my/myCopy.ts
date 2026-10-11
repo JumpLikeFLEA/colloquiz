@@ -1,0 +1,82 @@
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
+
+/**
+ * The learner home's strings (PROG-002, docs/decisions/0120). Both languages:
+ * `/my` follows the saved EN/RU choice (owner, 2026-10-11), with no toggle of
+ * its own. Imported only by Server Components; keep it out of Client
+ * Components (docs/decisions/0079, "Budget").
+ *
+ * New copy, pending owner/partner review.
+ */
+type MyStrings = {
+  metaTitle: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  backToCatalogue: string;
+  nextCallTitle: string;
+  join: string;
+  coursesTitle: string;
+  coursesEmpty: string;
+  browseCourses: string;
+  attempted: string;
+  of: string;
+  average: string;
+  tierBasic: string;
+  tierExtended: string;
+  feedbackTitle: string;
+  feedbackEmpty: string;
+  voiceFeedback: string;
+  finalComment: string;
+  openLesson: string;
+  openBeforeAfter: string;
+};
+
+export const myCopy: Record<SurfaceLang, MyStrings> = {
+  ru: {
+    metaTitle: "Мои курсы",
+    eyebrow: "Личный кабинет",
+    title: "Мои курсы",
+    lead: "Ваши курсы, прогресс и отзывы преподавателя в одном месте.",
+    backToCatalogue: "Все курсы",
+    nextCallTitle: "Следующий созвон",
+    join: "Подключиться",
+    coursesTitle: "Курсы",
+    coursesEmpty: "Вы ещё не начали ни одного курса.",
+    browseCourses: "Выбрать курс",
+    attempted: "пройдено уроков",
+    of: "из",
+    average: "средний результат",
+    tierBasic: "Базовый",
+    tierExtended: "Расширенный",
+    feedbackTitle: "Отзывы",
+    feedbackEmpty: "Отзывов пока нет. Они появятся здесь, когда преподаватель ответит на ваши записи.",
+    voiceFeedback: "Отзыв на запись",
+    finalComment: "Итоговый комментарий",
+    openLesson: "Открыть урок",
+    openBeforeAfter: "До и после",
+  },
+  en: {
+    metaTitle: "My courses",
+    eyebrow: "Your account",
+    title: "My courses",
+    lead: "Your courses, your progress and your teacher's feedback in one place.",
+    backToCatalogue: "All courses",
+    nextCallTitle: "Next call",
+    join: "Join",
+    coursesTitle: "Courses",
+    coursesEmpty: "You haven't started a course yet.",
+    browseCourses: "Browse courses",
+    attempted: "lessons attempted",
+    of: "of",
+    average: "average score",
+    tierBasic: "Basic",
+    tierExtended: "Extended",
+    feedbackTitle: "Feedback",
+    feedbackEmpty: "No feedback yet. It appears here when your teacher answers your recordings.",
+    voiceFeedback: "Feedback on your recording",
+    finalComment: "Final comment",
+    openLesson: "Open lesson",
+    openBeforeAfter: "Before and after",
+  },
+};

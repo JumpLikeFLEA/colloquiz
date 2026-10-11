@@ -80,9 +80,12 @@ layout, its chrome is English, and it has no JS budget of its own. Nothing
 from it may reach an English route. It is a tool, not a third product
 surface. The Colloquiz admin tools stay at `/app/admin`.
 
-Course creation stays on the PDF -> JSON -> import path. A learner home
-(PROG-002) will live on the English surface at `/my`, under that surface's
-budget, reusing Studio's components but not its shell.
+Course creation stays on the PDF -> JSON -> import path. The learner home
+(PROG-002, docs/decisions/0120) lives on the English surface at `/my`,
+under that surface's budget, reusing Studio's components but not its
+shell: the learner's courses with the two progress numbers, the next call
+for an extended enrolee, and the feedback they received. It is linked
+from the account menu and needs a sign-in.
 
 ## Course and lesson shape
 
@@ -229,8 +232,9 @@ What it means concretely:
   one toggle and one saved choice (a cookie read server-side, so a reload
   or the next page is already in the chosen language). The course page's
   strings live beside it in `courseCopy.ts`, and the footer follows the
-  choice there. Every other route has no toggle and keeps a single
-  language. **Lesson chrome is English (owner, 2026-10-07, docs/decisions/
+  choice there. **The learner home `/my` follows the same saved choice
+  with no toggle of its own (owner, 2026-10-11, docs/decisions/0120).**
+  Every other route has no toggle and keeps a single language. **Lesson chrome is English (owner, 2026-10-07, docs/decisions/
   0080 Decision 5), reversing the 2026-09-24 rule above for the lesson
   page:** player buttons, the lesson band, the progress strip, the
   completion card, the signup offer and the paid-lesson notice are fixed

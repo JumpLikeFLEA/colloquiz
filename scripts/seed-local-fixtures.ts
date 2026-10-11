@@ -73,6 +73,8 @@ const USERS = {
   signedIn: "play006-signedin@example.com",
   entitled: "play006-entitled@example.com",
   editor: "play006-editor@example.com",
+  // PROG-002 (docs/decisions/0120): the learner home's fixture learner.
+  learnerHome: "prog002-learner@example.com",
 } as const;
 
 const VALID_DOCUMENT = [
@@ -305,6 +307,7 @@ async function main() {
 
   await seedRealLessonFixture(editorId);
   await seedCohortRunFixture(editorId);
+  await seedLearnerHomeFixture(await upsertUser(USERS.learnerHome));
 
   console.log("Done.");
 }
@@ -463,6 +466,99 @@ async function seedCohortRunFixture(editorId: string): Promise<void> {
     );
   if (runErr) throw new Error(`cohort run insert failed: ${runErr.message}`);
   console.log("Cohort course:", courseId, "run:", COHORT_FIXTURE_RUN_ID);
+}
+
+// PROG-002 (docs/decisions/0120): a learner whose /my shows every section,
+// so `scripts/budget.ts` can measure the page signed in and a browser run can
+// see it: an attempt on the PLAY-006 course's free lesson, an extended
+// enrolment in the COH-005 run with a call, and a published feedback on a
+// voice take. The take is stored already purged (object_name NULL), so no
+// storage object is needed. Fixed ids; every write is idempotent.
+const LEARNER_HOME_IDS = {
+  attempt: "f0020000-0000-4000-8000-0000000000a1",
+  call: "f0020000-0000-4000-8000-0000000000c1",
+  submission: "f0020000-0000-4000-8000-0000000000d1",
+} as const;
+
+async function publishedVersionId(courseSlug: string, lessonSlug: string): Promise<{ courseId: string; lessonId: string; versionId: string }> {
+  const { data, error } = await supabase
+    .from("lessons")
+    .select("id, published_version_id, courses!inner(id, slug)")
+    .eq("slug", lessonSlug)
+    .eq("courses.slug", courseSlug)
+    .single();
+  if (error) throw new Error(`lesson lookup failed (${courseSlug}/${lessonSlug}): ${error.message}`);
+  const course = data.courses as unknown as { id: string };
+  return { courseId: course.id, lessonId: data.id as string, versionId: data.published_version_id as string };
+}
+
+async function seedLearnerHomeFixture(learnerId: string): Promise<void> {
+  const free = await publishedVersionId(COURSE_SLUG, "free-lesson");
+  const { error: attemptErr } = await supabase.from("lesson_attempts").upsert(
+    { id: LEARNER_HOME_IDS.attempt, user_id: learnerId, lesson_version_id: free.versionId, block_id: "q1", earned: 1, possible: 1 },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (attemptErr) throw new Error(`lesson_attempts upsert failed: ${attemptErr.message}`);
+
+  const { data: existing, error: enrolReadErr } = await supabase
+    .from("run_enrolments")
+    .select("id")
+    .eq("run_id", COHORT_FIXTURE_RUN_ID)
+    .eq("user_id", learnerId)
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (enrolReadErr) throw new Error(`run_enrolments read failed: ${enrolReadErr.message}`);
+  let enrolmentId = existing?.id as string | undefined;
+  if (!enrolmentId) {
+    const { data: created, error: enrolErr } = await supabase
+      .from("run_enrolments")
+      .insert({ run_id: COHORT_FIXTURE_RUN_ID, user_id: learnerId, tier: "extended", source_ref: "seed:prog002" })
+      .select("id")
+      .single();
+    if (enrolErr) throw new Error(`run_enrolments insert failed: ${enrolErr.message}`);
+    enrolmentId = created.id as string;
+  }
+
+  const { error: callErr } = await supabase.from("run_calls").upsert(
+    {
+      id: LEARNER_HOME_IDS.call,
+      run_id: COHORT_FIXTURE_RUN_ID,
+      starts_at: "2026-11-09T18:00:00Z",
+      meet_url: "https://meet.google.com/abc-defg-hij",
+      title: "Week 2 speaking club",
+    },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (callErr) throw new Error(`run_calls upsert failed: ${callErr.message}`);
+
+  const weekOne = await publishedVersionId("coh005-fixture", "week-one");
+  const { error: subErr } = await supabase.from("voice_submissions").upsert(
+    {
+      id: LEARNER_HOME_IDS.submission,
+      enrolment_id: enrolmentId,
+      user_id: learnerId,
+      course_id: weekOne.courseId,
+      lesson_id: weekOne.lessonId,
+      block_id: "vb",
+      lesson_version_id: weekOne.versionId,
+      object_name: null,
+      content_type: "audio/webm",
+      purged_at: new Date().toISOString(),
+    },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (subErr) throw new Error(`voice_submissions upsert failed: ${subErr.message}`);
+
+  const { error: fbErr } = await supabase.from("voice_feedback").upsert(
+    {
+      submission_id: LEARNER_HOME_IDS.submission,
+      body: { paragraphs: [{ runs: [{ text: "Great start! " }, { text: "Watch the past tense.", bold: true }] }] },
+      published_at: new Date().toISOString(),
+    },
+    { onConflict: "submission_id", ignoreDuplicates: true },
+  );
+  if (fbErr) throw new Error(`voice_feedback upsert failed: ${fbErr.message}`);
+  console.log("Learner home fixture:", USERS.learnerHome, "enrolment:", enrolmentId);
 }
 
 main().catch((e) => {

@@ -1434,3 +1434,31 @@ Appended to in the same commit as the change it records. Referenced from
   No scores. Measured at 360px: `scrollWidth/innerWidth 360/360`.
   Composed from existing classes and tokens; no new colours. Do not add a
   score or an attempt count without a legal revision (0109 Decision 8).
+- Learner home (2026-10-11, PROG-002, docs/decisions/0120). `/my` on the
+  English surface, reached from a new "My courses" link (`BookOpen`, the
+  Studio link's classes) first in the `AccountMenu` card for every
+  signed-in user. Still a plain `<a>`, zero client JS. The page:
+  - a compact gradient band (`BandTopBar` with "← All courses" and the
+    account chip, a "Your account" glass pill, the "My courses" `h1`, a
+    lead line);
+  - "Next call", only for an extended enrolee with an upcoming call: one
+    card in the course page's calls-row shape (step-tile `Video` icon,
+    `LocalDateTime`, the course title linking to its page, Join);
+  - "Courses": a two-column grid at `sm` of `LIFT_CARD_CLASS` cards
+    linking to the course page, each with a 64px cover (or the gradient
+    level tile), the level pill, a muted tier · run pill on an enrolled
+    course, the title, and the two progress numbers as a `dl` ("N of M
+    lessons attempted", "N% average score"). The average is absent until
+    a lesson is attempted. Never blended into one number. No courses: a
+    dashed box with "Browse courses" to `/#catalogue`;
+  - "Feedback", for an enrolled learner or anyone with feedback: one card
+    per published voice feedback or final comment, newest first, with the
+    course · lesson, the local date, the text in the learner's
+    `bg-brand-subtle` feedback box (`FeedbackContentView`), and "Open
+    lesson" (or "Before and after" to `/runs/<run>`). No audio player
+    here.
+  Chrome follows the saved EN/RU choice with no toggle (owner,
+  2026-10-11); strings in `app/(english)/my/myCopy.ts`. Sign-out from
+  `/my` returns to `/`. Measured at 360px: `scrollWidth/innerWidth
+  360/360`. Composed from existing classes and tokens; no new colours.
+  Do not add scores per lesson or a blended percentage.
