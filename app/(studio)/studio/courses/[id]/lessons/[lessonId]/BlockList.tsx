@@ -24,6 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
@@ -36,14 +37,16 @@ import {
 } from "@/lib/lessons";
 import type { LessonBlock } from "@/lib/lessons";
 import type { LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
+import { EXERCISE_VARIANT_LABEL, EXERCISE_VARIANTS, exerciseLabel, exerciseTemplate } from "@/lib/studio/exerciseTemplates";
 import { BlockForm } from "./BlockForm";
 import { PracticeItemForm } from "./PracticeItemForm";
 import { VoiceTaskForm } from "./VoiceTaskForm";
 import type { UploadLessonImage } from "./LessonImageUploadButton";
 
-// The block-list half of AUTH-002: add, edit (theory only — practice-block
-// forms are AUTH-003), delete and reorder every block in the lesson
-// document, theory and practice together, in one array. Drag uses the same
+// The block-list half of AUTH-002: add, edit, delete and reorder every block
+// in the lesson document, theory and practice together, in one array.
+// Exercises are added from AUTH-016's friendly variants
+// (lib/studio/exerciseTemplates.ts, docs/decisions/0125 Decision 5). Drag uses the same
 // dnd-kit sensor/id shape as the lesson player's OrderingRenderer (0032) —
 // with the up/down buttons kept as the accessible fallback, same precedent.
 
@@ -95,7 +98,7 @@ function defaultVoiceTask(): VoiceTaskBlock {
 function blockTypeLabel(block: LessonBlock): string {
   switch (block.kind) {
     case "practice":
-      return `Practice · ${block.item.type}`;
+      return exerciseLabel(block.item);
     case "task":
       return block.compare ? `${VOICE_TASK_LABEL} · ${block.compare}` : VOICE_TASK_LABEL;
     case "theory":
@@ -104,7 +107,7 @@ function blockTypeLabel(block: LessonBlock): string {
 }
 
 function blockPreview(block: LessonBlock): string {
-  if (block.kind === "practice") return `${block.item.type} item`;
+  if (block.kind === "practice") return block.item.payload.prompt || "(empty)";
   if (block.kind === "task") return block.prompt.map((r) => r.text).join("") || "(empty)";
   switch (block.type) {
     case "heading":
@@ -232,9 +235,17 @@ export function BlockList({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
+          <DropdownMenuLabel className="text-xs text-muted-foreground">Theory</DropdownMenuLabel>
           {THEORY_BLOCK_TYPES.map((type) => (
             <DropdownMenuItem key={type} onSelect={() => addBlock(defaultBlockFor(type))}>
               {TYPE_LABEL[type]}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs text-muted-foreground">Exercise</DropdownMenuLabel>
+          {EXERCISE_VARIANTS.map((variant) => (
+            <DropdownMenuItem key={variant} onSelect={() => addBlock(exerciseTemplate(variant))}>
+              {EXERCISE_VARIANT_LABEL[variant]}
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />

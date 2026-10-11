@@ -1508,3 +1508,30 @@ Appended to in the same commit as the change it records. Referenced from
   tokens; no new colours. Do not hide the button from non-admin editors:
   `create_course` (067) allows them, and a creator becomes the new
   course's editor in the same transaction.
+- Lesson editor: adding exercises (2026-10-11, AUTH-016, docs/decisions/0125
+  D5/D6 + 0127). The "Add block" menu now has three groups. Each of the
+  first two is headed by a muted `DropdownMenuLabel`:
+  - "Theory": the nine theory types;
+  - "Exercise": Multiple choice, True / False, True/False statements, Put
+    in order, Match pairs, Sort into groups, Fill the gaps, Drag words into
+    gaps;
+  - Voice task, below its separator.
+
+  A new exercise opens empty. True / False is the exception: its two
+  options are prefilled. Saving an unfinished exercise gets a 422, and
+  every message shows under the field it names. There is no placeholder
+  text and no lenient draft.
+
+  A practice block's row now shows the friendly label (`exerciseLabel`,
+  read from the item) instead of "Practice · selection". Its preview shows
+  the prompt instead of "selection item".
+
+  The matching form gains a "Show as" Select (Pairs / Sort into groups)
+  bound to `payload.presentation`. With "Sort into groups" selected, a
+  muted line says which side holds the groups. The slots form gains one
+  muted line under the prompt about the `___` gap marker.
+
+  Measured at 360px with an empty exercise's errors showing and with the
+  matching form open: `scrollWidth/innerWidth 360/360`. Composed from
+  existing classes and tokens; no new colours. Do not add a placeholder
+  exercise that passes validation: placeholder text can be published.

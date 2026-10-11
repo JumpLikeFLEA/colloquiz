@@ -114,9 +114,9 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
 
   // PLAY-011a acceptance: "The field is carried through the validator,
   // import-lesson.ts and PracticeItemForm. It round-trips through import ->
-  // stored JSON -> editor -> save." MatchingForm has no control for
-  // `presentation` (docs/decisions/0060 leaves that undecided) — this proves
-  // the field survives editing a DIFFERENT field regardless, per
+  // stored JSON -> editor -> save." MatchingForm has had a "Show as" Select
+  // for `presentation` since AUTH-016 (docs/decisions/0127); this proves the
+  // field also survives editing a DIFFERENT field, per
   // MatchingForm's own "every onChange spreads the existing payload first"
   // rule (0060's "Round-trip evidence for the field" section).
   it("matching: an unrelated edit (Prompt) carries an item-level \"presentation\" field through unchanged", () => {

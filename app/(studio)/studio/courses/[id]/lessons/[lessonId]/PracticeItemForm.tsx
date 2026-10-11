@@ -666,6 +666,28 @@ function MatchingForm({
   return (
     <div className="space-y-3">
       <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <div className="space-y-1">
+        <label className={labelClass}>Show as</label>
+        <Select
+          value={payload.presentation}
+          onValueChange={(presentation) =>
+            onChange({ ...item, payload: { ...payload, presentation: presentation as "pairs" | "sort" } })
+          }
+        >
+          <SelectTrigger className="w-48" aria-label="Show as">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pairs">Pairs</SelectItem>
+            <SelectItem value="sort">Sort into groups</SelectItem>
+          </SelectContent>
+        </Select>
+        {payload.presentation === "sort" && (
+          <p className="text-xs text-muted-foreground">
+            Left side: the statements to sort. Right side: the groups. Each pair puts a statement in its group.
+          </p>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <label className={labelClass}>Left side</label>
@@ -791,6 +813,7 @@ function SlotsForm({
   return (
     <div className="space-y-3">
       <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <p className="text-xs text-muted-foreground -mt-1">Write ___ (three underscores) in the prompt where each gap goes, in the same order as the gaps below.</p>
       <div className="space-y-1">
         <label className={labelClass}>Input affordance</label>
         <Select value={payload.input} onValueChange={(input) => onChange({ ...item, payload: { ...payload, input: input as "typed" | "drag" } })}>
