@@ -1401,3 +1401,36 @@ Appended to in the same commit as the change it records. Referenced from
   existing classes and tokens; no new colours. Do not compute the badge
   from a second query: it and the waiting list read the same cached
   `review_queue` call (`inboxData.ts`).
+- Studio learner page (2026-10-11, AUTH-013, docs/decisions/0119).
+  `/studio/learners/[userId]`, opened by the learner's name on a roster
+  card (now a link, `hover:underline`). The page has a "← Learners" back
+  link (the lesson editor's back-link classes), then a header:
+  - the label (invite name, else the email) with the email and invite
+    contacts;
+  - "Came from" and "Last active";
+  - one muted pill per enrolment (course · run · tier, "· Revoked");
+  - "Only the courses you edit."
+
+  Then two sections:
+  - "Lessons": one card per course in the runs page's card frame, with
+    "Opened N of M · completed N of M" and a divided list of lessons. Each
+    lesson has its number and title, a Week pill, "No longer published"
+    for an archived lesson with activity, Completed
+    (`bg-brand-subtle text-brand-text`) or Opened (muted), and last
+    opened / completed / recordings.
+  - "Recordings": one card per run, with a "Write feedback in Reviews"
+    link in the course editor's outlined-link classes, pre-filtered. A
+    "Before and after" pair sits side by side at `sm` and stacks on a
+    phone; each side is topped by a Before / After pill in
+    `bg-brand-subtle text-brand-text`, and a missing side is a dashed box
+    with "Not sent yet." The weekly takes follow.
+
+  A take shows its prompt, `SignedAudio` (no download), the review queue's
+  Waiting / Draft / Answered pill, and its feedback in the learner's
+  `bg-brand-subtle` box, labelled "Feedback draft: the learner can't see
+  it yet" when it is a draft. A purged take says it was removed and that
+  the learner did record it. Read-only: feedback is written in Reviews.
+
+  No scores. Measured at 360px: `scrollWidth/innerWidth 360/360`.
+  Composed from existing classes and tokens; no new colours. Do not add a
+  score or an attempt count without a legal revision (0109 Decision 8).

@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { learnerLabel } from "@/lib/reviews/queue";
 import type { AcquisitionSource, RosterRow } from "@/lib/learners/roster";
 
 // One row of learner_roster() (063): a learner in one course (and one run,
 // if enrolled). Every number comes from SQL; this only lays it out. The
+// label opens the learner page (AUTH-013). The
 // fields are privacy-policy.md section 5's "Course authors" list, no more:
 // no scores (docs/decisions/0109 Decision 8).
 
@@ -30,7 +32,11 @@ export function LearnerCard({ row }: { row: RosterRow }) {
     <article className="rounded-2xl border border-border bg-card px-4 py-3 space-y-3">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground break-all">{label}</h3>
+          <h3 className="text-sm font-semibold text-foreground break-all">
+            <Link href={`/studio/learners/${row.userId}`} className="hover:underline">
+              {label}
+            </Link>
+          </h3>
           {row.tier && (
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-muted text-muted-foreground">
               {row.tier === "extended" ? "Extended" : "Basic"}

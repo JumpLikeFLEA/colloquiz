@@ -140,7 +140,8 @@ refactor.
     (`can_edit_course`), English chrome; nothing from it reaches an English
     route. The shell, course editing (SHELL-020, docs/decisions/0113), the
     review queue at `/studio/reviews` (VOICE-006, 0114), the learners
-    page at `/studio/learners` (AUTH-011, 0116) and the inbox at `/studio`
+    page at `/studio/learners` (AUTH-011, 0116), the learner page at
+    `/studio/learners/[userId]` (AUTH-013, 0119) and the inbox at `/studio`
     (AUTH-012, 0118) are built.
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
