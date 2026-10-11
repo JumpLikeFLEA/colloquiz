@@ -139,9 +139,9 @@ refactor.
     queue, learners, the inbox. Its own root layout, author-only
     (`can_edit_course`), English chrome; nothing from it reaches an English
     route. The shell, course editing (SHELL-020, docs/decisions/0113), the
-    review queue at `/studio/reviews` (VOICE-006, 0114) and the learners
-    page at `/studio/learners` (AUTH-011, 0116) are built; the inbox is
-    **planned** (AUTH-012).
+    review queue at `/studio/reviews` (VOICE-006, 0114), the learners
+    page at `/studio/learners` (AUTH-011, 0116) and the inbox at `/studio`
+    (AUTH-012, 0118) are built.
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
   - `app/components/` — shared components. `ui/**` (vendored shadcn/Radix) and

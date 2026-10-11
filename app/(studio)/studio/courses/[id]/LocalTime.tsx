@@ -27,11 +27,14 @@ const FORMAT: Intl.DateTimeFormatOptions = {
   minute: "2-digit",
 };
 
-export function LocalTime({ iso }: { iso: string }) {
+const DATE_FORMAT: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+
+/** `dateOnly`: "9 Oct 2026", e.g. to tell untitled runs apart (AUTH-012). */
+export function LocalTime({ iso, dateOnly = false }: { iso: string; dateOnly?: boolean }) {
   const isClient = useIsClient();
   return (
     <time dateTime={iso}>
-      {isClient ? new Date(iso).toLocaleString("en-GB", FORMAT) : "…"}
+      {isClient ? new Date(iso).toLocaleString("en-GB", dateOnly ? DATE_FORMAT : FORMAT) : "…"}
     </time>
   );
 }

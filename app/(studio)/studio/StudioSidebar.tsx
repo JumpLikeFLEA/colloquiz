@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Library, LogOut, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
+import { ExternalLink, Inbox, Library, LogOut, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -16,15 +16,17 @@ import {
 // vendored ui/sidebar with the same link classes as AppSidebar's nav, so it
 // reads as the same app family without importing the Colloquiz shell.
 
-type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavItem = { label: string; href: string; icon: LucideIcon; exact?: boolean };
 
 const workItems: NavItem[] = [
+  // /studio itself: active on the exact path only, or it would match every page.
+  { label: "Inbox", href: "/studio", icon: Inbox, exact: true },
   { label: "Courses", href: "/studio/courses", icon: Library },
   { label: "Reviews", href: "/studio/reviews", icon: MessageSquareText },
   { label: "Learners", href: "/studio/learners", icon: Users },
 ];
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badge?: number | null }) {
   const Icon = item.icon;
   return (
     <Link
@@ -44,11 +46,20 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         <Icon size={16} />
       </div>
       <p className="flex-1 min-w-0 text-sm font-medium leading-none truncate">{item.label}</p>
+      {/* AppSidebar's duels badge, same classes (AUTH-012). */}
+      {badge != null && badge > 0 && (
+        <span
+          className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-brand text-white text-[11px] font-medium leading-none"
+          aria-label={`${badge} waiting for feedback`}
+        >
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }
 
-export function StudioSidebar({ isAdmin }: { isAdmin: boolean }) {
+export function StudioSidebar({ isAdmin, waitingCount }: { isAdmin: boolean; waitingCount: number | null }) {
   const pathname = usePathname();
 
   // "View site" and the admin link leave Studio, so they never show as active.
@@ -79,7 +90,8 @@ export function StudioSidebar({ isAdmin }: { isAdmin: boolean }) {
             <NavLink
               key={item.href}
               item={item}
-              active={pathname === item.href || pathname.startsWith(item.href + "/")}
+              active={pathname === item.href || (!item.exact && pathname.startsWith(item.href + "/"))}
+              badge={item.href === "/studio" ? waitingCount : null}
             />
           ))}
         </nav>

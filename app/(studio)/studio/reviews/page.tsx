@@ -125,7 +125,8 @@ export default async function ReviewsPage({
             </section>
           )}
 
-          <section className="space-y-3">
+          {/* The inbox's final-comment drafts link here (AUTH-012). */}
+          <section id="final-comments" className="space-y-3 scroll-mt-4">
             <h2 className="text-sm font-semibold text-foreground">
               Final comments <span className="text-muted-foreground font-normal">({finalComments.length})</span>
             </h2>

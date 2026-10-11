@@ -1382,3 +1382,22 @@ Appended to in the same commit as the change it records. Referenced from
   `next` wins. Do not move the editor check into the client: it lives in
   `lib/studioEditor.ts`, and the password sign-in reaches it through
   `/auth/after-sign-in`.
+- Studio inbox (2026-10-11, AUTH-012, docs/decisions/0109 Decision 5 +
+  0118). `/studio` no longer redirects to `/studio/courses`; it is "Needs
+  attention", with three sections:
+  - "Waiting for feedback": one row per course · run · week;
+  - "Unpublished drafts": voice feedback per week, final comments per run;
+  - "Calls in the next 7 days".
+  Each row is a link card in the runs page's frame (`rounded-2xl border
+  bg-card`, `hover:bg-accent`) with a `bg-muted` icon tile, the title, a
+  muted detail line ("Oldest sent 2 days ago", or the call's local time)
+  and a count pill in the review queue's Waiting tokens (`bg-warning-subtle
+  text-warning`). Below `sm` the pill drops under the text: beside it, it
+  squeezed the title at 360px. An untitled run reads "run from <date>"
+  (`LocalTime`'s new `dateOnly`). One dashed empty box when nothing needs
+  attention. The Studio nav gains "Inbox" first, with a waiting-count
+  badge in AppSidebar's duels-badge classes. SUPERSEDES the SHELL-020
+  entry's "`/studio` redirects to `/studio/courses`". Composed from
+  existing classes and tokens; no new colours. Do not compute the badge
+  from a second query: it and the waiting list read the same cached
+  `review_queue` call (`inboxData.ts`).
