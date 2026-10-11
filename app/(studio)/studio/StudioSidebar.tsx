@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Library, LogOut, MessageSquareText, PenTool, Shield, type LucideIcon } from "lucide-react";
+import { ExternalLink, Library, LogOut, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -21,6 +21,7 @@ type NavItem = { label: string; href: string; icon: LucideIcon };
 const workItems: NavItem[] = [
   { label: "Courses", href: "/studio/courses", icon: Library },
   { label: "Reviews", href: "/studio/reviews", icon: MessageSquareText },
+  { label: "Learners", href: "/studio/learners", icon: Users },
 ];
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {

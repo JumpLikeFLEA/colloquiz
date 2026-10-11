@@ -1355,3 +1355,20 @@ Appended to in the same commit as the change it records. Referenced from
   card's shape (step-tile `Mic` icon, the Join button's classes, "Open"),
   EN/RU. Composed from existing classes and tokens; no new colours. Do not
   render a purged take as "missing": the row says it was recorded.
+- Studio learners page (2026-10-11, AUTH-011, docs/decisions/0116).
+  `/studio/learners`, a "Learners" entry in the Studio nav under Reviews
+  (`Users`). A Course and a Run Select (two columns at 360px, URL-driven,
+  the review queue's filter row), a "N learners" count of people (not
+  rows), then one card per learner × course × enrolment in the runs
+  page's card frame: the label (invite name, else email) with a muted
+  Basic / Extended pill and a muted "Revoked" pill on a revoked
+  enrolment; email · invite contact; course · run (or "Not in a run");
+  "Came from: <channel> · <course>" or "not recorded". Under a rule, a
+  `dl` grid (2 columns, 4 at `sm`): lessons opened N of M, lessons
+  completed N of M, recordings "N sent · N answered" ("—" without an
+  enrolment), last active in the editor's timezone. Cards, not a table,
+  so it fits 360px with no horizontal scroll. Every value comes from
+  `learner_roster()` (063); no scores, per the privacy policy's "Course
+  authors" list. Composed from existing classes and tokens; no new
+  colours. Do not add a score column without a legal revision first
+  (0109 Decision 8).
