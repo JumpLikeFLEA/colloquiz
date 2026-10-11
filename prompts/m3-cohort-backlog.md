@@ -129,7 +129,7 @@ assumption.
 6. **Lesson document.** The block-kind union and parse path
    (`lib/lessons/parseLessonDocument.ts`), how `publish_lesson` counts items,
    how the block editor inserts a block, the preview, and the importer plus
-   `docs/instruction_external_LLM_course.txt`. Name every place a third block
+   `prompts/draft-lesson.md`. Name every place a third block
    kind has to enter.
 7. **Storage.** Every bucket with its policies, size limit and MIME list;
    upload path patterns; where INFRA-002's conversion runs (browser or route
@@ -418,7 +418,7 @@ provider**
   vitest. Item count, lesson score and completion are unaffected (tests).
 - At most one `before` and one `after` per course, enforced at publish.
 - The editor can insert it anywhere; the preview shows a placeholder
-  recorder. The importer and `instruction_external_LLM_course.txt` know the
+  recorder. The importer and `prompts/draft-lesson.md` know the
   block.
 - Content export stays readable: the block has a plain-text rendering.
 
