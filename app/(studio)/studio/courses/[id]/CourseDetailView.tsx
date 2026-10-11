@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Archive, ArchiveRestore, Blocks, Eye, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, Archive, ArchiveRestore, ChartColumn, Blocks, Eye, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -149,6 +149,14 @@ export function CourseDetailView({
         <div>
           <h1 className="text-2xl font-bold text-foreground">{course.title}</h1>
           <p className="text-xs text-muted-foreground mt-1 font-mono">{course.slug}</p>
+          {/* AUTH-014: lesson funnel and per-exercise averages (0121). */}
+          <Link
+            href={`/studio/courses/${course.id}/stats`}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+          >
+            <ChartColumn className="size-3.5" />
+            Stats
+          </Link>
         </div>
         <button
           onClick={toggleStatus}

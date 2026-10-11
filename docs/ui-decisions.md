@@ -1462,3 +1462,20 @@ Appended to in the same commit as the change it records. Referenced from
   `/my` returns to `/`. Measured at 360px: `scrollWidth/innerWidth
   360/360`. Composed from existing classes and tokens; no new colours.
   Do not add scores per lesson or a blended percentage.
+- Studio course stats (2026-10-11, AUTH-014, docs/decisions/0121).
+  `/studio/courses/[id]/stats`, from a new "Stats" link (`ChartColumn`,
+  the "Runs and calls" link's outlined classes) under the slug in the
+  course editor header, for every course format. The runs page's back link
+  and `h1`, then two muted notes: signed-in learners only, and the average
+  is each learner's first try, shown from 5 learners, restarting when the
+  exercise is edited. One card per published lesson in the runs page's
+  card frame: "N. <title>", a muted Week pill on a cohort course, and a
+  two-column `dl` of "Opened" / "Attempted" learner counts. Under a rule,
+  one divided row per exercise: "Exercise N", the type in the lesson
+  editor's raw type pill, the prompt as plain text (`line-clamp-2`), and
+  on the right (below the prompt on a phone) the whole-percent average
+  with a `bg-brand` bar in a `bg-muted` track and the learner count, or
+  "N learners · average shows from 5". Measured at 360px:
+  `scrollWidth/innerWidth 360/360`. Composed from existing classes and
+  tokens; no new colours. Do not compute or threshold the average in
+  TypeScript: `course_stats()` (065) returns NULL below 5 learners.

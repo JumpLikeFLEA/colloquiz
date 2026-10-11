@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.2 · Last updated 2026-10-08
+Version 1.3 · Last updated 2026-10-11
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -190,7 +190,9 @@ course. The author of a course you take while signed in, free or paid, sees your
 address or Telegram username; your invite's contact label (if you were invited); how you
 found the course (the course and the arrival channel); and your activity in that course:
 lessons opened and completed, recordings sent and answered, and your last activity. The
-purpose is to run the course and contact you about it. For a cohort course you joined
+purpose is to run the course and contact you about it. The author also sees, for each
+exercise, the average score of signed-in learners, shown only when at least 5 learners
+attempted it, and never the score of an individual learner. For a cohort course you joined
 this rests on contract; for a free course it rests on legitimate interests, and you can
 object (section 8).
 
@@ -284,8 +286,10 @@ depends on it: group members' quiz histories, shared questions other learners ar
 answering, and aggregate subject statistics would otherwise be destroyed or corrupted.
 This is permitted under Art. 17(3) and Art. 89 — anonymised data is no longer personal
 data. Your English lesson practice attempts, and the course data listed above, are different:
-nothing else in the Service reads another learner's attempts or recordings, so there is
-no one else's data at stake, and they are deleted outright rather than kept anonymised.
+apart from the per-exercise averages described in section 5, which include no one's
+identity, nothing else in the Service reads another learner's attempts or recordings, so
+there is no one else's data at stake, and they are deleted outright rather than kept
+anonymised. Once deleted, your attempts no longer count toward those averages.
 
 If you would prefer a different outcome, email privacy@colloquiz.app and we will discuss what
 is possible.
