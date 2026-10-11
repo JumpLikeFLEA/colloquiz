@@ -5,8 +5,9 @@ import { z } from "zod";
  * COH-005's final comment (docs/decisions/0096 Decision 1): paragraphs of
  * runs, a run optionally bold. Stored as JSONB.
  *
- * The textarea → FeedbackContent converter is VOICE-006's. This module holds
- * only the shape and the cap, because the write RPC in migration 060
+ * The textarea ↔ FeedbackContent converter is markup.ts and the clipboard
+ * converter is paste.ts (VOICE-006). This module holds only the shape and
+ * the cap, because the write RPC in migration 060
  * (save_voice_feedback) validates the same shape and the same number
  * server-side; content.test.ts fails if the two disagree.
  */
