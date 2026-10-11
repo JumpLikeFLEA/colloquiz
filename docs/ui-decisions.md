@@ -1492,3 +1492,19 @@ Appended to in the same commit as the change it records. Referenced from
   `scrollWidth/innerWidth 360/360`. Composed from existing classes and
   tokens; no new colours. Do not add a tier Select here while tier is
   binary.
+- Studio "New course" for every editor (2026-10-11, AUTH-015,
+  docs/decisions/0125 D2/D4 + 0126). `/studio/courses` shows "New course"
+  to everyone who reaches the page (an admin or anyone with a
+  `course_editors` row), not only to admins; the non-admin empty-state copy
+  "No courses have been shared with you yet." is gone. In the dialog the
+  slug fills from the title (`slugifyLessonTitle`, so a Cyrillic title
+  transliterates) until the author types in the slug field; emptying the
+  slug field hands it back to the title. `slug_taken` and `invalid_slug`
+  show under the slug field (`text-xs text-destructive-text`, the field's
+  border in `border-destructive-border`, `aria-invalid`), not in the
+  dialog's general error box, which still carries every other refusal.
+  The slug input gained `aria-label="Slug"`. Measured at 360px:
+  `scrollWidth/innerWidth 360/360`. Composed from existing classes and
+  tokens; no new colours. Do not hide the button from non-admin editors:
+  `create_course` (067) allows them, and a creator becomes the new
+  course's editor in the same transaction.

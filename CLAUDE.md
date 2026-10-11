@@ -141,8 +141,9 @@ refactor.
     route. The shell, course editing (SHELL-020, docs/decisions/0113), the
     review queue at `/studio/reviews` (VOICE-006, 0114), the learners
     page at `/studio/learners` (AUTH-011, 0116), the learner page at
-    `/studio/learners/[userId]` (AUTH-013, 0119) and the inbox at `/studio`
-    (AUTH-012, 0118) are built.
+    `/studio/learners/[userId]` (AUTH-013, 0119), the inbox at `/studio`
+    (AUTH-012, 0118) and "New course" for any editor (AUTH-015, 0126;
+    `create_course`, 067, not yet applied) are built.
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
   - `app/components/` — shared components. `ui/**` (vendored shadcn/Radix) and

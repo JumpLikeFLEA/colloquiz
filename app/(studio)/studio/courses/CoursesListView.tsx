@@ -21,6 +21,7 @@ import {
 } from "@/app/components/ui/select";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/courseLevels";
 import { pluralize } from "@/lib/format";
+import { slugifyLessonTitle } from "@/lib/lessonSlug";
 import type { AuthoredCourse } from "@/lib/courseAuthoring";
 
 const STATUS_STYLE: Record<AuthoredCourse["status"], string> = {
@@ -28,10 +29,23 @@ const STATUS_STYLE: Record<AuthoredCourse["status"], string> = {
   published: "bg-brand-subtle text-brand-text",
 };
 
-export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[]; isAdmin: boolean }) {
+// Codes from create_course (067) that belong to the slug field, shown under
+// it rather than in the dialog's general error box.
+const SLUG_ERROR_CODES = new Set(["slug_taken", "invalid_slug"]);
+
+// The slug follows the title (slugifyLessonTitle, docs/decisions/0125 D4)
+// until the author types in the slug field. Clearing the slug field hands it
+// back to the title (docs/decisions/0126).
+function slugFromTitle(title: string): string {
+  return title.trim() === "" ? "" : slugifyLessonTitle(title);
+}
+
+export function CoursesListView({ courses }: { courses: AuthoredCourse[] }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [slug, setSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState<CefrLevel>("A2");
   const [description, setDescription] = useState("");
@@ -42,6 +56,7 @@ export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[
     if (!slug.trim() || !title.trim()) return;
     setSaving(true);
     setError(null);
+    setSlugError(null);
     try {
       const res = await fetch("/api/admin/courses", {
         method: "POST",
@@ -50,11 +65,14 @@ export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Could not create the course.");
+        const message = data.error ?? "Could not create the course.";
+        if (SLUG_ERROR_CODES.has(data.code)) setSlugError(message);
+        else setError(message);
         return;
       }
       setCreating(false);
       setSlug("");
+      setSlugEdited(false);
       setTitle("");
       setDescription("");
       router.push(`/studio/courses/${data.courseId}`);
@@ -74,21 +92,19 @@ export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[
             Manage English mini-courses and their lesson lists.
           </p>
         </div>
-        {isAdmin && (
-          <button
-            onClick={() => setCreating(true)}
-            className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors shrink-0"
-          >
-            <Plus className="size-4" />
-            New course
-          </button>
-        )}
+        <button
+          onClick={() => setCreating(true)}
+          className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors shrink-0"
+        >
+          <Plus className="size-4" />
+          New course
+        </button>
       </div>
 
       {courses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground rounded-2xl border border-dashed border-border">
           <BookOpen size={32} className="mb-2 opacity-40" />
-          <p className="text-sm">{isAdmin ? "No courses yet. Create the first one." : "No courses have been shared with you yet."}</p>
+          <p className="text-sm">No courses yet. Create the first one.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -129,19 +145,40 @@ export function CoursesListView({ courses, isAdmin }: { courses: AuthoredCourse[
           <div className="flex flex-col gap-3">
             <input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (!slugEdited) {
+                  setSlug(slugFromTitle(e.target.value));
+                  setSlugError(null);
+                }
+              }}
               placeholder="Title"
               maxLength={120}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
             />
-            <input
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase())}
-              placeholder="slug-like-this"
-              pattern="[a-z0-9]+(-[a-z0-9]+)*"
-              maxLength={80}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none font-mono"
-            />
+            <div className="flex flex-col gap-1">
+              <input
+                value={slug}
+                onChange={(e) => {
+                  const next = e.target.value.toLowerCase();
+                  setSlugEdited(next !== "");
+                  setSlug(next === "" ? slugFromTitle(title) : next);
+                  setSlugError(null);
+                }}
+                placeholder="slug-like-this"
+                aria-label="Slug"
+                aria-invalid={slugError ? true : undefined}
+                aria-describedby={slugError ? "new-course-slug-error" : undefined}
+                pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                maxLength={80}
+                className={`px-3 py-2 rounded-lg border bg-background text-sm text-foreground outline-none font-mono ${slugError ? "border-destructive-border" : "border-border"}`}
+              />
+              {slugError && (
+                <p id="new-course-slug-error" className="text-xs text-destructive-text">
+                  {slugError}
+                </p>
+              )}
+            </div>
             <Select value={level} onValueChange={(v) => setLevel(v as CefrLevel)}>
               <SelectTrigger className="w-full">
                 <SelectValue />

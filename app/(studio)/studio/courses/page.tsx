@@ -8,6 +8,8 @@ import { CoursesListView } from "./CoursesListView";
 // 0025 Decision 1). Signed-out or neither → Forbidden. `getCourseAccess`
 // mirrors the SQL `can_edit_course` grant model (own course_editors rows,
 // self-filtered — see lib/courseAccess.ts), not a re-derived permission.
+// Everyone past that gate may create a course: create_course (067) allows
+// an admin or any caller with a course_editors row (docs/decisions/0125 D2).
 export default async function AdminCoursesPage() {
   const { isAdmin, editableCourseIds } = await getCourseAccess();
 
@@ -27,7 +29,7 @@ export default async function AdminCoursesPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <CoursesListView courses={courses} isAdmin={isAdmin} />
+      <CoursesListView courses={courses} />
     </div>
   );
 }

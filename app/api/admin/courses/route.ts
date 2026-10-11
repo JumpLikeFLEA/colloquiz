@@ -12,11 +12,12 @@ const CreateCourseSchema = z.object({
   description: z.string().trim().optional(),
 });
 
-// POST { slug, title, level, description? } → create a course. Admin-only —
-// see create_course's authorization note (migration 044): a course has no
-// editors yet at creation time, so this is gated on is_admin, not
-// can_edit_course. The RPC is the authority; this route only shapes the
-// request and maps its error back to HTTP.
+// POST { slug, title, level, description? } → create a course. Allowed for
+// an admin or any editor of at least one course; a non-admin creator becomes
+// the new course's editor in the same transaction (create_course, migration
+// 067, docs/decisions/0125 D2). The RPC is the authority; this route only
+// shapes the request and maps its error back to HTTP. A refusal also carries
+// the RPC's `code`, so the dialog can put slug_taken under the slug field.
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const result = data as { ok: boolean; error?: string; course_id?: string };
     if (!result.ok) {
       const { status, body } = courseAuthoringErrorResponse(result.error);
-      return NextResponse.json(body, { status });
+      return NextResponse.json({ ...body, code: result.error }, { status });
     }
 
     return NextResponse.json({ courseId: result.course_id });
