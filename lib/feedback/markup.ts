@@ -61,3 +61,32 @@ export function markupFromFeedback(content: FeedbackContent): string {
     .map((p) => p.runs.map((r) => (r.bold ? `**${r.text}**` : r.text)).join(""))
     .join("\n\n");
 }
+
+export type TextSelection = { text: string; start: number; end: number };
+
+/**
+ * The Bold button and Ctrl+B (0096 Decision 2): wrap the selection in `**`,
+ * or unwrap it when it is already wrapped, either by markers just outside
+ * the selection or by markers it includes. With nothing selected, inserts
+ * an empty pair and puts the caret between the markers. Returns the new
+ * text and the selection to restore (the same words, without/with markers).
+ */
+export function toggleBold({ text, start, end }: TextSelection): TextSelection {
+  const before = text.slice(0, start);
+  const selected = text.slice(start, end);
+  const after = text.slice(end);
+
+  if (before.endsWith("**") && after.startsWith("**")) {
+    return { text: before.slice(0, -2) + selected + after.slice(2), start: start - 2, end: end - 2 };
+  }
+  if (selected.length >= 4 && selected.startsWith("**") && selected.endsWith("**")) {
+    const inner = selected.slice(2, -2);
+    return { text: before + inner + after, start, end: start + inner.length };
+  }
+  // Keep a selection's edge whitespace outside the markers, as paste does.
+  const lead = /^\s*/.exec(selected)![0];
+  const trail = selected.length > lead.length ? /\s*$/.exec(selected)![0] : "";
+  const core = selected.slice(lead.length, selected.length - trail.length);
+  const s = start + lead.length + 2;
+  return { text: before + lead + "**" + core + "**" + trail + after, start: s, end: s + core.length };
+}

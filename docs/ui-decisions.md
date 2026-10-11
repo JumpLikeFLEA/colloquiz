@@ -1303,3 +1303,29 @@ Appended to in the same commit as the change it records. Referenced from
   - No new tokens or hex literals. Do not move Studio back under the
     Colloquiz shell, and do not import AppSidebar, Topbar or the duel badge
     into it.
+- Studio review queue (2026-10-11, VOICE-006, docs/decisions/0114).
+  `/studio/reviews`, a "Reviews" entry in the Studio nav under Courses
+  (`MessageSquareText`). A filter row (Course, Run, Week, Status Selects, two
+  columns at 360px, URL-driven), then:
+  - "Recordings": one card per learner × voice task in the runs page's card
+    frame, with the learner (invite name or email, then email · contact ·
+    tier), course · run · week · lesson, the sent time, the task prompt, a
+    native `<audio controls>` (`nodownload`), and the VOICE-002 editor. A
+    take removed by the 6-month purge says so instead of a player.
+  - "Status by learner and week": a real `<table>` in its own horizontal
+    scroller, learner column sticky, one status pill per voice task.
+  - "Final comments": one collapsed row per enrolment with a
+    Not written / Draft / Published pill, expanding to the same editor.
+  The editor: a bordered textarea with a Bold button bar ("**bold** · blank
+  line = new paragraph"), Ctrl/⌘+B, HTML paste converted to `**…**`, a
+  character count against 5,000, a "What the learner sees" preview in the
+  learner's own `bg-brand-subtle` feedback box (`FeedbackContentView`), and
+  Publish (primary, `bg-brand`) + Save draft before publishing, Save changes
+  after. Status pills: Waiting and Draft in the warning set
+  (`bg-warning-subtle text-warning`, already used by the Colloquiz review
+  queues), Answered in `bg-brand-subtle text-brand-text`, Not sent / Not
+  open yet muted. The course editor's Format section gains a "Reviews" link
+  beside "Runs and calls", and each run card a `MessageSquareText` icon
+  link, both pre-filtered. Composed from existing classes and tokens; no new
+  colours. Do not let the editor's Ctrl+B reach the window: `ui/sidebar`
+  toggles the nav on it.

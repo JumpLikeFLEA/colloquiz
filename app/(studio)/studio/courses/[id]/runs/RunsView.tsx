@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, CircleStop, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, CircleStop, ExternalLink, MessageSquareText, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,7 @@ import type { CourseFormat } from "@/lib/courseAuthoring";
 import type { CourseCall, CourseRun } from "@/lib/courseRuns";
 import type { CourseRunInvite, InviteEditorState } from "@/lib/runInvites";
 import { pluralize } from "@/lib/format";
+import { reviewFiltersQuery } from "@/lib/reviews/queue";
 import { LocalTime, LocalTimeZone } from "../LocalTime";
 import { postJson } from "../postJson";
 import { CallDialog } from "./CallDialog";
@@ -183,6 +184,15 @@ export function RunsView({
                     )}
                   </div>
                   <div className="ml-auto flex shrink-0 items-center gap-1">
+                    {/* VOICE-006: this run's recordings in the review queue. */}
+                    <Link
+                      href={`/studio/reviews${reviewFiltersQuery({ course: courseId, run: run.id })}`}
+                      aria-label={`Reviews for ${run.title || "this run"}`}
+                      title="Recordings and feedback"
+                      className={ICON_BUTTON}
+                    >
+                      <MessageSquareText size={14} />
+                    </Link>
                     <button
                       onClick={() => setRunDialog({ run })}
                       disabled={busy}

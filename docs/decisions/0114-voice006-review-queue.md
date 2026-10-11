@@ -85,7 +85,39 @@ table, no grant on a table, no access function changes, so
   `recording_removed`; the UI says the recording was removed instead of
   showing a player.
 
+## Decision 4 — the page (*unattended*)
+
+- **One call, filtered in TS.** The page calls `review_queue()` and
+  `review_final_comments()` unfiltered and narrows with `lib/reviews`
+  (`parseReviewFilters`, `scopeRows`, `matchesStatus`, tested). The filter
+  menus and the learner × week table need more than the filtered list, and
+  a queue is one cohort's rows, not a feed. The RPCs keep their filter
+  parameters for the inbox (AUTH-012). Filters live in the URL, allow-listed.
+- **Default status filter "To review" = waiting + draft**: every take
+  without published feedback, the acceptance's queue. "Answered" is where
+  feedback is edited after publishing.
+- **Learner label**: the invite's name when there is one, else the email;
+  the email and the invite contact are both shown under it (owner's choice,
+  Decision 2).
+- **Playback** is signed at render under the editor's session (0110
+  Decision 5); `ReviewAudio` re-signs through VOICE-005's playback route
+  once per URL on a load error. `controlsList="nodownload"` (0109 Decision
+  13; it hides the browser's button, it can't stop a determined copy).
+- **Final comments** are listed per enrolment, collapsed, under the queue,
+  scoped by the course and run filters.
+- **Links into the queue**: the course editor's Format section ("Reviews",
+  pre-filtered to the course) and each run card on the runs page (course +
+  run). The nav gets "Reviews"; its waiting-count badge is AUTH-012's.
+- **Ctrl/⌘+B in the editor stops propagation.** The vendored `ui/sidebar`
+  toggles the nav on Ctrl/⌘+B from a window keydown listener. Measured: at
+  360px the first build's Ctrl+B in the editor opened the nav sheet; after
+  the fix it doesn't, and Ctrl+B outside the editor still toggles the nav
+  (control). `ui/**` is vendored, so the fix is in the editor.
+
 ## What would make us revisit this
 
 - The partner finds `**` confusing in use (0096's own trigger).
+- A queue grows past what one unfiltered read can render (Decision 4):
+  push the filters into the RPC call.
+- The partner wants to review a revoked learner's take (Decision 3).
 - A literal `**` round-trip bites in practice.

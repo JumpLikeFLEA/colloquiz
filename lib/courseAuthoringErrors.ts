@@ -95,6 +95,16 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   run_ended: { status: 409, message: "This run has ended, so nobody can join it." },
   invite_not_found: { status: 404, message: "That invite no longer exists." },
   rate_limited: { status: 429, message: "Too many invites in the last hour. Try again later." },
+  // Feedback and final comments (060 save_voice_feedback, 061
+  // save_final_comment), surfaced by VOICE-006's review queue.
+  invalid_feedback: {
+    status: 400,
+    message: "Feedback must have some text and be 5,000 characters or fewer.",
+  },
+  enrolment_revoked: {
+    status: 409,
+    message: "This learner's access was revoked, so they can't get a final comment.",
+  },
 };
 
 export function courseAuthoringErrorResponse(code: string | undefined): { status: number; body: { error: string } } {

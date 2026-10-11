@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, MessageSquareText } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import type { CourseFormat } from "@/lib/courseAuthoring";
 import { pluralize } from "@/lib/format";
+import { reviewFiltersQuery } from "@/lib/reviews/queue";
 import { postJson } from "./postJson";
 
 // AUTH-010 — the course's format (058 `courses.format`) and, for a cohort
@@ -138,6 +139,15 @@ export function CourseFormatSection({
             <CalendarClock className="size-3.5" />
             Runs and calls
             <span className="text-muted-foreground font-normal">({pluralize(runs.count, "run")})</span>
+          </Link>
+          {/* VOICE-006: the one review queue, pre-filtered to this course
+              (docs/decisions/0109 Decision 7). */}
+          <Link
+            href={`/studio/reviews${reviewFiltersQuery({ course: courseId })}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+          >
+            <MessageSquareText className="size-3.5" />
+            Reviews
           </Link>
         </>
       )}

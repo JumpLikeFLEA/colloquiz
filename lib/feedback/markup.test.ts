@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { FeedbackContentSchema } from "./content";
-import { feedbackFromMarkup, markupFromFeedback } from "./markup";
+import { feedbackFromMarkup, markupFromFeedback, toggleBold } from "./markup";
 import { markupFromClipboardHtml, type PasteNode } from "./paste";
 
 // jsdom ships no types and @types/jsdom is not a dependency; this test needs
@@ -106,5 +106,27 @@ describe("markupFromClipboardHtml (0096 Decision 2)", () => {
   it("keeps whitespace outside the markers and drops meta/style", () => {
     const html = '<meta charset="utf-8"><style>p{}</style><p>x<b> y </b>z</p>';
     expect(markupFromClipboardHtml(body(html))).toBe("x **y** z");
+  });
+});
+
+describe("toggleBold (0096 Decision 2)", () => {
+  it("wraps a selection and selects the same words inside the markers", () => {
+    expect(toggleBold({ text: "say hello now", start: 4, end: 9 })).toEqual({ text: "say **hello** now", start: 6, end: 11 });
+  });
+  it("unwraps when the markers sit just outside the selection", () => {
+    expect(toggleBold({ text: "say **hello** now", start: 6, end: 11 })).toEqual({ text: "say hello now", start: 4, end: 9 });
+  });
+  it("unwraps when the selection includes the markers", () => {
+    expect(toggleBold({ text: "say **hello** now", start: 4, end: 13 })).toEqual({ text: "say hello now", start: 4, end: 9 });
+  });
+  it("keeps edge whitespace outside the markers", () => {
+    expect(toggleBold({ text: "a b c", start: 1, end: 4 })).toEqual({ text: "a **b** c", start: 4, end: 5 });
+  });
+  it("inserts an empty pair with the caret inside when nothing is selected", () => {
+    expect(toggleBold({ text: "ab", start: 1, end: 1 })).toEqual({ text: "a****b", start: 3, end: 3 });
+  });
+  it("a wrap then an unwrap restores the text", () => {
+    const wrapped = toggleBold({ text: "one two", start: 0, end: 3 });
+    expect(toggleBold(wrapped).text).toBe("one two");
   });
 });
