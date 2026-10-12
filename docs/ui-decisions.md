@@ -1669,3 +1669,15 @@ Appended to in the same commit as the change it records. Referenced from
   `npm run budget`: `/` 179.1 KB of 180. Do not render the feedback only
   after an answer, and do not switch the grid to `items-start` instead: that
   moves the headline off its 0078 centring.
+- Lesson title not repeated under the band (2026-10-12, PLAY-014). Every Future
+  Imperfect lesson opens with a level-1 heading equal to its title, so the page
+  showed it in `LessonBand` and again directly beneath. `LessonPlayer` takes an
+  optional `lessonTitle` and drops the FIRST block when it is a level-1 heading
+  whose text equals the title (trimmed, case-insensitive), via the pure
+  `dropTitleHeading` (`lib/lessonPlayer/titleHeading.ts`). Narrow on purpose: a
+  level-1 heading is a chapter since AUTH-017 (0128), so a later one, a level-2
+  one or a differing first one still renders. Render-time only: the lesson
+  document and the editor outline are untouched. The public lesson page and the
+  Studio preview both pass the title (the preview is the learner's view); the
+  demo passes none. No new classes or tokens. Do not strip headings in the
+  importer or the editor to get the same effect.

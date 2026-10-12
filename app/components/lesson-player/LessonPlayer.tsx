@@ -26,6 +26,7 @@ import {
   PRACTICE_CARD_CLASS,
   READING_WIDTH_CLASS,
 } from "./columnLayout";
+import { dropTitleHeading } from "@/lib/lessonPlayer/titleHeading";
 import { LessonCompletion } from "./LessonCompletion";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
@@ -80,6 +81,10 @@ export interface PracticeRendererProps {
 export type LessonProgress = { answered: number; total: number; complete: boolean; percent: number | null };
 
 export interface LessonPlayerProps {
+  /** PLAY-014 — the lesson's title, so a first level-1 heading that repeats
+   * it (the band already shows it) is not rendered twice. Optional: the demo
+   * has no lesson. */
+  lessonTitle?: string;
   /** Raw, unparsed lesson document JSON â€” parsed here, on read, per
    * CNT-003/0018 Decision 2 ("the database is canonical", nothing reads a
    * pre-validated shape from elsewhere). */
@@ -217,6 +222,7 @@ export function LessonPlayer({
   renderProgress,
   previousBestPercent = null,
   voiceTasks,
+  lessonTitle,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
 
@@ -280,7 +286,7 @@ export function LessonPlayer({
 
   return (
     <LessonPlayerBody
-      document={parsed.document}
+      document={dropTitleHeading(parsed.document, lessonTitle)}
       results={results}
       attemptId={attemptId}
       onScore={handleScore}

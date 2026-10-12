@@ -376,3 +376,21 @@ describe("LessonPlayer — exercise cards (docs/decisions/0079 D6)", () => {
     expect(screen.queryByText(/Exercise 3/)).toBeNull();
   });
 });
+
+describe("LessonPlayer — title heading (PLAY-014)", () => {
+  const heading = (text: string) => ({ id: "h", kind: "theory", type: "heading", level: 1, text: [{ text }] });
+  const prose = { id: "p", kind: "theory", type: "prose", text: [{ text: "Body." }] };
+
+  it("does not render a first level-1 heading that repeats the lesson title", () => {
+    render(
+      <LessonPlayer document={[heading("True or false?"), prose]} attemptId="a" lessonTitle="true or false?" />,
+    );
+    expect(screen.queryByRole("heading", { name: "True or false?" })).toBeNull();
+    expect(screen.getByText("Body.")).toBeDefined();
+  });
+
+  it("keeps a first heading that differs from the title", () => {
+    render(<LessonPlayer document={[heading("Part one"), prose]} attemptId="a" lessonTitle="True or false?" />);
+    expect(screen.getByRole("heading", { name: "Part one" })).toBeDefined();
+  });
+});

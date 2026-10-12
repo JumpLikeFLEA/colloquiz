@@ -46,10 +46,13 @@ export function LessonPageClient({
   lessonPath,
   previousBestPercent,
   voiceTasks,
+  lessonTitle,
 }: {
   header: ReactNode;
   backLink: ReactNode;
   document: unknown[];
+  /** PLAY-014 */
+  lessonTitle: string;
   attemptId: string;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
@@ -66,6 +69,7 @@ export function LessonPageClient({
       {header}
       <LessonPlayer
         document={document}
+        lessonTitle={lessonTitle}
         attemptId={attemptId}
         practiceRenderer={practiceRenderer}
         courseSlug={courseSlug}

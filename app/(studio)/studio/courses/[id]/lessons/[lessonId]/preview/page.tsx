@@ -53,6 +53,7 @@ export default async function LessonPreviewPage({
       lessonId={lessonId}
       versionId={versionId}
       document={document}
+      lessonTitle={draft.lessonTitle}
       attemptId={attemptId}
     />
   );

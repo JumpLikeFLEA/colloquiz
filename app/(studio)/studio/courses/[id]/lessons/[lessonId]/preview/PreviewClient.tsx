@@ -27,12 +27,14 @@ export function PreviewClient({
   lessonId,
   versionId,
   document,
+  lessonTitle,
   attemptId,
 }: {
   courseId: string;
   lessonId: string;
   versionId: string;
   document: unknown;
+  lessonTitle: string;
   attemptId: string;
 }) {
   const router = useRouter();
@@ -108,7 +110,7 @@ export function PreviewClient({
         </div>
       )}
 
-      <LessonPlayer document={document} attemptId={attemptId} practiceRenderer={practiceRenderer} />
+      <LessonPlayer document={document} lessonTitle={lessonTitle} attemptId={attemptId} practiceRenderer={practiceRenderer} />
     </div>
   );
 }

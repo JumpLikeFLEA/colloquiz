@@ -115,6 +115,7 @@ export default async function LessonPage({
       header={band}
       backLink={<StripBackLink courseSlug={courseSlug} />}
       document={lesson.document}
+      lessonTitle={lesson.title}
       attemptId={attemptId}
       courseSlug={courseSlug}
       nextLesson={nav?.next ?? null}
