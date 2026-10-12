@@ -1644,3 +1644,14 @@ Appended to in the same commit as the change it records. Referenced from
   Ordering keeps its number centred with the grip handle: number and
   handle are its control column. Do not split the matching number from
   its content again.
+- True/False rows reserve the ✓/✗ slot before Check (2026-10-12, ad-hoc,
+  desktop UX run). `SelectionGridRenderer` inserted the marker after the
+  two buttons only on Check, so every statement narrowed by the marker and
+  its gap (460px → 436px at 1440, measured on localhost) and re-wrapped:
+  8 of 8 rows changed size on Check, one grew a line. An invisible
+  `size-4` placeholder now holds the slot until Check (measured after: 0 of
+  8 rows change). Below `sm` the buttons sit on their own line, so the
+  placeholder is just trailing space there. The same reflow in typed gaps
+  (`SlotsRenderer`, a marker after each gap inside a sentence) is NOT fixed
+  here: reserving space after every gap changes how the unanswered
+  sentence reads, which is a design call, not a bug fix.

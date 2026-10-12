@@ -98,12 +98,16 @@ export function SelectionGridRenderer({
                   >
                     {alliengllCopy.player.false}
                   </button>
-                  {submitted &&
-                    (rowCorrect ? (
-                      <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-                    ) : (
-                      <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-                    ))}
+                  {/* The marker's slot is reserved before Check, so the
+                      statement doesn't narrow and re-wrap when ✓/✗ appears
+                      (docs/ui-decisions.md, 2026-10-12). */}
+                  {!submitted ? (
+                    <span className="size-4 shrink-0" aria-hidden="true" />
+                  ) : rowCorrect ? (
+                    <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+                  ) : (
+                    <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+                  )}
                 </div>
               </div>
               {explanation && <ExplanationDisclosure explanation={explanation} />}
