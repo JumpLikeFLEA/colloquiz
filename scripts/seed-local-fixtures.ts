@@ -163,9 +163,6 @@ async function upsertLessons(courseId: string, lessons: LessonFixture[]): Promis
           title: lesson.title,
           description: lesson.description,
           access_level: lesson.accessLevel,
-          // Mirror of access_level until CNT-014 drops it; migration 055's
-          // CHECK refuses a row where the two disagree.
-          in_free_sample: lesson.accessLevel === "anyone",
           ordinal: lesson.ordinal,
           ...(lesson.week !== undefined ? { week: lesson.week } : {}),
           published_item_count: lesson.document ? countPracticeBlocks(lesson.document as never) : 0,

@@ -66,8 +66,8 @@ BEGIN
   VALUES ('verify-' || p_tag, 'Verify ' || p_tag, 'A2', 'draft', 'cohort')
   RETURNING id INTO course_id;
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (course_id, p_editor, p_editor);
-  INSERT INTO lessons (course_id, ordinal, title, slug, access_level, in_free_sample, week)
-  VALUES (course_id, 1, 'L1', 'l1', 'entitled', false, 1)
+  INSERT INTO lessons (course_id, ordinal, title, slug, access_level, week)
+  VALUES (course_id, 1, 'L1', 'l1', 'entitled', 1)
   RETURNING id INTO lesson_id;
   INSERT INTO lesson_versions (lesson_id, document, source)
   VALUES (lesson_id, '[]'::jsonb, 'editor')
