@@ -444,7 +444,7 @@ function BankChip({
       type="button"
       disabled={submitted}
       onClick={onTap}
-      className={`flex min-h-11 items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm transition-colors cursor-grab hover:border-brand/40 disabled:cursor-not-allowed ${
+      className={`flex min-h-11 items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-left text-sm transition-colors cursor-grab hover:border-brand/40 disabled:cursor-not-allowed ${
         isDragging ? "opacity-40" : ""
       }`}
       {...attributes}

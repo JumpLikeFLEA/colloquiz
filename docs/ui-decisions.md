@@ -1613,3 +1613,9 @@ Appended to in the same commit as the change it records. Referenced from
   Before Check nothing changes, at any width (360px: still sticky, page
   `scrollWidth` 345). Do not move the prompt back inside the bank's
   containing block.
+- Matching bank chips are `text-left` (2026-10-12, ad-hoc, desktop UX run).
+  A chip is a `<button>`, so a sentence that wrapped to two lines inherited
+  the button's centred text (lesson 3's "Modern wireless earbuds…" chip on
+  colloquiz.app) next to left-aligned one-line chips. `BucketRenderer`'s
+  statement chips were already `text-left`; the pairs bank now matches
+  (computed `text-align: left` on all 12 chips of lesson 3 on localhost).
