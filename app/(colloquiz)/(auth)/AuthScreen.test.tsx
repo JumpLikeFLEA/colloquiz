@@ -115,3 +115,29 @@ describe("AuthScreen — Colloquiz entry", () => {
     expect(url.searchParams.has("source")).toBe(false);
   });
 });
+
+describe("AuthScreen — panel by entry (ANON-017)", () => {
+  afterEach(cleanup);
+
+  it("English-surface next shows the Alliengll panel, not the quiz copy", () => {
+    render(<AuthScreen initialMode="login" redirectTo="/courses/future-imperfect/lesson-1" />);
+    expect(screen.getByText(/save your progress/)).toBeTruthy();
+    expect(screen.queryByText(/advertisement/)).toBeNull();
+    expect(screen.queryByText("Mathematics")).toBeNull();
+  });
+
+  it.each([undefined, "/app", "/app/dashboard"])("next=%s keeps the Colloquiz panel", (next) => {
+    render(<AuthScreen initialMode="login" redirectTo={next} />);
+    expect(screen.getByText(/advertisement/)).toBeTruthy();
+    expect(screen.queryByText(/save your progress/)).toBeNull();
+  });
+
+  it("password fields carry no dot placeholder on either variant", () => {
+    for (const next of [undefined, "/"]) {
+      const { unmount } = render(<AuthScreen initialMode="register" redirectTo={next} />);
+      expect(screen.getByLabelText("Password").getAttribute("placeholder")).toBe("");
+      expect(screen.getByLabelText("Confirm Password").getAttribute("placeholder")).toBe("");
+      unmount();
+    }
+  });
+});

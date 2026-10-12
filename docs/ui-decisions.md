@@ -1729,3 +1729,15 @@ Appended to in the same commit as the change it records. Referenced from
   `SelectionGridRenderer` row is a `role="group"` labelled by the row's
   statement. No visual change. Do not move the statement onto the buttons'
   names without updating the name-based tests.
+- Sign-in from the English surface (2026-10-12, ANON-017,
+  docs/decisions/0135). `/login` and `/signup` with a `next` outside `/app`
+  (`isEnglishSurfaceEntry`) show `EnglishAuthPanel` in place of the quiz-app
+  panel: the same gradient shell, an "Alliengll" heading, and "Sign in to save
+  your progress and pick up where you left off." The mobile logo chip reads
+  "Alliengll". English, fixed, no cookie read (owner choice over following the
+  EN/RU cookie). No `next`, or a `next` under `/app`, keeps the Colloquiz panel
+  unchanged. The password and confirm-password fields have no "••••••••"
+  placeholder: it read as a pre-filled password. `reset-password` still has
+  its dots (not in this card). Tab title stays "Colloquiz". Existing tokens
+  only; `/login` 287.5 KB of 380 (287.4 before). Do not make the panel read
+  the language cookie without redoing 0135.

@@ -95,6 +95,35 @@ const FLOAT_SUBJECTS = [
   { icon: Brain,      label: "Psychology",  top: "6%", left: "40%", delay: 2.8 },
 ];
 
+// ANON-017: the panel a learner arriving from the English surface sees, in
+// place of the quiz-app panel. English, fixed (lesson chrome is English;
+// the owner chose this over following the EN/RU cookie, so /login reads no
+// cookie). Same gradient shell and tokens as AuthLeftPanel.
+function EnglishAuthPanel() {
+  return (
+    <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
+      <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="dots-en" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.5" fill="white" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dots-en)" />
+      </svg>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+      <div className="relative z-10 flex flex-col items-center text-center gap-6 px-12">
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur border border-white/30 shadow-xl">
+          <GraduationCap size={32} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-3xl text-white leading-tight">Alliengll</h2>
+          <p className="text-white/60 mt-3 text-sm leading-relaxed">Sign in to save your progress<br />and pick up where you left off.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AuthLeftPanel() {
   return (
     // These gradient stops stay hardcoded on purpose. The panel is decorative and
@@ -326,7 +355,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
   return (
     <div className="flex h-full">
       {/* Left decorative panel */}
-      <AuthLeftPanel />
+      {englishEntry ? <EnglishAuthPanel /> : <AuthLeftPanel />}
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
@@ -345,7 +374,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-brand-accent">
               <GraduationCap size={16} className="text-white" />
             </div>
-            <span className="font-semibold text-foreground">Colloquiz</span>
+            <span className="font-semibold text-foreground">{englishEntry ? "Alliengll" : "Colloquiz"}</span>
           </div>
 
           {emailSent ? (
@@ -485,7 +514,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <Field label="Password" type="password" placeholder="••••••••" icon={<Lock size={16} />}
+                  <Field label="Password" type="password" placeholder="" icon={<Lock size={16} />}
                     id="password" name="password" required
                     minLength={mode === "register" ? 8 : undefined}
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
@@ -502,7 +531,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <Field label="Confirm Password" type="password" placeholder="••••••••" icon={<Lock size={16} />}
+                  <Field label="Confirm Password" type="password" placeholder="" icon={<Lock size={16} />}
                     id="confirmPassword" name="confirmPassword" required autoComplete="new-password"
                     value={form.confirmPassword} onChange={v => setForm(f => ({ ...f, confirmPassword: v }))} />
                 </motion.div>
