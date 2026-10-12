@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
-import type { LessonScoreResult, ResolvedExplanation } from "@/lib/items";
+import type { LessonScoreResult } from "@/lib/items";
+import { exerciseAnchorId } from "@/lib/lessonPlayer/anchors";
+import type { ReviewEntry } from "@/lib/lessonPlayer/reviewEntries";
 import type { SessionProgress } from "@/lib/lessonPlayer/session";
 import { pluralize } from "@/lib/pluralCategory";
 import type { NextLessonLink } from "@/lib/publicLesson";
@@ -47,7 +49,7 @@ const pointsFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }
 export function LessonCompletion({
   score,
   progress,
-  explanations,
+  review,
   courseSlug,
   nextLesson,
   lessonPath = "",
@@ -55,7 +57,8 @@ export function LessonCompletion({
 }: {
   score: LessonScoreResult;
   progress: SessionProgress;
-  explanations: ReadonlyMap<string, ResolvedExplanation[]>;
+  /** PLAY-016 — wrong sub-parts with their exercise number and statement. */
+  review: ReadonlyArray<ReviewEntry>;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
   /** ANON-004 — the current lesson's own path (`/courses/<slug>/<slug>`), for
@@ -69,7 +72,6 @@ export function LessonCompletion({
   isSignedIn?: boolean;
 }) {
   const c = alliengllCopy.completion;
-  const reviewEntries = [...explanations.entries()].filter(([, list]) => list.length > 0);
   const complete = progress.total > 0 && progress.answered === progress.total;
   const remaining = progress.total - progress.answered;
   const nextHref = nextLesson ? `/courses/${courseSlug}/${nextLesson.slug}` : null;
@@ -146,17 +148,25 @@ export function LessonCompletion({
 
       {complete && score.status === "scored" && !isSignedIn && <RegistrationOffer lessonPath={lessonPath} />}
 
-      {reviewEntries.length > 0 && (
+      {review.length > 0 && (
         <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground">{c.reviewTitle}</h3>
           <ul className="flex flex-col gap-2">
-            {reviewEntries.flatMap(([itemId, list]) =>
-              list.map((entry) => (
-                <li key={`${itemId}:${entry.subResultId}`} className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  {entry.explanation}
-                </li>
-              )),
-            )}
+            {review.map((entry) => (
+              <li key={entry.key} className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                <a
+                  href={`#${exerciseAnchorId(entry.blockId)}`}
+                  className="flex min-w-0 items-baseline gap-2 rounded text-xs outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className="flex-none font-semibold text-foreground">
+                    {c.reviewExercise} {entry.exerciseNumber}
+                    {entry.subPart !== null && ` · ${entry.subPart}`}
+                  </span>
+                  <span className="min-w-0 truncate">{entry.context}</span>
+                </a>
+                <p className="pt-1">{entry.explanation}</p>
+              </li>
+            ))}
           </ul>
         </section>
       )}

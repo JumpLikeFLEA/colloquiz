@@ -105,6 +105,7 @@ export const alliengllCopy = {
     scoreLabel: "Your score",
     nextLesson: "Next lesson",
     reviewTitle: "Answer review",
+    reviewExercise: "Exercise",
     // docs/decisions/0079 D7: "17 of 20" under the score, and the card shown
     // until every exercise is answered ("3 exercises left").
     scoreOf: "of",

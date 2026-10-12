@@ -9,7 +9,6 @@ import type { ItemScoreResult } from "@/lib/items";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
 import {
-  explanationsForSession,
   scoreSession,
   sessionProgress,
   type LessonSessionResults,
@@ -27,6 +26,8 @@ import {
   READING_WIDTH_CLASS,
 } from "./columnLayout";
 import { dropTitleHeading } from "@/lib/lessonPlayer/titleHeading";
+import { exerciseAnchorId } from "@/lib/lessonPlayer/anchors";
+import { reviewEntriesForSession } from "@/lib/lessonPlayer/reviewEntries";
 import { LessonCompletion } from "./LessonCompletion";
 import { LessonPlayerError } from "./LessonPlayerError";
 import { PracticeBlockPlaceholder } from "./PracticeBlockPlaceholder";
@@ -419,7 +420,7 @@ function LessonPlayerBody({
               case "practice":
                 return (
                   <div key={block.id} className={widthClass}>
-                    <div className={PRACTICE_CARD_CLASS}>
+                    <div id={exerciseAnchorId(block.id)} className={`${PRACTICE_CARD_CLASS} scroll-mt-20`}>
                       <ExercisePill
                         number={practiceNumber.get(block.id) ?? 0}
                         total={practiceIds.length}
@@ -455,7 +456,7 @@ function LessonPlayerBody({
         <LessonCompletion
           score={lessonScore}
           progress={{ answered, total }}
-          explanations={explanationsForSession(document, results)}
+          review={reviewEntriesForSession(document, results)}
           courseSlug={courseSlug}
           nextLesson={nextLesson}
           lessonPath={lessonPath}

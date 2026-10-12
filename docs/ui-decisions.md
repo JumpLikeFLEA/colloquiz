@@ -1706,3 +1706,12 @@ Appended to in the same commit as the change it records. Referenced from
   explanation. Right sub-parts get no note. English lesson chrome from
   `lib/alliengll/copy.ts`; existing tokens only. Do not drop the note back
   into "Why?" only.
+- Answer review names its exercise and row (2026-10-12, PLAY-016,
+  docs/decisions/0132). Each "Answer review" entry on the completion card now
+  has a heading line, "Exercise N · k" (or "Exercise N · Gap k"; just
+  "Exercise N" for a multiple-choice item), `text-xs font-semibold` over the
+  statement or prompt it explains, cut to one line (`truncate`), and the
+  explanation below. The heading line is a link to the exercise's card
+  (`#exercise-<block id>`, `scroll-mt-20` under the sticky strip). Correct
+  sub-parts stay out (0058 D2). Existing tokens only. Do not turn the list
+  back into bare explanations.
