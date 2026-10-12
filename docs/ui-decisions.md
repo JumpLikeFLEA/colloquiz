@@ -1655,3 +1655,17 @@ Appended to in the same commit as the change it records. Referenced from
   (`SlotsRenderer`, a marker after each gap inside a sentence) is NOT fixed
   here: reserving space after every gap changes how the unanswered
   sentence reads, which is a design call, not a bug fix.
+- Hero demo reserves its feedback height (2026-10-12, SHELL-022, ad-hoc desktop
+  UX run). Answering the demo added ~37px (feedback line + "Try again"), and
+  the hero grid's `items-center` (LandingContent.tsx) re-centred the headline
+  column, so the h1, CTA row and value strip jumped on a visitor's first tap.
+  `HeroDemo` now always renders the feedback block, `invisible` until
+  answered (same wording for both outcomes, so it is as tall as either real
+  state); the `key` swap makes the real one mount fresh inside the
+  `aria-live` region so it still announces. Grid alignment is unchanged.
+  Measured on localhost, before vs after answering a right and a wrong
+  option: h1 / CTA / value strip y and card width, x and height identical at
+  1440 (179/407/573, 442px, 401px) and 360 (140/307/876, 328px, 405px).
+  `npm run budget`: `/` 179.1 KB of 180. Do not render the feedback only
+  after an answer, and do not switch the grid to `items-start` instead: that
+  moves the headline off its 0078 centring.

@@ -74,25 +74,33 @@ export function HeroDemo({ lang }: { lang: SurfaceLang }) {
         })}
       </div>
 
+      {/* Always rendered, `invisible` until answered: the feedback line and
+          "Try again" hold their height from the first paint, so answering
+          never grows the card and the centred hero grid never re-centres
+          (SHELL-022). Same wording for both outcomes, so the placeholder is
+          as tall as either real state. */}
       <div aria-live="polite">
-        {submitted && (
-          <div className="mt-3 flex flex-col items-start gap-2 animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
-            <p className="text-sm">
-              <span className={`font-semibold ${isCorrect ? "text-success" : "text-destructive-text"}`}>
-                {isCorrect ? t.correct : t.wrong}
-              </span>{" "}
-              <span className="text-muted-foreground">{t.why}</span>
-            </p>
-            <button
-              type="button"
-              onClick={() => setPicked(null)}
-              className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md text-xs font-medium text-brand-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              <RotateCcw className="size-3.5" aria-hidden="true" />
-              {t.retry}
-            </button>
-          </div>
-        )}
+        <div
+          key={submitted ? "answered" : "reserved"}
+          className={`mt-3 flex flex-col items-start gap-2 ${
+            submitted ? "animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none" : "invisible"
+          }`}
+        >
+          <p className="text-sm">
+            <span className={`font-semibold ${isCorrect ? "text-success" : "text-destructive-text"}`}>
+              {isCorrect ? t.correct : t.wrong}
+            </span>{" "}
+            <span className="text-muted-foreground">{t.why}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => setPicked(null)}
+            className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md text-xs font-medium text-brand-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <RotateCcw className="size-3.5" aria-hidden="true" />
+            {t.retry}
+          </button>
+        </div>
       </div>
 
       <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">{t.source}</p>
