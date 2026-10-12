@@ -141,15 +141,21 @@ function GapExplanations({
   subResultById,
   explanationByGapId,
 }: {
-  gaps: readonly { id: string }[];
+  gaps: readonly { id: string; acceptedAnswers: readonly string[] }[];
   subResultById: SubResultById;
   explanationByGapId: ReadonlyMap<string, string>;
 }) {
-  const wrongGaps: Array<{ id: string; index: number; explanation: string }> = [];
+  // PLAY-015: every wrong gap is listed with an accepted answer, whether or
+  // not it also has an explanation.
+  const wrongGaps: Array<{ id: string; index: number; answer: string; explanation: string | undefined }> = [];
   gaps.forEach((gap, index) => {
-    const explanation = explanationByGapId.get(gap.id);
-    if (subResultById.get(gap.id)?.correct === false && explanation !== undefined) {
-      wrongGaps.push({ id: gap.id, index, explanation });
+    if (subResultById.get(gap.id)?.correct === false) {
+      wrongGaps.push({
+        id: gap.id,
+        index,
+        answer: gap.acceptedAnswers[0],
+        explanation: explanationByGapId.get(gap.id),
+      });
     }
   });
 
@@ -157,12 +163,12 @@ function GapExplanations({
 
   return (
     <div className="mb-3 flex flex-col gap-1">
-      {wrongGaps.map(({ id, index, explanation }) => (
-        <div key={id} className="flex items-start gap-1 text-xs text-muted-foreground">
+      {wrongGaps.map(({ id, index, answer, explanation }) => (
+        <div key={id} className="flex items-start gap-2 text-xs text-muted-foreground">
           <span className="mt-4 shrink-0">
-            {alliengllCopy.player.gapLabel} {index + 1}:
+            {alliengllCopy.player.gapLabel} {index + 1}: {alliengllCopy.player.correctAnswerPrefix}: {answer}
           </span>
-          <ExplanationDisclosure explanation={explanation} />
+          {explanation !== undefined && <ExplanationDisclosure explanation={explanation} />}
         </div>
       ))}
     </div>

@@ -1696,3 +1696,13 @@ Appended to in the same commit as the change it records. Referenced from
   "Gap N:" in the explanation list moved from `mt-2.5` to `mt-4` so its
   text centre matches "Why?" (443 vs 443 at 1440, measured). Existing
   tokens only. Do not put the mark back in the inline flow.
+- Wrong sub-parts name the right answer (2026-10-12, PLAY-015,
+  docs/decisions/0131). After Check, a wrong True/False row, matching pair,
+  typed or dragged gap and ordering row each gets a `text-xs
+  text-muted-foreground` line in the sort renderer's style: "Correct: True",
+  "Correct: <right side>" (rendered as content, so an image pair shows the
+  image), "Gap N: Correct: <first accepted answer>", "Correct position: N".
+  Gap lines now appear for every wrong gap, not only those with an
+  explanation. Right sub-parts get no note. English lesson chrome from
+  `lib/alliengll/copy.ts`; existing tokens only. Do not drop the note back
+  into "Why?" only.

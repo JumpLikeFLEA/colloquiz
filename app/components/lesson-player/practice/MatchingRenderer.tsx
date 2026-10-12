@@ -248,6 +248,16 @@ function PairsMatchingRenderer({
                       }}
                     />
                   )}
+                  {subResult && !subResult.correct && scoredPair && rightById.get(scoredPair.right) && (
+                    <div className="flex flex-wrap items-baseline gap-1 text-xs text-muted-foreground">
+                      <span>{alliengllCopy.player.correctAnswerPrefix}:</span>
+                      <MatchingContentView
+                        content={rightById.get(scoredPair.right)!.content}
+                        inline
+                        className="min-w-0"
+                      />
+                    </div>
+                  )}
                   {explanation && <ExplanationDisclosure explanation={explanation} />}
                 </div>
               );

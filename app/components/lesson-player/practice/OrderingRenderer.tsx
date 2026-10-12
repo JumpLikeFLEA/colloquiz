@@ -53,6 +53,8 @@ export function OrderingRenderer({
     () => new Map(item.payload.elements.map((element) => [element.id, element])),
     [item],
   );
+  // `elements` is authored in the correct order (lib/items/ordering.ts).
+  const correctPositionById = new Map(item.payload.elements.map((element, index) => [element.id, index]));
   const startOrder = useMemo(() => {
     const displayIndices = shuffleOrderingIndices(elementIds.length, attemptId, item.id);
     return initialOrder(elementIds, displayIndices);
@@ -122,6 +124,7 @@ export function OrderingRenderer({
                   id={id}
                   text={element.text}
                   position={position}
+                  correctPosition={correctPositionById.get(id)}
                   submitted={submitted}
                   correct={subResult?.correct}
                   explanation={explanation}
@@ -151,6 +154,7 @@ function OrderingRow({
   id,
   text,
   position,
+  correctPosition,
   submitted,
   correct,
   explanation,
@@ -158,6 +162,7 @@ function OrderingRow({
   id: string;
   text: string;
   position: number;
+  correctPosition: number | undefined;
   submitted: boolean;
   correct: boolean | undefined;
   explanation: string | undefined;
@@ -190,6 +195,11 @@ function OrderingRow({
             <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
           ))}
       </div>
+      {submitted && !correct && correctPosition !== undefined && (
+        <span className="pl-1 text-xs text-muted-foreground">
+          {alliengllCopy.player.correctPositionPrefix}: {correctPosition + 1}
+        </span>
+      )}
       {explanation && <ExplanationDisclosure explanation={explanation} />}
     </div>
   );

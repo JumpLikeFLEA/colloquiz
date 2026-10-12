@@ -272,7 +272,7 @@ describe("LessonPlayer — practice renderer smoke tests", () => {
     fireEvent.change(await screen.findByLabelText("Gap 1"), { target: { value: "go" } });
     fireEvent.click(screen.getByRole("button", { name: "Check" }));
 
-    expect(screen.getByText("Gap 2:")).toBeDefined();
+    expect(screen.getByText(/^Gap 2: Correct: /)).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Why?" }));
     expect(lessonBlocks().getByText(/take the preposition "on"/)).toBeDefined();
   });

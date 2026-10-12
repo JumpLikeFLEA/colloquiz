@@ -77,6 +77,8 @@ export const alliengllCopy = {
     returnToPool: "Return to pool",
     allStatementsSorted: "All statements sorted",
     correctAnswerPrefix: "Correct",
+    // PLAY-015: an ordering row that is in the wrong place says where it belongs.
+    correctPositionPrefix: "Correct position",
     gapLabel: "Gap",
     clear: "Clear",
     allWordsPlaced: "All words placed",

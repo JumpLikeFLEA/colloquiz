@@ -110,4 +110,18 @@ describe("MatchingRenderer", () => {
       ["p2", false],
     ]);
   });
+
+  it("PLAY-015: a wrong pair says the correct right side; a right pair does not", () => {
+    render(<MatchingRenderer item={parsedMatching()} attemptId="attempt-1" onScore={() => {}} />);
+    expect(screen.queryByText(/^Correct:/)).toBeNull();
+
+    fireEvent.click(screen.getAllByLabelText("Empty answer slot — tap to select")[0]);
+    fireEvent.click(screen.getByText("a small furry pet that says meow")); // cat -> r1, right
+    fireEvent.click(screen.getByLabelText("Empty answer slot — tap to select"));
+    fireEvent.click(screen.getByText("a loyal pet that barks")); // dog -> r2, wrong (r1)
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
+
+    // Exactly one note (dog's); cat's right pair has none.
+    expect(screen.getAllByText("Correct:")).toHaveLength(1);
+  });
 });

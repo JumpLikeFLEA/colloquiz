@@ -110,6 +110,12 @@ export function SelectionGridRenderer({
                   )}
                 </div>
               </div>
+              {submitted && !rowCorrect && (
+                <span className="text-xs text-muted-foreground">
+                  {alliengllCopy.player.correctAnswerPrefix}:{" "}
+                  {row.correct ? alliengllCopy.player.true : alliengllCopy.player.false}
+                </span>
+              )}
               {explanation && <ExplanationDisclosure explanation={explanation} />}
             </div>
           );

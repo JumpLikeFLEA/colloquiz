@@ -129,4 +129,17 @@ describe("OrderingRenderer", () => {
     expect(result.possible).toBe(3);
     expect(result.subResults).toHaveLength(3);
   });
+
+  it("PLAY-015: a wrong row states its correct position; correct rows do not", () => {
+    const onScore = vi.fn<(result: ItemScoreResult) => void>();
+    render(<OrderingRenderer item={parsedOrdering()} attemptId="attempt-1" onScore={onScore} />);
+    expect(screen.queryByText(/Correct position/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
+
+    const wrong = onScore.mock.calls[0][0].subResults.filter((r) => !r.correct).length;
+    // Guard against a vacuous pass: the seeded shuffle must leave a wrong row.
+    expect(wrong).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^Correct position: [123]$/)).toHaveLength(wrong);
+  });
 });
