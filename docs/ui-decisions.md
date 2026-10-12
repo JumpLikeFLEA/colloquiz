@@ -1724,3 +1724,8 @@ Appended to in the same commit as the change it records. Referenced from
   (0079 D11). Measured at 1440x900: no row under the bank at any scroll
   position. Do not put the bank back under the rows at `lg`, and do not widen
   the practice card to fit it without redoing 0133 Decision 4.
+- True/False rows are named groups (2026-10-12, PLAY-018,
+  docs/decisions/0134). The True / False button pair in each
+  `SelectionGridRenderer` row is a `role="group"` labelled by the row's
+  statement. No visual change. Do not move the statement onto the buttons'
+  names without updating the name-based tests.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Check, X } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { PROMPT_TEXT_CLASS, SUBMIT_BUTTON_CLASS } from "./practiceClasses";
@@ -43,6 +43,7 @@ export function SelectionGridRenderer({
   const [answers, setAnswers] = useState<Map<string, boolean>>(new Map());
   const [result, setResult] = useState<ItemScoreResult | null>(null);
   const submitted = result !== null;
+  const idBase = useId();
 
   const correctByRow = new Map(result?.subResults.map((r) => [r.id, r.correct]));
   const explanationByRowId = new Map(
@@ -75,11 +76,14 @@ export function SelectionGridRenderer({
               }`}
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span className="flex-1 text-sm text-foreground">
+                <span id={`${idBase}-${row.id}`} className="flex-1 text-sm text-foreground">
                   <span className="mr-1 text-muted-foreground">{index + 1}.</span>
                   {row.statement}
                 </span>
-                <div className="flex items-center gap-2 shrink-0">
+                {/* PLAY-018: the group is named by the row's statement, so a
+                    screen reader hears it on entering the True / False pair
+                    instead of eight bare "True, toggle button"s. */}
+                <div role="group" aria-labelledby={`${idBase}-${row.id}`} className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     disabled={submitted}
