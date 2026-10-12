@@ -159,7 +159,7 @@ function GapExplanations({
     <div className="mb-3 flex flex-col gap-1">
       {wrongGaps.map(({ id, index, explanation }) => (
         <div key={id} className="flex items-start gap-1 text-xs text-muted-foreground">
-          <span className="mt-2.5 shrink-0">
+          <span className="mt-4 shrink-0">
             {alliengllCopy.player.gapLabel} {index + 1}:
           </span>
           <ExplanationDisclosure explanation={explanation} />
@@ -181,7 +181,7 @@ function gapControlClassName({
   correct: boolean | undefined;
 }): string {
   const base =
-    "mx-1 inline-flex min-h-11 min-w-20 items-center justify-center rounded-md border px-2 py-1 text-sm transition-colors align-middle";
+    "relative mx-1 inline-flex min-h-11 min-w-20 items-center justify-center rounded-md border px-2 py-1 text-sm transition-colors align-middle";
   if (!submitted) {
     return `${base} border-border bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand`;
   }
@@ -214,7 +214,9 @@ function typedGapInputClassName({ submitted, correct }: { submitted: boolean; co
 }
 
 /**
- * `input: 'typed'` — a real `<input>` inline at each gap, sized to its own
+ * `input: 'typed'` — the ✓/✗ after a checked gap is absolutely positioned
+ * (PLAY-013), so it takes no inline space and the sentence's line breaks
+ * don't move on Check. A real `<input>` inline at each gap, sized to its own
  * longest accepted answer (`gapInputWidthCh`) so the sentence reads as one
  * flowing line instead of N identical wide boxes forcing ragged wraps. State
  * only ever holds gap ids read off `item.payload.gaps` (via `setGapAnswer`),
@@ -255,7 +257,7 @@ function TypedSlots({
           const gap = gaps[index];
           const subResult = subResultById.get(gap.id);
           return (
-            <span className="mx-0.5 inline-flex items-baseline align-baseline">
+            <span className="relative mx-0.5 inline-flex items-baseline align-baseline">
               <input
                 type="text"
                 aria-label={`Gap ${index + 1}`}
@@ -271,9 +273,9 @@ function TypedSlots({
               />
               {submitted &&
                 (subResult?.correct ? (
-                  <Check className="ml-0.5 size-3.5 shrink-0 self-center text-success" aria-hidden="true" />
+                  <Check className="absolute -right-1 top-0.5 size-3.5 text-success" aria-hidden="true" />
                 ) : (
-                  <X className="ml-0.5 size-3.5 shrink-0 self-center text-destructive-text" aria-hidden="true" />
+                  <X className="absolute -right-1 top-0.5 size-3.5 text-destructive-text" aria-hidden="true" />
                 ))}
             </span>
           );
@@ -480,9 +482,9 @@ function GapDropTarget({
       )}
       {submitted &&
         (correct ? (
-          <Check className="ml-1 size-4 shrink-0 text-success" aria-hidden="true" />
+          <Check className="absolute -right-1.5 -top-1.5 size-4 rounded-full bg-card text-success" aria-hidden="true" />
         ) : (
-          <X className="ml-1 size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+          <X className="absolute -right-1.5 -top-1.5 size-4 rounded-full bg-card text-destructive-text" aria-hidden="true" />
         ))}
     </span>
   );

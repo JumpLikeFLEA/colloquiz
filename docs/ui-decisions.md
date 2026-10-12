@@ -1681,3 +1681,18 @@ Appended to in the same commit as the change it records. Referenced from
   Studio preview both pass the title (the preview is the learner's view); the
   demo passes none. No new classes or tokens. Do not strip headings in the
   importer or the editor to get the same effect.
+- Gap check marks take no inline space (2026-10-12, PLAY-013,
+  docs/decisions/0130). `SlotsRenderer` added a ✓/✗ after each typed gap on
+  Check, which re-wrapped sentences: 6 of 17 typed gaps on Grammar drilling
+  moved at 1440 and 7 of 17 at 360 (measured on localhost, gap x/y relative
+  to its sentence, before vs after Check). The mark is now absolutely
+  positioned at the gap's top-right corner (`absolute -right-1 top-0.5`),
+  so the unanswered sentence has no extra space and Check moves nothing
+  (0 of 17 at both widths, measured). Reserving space up front (the
+  True/False fix) was rejected for typed gaps: it would leave visible
+  space after every blank. The drag variant's mark, inside the gap control,
+  got the same treatment (`absolute -right-1.5 -top-1.5`, `bg-card` disc);
+  no published lesson has a drag-slots item, so that one is not measured.
+  "Gap N:" in the explanation list moved from `mt-2.5` to `mt-4` so its
+  text centre matches "Why?" (443 vs 443 at 1440, measured). Existing
+  tokens only. Do not put the mark back in the inline flow.
