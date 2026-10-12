@@ -1715,3 +1715,12 @@ Appended to in the same commit as the change it records. Referenced from
   (`#exercise-<block id>`, `scroll-mt-20` under the sticky strip). Correct
   sub-parts stay out (0058 D2). Existing tokens only. Do not turn the list
   back into bare explanations.
+- Desktop matching: rows left, bank right (2026-10-12, PLAY-017,
+  docs/decisions/0133), superseding 0055's rejection of side-by-side for `lg`
+  and up. The pairs bank is a 16rem column beside the rows, chips stacked,
+  sticky at `top-16` under the progress strip until Check, scrolling inside
+  itself if taller than the viewport. Below `lg` it is the stacked
+  `sticky bottom-0` bank as before. The card stays at the 672px reading width
+  (0079 D11). Measured at 1440x900: no row under the bank at any scroll
+  position. Do not put the bank back under the rows at `lg`, and do not widen
+  the practice card to fit it without redoing 0133 Decision 4.

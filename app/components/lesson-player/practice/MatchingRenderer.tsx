@@ -186,7 +186,7 @@ function PairsMatchingRenderer({
         {/* Rows and bank share this wrapper so the sticky bank's containing
             block starts below the prompt: it can ride up over the rows it
             serves, never over the prompt (docs/ui-decisions.md, 2026-10-12). */}
-        <div>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start lg:gap-4">
           <div className="flex flex-col gap-2">
             {item.payload.left.map((leftElement, index) => {
               const pairedRightId = pairs.get(leftElement.id);
@@ -415,7 +415,9 @@ function Bank({
   return (
     <div
       ref={setNodeRef}
-      className={`${submitted ? "" : "sticky bottom-0 "}mt-3 flex min-h-14 flex-wrap items-center gap-2 border-t bg-card p-2 transition-colors ${
+      className={`${
+        submitted ? "" : "sticky bottom-0 lg:bottom-auto lg:top-16 lg:max-h-[calc(100svh-5rem)] lg:overflow-y-auto "
+      }mt-3 flex min-h-14 flex-wrap items-center gap-2 border-t bg-card p-2 transition-colors lg:mt-0 lg:flex-col lg:items-stretch lg:rounded-lg lg:border ${
         !submitted && isOver ? "border-brand bg-brand-subtle/30" : "border-border"
       }`}
     >

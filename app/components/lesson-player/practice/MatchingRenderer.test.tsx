@@ -125,3 +125,19 @@ describe("MatchingRenderer", () => {
     expect(screen.getAllByText("Correct:")).toHaveLength(1);
   });
 });
+
+describe("MatchingRenderer — desktop layout (PLAY-017, docs/decisions/0133)", () => {
+  // jsdom has no layout, so this pins the classes the 1440x900 measurement in
+  // 0133 was taken with. Tap-to-fill and submit above run on the same DOM.
+  it("puts rows and bank in a two-column grid at lg and sticks the bank under the strip until Check", () => {
+    render(<MatchingRenderer item={parsedMatching()} attemptId="attempt-1" onScore={() => {}} />);
+    const bank = screen.getByText("a loyal pet that barks").closest("div.border-t") as HTMLElement;
+    expect(bank.parentElement?.className).toContain("lg:grid-cols-[minmax(0,1fr)_16rem]");
+    expect(bank.className).toContain("sticky bottom-0");
+    expect(bank.className).toContain("lg:top-16");
+    expect(bank.className).toContain("lg:bottom-auto");
+
+    fireEvent.click(screen.getByRole("button", { name: /check|submit/i }));
+    expect(bank.className).not.toContain("sticky");
+  });
+});
