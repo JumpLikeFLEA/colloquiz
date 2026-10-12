@@ -3093,6 +3093,292 @@ export const CARDS = [
     ],
     notes: 'Solid-colour fill was considered and not built; blurred fill only.',
   },
+  // ----------------------------------- desktop UX run, 2026-10-12 ---
+  // Found on colloquiz.app at 1440×900 (Edge, Windows) while playing
+  // Future Imperfect signed out then signed in. The clear visual bugs from
+  // the same run were fixed in 777edcc..e0f81b7; these are what was left.
+  {
+    key: 'SHELL-022',
+    title: 'Hero stays still when the demo is answered',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2630,
+    dependsOn: [],
+    goal:
+      'Answering the landing\'s hero demo grows its card by about 37px (the feedback line and ' +
+      '"Try again"). The hero grid is `items-center` (app/(english)/LandingContent.tsx:105), so the ' +
+      'headline column re-centres and the value strip moves down with it: the page jumps on a ' +
+      'visitor\'s first interaction.',
+    acceptance: [
+      'Answering the demo, right or wrong, moves nothing outside the demo card: the h1, the CTA row and the value strip keep their y position, measured before and after at 1440 and 360.',
+      'The demo card does not change width or shift sideways on answer.',
+      '`npm run budget` printed: `/` stays within its 180 KB budget (179.0 KB on 2026-10-12, so the fix has under 1 KB).',
+      'Recorded in docs/ui-decisions.md (it changes the 0078 landing layout).',
+    ],
+  },
+  {
+    key: 'PLAY-013',
+    title: 'Typed gaps keep their line breaks on Check',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2640,
+    dependsOn: [],
+    goal:
+      'SlotsRenderer adds a ✓/✗ after each typed gap only on Check ' +
+      '(app/components/lesson-player/practice/SlotsRenderer.tsx:270-272), so the sentence reflows: ' +
+      'in lesson 5 "(walk) on" moved to the next line. Reserving the space up front, as e0f81b7 did ' +
+      'for True/False rows, would put visible gaps into the unanswered sentence, so this needs a ' +
+      'design choice. The "Gap N:" label and its "Why?" also sit on different baselines.',
+    acceptance: [
+      'Each typed item\'s line breaks are identical before and after Check, at 1440 and 360, on lesson 5\'s typed items (measured, not eyeballed).',
+      'The unanswered sentence has no extra space after a gap that reads as part of the sentence.',
+      '"Gap N:" and "Why?" share a baseline.',
+      'The drag-input slots variant behaves the same, or the card records why it differs.',
+      'Recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'PLAY-014',
+    title: 'Lesson page does not repeat the lesson title under the band',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2650,
+    dependsOn: [],
+    goal:
+      'Every Future Imperfect lesson opens with a level-1 heading equal to its title, so the page shows ' +
+      '"True or false?" in the band and again directly under it. A level-1 heading is also a chapter ' +
+      'since AUTH-017 (docs/decisions/0128), so the rule must be narrow.',
+    acceptance: [
+      'On the public lesson page, a first block that is a level-1 heading whose text equals the lesson title (trimmed, case-insensitive) is not rendered; any other first heading still is.',
+      'The admin preview hides it the same way, since the preview is the learner\'s view; the lesson document and the editor outline are unchanged.',
+      'The rule is a pure function in lib/ under vitest; an RTL test shows the duplicate gone and a differing first heading kept.',
+      'Recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'SHELL-023',
+    title: 'No sideways shift between pages with and without a scrollbar',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2660,
+    dependsOn: [],
+    goal:
+      'With classic 15px scrollbars (Windows), a page with no vertical scrollbar (lesson 8\'s paid ' +
+      'notice, /login, /my, the 404) is 15px wider than one with, so centred content moves 7-8px ' +
+      'between pages: the lesson band text sat at x=384 on lesson 8 and x=377 on lesson 1 at 1440. ' +
+      'The usual fix, `scrollbar-gutter: stable`, leaves an empty 15px strip beside the full-bleed ' +
+      'gradient bands on short pages.',
+    acceptance: [
+      'Before implementation the owner chooses: the gutter (with the strip beside bands), an alternative, or accepting the shift. Stop and ask.',
+      'If fixed: the wordmark\'s x is identical on lesson 8 and lesson 1 at 1440 in Edge on Windows, and on /, a course page and /my (measured).',
+      'Overlay scrollbars and phones unchanged: at 360px the page still has no horizontal scroll.',
+      'Recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'ANON-017',
+    title: 'Sign-in from the English surface looks like the English surface',
+    milestone: 'M4',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2670,
+    dependsOn: [],
+    goal:
+      '"Already have an account? Sign in" on a finished lesson opens /login?next=<lesson>, which renders ' +
+      'the Colloquiz quiz-app screen (AuthLeftPanel in app/(colloquiz)/(auth)/AuthScreen.tsx): "Your ' +
+      'advertisement won\'t be here / However, you can try out some quizzes", Mathematics/Physics/CS ' +
+      'chips, tab title "Colloquiz", and nothing about the lesson or saving progress. A learner from a ' +
+      'reel meets a different product at the moment of conversion. The password field\'s "••••••••" ' +
+      'placeholder also reads as a pre-filled password.',
+    acceptance: [
+      '/login and /signup with a `next` on the English surface (/, /courses/..., /my, /invite/..., /runs/...) show an English-surface panel: the Alliengll wordmark, no subject chips, no "advertisement" copy, and a line saying the learner\'s progress will be saved.',
+      'With no such `next`, or an /app `next`, the Colloquiz screen is unchanged.',
+      'The password field has no dot placeholder on either variant.',
+      'Sign-in still returns to `next` (ANON-016\'s paths unchanged), verified by signing in from a finished lesson.',
+      '`npm run budget` printed: /login within its 380 KB budget, English routes unchanged.',
+      'Copy language: stop and ask (lesson chrome is English; the course page follows the EN/RU choice).',
+      'Recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'PROG-004',
+    title: 'What counts as an attempted lesson (theory-only, partial, the label)',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'decision',
+    rank: 2680,
+    dependsOn: [],
+    goal:
+      'Signed-in run on Future Imperfect, 2026-10-12. (1) Lessons 4 and 7 have no exercises, so they ' +
+      'never produce an attempt: after lesson 4 was read to the end the course page still counted ' +
+      '"4 из 8" without it, and completion ("every lesson attempted", docs/handoff.md) is unreachable ' +
+      'for this course. (2) Lesson 5 showed "Лучший: 75%" and counted as attempted after 2 of its 25 ' +
+      'exercises, because a lesson score covers answered blocks only ' +
+      '(lib/lessonPlayer/session.ts:30-35). (3) The course hero labels the count "пройдено уроков" ' +
+      '(completed), which overstates "attempted".',
+    acceptance: [
+      'Options for theory-only lessons, with evidence: counted on reaching the end, a "Mark as read" control, a self-check counting, or excluded from the total.',
+      'Options for partial attempts: keep best-of-answered, show "in progress N of M" until every exercise is answered, or score over the whole lesson (docs/handoff.md, "Item types": the denominator is constant).',
+      'Options for the label, RU and EN ("пройдено" vs "начато" or another word).',
+      'Each option states what changes in SQL (the course progress read path) versus TypeScript, and what an already-recorded attempt becomes.',
+      'The owner decides; the decision is written to docs/decisions/.',
+    ],
+  },
+  {
+    key: 'PROG-003',
+    title: 'Resume where the learner left off',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 2690,
+    dependsOn: ['PROG-004'],
+    goal:
+      'After five lessons the course page CTA still read "Начать первый бесплатный урок" and opened ' +
+      'lesson 1: the CTA is always the first open lesson ' +
+      '(app/(english)/courses/[courseSlug]/page.tsx:120-131). /my\'s course card has no continue ' +
+      'action, and an anonymous visitor\'s course page ignores the attempts in their browser (no ✓, ' +
+      'same CTA). Depends on PROG-004: "the next unattempted lesson" would otherwise stop for good on ' +
+      'theory-only lesson 4.',
+    acceptance: [
+      'Once any lesson of the course is attempted, the course-page CTA reads "Continue: <title>" / "Продолжить: <title>" and opens the first open lesson not yet attempted (as PROG-004 defines it), or the last opened lesson when all are attempted.',
+      '/my\'s course card carries the same action.',
+      'An anonymous visitor gets the same CTA and the per-row ✓ from the local attempt store, without a layout shift.',
+      'A cohort learner\'s scheduled lessons are never the target.',
+      '`npm run budget` printed for the course page and /my, within budget.',
+      'Recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'PLAY-015',
+    title: 'Show the right answer on a wrong sub-part',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2700,
+    dependsOn: [],
+    goal:
+      'A wrong True/False row, matching pair, typed gap or ordering position shows ✗ and "Why?" but not ' +
+      'the right answer, so the learner opens "Why?" and infers it. Multiple choice already marks the ' +
+      'correct option, and the sort renderer shows "Correct: <bucket>" (docs/decisions/0060).',
+    acceptance: [
+      'A wrong matching pair shows "Correct: <right side>" under the placed answer, in the sort renderer\'s style.',
+      'A wrong typed or dragged gap shows an accepted answer next to the learner\'s.',
+      'A wrong ordering row shows its correct position.',
+      'A wrong True/False row marks the correct choice.',
+      'Copy is English lesson chrome in lib/alliengll/copy.ts; no new tokens.',
+      'An RTL test per renderer covers the wrong state; `npm run budget` printed for a lesson route, within budget.',
+      'Recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'PLAY-016',
+    title: 'Answer review names its exercise and row',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2710,
+    dependsOn: [],
+    goal:
+      'The completion card\'s "Answer review" lists bare explanations ("Invented. It sounds plausible, ' +
+      'but…") with no pointer to the exercise or row they explain; on a long lesson the learner cannot ' +
+      'map them back.',
+    acceptance: [
+      'Each entry is headed by its exercise number and sub-part ("Exercise 1 · 6", "Exercise 9 · Gap 2") and shows the statement or prompt it explains, cut to one line.',
+      'Entries keep document order, and correct sub-parts stay out (docs/decisions/0058 Decision 2 unchanged).',
+      'Each entry links to its exercise card on the page.',
+      'An RTL test on LessonCompletion; recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'PLAY-017',
+    title: 'Desktop matching: rows and bank side by side',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2720,
+    dependsOn: [],
+    goal:
+      'Desktop is the main platform (owner, 2026-10-12). The matching bank sits under the rows and ' +
+      'sticks to the viewport bottom (docs/decisions/0039 Decision 5), so on a 900px screen it covers ' +
+      'rows while the learner works (up to 220px with three lines of chips). docs/decisions/0055 ' +
+      'rejected a side-by-side layout because phone traffic saw no benefit; that premise does not hold ' +
+      'on desktop.',
+    acceptance: [
+      'At `lg` and up, rows sit left and the bank right, the bank sticky below the progress strip; no row or chip is covered at any scroll position (measured at 1440×900 on lessons 2, 3 and 6).',
+      'Below `lg` the stacked layout is unchanged.',
+      'The card records whether practice blocks get a wider band at `lg` than the 672px reading column (0043, 0079 Decision 11), and why.',
+      'Tap-to-fill and drag both still work; the RTL tests pass, extended for the new layout.',
+      'A decision doc supersedes 0055\'s side-by-side rejection; docs/ui-decisions.md updated.',
+    ],
+  },
+  {
+    key: 'PAY-001',
+    title: 'A gated lesson tells the learner how to get in',
+    milestone: 'M4',
+    epic: 'PAY',
+    type: 'task',
+    rank: 2730,
+    dependsOn: [],
+    goal:
+      'Lesson 8 of Future Imperfect (access "entitled") shows only "This lesson opens when you buy the ' +
+      'course." and "Back to course": no price, no way in, no link. Its course-page row has no cue at ' +
+      'all, while the other seven say "Бесплатно". docs/decisions/0079 Decision 8 deferred a buy CTA ' +
+      'to M3; M3 then moved paid access outside the app for cohorts (docs/handoff.md, "Payments"), ' +
+      'which leaves a self-paced paid lesson a dead end.',
+    acceptance: [
+      'A course can carry an author-set "how to get access" link; reuse how_to_join_url if it fits, otherwise a new column is a schema change, so stop and ask.',
+      'The paid notice shows that link as its primary action when set, and today\'s copy alone when not.',
+      'The course page marks a lesson the visitor cannot open (paid or sign-in), not only the free ones; an all-free course page is unchanged.',
+      'The cue reads the same SQL access state the lesson page uses; nothing about access is decided in TypeScript.',
+      '`npm run budget` printed for the course page; recorded in docs/ui-decisions.md.',
+    ],
+  },
+  {
+    key: 'PLAY-018',
+    title: 'True/False buttons say which statement they answer',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 2740,
+    dependsOn: [],
+    goal:
+      'Each True/False row\'s buttons are named only "True" and "False" (aria-pressed), so a screen ' +
+      'reader hears "True, toggle button" eight times with no statement ' +
+      '(app/components/lesson-player/practice/SelectionGridRenderer.tsx).',
+    acceptance: [
+      'Each row is a group labelled by its statement, or each button\'s accessible name includes the row number and statement.',
+      'An RTL test finds a button by an accessible name that includes its statement.',
+      'No visual change.',
+    ],
+  },
+  {
+    key: 'CNT-017',
+    title: 'Future Imperfect content and production data fixes',
+    epic: 'CNT',
+    type: 'task',
+    rank: 3040,
+    dependsOn: [],
+    goal:
+      'Content and data problems found in the desktop UX run on colloquiz.app, 2026-10-12. Each is an ' +
+      'edit in Studio by the author or owner; a session never writes to the hosted database.',
+    acceptance: [
+      'The "AUTH-003/005 smoke test" course is unpublished on production: the catalogue lists only real courses, and the landing\'s "Start for free" opens a Future Imperfect lesson.',
+      'Lesson 6 (Applied practice), exercise 1 "Sort into categories" is set to "Sort into groups" (presentation: "sort") and renders the bucket sorter.',
+      'Lesson 1\'s self-check no longer names the invented items ("items 1, 4 and 7") where it can be read before Check.',
+      'Reading passages and statement pairs in lesson 6 carry a label other than the default "Example", or use another block type.',
+      'Lesson 5 (25 min, 25 exercises) is split, or the owner records why it stays above the 10-15 minute lesson rule (docs/handoff.md, "Course and lesson shape").',
+    ],
+    notes:
+      'No milestone (the OPS-021 shape), so next-card never picks it. The landing hero features the ' +
+      'OLDEST published course (app/(english)/page.tsx:36 takes courses[0]; lib/publicCatalogue.ts:46 ' +
+      'orders by created_at), which is why a published test course became the reel entry point. ' +
+      'Lesson 6\'s missing presentation is a HYPOTHESIS, unverified: it was published before the ' +
+      'authored file carried presentation: "sort".',
+  },
 ];
 
 export function rankOf(key) {
