@@ -81,7 +81,7 @@ export interface PracticeRendererProps {
 export type LessonProgress = { answered: number; total: number; complete: boolean; percent: number | null };
 
 export interface LessonPlayerProps {
-  /** PLAY-014 — the lesson's title, so a first level-1 heading that repeats
+  /** PLAY-014 â€” the lesson's title, so a first level-1 heading that repeats
    * it (the band already shows it) is not rendered twice. Optional: the demo
    * has no lesson. */
   lessonTitle?: string;
