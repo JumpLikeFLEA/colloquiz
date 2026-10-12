@@ -183,27 +183,53 @@ function PairsMatchingRenderer({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setDraggingId(null)}
       >
-        <div className="flex flex-col gap-2">
-          {item.payload.left.map((leftElement, index) => {
-            const pairedRightId = pairs.get(leftElement.id);
-            const pairedRight = pairedRightId ? rightById.get(pairedRightId) : undefined;
-            const scoredPair = pairByLeftId.get(leftElement.id);
-            const subResult = scoredPair ? subResultByPairId.get(scoredPair.id) : undefined;
-            const explanation =
-              subResult && !subResult.correct ? explanationByPairId.get(subResult.id) : undefined;
+        {/* Rows and bank share this wrapper so the sticky bank's containing
+            block starts below the prompt: it can ride up over the rows it
+            serves, never over the prompt (docs/ui-decisions.md, 2026-10-12). */}
+        <div>
+          <div className="flex flex-col gap-2">
+            {item.payload.left.map((leftElement, index) => {
+              const pairedRightId = pairs.get(leftElement.id);
+              const pairedRight = pairedRightId ? rightById.get(pairedRightId) : undefined;
+              const scoredPair = pairByLeftId.get(leftElement.id);
+              const subResult = scoredPair ? subResultByPairId.get(scoredPair.id) : undefined;
+              const explanation =
+                subResult && !subResult.correct ? explanationByPairId.get(subResult.id) : undefined;
 
-            return (
-              <div
-                key={leftElement.id}
-                className={`flex flex-col gap-1 rounded-lg border px-3 py-2 transition-colors ${rowBorderClassName({
-                  submitted,
-                  correct: subResult?.correct,
-                })}`}
-              >
-                <div className="flex min-h-11 items-center gap-2">
-                  <span className="shrink-0 text-sm text-muted-foreground">{index + 1}.</span>
-                  <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
-                  {!pairedRightId && (
+              return (
+                <div
+                  key={leftElement.id}
+                  className={`flex flex-col gap-1 rounded-lg border px-3 py-2 transition-colors ${rowBorderClassName({
+                    submitted,
+                    correct: subResult?.correct,
+                  })}`}
+                >
+                  <div className="flex min-h-11 items-center gap-2">
+                    <span className="shrink-0 text-sm text-muted-foreground">{index + 1}.</span>
+                    <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
+                    {!pairedRightId && (
+                      <SlotTarget
+                        leftId={leftElement.id}
+                        pairedRightId={pairedRightId}
+                        pairedContent={pairedRight?.content}
+                        submitted={submitted}
+                        active={activeLeft === leftElement.id}
+                        onTapToggle={() => setActiveLeft((prev) => (prev === leftElement.id ? null : leftElement.id))}
+                        onClear={() => {
+                          setPairs((prev) => clearMatchingPair(prev, leftElement.id));
+                          setActiveLeft(null);
+                        }}
+                      />
+                    )}
+                    {submitted &&
+                      subResult &&
+                      (subResult.correct ? (
+                        <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+                      ) : (
+                        <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
+                      ))}
+                  </div>
+                  {pairedRightId && (
                     <SlotTarget
                       leftId={leftElement.id}
                       pairedRightId={pairedRightId}
@@ -217,39 +243,18 @@ function PairsMatchingRenderer({
                       }}
                     />
                   )}
-                  {submitted &&
-                    subResult &&
-                    (subResult.correct ? (
-                      <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
-                    ) : (
-                      <X className="size-4 shrink-0 text-destructive-text" aria-hidden="true" />
-                    ))}
+                  {explanation && <ExplanationDisclosure explanation={explanation} />}
                 </div>
-                {pairedRightId && (
-                  <SlotTarget
-                    leftId={leftElement.id}
-                    pairedRightId={pairedRightId}
-                    pairedContent={pairedRight?.content}
-                    submitted={submitted}
-                    active={activeLeft === leftElement.id}
-                    onTapToggle={() => setActiveLeft((prev) => (prev === leftElement.id ? null : leftElement.id))}
-                    onClear={() => {
-                      setPairs((prev) => clearMatchingPair(prev, leftElement.id));
-                      setActiveLeft(null);
-                    }}
-                  />
-                )}
-                {explanation && <ExplanationDisclosure explanation={explanation} />}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <Bank
+            options={rightOptions}
+            usedCountByRightId={usedCountByRightId}
+            submitted={submitted}
+            onTapChip={fillFromChip}
+          />
         </div>
-        <Bank
-          options={rightOptions}
-          usedCountByRightId={usedCountByRightId}
-          submitted={submitted}
-          onTapChip={fillFromChip}
-        />
         <DragOverlay>
           {draggingContent ? <ChipPreview content={draggingContent} /> : null}
         </DragOverlay>
@@ -395,7 +400,7 @@ function Bank({
   return (
     <div
       ref={setNodeRef}
-      className={`sticky bottom-0 mt-3 flex min-h-14 flex-wrap items-center gap-2 border-t bg-card p-2 transition-colors ${
+      className={`${submitted ? "" : "sticky bottom-0 "}mt-3 flex min-h-14 flex-wrap items-center gap-2 border-t bg-card p-2 transition-colors ${
         !submitted && isOver ? "border-brand bg-brand-subtle/30" : "border-border"
       }`}
     >

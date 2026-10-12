@@ -1595,3 +1595,21 @@ Appended to in the same commit as the change it records. Referenced from
   (still scrolls inside its box, page `scrollWidth` 345). Cells and headers
   are now `align-top`: once a row wraps, a one-line cell centred against a
   two-line one read as misaligned. Do not put `min-w-max` back at `lg`.
+- Matching bank: sticky only under the prompt and only before Check
+  (2026-10-12, ad-hoc, desktop UX run). Two bugs in the 0039 Decision 5
+  sticky bank, both seen on colloquiz.app at 1440px:
+  - The bank's containing block was the whole renderer, prompt included,
+    so when an exercise entered from the bottom of the viewport the bank
+    rode up over its own prompt (measured on localhost: bank over the
+    prompt with the card's top 100, 160 and 220px above the viewport
+    bottom). Rows and bank now share a plain wrapper `<div>` (no overflow,
+    so 0039 Decision 5's "no new overflow on an ancestor" holds); the bank
+    can still ride over the rows it serves, never over the prompt
+    (measured after: no overlap at any of the four offsets).
+  - After Check the disabled bank stayed sticky and covered results
+    (2 result rows under it at 1440). It is now `sticky bottom-0` only
+    while unsubmitted, static after (measured after: 0 rows under it).
+
+  Before Check nothing changes, at any width (360px: still sticky, page
+  `scrollWidth` 345). Do not move the prompt back inside the bank's
+  containing block.
