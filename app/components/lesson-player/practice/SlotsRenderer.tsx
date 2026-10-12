@@ -202,7 +202,11 @@ function typedGapInputClassName({ submitted, correct }: { submitted: boolean; co
   const base =
     "inline-block max-w-full rounded-sm border-0 border-b-2 bg-transparent px-1 py-2.5 -my-2.5 text-center text-sm leading-none align-baseline transition-colors focus:outline-none disabled:cursor-not-allowed";
   if (!submitted) {
-    return `${base} border-border text-foreground focus:border-brand`;
+    // The underline is the gap's only visible boundary, so it uses
+    // muted-foreground (~5.4:1 on the card), not `border-border`, which is
+    // 10% black and left an empty gap nearly invisible (docs/ui-decisions.md,
+    // 2026-10-12).
+    return `${base} border-muted-foreground text-foreground focus:border-brand`;
   }
   return correct
     ? `${base} border-success-border bg-success-subtle/60 text-success`

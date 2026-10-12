@@ -1619,3 +1619,12 @@ Appended to in the same commit as the change it records. Referenced from
   colloquiz.app) next to left-aligned one-line chips. `BucketRenderer`'s
   statement chips were already `text-left`; the pairs bank now matches
   (computed `text-align: left` on all 12 chips of lesson 3 on localhost).
+- Typed gap underline uses `border-muted-foreground` (2026-10-12, ad-hoc,
+  desktop UX run). An unanswered typed gap is drawn only by its 2px bottom
+  border, and that border was `border-border` (10% black, 1.25:1 on the
+  white card, computed from the tokens), so lesson 5's empty gaps were
+  nearly invisible on colloquiz.app. WCAG 1.4.11 asks 3:1 for a control's
+  boundary; `--muted-foreground` gives 5.44:1 (computed), is an existing
+  token with a `.dark` value, and the focus (`border-brand`) and submitted
+  (success/destructive) states are unchanged. Do not put an unanswered
+  gap back on `border-border`.
