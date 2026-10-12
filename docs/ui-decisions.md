@@ -1582,3 +1582,16 @@ Appended to in the same commit as the change it records. Referenced from
   tokens; no new colours. Do not decide deletability in TypeScript:
   `course_delete_blockers` decides, and `delete_course` re-checks it under
   row locks.
+- Lesson table wraps at lg (2026-10-12, ad-hoc, desktop UX run). Owner's
+  desktop run on colloquiz.app: at 1440px the Vocabulary table's Example
+  column was cut mid-word behind the table's own horizontal scrollbar,
+  because `min-w-max` stopped every cell from wrapping (measured on
+  localhost: table 1159px in a 990px box). `TableBlock` keeps `min-w-max`
+  below `lg` and adds `lg:min-w-0`, so at `lg` cells wrap and a text table
+  fits the FIT band (measured: 990px in 990px at 1440 and 1920; lesson 4's
+  five tables unchanged, 670–958px). The inner scroll stays as the fallback
+  for a table whose longest words alone overflow the column, which is the
+  FIT band's stated fallback (2026-09-26 entry). At 360px nothing changes
+  (still scrolls inside its box, page `scrollWidth` 345). Cells and headers
+  are now `align-top`: once a row wraps, a one-line cell centred against a
+  two-line one read as misaligned. Do not put `min-w-max` back at `lg`.
