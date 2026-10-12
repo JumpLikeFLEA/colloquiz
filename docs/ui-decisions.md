@@ -1628,3 +1628,19 @@ Appended to in the same commit as the change it records. Referenced from
   token with a `.dark` value, and the focus (`border-brand`) and submitted
   (success/destructive) states are unchanged. Do not put an unanswered
   gap back on `border-border`.
+- Matching and ordering row numbers (2026-10-12, ad-hoc, desktop UX run).
+  Two alignment bugs in the 0053/0054 row numbers, measured on localhost
+  (lesson 6 at 1440):
+  - In a matching row the number was a sibling of the content inside an
+    `items-center` row, so on a two-line statement it sat 9px below the
+    first line, between the lines. Number and content are now one inner
+    `items-start` flex unit, itself centred in the row as before: the
+    number sits on the first line (1px off, measured), and a one-line row
+    looks the same as before.
+  - "1." is narrower than "2." (8.22px vs 11.5px), so row 1's text and grip
+    started 3px left of the others. Both renderers' numbers are now
+    `tabular-nums` (every number 11.23px; text starts at one x).
+
+  Ordering keeps its number centred with the grip handle: number and
+  handle are its control column. Do not split the matching number from
+  its content again.

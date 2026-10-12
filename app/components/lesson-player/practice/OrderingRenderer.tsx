@@ -171,7 +171,7 @@ function OrderingRow({
   return (
     <div ref={setNodeRef} style={style} className={rowClassName({ submitted, correct, isDragging })}>
       <div className="flex min-h-11 items-center gap-2">
-        <span className="shrink-0 text-sm text-muted-foreground">{position + 1}.</span>
+        <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{position + 1}.</span>
         <button
           type="button"
           disabled={submitted}

@@ -205,8 +205,13 @@ function PairsMatchingRenderer({
                   })}`}
                 >
                   <div className="flex min-h-11 items-center gap-2">
-                    <span className="shrink-0 text-sm text-muted-foreground">{index + 1}.</span>
-                    <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
+                    {/* Number and content are one centred unit, the number on
+                        the content's first line, not centred on a wrapped
+                        statement (docs/ui-decisions.md, 2026-10-12). */}
+                    <div className="flex min-w-0 flex-1 items-start gap-2">
+                      <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{index + 1}.</span>
+                      <MatchingContentView content={leftElement.content} className="min-w-0 flex-1 text-sm text-foreground" />
+                    </div>
                     {!pairedRightId && (
                       <SlotTarget
                         leftId={leftElement.id}
