@@ -2903,6 +2903,62 @@ export const CARDS = [
       'Printed on seeded data: an extended enrolee with a call tomorrow gets it; a basic enrolee and a stopped link get nothing; a second cron run sends nothing new.',
     ],
   },
+  // Follow-ups from ANON-012 (owner, 2026-10-14, #166's closing comment).
+  {
+    key: 'ANON-018',
+    title: 'Telegram sign-in inside in-app browsers, where phones prove it',
+    milestone: 'M3',
+    epic: 'ANON',
+    type: 'task',
+    rank: 2515.5,
+    dependsOn: ['ANON-012'],
+    goal:
+      'ANON-012 ships Telegram hidden in the in-app registration offer until a phone pass proves it there ' +
+      '(docs/decisions/0098 Decision 1, 0139 Decision 2). The owner runs that pass on production.',
+    acceptance: [
+      'The device matrix on production at /login?next=<lesson>: iOS and Android x Telegram and Instagram in-app browsers, plus mobile Safari and Chrome. Each cell printed: does sign-in hand off to the Telegram app and come back signed in on the lesson? An untested cell reads "not tested", never omitted. The cells fill 0098\'s device rows.',
+      'lib/inAppBrowser.ts offers Telegram in exactly the in-app browsers where it worked (per browser if the cells differ), under tests; the registration offer\'s in-app notice is reworded to match.',
+      '`npm run budget` for a lesson route before and after.',
+      'The ANON-012 entry in docs/ui-decisions.md is updated.',
+    ],
+  },
+  {
+    key: 'AUTH-019',
+    title: 'Studio shows a Telegram learner\'s username',
+    milestone: 'M3',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2515.6,
+    dependsOn: ['ANON-012'],
+    goal:
+      'A learner who signs in with Telegram has no email (docs/decisions/0098), so Studio labels them by ' +
+      'invite name or nothing. The privacy policy already says a course author sees "your email or Telegram ' +
+      'username" (privacy-policy.md section 5). AUTH-011 deferred this to after ANON-012 (0116 D6).',
+    acceptance: [
+      'A migration re-emits every Studio RPC that returns auth.users.email, derived with rg over the migrations and printed (at filing time: 062\'s review_queue in two places, and 063\'s learner_roster), adding the Telegram username (auth.identities, provider custom:telegram, identity_data->>preferred_username) for an account whose email is empty. Written, not applied; migration-number and re-emitted-body print rule (section header).',
+      'The roster, the learner page, the review queue and the inbox show "@username" where they show the email; the label order stays invite name, then email, then @username.',
+      'Full protocol: an editor of course A sees the username of a Telegram learner of A (positive control) and not of a learner who only touched course B; a non-editor gets zero rows.',
+      'Usable at 360px. docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'SHELL-024',
+    title: 'Account menu names a Telegram user',
+    milestone: 'M3',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2515.7,
+    dependsOn: ['ANON-012'],
+    goal:
+      'With no email the English account chip shows a person icon and "Signed in" (docs/decisions/0086). ' +
+      'A Telegram account has a username (docs/decisions/0098), so the menu can say who is signed in.',
+    acceptance: [
+      'getSignedInAccount (lib/signedInAccount.ts) returns the Telegram username when the email is empty. It reads it from the JWT\'s user_metadata if it is there (0098 printed preferred_username in user_metadata), so no network call is added; which source it used is printed.',
+      'The chip shows the username\'s first letter and the card reads "Signed in as @username"; email accounts are unchanged. AccountMenu stays a Server Component with zero client JS.',
+      '`npm run budget` before and after for /, a course page and a lesson: unchanged.',
+      'docs/ui-decisions.md entry.',
+    ],
+  },
   // Authors build a course in Studio (owner, 2026-10-11, docs/decisions/0125).
   {
     key: 'AUTH-015',
