@@ -12,7 +12,18 @@ import { GradientBackdrop } from "../../HeroDecor";
 import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../surfaceClasses";
 import { inviteCopy } from "./inviteCopy";
 
-export const metadata: Metadata = { title: inviteCopy.metaTitle };
+// The title and description a link preview shows (docs/decisions/0137).
+// The same for every state but not_found, for the reason the share card is
+// (./opengraph-image.tsx): the preview is cached per URL.
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const preview = await getInvitePreview(token);
+  if (preview.state === "not_found") return { title: inviteCopy.metaTitle };
+  return {
+    title: inviteCopy.metaTitleFor(preview.courseTitle),
+    description: inviteCopy.metaDescriptionFor(preview.courseTitle),
+  };
+}
 
 // The paid-lesson card's secondary button (LessonUnavailable.tsx).
 const SECONDARY_BUTTON_CLASS =

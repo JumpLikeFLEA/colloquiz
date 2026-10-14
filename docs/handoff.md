@@ -481,10 +481,12 @@ sales of evergreen courses are wanted.
 
 ## Open questions
 
-- Branding: **for now the English platform is simply Colloquiz.** Whether it
-  eventually carries a sub-brand or its own name on the same domain is
-  deliberately deferred — it is a naming decision, not a blocker, and nothing
-  in the build should assume a rename is coming.
+- ~~Branding: for now the English platform is simply Colloquiz.~~
+  **Answered (owner, 2026-10-14, docs/decisions/0137):** the English
+  surface's name is **Alliengll**: its tab titles (`%s · Alliengll`),
+  og:site_name and share cards. Colloquiz (`/app`) keeps its own name,
+  same domain. The auth screens still read "Colloquiz" outside the English
+  panel (0135); renaming them is a separate call.
 - ~~How Colloquiz is reached from the English surface — a toggle, a footer
   link, a nav entry — and whether a signed-in Colloquiz user lands on `/` or
   on their Colloquiz home.~~ **Answered (owner, 2026-09-24):** a footer link

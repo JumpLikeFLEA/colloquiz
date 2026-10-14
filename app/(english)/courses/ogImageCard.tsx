@@ -1,9 +1,13 @@
+import { alliengllCopy } from "@/lib/alliengll/copy";
 import { BRAND, BRAND_ACCENT } from "@/lib/site";
 import { isOgDecodableCoverUrl } from "@/lib/courseCover";
 
 /**
- * SHELL-009 — shared JSX for the two course-scoped opengraph-image.tsx route
- * segments (courses/[courseSlug] and courses/[courseSlug]/[lessonSlug]).
+ * SHELL-009 — shared JSX for the English surface's opengraph-image.tsx route
+ * segments: the course and lesson cards, and since docs/decisions/0137 the
+ * surface default (app/(english)/opengraph-image.tsx) and the invite card.
+ * Every card carries the Alliengll wordmark at the top left; `eyebrow` is a
+ * pill before the level ("You're invited" on an invite).
  * Not a route file itself (no `opengraph-image`/`page`/`layout` name), so
  * Next attaches no convention to it — a plain shared component the two
  * ImageResponse callers both render, so their card layout can't drift apart.
@@ -21,11 +25,13 @@ export function OgImageCard({
   description,
   level,
   coverImageUrl,
+  eyebrow,
 }: {
   title: string;
   description: string | null;
   level: string | null;
   coverImageUrl: string | null;
+  eyebrow?: string;
 }) {
   // Satori (this component's own renderer) can't decode WebP — VIS-001 step
   // 4c. A cover URL it can't decode is treated as absent, falling back to
@@ -60,36 +66,48 @@ export function OgImageCard({
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-end",
-          gap: 16,
+          justifyContent: "space-between",
           padding: 64,
           ...(cover
             ? { background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)" }
             : {}),
         }}
       >
-        {level && (
-          <div
-            style={{
-              display: "flex",
-              alignSelf: "flex-start",
-              padding: "6px 18px",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.18)",
-              fontSize: 28,
-              fontWeight: 600,
-            }}
-          >
-            {level}
-          </div>
-        )}
-        <div style={{ display: "flex", fontSize: 56, fontWeight: 700, lineHeight: 1.15 }}>{title}</div>
-        {description && (
-          <div style={{ display: "flex", fontSize: 28, opacity: 0.9, lineHeight: 1.35 }}>
-            {description.length > 160 ? `${description.slice(0, 160)}…` : description}
-          </div>
-        )}
+        <div style={{ display: "flex", fontSize: 32, fontWeight: 700, letterSpacing: -0.5, opacity: 0.95 }}>
+          {alliengllCopy.wordmark}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {(eyebrow || level) && (
+            <div style={{ display: "flex", gap: 12 }}>
+              {eyebrow && <Pill>{eyebrow}</Pill>}
+              {level && <Pill>{level}</Pill>}
+            </div>
+          )}
+          <div style={{ display: "flex", fontSize: 56, fontWeight: 700, lineHeight: 1.15 }}>{title}</div>
+          {description && (
+            <div style={{ display: "flex", fontSize: 28, opacity: 0.9, lineHeight: 1.35 }}>
+              {description.length > 160 ? `${description.slice(0, 160)}…` : description}
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Pill({ children }: { children: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        padding: "6px 18px",
+        borderRadius: 999,
+        background: "rgba(255,255,255,0.18)",
+        fontSize: 28,
+        fontWeight: 600,
+      }}
+    >
+      {children}
     </div>
   );
 }

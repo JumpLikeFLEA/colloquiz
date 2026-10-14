@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { INVITE_TOKEN_PATTERN, parseInvitePreview, toCourseRunInvite, type CourseRunInvite, type CourseRunInviteRow, type InvitePreview } from "./runInvites";
 
@@ -17,11 +18,12 @@ export async function getCourseRunInvites(courseId: string): Promise<CourseRunIn
 
 /** The claim page's view of a token, for the signed-in caller or anon.
  * Never carries the contact label. A malformed token is not_found without a
- * round trip. */
-export async function getInvitePreview(token: string): Promise<InvitePreview> {
+ * round trip. cache(): the page and its generateMetadata both call it
+ * (docs/decisions/0137), the lib/coursePage.ts precedent. */
+export const getInvitePreview = cache(async (token: string): Promise<InvitePreview> => {
   if (!INVITE_TOKEN_PATTERN.test(token)) return { state: "not_found" };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("run_invite_preview", { p_token: token });
   if (error) throw new Error(error.message);
   return parseInvitePreview(data);
-}
+});

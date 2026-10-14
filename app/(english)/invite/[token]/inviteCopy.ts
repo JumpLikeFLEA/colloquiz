@@ -10,6 +10,10 @@
  */
 export const inviteCopy = {
   metaTitle: "Your invite",
+  /** Share preview (docs/decisions/0137): "Invite to <course> · Alliengll". */
+  metaTitleFor: (courseTitle: string) => `Invite to ${courseTitle}`,
+  metaDescriptionFor: (courseTitle: string) => `You’re invited to join ${courseTitle}.`,
+  ogEyebrow: "You’re invited",
   eyebrow: "Invite",
   tier: { basic: "Basic", extended: "Extended, with live calls" },
   pending: {

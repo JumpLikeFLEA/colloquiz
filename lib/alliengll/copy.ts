@@ -23,11 +23,15 @@
  */
 
 export const alliengllCopy = {
-  siteName: "Colloquiz",
+  // The English surface's external name (owner, 2026-10-14, docs/decisions/
+  // 0137): the `%s · Alliengll` title template, og:site_name and the share
+  // cards' alt text. Colloquiz (/app) keeps lib/site.ts's SITE_NAME.
+  siteName: "Alliengll",
 
-  // docs/decisions/0079 D9: the course and lesson pages' header wordmark —
-  // the same literal display text as the landing header's (0078), not a
-  // rename. siteName above (and the `%s · Colloquiz` title template) stays.
+  // docs/decisions/0079 D9: the course and lesson pages' header wordmark,
+  // the same literal display text as the landing header's (0078). Equal to
+  // siteName since 0137; kept separate because one is a page element and
+  // the other is metadata.
   wordmark: "Alliengll",
 
   landing: {

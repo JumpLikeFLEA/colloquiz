@@ -1751,3 +1751,14 @@ Appended to in the same commit as the change it records. Referenced from
   an all-free course is unchanged. No lock icon. Studio's "How to join (link)"
   field now shows for self-paced courses too. Existing tokens only. Do not
   derive the pill from `accessLevel`.
+- English surface shares say Alliengll (2026-10-14, ad-hoc,
+  docs/decisions/0137). The tab-title suffix on every English route is
+  "· Alliengll" (was "· Colloquiz"), and og:site_name is Alliengll. Every
+  share card (`courses/ogImageCard.tsx`) carries an "Alliengll" wordmark at
+  the top left. `/` and every English route without a card of its own get a
+  new surface card (hero title and subtitle on the brand gradient), replacing
+  the Colloquiz quiz card they fell back to. Invite links get a card with the
+  course cover, a "You're invited" pill and the title, and the title "Invite
+  to <course>", the same for every invite state. Colloquiz (`/app`, `/login`)
+  is unchanged. No new hex literals. Do not make the invite card or title
+  depend on the invite's state: Telegram caches the preview per URL.

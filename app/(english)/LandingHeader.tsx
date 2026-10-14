@@ -9,9 +9,8 @@ import { LanguageToggle } from "./LanguageToggle";
  * the shared `LanguageToggle` the course pages also carry (docs/decisions/
  * 0080, extending the 2026-09-28 landing exception in docs/handoff.md,
  * "Audience and language"); the login link is landing-only.
- * "Alliengll" here is a page title, not a branding decision: siteName in
- * lib/alliengll/copy.ts stays "Colloquiz" (docs/handoff.md, "Open
- * questions" — naming is still deliberately deferred).
+ * "Alliengll" is the English surface's name (owner, 2026-10-14,
+ * docs/decisions/0137).
  *
  * The login link carries `next=/`: that is what marks /login as the English
  * entry point, so a signup there threads the funnel source (ANON-014,

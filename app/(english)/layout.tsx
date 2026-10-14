@@ -24,15 +24,16 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  // "Alliengll" here is the browser-tab title, same literal display text as
-  // LandingHeader.tsx's wordmark (docs/ui-decisions.md, 2026-09-28 landing
-  // rebuild entry) — not a branding decision; alliengllCopy.siteName stays
-  // "Colloquiz".
+  // The English surface's name is Alliengll (owner, 2026-10-14,
+  // docs/decisions/0137): the tab title, the `· Alliengll` suffix and
+  // og:site_name. Pages set their own title/description; Next fills
+  // og:title/og:description from those.
   title: {
-    default: "Alliengll",
+    default: alliengllCopy.siteName,
     template: `%s · ${alliengllCopy.siteName}`,
   },
   description: alliengllCopy.landing.heroSubtitle,
+  openGraph: { siteName: alliengllCopy.siteName, type: "website" },
   robots: { index: false, follow: false },
 };
 
