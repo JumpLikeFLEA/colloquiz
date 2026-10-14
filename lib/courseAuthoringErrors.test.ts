@@ -48,6 +48,7 @@ describe("courseAuthoringErrorResponse", () => {
     "invalid_invitee_contact",
     "invalid_invitee_name",
     "invalid_tier",
+    "invite_claimed",
     "invite_not_found",
     "rate_limited",
     "run_ended",

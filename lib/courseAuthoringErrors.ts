@@ -94,6 +94,10 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   },
   run_ended: { status: 409, message: "This run has ended, so nobody can join it." },
   invite_not_found: { status: 404, message: "That invite no longer exists." },
+  invite_claimed: {
+    status: 409,
+    message: "This invite has been claimed, so it can't be deleted. Revoke it to end the learner's access.",
+  },
   rate_limited: { status: 429, message: "Too many invites in the last hour. Try again later." },
   // Feedback and final comments (060 save_voice_feedback, 061
   // save_final_comment), surfaced by VOICE-006's review queue.

@@ -67,6 +67,7 @@ type Confirm =
   | { kind: "delete-run"; run: RunWithPhase }
   | { kind: "delete-call"; call: CourseCall }
   | { kind: "revoke-invite"; invite: CourseRunInvite }
+  | { kind: "delete-invite"; invite: CourseRunInvite }
   | { kind: "change-tier"; invite: CourseRunInvite; enrolmentId: string; tier: InviteTier };
 
 // COH-007: the tier is binary, so "change" is always "switch to the other".
@@ -117,6 +118,8 @@ export function RunsView({
         "POST",
         c.invite.state === "claimed" ? "Invite revoked. The learner's access to this run has ended." : "Invite revoked.",
       );
+    } else if (c.kind === "delete-invite") {
+      act(`/api/admin/courses/${courseId}/invites/${c.invite.id}`, "DELETE", "Invite deleted.");
     } else if (c.kind === "change-tier") {
       act(
         `/api/admin/courses/${courseId}/enrolments/${c.enrolmentId}/tier`,
@@ -343,7 +346,7 @@ export function RunsView({
                               )}
                             </p>
                           </div>
-                          {(invite.state === "pending" || invite.state === "claimed") && (
+                          {(invite.state === "pending" || invite.state === "claimed" || !invite.claimedAt) && (
                             <div className="ml-auto flex shrink-0 items-center gap-1">
                               {invite.state === "claimed" && invite.enrolmentId && (
                                 <button
@@ -363,15 +366,28 @@ export function RunsView({
                                   <ArrowUpDown size={14} />
                                 </button>
                               )}
-                              <button
-                                onClick={() => setConfirm({ kind: "revoke-invite", invite })}
-                                disabled={busy}
-                                aria-label={`Revoke the invite for ${invite.inviteeName}`}
-                                title="Revoke"
-                                className={`${ICON_BUTTON} hover:text-destructive-text`}
-                              >
-                                <Ban size={14} />
-                              </button>
+                              {(invite.state === "pending" || invite.state === "claimed") && (
+                                <button
+                                  onClick={() => setConfirm({ kind: "revoke-invite", invite })}
+                                  disabled={busy}
+                                  aria-label={`Revoke the invite for ${invite.inviteeName}`}
+                                  title="Revoke"
+                                  className={`${ICON_BUTTON} hover:text-destructive-text`}
+                                >
+                                  <Ban size={14} />
+                                </button>
+                              )}
+                              {!invite.claimedAt && (
+                                <button
+                                  onClick={() => setConfirm({ kind: "delete-invite", invite })}
+                                  disabled={busy}
+                                  aria-label={`Delete the invite for ${invite.inviteeName}`}
+                                  title="Delete"
+                                  className={`${ICON_BUTTON} hover:text-destructive-text`}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -430,9 +446,11 @@ export function RunsView({
                   ? "Delete this run?"
                   : confirm?.kind === "revoke-invite"
                     ? `Revoke the invite for ${confirm.invite.inviteeName}?`
-                    : confirm?.kind === "change-tier"
-                      ? `Move ${confirm.invite.inviteeName} to ${TIER_LABELS[confirm.tier]}?`
-                      : "Delete this call?"}
+                    : confirm?.kind === "delete-invite"
+                      ? `Delete the invite for ${confirm.invite.inviteeName}?`
+                      : confirm?.kind === "change-tier"
+                        ? `Move ${confirm.invite.inviteeName} to ${TIER_LABELS[confirm.tier]}?`
+                        : "Delete this call?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm?.kind === "close-run"
@@ -443,11 +461,13 @@ export function RunsView({
                     ? confirm.invite.state === "claimed"
                       ? "The learner who claimed it loses access to this run. Access through any other run stays. Use this after a refund or a chargeback. It can't be undone; a new invite enrols them again."
                       : "The link stops working. It can't be undone; create a new invite if needed."
-                    : confirm?.kind === "change-tier"
-                      ? confirm.tier === "extended"
-                        ? "They will see this run's calls and their links on the course page. Their access to lessons doesn't change."
-                        : "They will no longer see this run's calls on the course page. Their access to lessons doesn't change."
-                      : "Learners on the extended tier will no longer see it."}
+                    : confirm?.kind === "delete-invite"
+                      ? "The link stops working and the name and contact are removed. It can't be undone; create a new invite if needed."
+                      : confirm?.kind === "change-tier"
+                        ? confirm.tier === "extended"
+                          ? "They will see this run's calls and their links on the course page. Their access to lessons doesn't change."
+                          : "They will no longer see this run's calls on the course page. Their access to lessons doesn't change."
+                        : "Learners on the extended tier will no longer see it."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

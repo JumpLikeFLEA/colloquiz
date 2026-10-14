@@ -1762,3 +1762,14 @@ Appended to in the same commit as the change it records. Referenced from
   to <course>", the same for every invite state. Colloquiz (`/app`, `/login`)
   is unchanged. No new hex literals. Do not make the invite card or title
   depend on the invite's state: Telegram caches the preview per URL.
+- Runs page: delete an unclaimed invite (2026-10-14, COH-009,
+  docs/decisions/0138). Every unclaimed invite row (pending, expired,
+  revoked-unclaimed) gains a Delete icon button (`Trash2`, the row's
+  `ICON_BUTTON` class with `hover:text-destructive-text`), beside Revoke on a
+  pending row. It opens the page's AlertDialog: "Delete the invite for <name>?"
+  / "The link stops working and the name and contact are removed. It can't be
+  undone; create a new invite if needed."; toast "Invite deleted." A claimed
+  invite has no Delete (Revoke and Change tier only). A pending row now has the
+  same two icons a claimed row already had; width at 360px not re-measured.
+  Composed from existing classes and tokens; no new colours. Do not offer
+  Delete on a claimed invite: its label belongs to the enrolment.
