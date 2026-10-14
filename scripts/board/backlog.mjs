@@ -2830,6 +2830,79 @@ export const CARDS = [
       'Output: a decision file and proposed build cards, with their milestone left to the owner.',
     ],
   },
+  // Telegram reminders (owner, 2026-10-14, docs/decisions/0140): filed in M3,
+  // not part of the M3 bar. The bot reaches a learner only through a /start
+  // deep link (ANON-010, docs/decisions/0098).
+  {
+    key: 'COH-010',
+    title: 'Telegram reminders: a learner links the bot',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2515.1,
+    dependsOn: ['COH-006'],
+    goal:
+      'A cohort learner links @Alliengll_bot once, through a /start deep link, and every reminder card ' +
+      'sends through that link (docs/decisions/0140). Sign-in gives the bot nothing it can message (0098).',
+    acceptance: [
+      'A migration: a link table (user, Telegram chat id, language and time zone captured at link time, linked_at, stopped_at) and hashed, single-use link tokens valid for one hour, written through SECURITY DEFINER RPCs; a learner reads only their own link. Written, not applied; migration-number and re-emitted-body print rule (section header).',
+      'POST /api/telegram/webhook refuses any request without the X-Telegram-Bot-Api-Secret-Token set by setWebhook. `/start <token>` links the sender\'s chat (from.id) and replies with what the bot sends and how to stop; `/stop` sets stopped_at; anything else gets a short help reply. TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET are server-only env vars; the closing comment gives the owner the exact setWebhook call.',
+      '"Get reminders in Telegram" with the linked state and Turn off, on /my and on the cohort course page, for an enrolee only; EN/RU follows the saved choice. The link captures the saved language and the browser time zone. `npm run budget` before and after for /my and a cohort course page.',
+      'One server-only sender with pure message builders in lib/ under vitest: a 403 from sendMessage marks the link stopped, and a failed send never throws into its caller.',
+      'Account export includes the link and account deletion removes it (delete_my_account re-emitted per the print rule). Full protocol: another user can neither read nor change a link; a token works once and expires; positive control: the owner links a chat on production and /stop works, printed.',
+      'Legal: privacy-policy rows for the chat id and for message text passing through Telegram; subprocessors.md\'s Telegram row gains messaging (0140 "Legal"). Drafted, owner signs off before commit. docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'COH-011',
+    title: 'Telegram reminder: feedback and final comment are ready',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2515.2,
+    dependsOn: ['COH-010'],
+    goal: 'Tell a linked learner when the author has answered (docs/decisions/0140, events 2 and 3).',
+    acceptance: [
+      'Publishing voice feedback (VOICE-006) or a final comment (COH-008) messages the learner, in the language saved at link time, with a link to the lesson or to /runs/<run>. Sent after the publish succeeds; a send failure never fails or delays the publish.',
+      'A sent log keyed by the feedback or comment: a republish or an edit sends nothing twice; an unlinked or stopped learner gets nothing.',
+      'Wording from docs/decisions/0140, EN and RU, in a pure lib/ module under vitest.',
+      'Live: the owner publishes feedback to a linked test learner on production and the message arrives (printed sendMessage result or screenshot).',
+    ],
+  },
+  {
+    key: 'COH-012',
+    title: 'Telegram reminder: week N is open (daily cron)',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2515.3,
+    dependsOn: ['COH-010'],
+    goal: 'Tell linked cohort enrolees that a new week has opened (docs/decisions/0140, event 1, option A).',
+    acceptance: [
+      'One daily Vercel cron in vercel.json (Hobby: once a day, fires within the hour) calls /api/cron/telegram-reminders with Authorization: Bearer $CRON_SECRET, the voice-purge pattern (docs/decisions/0110).',
+      'The weeks that opened since the last send are computed at send time from the same SQL schedule the lesson state uses (docs/decisions/0093, 0108), never from a stored per-week queue. Week 1 reads "the course has started". Only live enrolments of linked, not-stopped learners.',
+      'A sent log unique per enrolment and week. Printed on seeded data: a run whose week opened gets exactly one message across two cron runs; a week not yet open gets none; a revoked enrolee gets none.',
+      'Migration written, not applied; migration-number print rule (section header).',
+    ],
+  },
+  {
+    key: 'COH-013',
+    title: 'Telegram reminder: calls in the next 24 hours (extended tier)',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2515.4,
+    dependsOn: ['COH-012'],
+    goal:
+      'Remind extended enrolees of their calls (docs/decisions/0140, event 4). Under the daily cron this is a ' +
+      'digest of the next 24 hours, not an hour-before alert.',
+    acceptance: [
+      'The COH-012 cron sends each linked extended enrolee one message listing their run\'s calls that start in the next 24 hours, with times in the time zone saved at link time and each call\'s join link. Basic enrolees get none; which calls an enrolee sees comes from SQL (058), not TypeScript.',
+      'A sent log unique per enrolment and call: a call is announced at most once to each enrolee.',
+      'No wording promises a fixed lead time ("in an hour"): the cron fires once a day within its hour (0140).',
+      'Printed on seeded data: an extended enrolee with a call tomorrow gets it; a basic enrolee and a stopped link get nothing; a second cron run sends nothing new.',
+    ],
+  },
   // Authors build a course in Studio (owner, 2026-10-11, docs/decisions/0125).
   {
     key: 'AUTH-015',
