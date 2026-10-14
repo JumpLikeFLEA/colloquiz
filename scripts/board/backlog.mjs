@@ -2687,6 +2687,26 @@ export const CARDS = [
     ],
   },
   {
+    key: 'COH-009',
+    title: 'Editor: delete an unclaimed invite',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2508,
+    dependsOn: ['COH-003'],
+    goal:
+      'Reported by the owner, 2026-10-14: an author typed a wrong email into an invite and could not ' +
+      'remove it. The runs page only offers Revoke (revoke_run_invite, 059), which keeps the row, with ' +
+      'the wrong contact label, for 30 days until purge_unclaimed_run_invites. Scenario: create the ' +
+      'invite again with the right email, then delete the old one.',
+    acceptance: [
+      'A SECURITY DEFINER RPC deletes one unclaimed invite (pending, expired or revoked-unclaimed), gated on can_edit_course of the run\'s course. A claimed invite is refused with a named error; its label is kept with the enrolment (059 section 6). No grants on run_invites change.',
+      'The runs page offers Delete on every unclaimed invite row, with a confirm dialog, English chrome; the refusal is toasted through lib/courseAuthoringErrors.ts. After deleting, the old link shows the invite page\'s not-found state.',
+      'Full protocol: the editor of the course deletes a pending invite (positive control) and the row is gone from course_run_invites; a claimed invite, a non-editor and an editor of another course are refused; the deleted token\'s run_invite_preview is not_found.',
+      'Recorded in docs/ui-decisions.md. Migration-number print rule (section header).',
+    ],
+  },
+  {
     key: 'COH-008',
     title: 'Migration: final comment storage',
     milestone: 'M3',
