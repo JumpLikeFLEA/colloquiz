@@ -1741,3 +1741,13 @@ Appended to in the same commit as the change it records. Referenced from
   its dots (not in this card). Tab title stays "Colloquiz". Existing tokens
   only; `/login` 287.5 KB of 380 (287.4 before). Do not make the panel read
   the language cookie without redoing 0135.
+- Gated lessons say how to get in (2026-10-14, PAY-001, docs/decisions/0136).
+  The paid-lesson card gains a primary "How to get access" button
+  (`SUBMIT_BUTTON_CLASS`, external link, new tab) above "Back to course" when
+  the course has a `how_to_join_url`; without one it is unchanged. On the course
+  page a lesson the visitor cannot open yet gets a muted pill, "Sign in to open"
+  or "Paid" (`bg-muted text-muted-foreground`, the "Opens <date>" pill's
+  tokens), read from the SQL lesson state, so a granted learner sees none and
+  an all-free course is unchanged. No lock icon. Studio's "How to join (link)"
+  field now shows for self-paced courses too. Existing tokens only. Do not
+  derive the pill from `accessLevel`.

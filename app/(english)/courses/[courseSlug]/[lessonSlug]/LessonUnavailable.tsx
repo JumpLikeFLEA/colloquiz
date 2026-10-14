@@ -12,10 +12,10 @@ import {
 import { LocalDateTime } from "../../../LocalDateTime";
 import { TeaserBlock } from "./TeaserBlock";
 import { SUBMIT_BUTTON_CLASS } from "@/app/components/lesson-player/practice/practiceClasses";
-import { scheduledCopy, signInCopy } from "./signInCopy";
+import { paidCopy, scheduledCopy, signInCopy } from "./signInCopy";
 
 export type LessonUnavailableAccess =
-  | { access: "needs_entitlement" }
+  | { access: "needs_entitlement"; howToJoinUrl?: string | null }
   | { access: "scheduled"; opensAt: string }
   | { access: "needs_sign_in"; teaser: TheoryBlock[]; openLesson: NextLessonLink | null };
 
@@ -27,7 +27,9 @@ const BACK_BUTTON_CLASS =
  * `LessonBand` as a playable lesson, then what the caller still needs.
  *
  * - `needs_entitlement`: one card with the existing copy and a way back to
- *   the course. No buy CTA, no lock icon (M3's paid preview is not built).
+ *   the course. PAY-001 (docs/decisions/0136): when the author set a "how to
+ *   get access" link it is the primary action (a plain external link, new
+ *   tab); without one the card is unchanged. No checkout, no lock icon.
  * - `needs_sign_in` (ANON-011, docs/decisions/0104): the lesson's leading
  *   theory as `lesson_teaser` (055) cut it, then a card asking for sign-in
  *   that links to `/login?next=<this lesson>` (ANON-016 returns the learner
@@ -80,6 +82,11 @@ export function LessonUnavailable({
         <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
           <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
             <p className="max-w-sm text-base font-medium text-foreground">{alliengllCopy.notAvailable.body}</p>
+            {state.howToJoinUrl && (
+              <a href={state.howToJoinUrl} target="_blank" rel="noopener noreferrer" className={SUBMIT_BUTTON_CLASS}>
+                {paidCopy.getAccess}
+              </a>
+            )}
             <Link href={`/courses/${courseSlug}`} className={BACK_BUTTON_CLASS}>
               {alliengllCopy.player.backToCourse}
             </Link>

@@ -28,6 +28,9 @@ type CourseStrings = {
   exercises: PluralForms;
   minutesLabel: string;
   freeBadge: string;
+  /** PAY-001: a lesson this visitor cannot open yet. */
+  signInBadge: string;
+  paidBadge: string;
   bestScoreLabel: string;
   aboutTitle: string;
   lessonsEyebrow: string;
@@ -79,6 +82,8 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     exercises: { one: "задание", few: "задания", many: "заданий", other: "задания" },
     minutesLabel: "мин",
     freeBadge: "Бесплатно",
+    signInBadge: "Нужен вход",
+    paidBadge: "Платный",
     bestScoreLabel: "Лучший",
     aboutTitle: "О курсе",
     lessonsEyebrow: "Программа",
@@ -121,6 +126,8 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     exercises: { one: "exercise", other: "exercises" },
     minutesLabel: "min",
     freeBadge: "Free",
+    signInBadge: "Sign in to open",
+    paidBadge: "Paid",
     bestScoreLabel: "Best",
     aboutTitle: "About the course",
     lessonsEyebrow: "Syllabus",

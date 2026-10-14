@@ -96,34 +96,36 @@ export function CourseFormatSection({
         </p>
       </div>
 
+      <div className="flex flex-col gap-1">
+        <label htmlFor="how-to-join-url" className="text-xs font-medium text-foreground">
+          How to join (link)
+        </label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            id="how-to-join-url"
+            value={joinUrl}
+            onChange={(e) => setJoinUrl(e.target.value)}
+            placeholder="https://… (optional)"
+            inputMode="url"
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
+          />
+          <button
+            onClick={saveJoinUrl}
+            disabled={busy || joinUrl.trim() === (howToJoinUrl ?? "")}
+            className="cursor-pointer disabled:cursor-not-allowed shrink-0 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
+          >
+            Save
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {format === "cohort"
+              ? "Shown to a visitor who isn’t enrolled, e.g. your Patreon page."
+              : "Shown on a Purchase-required lesson as its “How to get access” button, e.g. your Patreon page."}
+        </p>
+      </div>
+
       {format === "cohort" && (
         <>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="how-to-join-url" className="text-xs font-medium text-foreground">
-              How to join (link)
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                id="how-to-join-url"
-                value={joinUrl}
-                onChange={(e) => setJoinUrl(e.target.value)}
-                placeholder="https://… (optional)"
-                inputMode="url"
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
-              />
-              <button
-                onClick={saveJoinUrl}
-                disabled={busy || joinUrl.trim() === (howToJoinUrl ?? "")}
-                className="cursor-pointer disabled:cursor-not-allowed shrink-0 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
-              >
-                Save
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Shown to a visitor who isn&rsquo;t enrolled, e.g. your Patreon page.
-            </p>
-          </div>
-
           {runs.inProgress && (
             <p className="px-3 py-2 rounded-lg bg-warning-subtle text-xs text-warning">
               A run is in progress. A published lesson&rsquo;s week can only move earlier, and a published lesson

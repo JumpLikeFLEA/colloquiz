@@ -24,6 +24,10 @@ export type PublicLesson =
       state: "not_available";
       /** What the caller still needs, as `lesson_state` (055) returned it. */
       access: "needs_entitlement";
+      /** PAY-001 (docs/decisions/0136) — the course's author-set "how to get
+       * access" link (`courses.how_to_join_url`, 058; https-only by CHECK);
+       * null when unset. */
+      howToJoinUrl: string | null;
     } & PublicLessonMeta)
   | ({
       state: "not_available";
@@ -104,7 +108,7 @@ export async function readPublicLesson(
 
   const { data: course, error: courseErr } = await supabase
     .from("courses")
-    .select("id, title")
+    .select("id, title, how_to_join_url")
     .eq("slug", courseSlug)
     .maybeSingle();
   if (courseErr) throw new Error(courseErr.message);
@@ -139,7 +143,7 @@ export async function readPublicLesson(
     // disagreeing — an invariant break, not a "paid" screen.
     throw new Error(`lesson_state(${lesson.id}) returned no row for a lesson RLS shows this caller`);
   }
-  if (lessonState.state === "needs_entitlement") return { state: "not_available", access: "needs_entitlement", ...meta };
+  if (lessonState.state === "needs_entitlement") return { state: "not_available", access: "needs_entitlement", howToJoinUrl: course.how_to_join_url, ...meta };
   if (lessonState.state === "scheduled") {
     // 058 sets opens_at on every scheduled row; a null one is the function
     // breaking its own contract, not a lesson to open.

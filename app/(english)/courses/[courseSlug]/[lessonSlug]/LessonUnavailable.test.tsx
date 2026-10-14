@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import type { TheoryBlock } from "@/lib/lessons";
 import { LessonUnavailable } from "./LessonUnavailable";
-import { scheduledCopy, signInCopy } from "./signInCopy";
+import { paidCopy, scheduledCopy, signInCopy } from "./signInCopy";
 
 /**
  * ANON-011 (docs/decisions/0104) — the two denied states. What SQL decides
@@ -107,5 +107,33 @@ describe("LessonUnavailable", () => {
     expect(screen.getByText(alliengllCopy.notAvailable.body)).toBeTruthy();
     expect(screen.queryByRole("link", { name: signInCopy.cta })).toBeNull();
     expect(screen.queryByTestId("lesson-teaser")).toBeNull();
+  });
+
+  it("needs_entitlement with a join link: it is an external primary action, beside the way back", () => {
+    render(
+      <LessonUnavailable
+        band={band}
+        courseSlug="future"
+        lessonPath="/courses/future/exit-check"
+        state={{ access: "needs_entitlement", howToJoinUrl: "https://patreon.example/course" }}
+      />,
+    );
+    const link = screen.getByRole("link", { name: paidCopy.getAccess });
+    expect(link.getAttribute("href")).toBe("https://patreon.example/course");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
+    expect(screen.getByRole("link", { name: alliengllCopy.player.backToCourse })).toBeTruthy();
+  });
+
+  it("needs_entitlement with a null join link: no access button", () => {
+    render(
+      <LessonUnavailable
+        band={band}
+        courseSlug="future"
+        lessonPath="/courses/future/exit-check"
+        state={{ access: "needs_entitlement", howToJoinUrl: null }}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: paidCopy.getAccess })).toBeNull();
   });
 });

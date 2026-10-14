@@ -30,3 +30,11 @@ export const scheduledCopy = {
   /** Followed by the unlock moment in the viewer's local time. */
   opensOn: "It opens on",
 } as const;
+
+/**
+ * PAY-001 — the paid lesson's way in (docs/decisions/0136). English lesson
+ * chrome. New copy, pending owner/partner review.
+ */
+export const paidCopy = {
+  getAccess: "How to get access",
+} as const;
