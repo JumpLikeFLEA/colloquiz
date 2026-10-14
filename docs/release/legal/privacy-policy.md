@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.3 · Last updated 2026-10-11
+Version 1.4 · Last updated 2026-10-14
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -56,7 +56,7 @@ that produces legal or similarly significant effects.
 | Profile picture | Optional, Settings › Account | Shown to you and to members of groups you join |
 | Your age confirmation | Sign-up | We only offer the Service to people aged 13 and over |
 | Feedback and question reports | When you submit them | To fix problems and moderate the question bank |
-| Telegram identity — if you sign in with Telegram: your Telegram account identifier, name, username and profile picture, as Telegram returns them | Sign-in with Telegram | Account identity and sign-in. Instead of an email address, a Telegram account has a username, which is what a course author sees |
+| Telegram identity — if you sign in with Telegram: an identifier Telegram issues for this Service (not your Telegram account number), your name and your username, as Telegram returns them | Sign-in with Telegram | Account identity and sign-in. Instead of an email address, a Telegram account has a username, which is what a course author sees |
 | Voice recordings — if you send one for a voice task in a cohort course: the audio | You, in the voice task | So the course author can listen and answer in writing, and so you can compare your first and last recording |
 | Invite contact label — an author's note of a name and a contact (email or @telegram) for someone they invite to a course | The course author, not you | To send you the invite. Only the course author sees it |
 

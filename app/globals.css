@@ -88,6 +88,9 @@
   --warning: #b45309;
   --warning-subtle: #fffbeb;
   --warning-border: #fde68a;
+  /* Telegram's brand blue, for its sign-in mark only (ANON-012). A brand
+     colour, not a theme colour, so .dark repeats the same value. */
+  --telegram: #2aabee;
   --border: rgba(0, 0, 0, 0.1);
   --input: transparent;
   --input-background: #f3f3f5;
@@ -228,6 +231,7 @@
   --warning: oklch(0.80 0.14 70);
   --warning-subtle: oklch(0.28 0.05 70);
   --warning-border: oklch(0.38 0.07 70);
+  --telegram: #2aabee;
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -287,6 +291,7 @@
   --color-warning: var(--warning);
   --color-warning-subtle: var(--warning-subtle);
   --color-warning-border: var(--warning-border);
+  --color-telegram: var(--telegram);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);

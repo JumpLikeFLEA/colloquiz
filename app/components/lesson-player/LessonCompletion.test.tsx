@@ -39,11 +39,12 @@ describe("LessonCompletion — registration offer gating", () => {
     expect(screen.queryByText(alliengllCopy.signupOffer.title)).toBeNull();
   });
 
-  it("shows the offer after a completed lesson for an anonymous learner", () => {
+  it("shows the offer after a completed lesson for an anonymous learner", async () => {
     render(
       <LessonCompletion score={scored} progress={all} review={[]} courseSlug="c" nextLesson={null} isSignedIn={false} />,
     );
-    expect(screen.getByText(alliengllCopy.signupOffer.title)).toBeDefined();
+    // Lazy-loaded (0139), so it arrives a tick later.
+    expect(await screen.findByText(alliengllCopy.signupOffer.title)).toBeDefined();
   });
 
   it("shows no offer for a signed-in learner, even after a completed lesson", () => {

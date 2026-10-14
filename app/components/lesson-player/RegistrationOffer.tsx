@@ -4,11 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Mail, Lock } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
-import { isInAppBrowser } from "@/lib/inAppBrowser";
+import { isInAppBrowser, isOAuthProviderAvailable } from "@/lib/inAppBrowser";
 import { createAttemptStore, toRecordAttemptPayload } from "@/lib/lessonPlayer/attemptStore";
-import { oauthQueryParams } from "@/lib/authRedirect";
+import { oauthQueryParams, type OAuthProvider } from "@/lib/authRedirect";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
-import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
+import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/ProviderIcons";
 
 /**
  * ANON-004 — the registration offer PLAY-007's `RegistrationOfferSlot`
@@ -28,13 +28,19 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
-  const [loading, setLoading] = useState<"email" | "google" | "discord" | null>(null);
+  const [loading, setLoading] = useState<"email" | OAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
 
   if (dismissed) return null;
 
-  const inAppBrowser = isInAppBrowser(typeof navigator === "undefined" ? null : navigator.userAgent);
+  const userAgent = typeof navigator === "undefined" ? null : navigator.userAgent;
+  const inAppBrowser = isInAppBrowser(userAgent);
+  // ANON-012 — per provider: each button shows only where it is proven to work
+  // (lib/inAppBrowser.ts). Today that hides all three in an in-app browser.
+  const showTelegram = isOAuthProviderAvailable("custom:telegram", userAgent);
+  const showGoogle = isOAuthProviderAvailable("google", userAgent);
+  const showDiscord = isOAuthProviderAvailable("discord", userAgent);
 
   const signInHref = `/login?${new URLSearchParams({ next: lessonPath }).toString()}`;
 
@@ -105,7 +111,7 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
     }
   }
 
-  async function handleOAuth(provider: "google" | "discord") {
+  async function handleOAuth(provider: OAuthProvider) {
     setError(null);
     setLoading(provider);
     try {
@@ -177,29 +183,47 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
     <div className="rounded-xl border border-brand-border bg-brand-subtle p-4 flex flex-col gap-4">
       <h3 className="text-sm font-semibold text-brand-text">{alliengllCopy.signupOffer.title}</h3>
 
-      {inAppBrowser ? (
-        <p className="text-xs text-brand-text">{alliengllCopy.signupOffer.inAppBrowserNotice}</p>
-      ) : (
+      {inAppBrowser && <p className="text-xs text-brand-text">{alliengllCopy.signupOffer.inAppBrowserNotice}</p>}
+      {(showTelegram || showGoogle || showDiscord) && (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleOAuth("google")}
-              disabled={loading !== null}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <GoogleIcon size={16} />
-              <span className="text-sm font-medium text-foreground">{alliengllCopy.signupOffer.oauthGoogle}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOAuth("discord")}
-              disabled={loading !== null}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <DiscordIcon size={16} />
-              <span className="text-sm font-medium text-foreground">{alliengllCopy.signupOffer.oauthDiscord}</span>
-            </button>
+          <div className="flex flex-col gap-3">
+            {showTelegram && (
+              <button
+                type="button"
+                onClick={() => handleOAuth("custom:telegram")}
+                disabled={loading !== null}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <TelegramIcon size={16} />
+                <span className="text-sm font-medium text-foreground">{alliengllCopy.signupOffer.oauthTelegram}</span>
+              </button>
+            )}
+            {(showGoogle || showDiscord) && (
+              <div className="grid grid-cols-2 gap-3">
+                {showGoogle && (
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth("google")}
+                    disabled={loading !== null}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <GoogleIcon size={16} />
+                    <span className="text-sm font-medium text-foreground">{alliengllCopy.signupOffer.oauthGoogle}</span>
+                  </button>
+                )}
+                {showDiscord && (
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth("discord")}
+                    disabled={loading !== null}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <DiscordIcon size={16} />
+                    <span className="text-sm font-medium text-foreground">{alliengllCopy.signupOffer.oauthDiscord}</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-border" />

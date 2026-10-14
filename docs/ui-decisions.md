@@ -1773,3 +1773,23 @@ Appended to in the same commit as the change it records. Referenced from
   same two icons a claimed row already had; width at 360px not re-measured.
   Composed from existing classes and tokens; no new colours. Do not offer
   Delete on a claimed invite: its label belongs to the enrolment.
+- Telegram sign-in (2026-10-14, ANON-012, docs/decisions/0139). AuthScreen
+  (both panels) and the lesson's registration offer gain a full-width
+  "Continue with Telegram" button above the Google/Discord row, in the same
+  button classes, grouped with that row at `gap-3`. The icon is Telegram's
+  mark in a new `--telegram` token (`#2aabee`, same in `.dark`). The sign-up
+  consent note reads "Signing up with Telegram, Google or Discord…". In an
+  Instagram or Telegram in-app browser the registration offer shows no OAuth
+  button, Telegram included, and its notice names all three, until a phone
+  pass proves Telegram there (`lib/inAppBrowser.ts`). Settings › Sign-in
+  methods gains a Telegram row, last, showing "@username" when connected.
+  Do not show Telegram in the in-app offer without that pass's result in
+  docs/decisions/0098.
+- Auth form reachable when taller than the screen (2026-10-14, ANON-012,
+  docs/decisions/0139 Decision 8). AuthScreen's right panel no longer
+  centres with `items-center`. The form column centres with `my-auto`
+  instead, so a sign-up form taller than the viewport starts at the panel's
+  top padding rather than overflowing above it. Measured on `/signup`: the
+  form's top was at −123 px at 360×800 and −35 px at 1440×900; now it is
+  48 px at both. A form that fits is centred exactly as before (`/login`
+  unchanged). Do not put `items-center` back on that panel.

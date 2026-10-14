@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
@@ -8,7 +9,13 @@ import type { SessionProgress } from "@/lib/lessonPlayer/session";
 import { pluralize } from "@/lib/pluralCategory";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import { READING_WIDTH_CLASS } from "./columnLayout";
-import { RegistrationOffer } from "./RegistrationOffer";
+
+// ANON-012 (docs/decisions/0139): loaded when the offer first shows, after a
+// completed lesson, so its OAuth buttons and provider icons are not in a
+// lesson's first load. Client-only: completion never exists on the server.
+const RegistrationOffer = dynamic(() => import("./RegistrationOffer").then((m) => m.RegistrationOffer), {
+  ssr: false,
+});
 
 /** Partial credit makes points fractional ("1.5 of 2"). The lesson page's
  * chrome is English (docs/decisions/0080 Decision 5), so the decimal is a

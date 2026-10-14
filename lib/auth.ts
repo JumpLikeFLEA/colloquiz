@@ -37,5 +37,7 @@ export async function authUserFrom(supabase: SupabaseClient): Promise<AuthUser |
   const { data, error } = await supabase.auth.getClaims();
   const sub = data?.claims?.sub;
   if (error || !sub) return null;
-  return { id: sub, email: (data.claims.email as string | undefined) ?? null };
+  // `||`, not `??`: an account with no email (Telegram sign-in) carries
+  // `email: ""` in its JWT (docs/decisions/0098), and "no email" has one value here.
+  return { id: sub, email: (data.claims.email as string | undefined) || null };
 }

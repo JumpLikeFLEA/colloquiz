@@ -75,6 +75,24 @@ describe("AuthScreen — English entry (the landing header's /login?next=/)", ()
     expect(url.searchParams.get("source")).toBe("telegram");
   });
 
+  it("Telegram (ANON-012) signs in through the custom provider and keeps a lesson's next and the source", async () => {
+    render(<AuthScreen initialMode="login" redirectTo="/courses/c/l" />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue with Telegram" }));
+    await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
+    const args = signInWithOAuth.mock.calls[0][0];
+    expect(args.provider).toBe("custom:telegram");
+    expect(args.options.queryParams).toBeUndefined();
+    const url = new URL(args.options.redirectTo as string);
+    expect(url.pathname).toBe("/auth/callback");
+    expect(url.searchParams.get("next")).toBe("/courses/c/l");
+    expect(url.searchParams.get("source")).toBe("telegram");
+  });
+
+  it("the sign-up consent note names Telegram with the other providers", () => {
+    render(<AuthScreen initialMode="register" redirectTo="/" />);
+    expect(screen.getByText(/Signing up with Telegram, Google or Discord also confirms/)).toBeDefined();
+  });
+
   it("a GPC visitor sends no source by either method, and storage is not read", async () => {
     setGpc(true);
     const getItem = vi.spyOn(Storage.prototype, "getItem");

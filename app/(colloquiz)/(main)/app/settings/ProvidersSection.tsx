@@ -7,7 +7,8 @@ import { Check, KeyRound, Loader2, Link2, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorDialog } from "@/app/components/ErrorDialog";
-import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
+import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/ProviderIcons";
+import type { OAuthProvider } from "@/lib/authRedirect";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,9 +26,21 @@ const PROVIDERS = [
   { id: "email", label: "Email & password", icon: <KeyRound size={18} className="text-muted-foreground" />, oauth: false },
   { id: "google", label: "Google", icon: <GoogleIcon size={18} />, oauth: true },
   { id: "discord", label: "Discord", icon: <DiscordIcon size={18} />, oauth: true },
+  // ANON-012: the hosted project's custom OIDC provider (docs/decisions/0098).
+  // Appended, not inserted, so an existing user's list keeps its order.
+  { id: "custom:telegram", label: "Telegram", icon: <TelegramIcon size={18} />, oauth: true },
 ] as const;
 
 type ProviderId = (typeof PROVIDERS)[number]["id"];
+
+/** The account behind a connected row: its email, or for Telegram, which
+ * sends none, its @username (0098). */
+function connectedDetail(identity: UserIdentity): string {
+  const data = identity.identity_data;
+  if (data?.email) return ` · ${String(data.email)}`;
+  if (data?.preferred_username) return ` · @${String(data.preferred_username)}`;
+  return "";
+}
 
 /**
  * Linked sign-in methods, read from Supabase's identities rather than inferred
@@ -51,7 +64,7 @@ export function ProvidersSection({
   const [confirmUnlink, setConfirmUnlink] = useState<{ identity: UserIdentity; label: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Counts every identity, not just the three this app renders: an account
+  // Counts every identity, not just the four this app renders: an account
   // linked to a provider we no longer show still has a way in, and unlinking a
   // visible one would not lock anybody out.
   const isLastMethod = identities.length <= 1;
@@ -60,7 +73,7 @@ export function ProvidersSection({
     setBusy(provider);
     const supabase = createClient();
     const { error } = await supabase.auth.linkIdentity({
-      provider: provider as "google" | "discord",
+      provider: provider as OAuthProvider,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=/app/settings` },
     });
     // On success the browser navigates to the provider; only failures land here.
@@ -114,7 +127,7 @@ export function ProvidersSection({
                   {connected ? (
                     <span className="inline-flex items-center gap-1 text-success">
                       <Check size={12} />
-                      Connected{identity.identity_data?.email ? ` · ${String(identity.identity_data.email)}` : ""}
+                      Connected{connectedDetail(identity)}
                     </span>
                   ) : (
                     "Not connected"

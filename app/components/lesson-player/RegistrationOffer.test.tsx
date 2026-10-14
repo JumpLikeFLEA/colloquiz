@@ -59,7 +59,24 @@ describe("RegistrationOffer", () => {
     fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
     expect(screen.getByText(alliengllCopy.signupOffer.oauthGoogle)).toBeDefined();
     expect(screen.getByText(alliengllCopy.signupOffer.oauthDiscord)).toBeDefined();
+    expect(screen.getByText(alliengllCopy.signupOffer.oauthTelegram)).toBeDefined();
     expect(screen.getByLabelText(alliengllCopy.signupOffer.emailLabel)).toBeDefined();
+  });
+
+  it("Telegram (ANON-012) signs in through the custom provider and returns to the lesson", async () => {
+    render(<RegistrationOffer lessonPath="/courses/c/l" />);
+    fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
+    fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.oauthTelegram }));
+    await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
+    const callArgs = signInWithOAuth.mock.calls[0][0] as {
+      provider: string;
+      options: { redirectTo: string; queryParams?: unknown };
+    };
+    expect(callArgs.provider).toBe("custom:telegram");
+    expect(callArgs.options.queryParams).toBeUndefined();
+    const redirectUrl = new URL(callArgs.options.redirectTo);
+    expect(redirectUrl.pathname).toBe("/auth/callback");
+    expect(redirectUrl.searchParams.get("next")).toBe("/courses/c/l");
   });
 
   it("hides OAuth buttons and shows a notice inside a detected in-app browser", () => {
@@ -67,6 +84,10 @@ describe("RegistrationOffer", () => {
     render(<RegistrationOffer lessonPath="/courses/c/l" />);
     fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
     expect(screen.queryByText(alliengllCopy.signupOffer.oauthGoogle)).toBeNull();
+    expect(screen.queryByText(alliengllCopy.signupOffer.oauthDiscord)).toBeNull();
+    // Hidden until a device pass proves it there (docs/decisions/0098 Decision 1).
+    expect(screen.queryByText(alliengllCopy.signupOffer.oauthTelegram)).toBeNull();
+    expect(screen.queryByText(alliengllCopy.signupOffer.orDivider)).toBeNull();
     expect(screen.getByText(alliengllCopy.signupOffer.inAppBrowserNotice)).toBeDefined();
     // The email/password form is still available.
     expect(screen.getByLabelText(alliengllCopy.signupOffer.emailLabel)).toBeDefined();

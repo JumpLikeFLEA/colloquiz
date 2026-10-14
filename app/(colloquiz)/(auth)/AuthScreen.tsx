@@ -10,8 +10,8 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { GoogleIcon, DiscordIcon } from "@/app/components/ProviderIcons";
-import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo } from "@/lib/authRedirect";
+import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/ProviderIcons";
+import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo, type OAuthProvider } from "@/lib/authRedirect";
 import { signInDestDependsOnRole } from "@/lib/postSignInDest";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
 
@@ -73,8 +73,6 @@ export function Field({ label, type = "text", placeholder, icon, dark, value, on
     </div>
   );
 }
-
-type OAuthProvider = "google" | "discord";
 
 interface AuthFormState {
   email: string; password: string; name: string;
@@ -357,15 +355,17 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
       {/* Left decorative panel */}
       {englishEntry ? <EnglishAuthPanel /> : <AuthLeftPanel />}
 
-      {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
+      {/* Right form panel. Centred by the column's my-auto, not items-center:
+          auto margins drop to 0 when the sign-up form is taller than the
+          viewport, so its top stays reachable by scrolling (0139). */}
+      <div className="flex-1 flex justify-center bg-background px-6 py-12 overflow-y-auto">
         <motion.div
           key={emailSent ? "email-sent" : mode}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.25 }}
-          className="w-full max-w-sm flex flex-col gap-7"
+          className="w-full max-w-sm my-auto flex flex-col gap-7"
         >
           {/* Logo (mobile only) — same exemption as AuthLeftPanel above: a small
               decorative gradient chip carrying a white glyph, correct in either
@@ -441,21 +441,28 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
 
           {mode !== "forgot" && (
             <>
-              {/* Social sign-in */}
-              <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                  <GoogleIcon size={18} />
-                  <span className="text-sm font-medium text-foreground">Google</span>
+              {/* Social sign-in. Telegram gets its own full-width row on top
+                  (ANON-012, docs/decisions/0139). */}
+              <div className="flex flex-col gap-3">
+                <button type="button" onClick={() => handleOAuthLogin("custom:telegram")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                  <TelegramIcon size={18} />
+                  <span className="text-sm font-medium text-foreground">Continue with Telegram</span>
                 </button>
-                <button type="button" onClick={() => handleOAuthLogin("discord")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                  <DiscordIcon size={18} />
-                  <span className="text-sm font-medium text-foreground">Discord</span>
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                    <GoogleIcon size={18} />
+                    <span className="text-sm font-medium text-foreground">Google</span>
+                  </button>
+                  <button type="button" onClick={() => handleOAuthLogin("discord")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                    <DiscordIcon size={18} />
+                    <span className="text-sm font-medium text-foreground">Discord</span>
+                  </button>
+                </div>
               </div>
 
               {mode === "register" && (
                 <p className="text-xs text-muted-foreground text-center">
-                  Signing up with Google or Discord also confirms you are 13 or over and accept our{" "}
+                  Signing up with Telegram, Google or Discord also confirms you are 13 or over and accept our{" "}
                   <Link href="/terms" target="_blank" rel="noreferrer" className="text-brand-text hover:underline">Terms</Link>{" "}
                   and{" "}
                   <Link href="/privacy" target="_blank" rel="noreferrer" className="text-brand-text hover:underline">Privacy Policy</Link>.

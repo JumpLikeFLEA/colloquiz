@@ -76,4 +76,8 @@ describe("oauthQueryParams", () => {
   it("leaves Discord's authorize URL unchanged", () => {
     expect(oauthQueryParams("discord")).toBeUndefined();
   });
+
+  it("leaves Telegram's authorize URL unchanged", () => {
+    expect(oauthQueryParams("custom:telegram")).toBeUndefined();
+  });
 });
