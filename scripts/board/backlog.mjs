@@ -51,6 +51,7 @@ export const EPICS = [
   },
   { key: 'COH', title: 'Cohort courses', desc: 'Runs, weekly unlocks, enrolment by invite, tiers, calls, the final screen.' },
   { key: 'VOICE', title: 'Voice tasks', desc: 'The voice block, recording, submissions, the partner\'s feedback and review queue.' },
+  { key: 'TCH', title: 'Teachers', desc: 'Seats, student links, groups, messages, homework (docs/decisions/0141).' },
 ];
 
 export const CARDS = [
@@ -2831,15 +2832,16 @@ export const CARDS = [
     ],
   },
   // Telegram reminders (owner, 2026-10-14, docs/decisions/0140): filed in M3,
-  // not part of the M3 bar. The bot reaches a learner only through a /start
-  // deep link (ANON-010, docs/decisions/0098).
+  // not part of the M3 bar; moved to the bottom of M4 (owner, 2026-10-15,
+  // docs/decisions/0141 Decision 21). The bot reaches a learner only through a
+  // /start deep link (ANON-010, docs/decisions/0098).
   {
     key: 'COH-010',
     title: 'Telegram reminders: a learner links the bot',
-    milestone: 'M3',
+    milestone: 'M4',
     epic: 'COH',
     type: 'task',
-    rank: 2515.1,
+    rank: 2900,
     dependsOn: ['COH-006'],
     goal:
       'A cohort learner links @Alliengll_bot once, through a /start deep link, and every reminder card ' +
@@ -2856,10 +2858,10 @@ export const CARDS = [
   {
     key: 'COH-011',
     title: 'Telegram reminder: feedback and final comment are ready',
-    milestone: 'M3',
+    milestone: 'M4',
     epic: 'COH',
     type: 'task',
-    rank: 2515.2,
+    rank: 2901,
     dependsOn: ['COH-010'],
     goal: 'Tell a linked learner when the author has answered (docs/decisions/0140, events 2 and 3).',
     acceptance: [
@@ -2872,10 +2874,10 @@ export const CARDS = [
   {
     key: 'COH-012',
     title: 'Telegram reminder: week N is open (daily cron)',
-    milestone: 'M3',
+    milestone: 'M4',
     epic: 'COH',
     type: 'task',
-    rank: 2515.3,
+    rank: 2902,
     dependsOn: ['COH-010'],
     goal: 'Tell linked cohort enrolees that a new week has opened (docs/decisions/0140, event 1, option A).',
     acceptance: [
@@ -2888,10 +2890,10 @@ export const CARDS = [
   {
     key: 'COH-013',
     title: 'Telegram reminder: calls in the next 24 hours (extended tier)',
-    milestone: 'M3',
+    milestone: 'M4',
     epic: 'COH',
     type: 'task',
-    rank: 2515.4,
+    rank: 2903,
     dependsOn: ['COH-012'],
     goal:
       'Remind extended enrolees of their calls (docs/decisions/0140, event 4). Under the daily cron this is a ' +
@@ -3038,18 +3040,254 @@ export const CARDS = [
       'A danger zone in the course editor: while deletable, a dialog that asks for the course title, then back to /studio/courses; otherwise a muted line naming the blocker. docs/ui-decisions.md entry.',
     ],
   },
+  // House-first teacher features (owner, 2026-10-15, docs/decisions/0141):
+  // everything the partner uses with her own students as the house teacher,
+  // all before the cohort dry run (Decision 21). Other teachers are M4.
+  {
+    key: 'VOICE-008',
+    title: 'Choose between voice takes before sending',
+    milestone: 'M3',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2521,
+    dependsOn: ['VOICE-005'],
+    goal:
+      'A learner records several takes, listens, and sends the one they like (docs/decisions/0141 ' +
+      'Decision 11). VoiceRecorder.tsx keeps only the last take today; the server keeps one take per ' +
+      'enrolment and task (060), and that stays.',
+    acceptance: [
+      'The voice-task card lists up to 5 takes made on this page, each with a native player and Delete; in send mode each also has "Send this take". A sixth recording asks the learner to delete one first.',
+      'One line says takes stay on this device until the page is reloaded. Nothing is written to IndexedDB or localStorage; blob URLs are revoked on delete and on unmount.',
+      'Sending, replace-until-feedback, the sent take\'s playback and the lock after published feedback are unchanged: no migration, no route change. Practice mode lists takes the same way, without Send.',
+      'The take-list rules (cap, delete, which take is sent) live in a pure lib/voice/ module under vitest.',
+      '`npm run budget` before and after for a free lesson and a cohort lesson; the recorder stays a lazy chunk. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'OPS-024',
+    title: 'Privacy policy and terms for the house-teacher features',
+    milestone: 'M3',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2525,
+    dependsOn: [],
+    goal:
+      'docs/decisions/0141 adds data the live legal text does not cover: every signed-in answer is ' +
+      'stored (Decision 7); a linked teacher sees a student\'s answers and scores (Decision 6), which ' +
+      '0109 Decision 8 forbids today; messages with exercise snapshots, private groups, homework, ' +
+      'custom events and a calendar feed token. One revision, drafted before the cards that ship them.',
+    acceptance: [
+      'A drafted delta to docs/release/legal/privacy-policy.md for: stored answers (what, who reads them, retention, export, deletion); the student link and what a linked teacher sees; messages and exercise snapshots; groups as private teacher labels, and whether the export carries them; homework; custom events; the .ics feed token.',
+      'The legal basis per item, how a learner leaves a link, and what happens to each item after they do.',
+      'The §13 materiality check (the OPS-019 precedent) and the notice route from docs/decisions/0095, pre- or post-launch.',
+      'terms-of-service.md and subprocessors.md checked: changes drafted, or "none" stated with the reason.',
+      'Drafted; the owner signs off before commit.',
+    ],
+  },
+  {
+    key: 'PROG-005',
+    title: 'Store each signed-in answer',
+    milestone: 'M3',
+    epic: 'PROG',
+    type: 'task',
+    rank: 2527,
+    dependsOn: ['OPS-024'],
+    goal:
+      'lesson_attempts (048) stores earned and possible per block, not the answer (docs/decisions/0141 ' +
+      'Decision 7). A linked teacher reads answers (TCH-003), and resume and restore (PROG-003, 0088 ' +
+      'option B) need them.',
+    acceptance: [
+      'A migration: nullable `response jsonb` on lesson_attempts; record_lesson_attempts (re-emitted from its latest body) accepts an optional response per element, drops only the response of an element over a fixed size cap, and still caps earned at possible. Written, not applied; migration-number print rule (section header).',
+      'The player sends each block\'s response with its attempt; the local attempt store keeps it so the claim path uploads it; an older local entry without one uploads null.',
+      'Read access unchanged: the owner-read policy only. The account export includes the response; delete_my_account already deletes the rows (checked, printed).',
+      'Full protocol: another user cannot read a response; positive control: the owner reads their own; seeded attempts with and without a response, printed.',
+      '`npm run budget` before and after for a free lesson. The live legal text describes what this card does; if it doesn\'t, stop and ask.',
+    ],
+  },
+  {
+    key: 'TCH-001',
+    title: 'A learner links to a teacher',
+    milestone: 'M3',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2529,
+    dependsOn: ['OPS-024'],
+    goal:
+      'Groups, homework, messages and answers work only on students who linked to a teacher, after a ' +
+      'visible statement of what the teacher sees (docs/decisions/0141 Decision 3). Until seats ' +
+      '(TCH-007), a teacher is anyone holding a course_editors row.',
+    acceptance: [
+      'A migration: a teacher-student link table (teacher, student, linked_at, ended_at, ended_by) and a rotating per-teacher join token stored hashed (the 0107 pattern), with SECURITY DEFINER RPCs to join, leave, remove and rotate. Written, not applied; print rule.',
+      'English route /join/[token]: the teacher\'s name, what they will see (docs/decisions/0141 Decision 6) and "Join"; sign-in first, returning to the same page; an invalid or rotated token says so. EN/RU follows the saved choice. `npm run budget` printed.',
+      'Claiming a run invite links the learner to the invite\'s creator when that creator edits the course; the invite page shows the same statement before "Join the course".',
+      '/my gains "Your teachers" with Leave (confirmed). Studio Learners shows linked students, including those with no activity yet, with a "Linked" pill and Remove, and the teacher\'s join link with Copy and Rotate.',
+      'The account export includes links; delete_my_account ends them (re-emitted per the print rule).',
+      'Full protocol: a learner cannot link anyone else; a teacher sees only their own links; an ended link stops every TCH read; positive controls printed. The live legal text describes what this card does; if it doesn\'t, stop and ask. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-002',
+    title: 'A teacher groups their linked students',
+    milestone: 'M3',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2531,
+    dependsOn: ['TCH-001'],
+    goal:
+      'Private, multi-membership groups of linked students: a Learners filter now and a homework ' +
+      'target in TCH-005 (docs/decisions/0141 Decision 12).',
+    acceptance: [
+      'A migration: teacher-owned groups (name) and memberships; a member must be a live linked student of that teacher; a student may be in several groups. Written, not applied; print rule.',
+      'Studio: create, rename and delete a group; add and remove members from the group page and from a learner\'s page; Learners gains a Group filter (URL-driven, the existing filter row).',
+      'No learner-facing page shows a group or its name. A link that ends removes the student from that teacher\'s groups. The export follows OPS-024\'s text.',
+      'Full protocol: another teacher cannot read or change a group; a non-linked user cannot be added; positive controls printed. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-003',
+    title: 'A linked student\'s answers and scores in Studio',
+    milestone: 'M3',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2533,
+    dependsOn: ['PROG-005', 'TCH-001'],
+    goal:
+      'For a linked student, the teacher sees every attempt\'s answer per exercise and the best lesson ' +
+      'score (docs/decisions/0141 Decision 6). This supersedes 0109 Decision 8 for linked students ' +
+      'only; TCH-005 extends the scope to assigned courses.',
+    acceptance: [
+      'A SECURITY DEFINER reader returns a student\'s attempts with responses only to a teacher with a live link to that student, on courses the teacher edits; unlinked, ended-link and other-teacher callers get nothing. Written, not applied; print rule.',
+      '/studio/learners/[userId] for a linked student: per lesson the best score and, per exercise, each attempt\'s time, earned/possible and answer. A non-linked learner\'s page is unchanged (no scores).',
+      'Answers are rendered as text by a pure lib/ module, one function per item type, read against the lesson version the attempt was made on, under vitest; an attempt with no stored response says so.',
+      'Full protocol on seeded attempts (not an empty table): unlinked, ended-link and other-teacher denials with positive controls. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-004',
+    title: 'Messages between a linked student and their teacher',
+    milestone: 'M3',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2535,
+    dependsOn: ['TCH-001'],
+    goal:
+      'One conversation per linked pair, in the app, with in-app counts (docs/decisions/0141 ' +
+      'Decisions 8, 9 and 17). Telegram pings are TCH-012.',
+    acceptance: [
+      'A migration: conversations (teacher, student) and messages (author, body, created_at, read_at), written through SECURITY DEFINER RPCs that need a live link to start or post; a 2,000-character cap; a DB rate limit (the 026/038 pattern). An ended link leaves the conversation readable to both and closed. Written, not applied; print rule.',
+      'Learner: /my/messages (saved EN/RU) with one conversation per teacher; a dot on the account chip and a count on /my while a teacher reply is unread. The chip stays zero client JS; `npm run budget` before and after for / and /my.',
+      'Studio: /studio/messages (conversations newest first, then the thread); the inbox gains "Unanswered questions" (last message from the student) and the nav a badge, both from one cached read. The teacher may write first.',
+      'Bodies use the feedback format (**bold**, blank line = paragraph), rendered by FeedbackContentView.',
+      'The account export includes the learner\'s conversations; delete_my_account removes the learner\'s messages per ADR 0002 (re-emitted per the print rule).',
+      'Full protocol: a third user cannot read or post; an unlinked learner cannot start one; the rate limit fires; positive controls printed. The live legal text describes what this card does; if it doesn\'t, stop and ask. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-005',
+    title: 'Homework: a teacher assigns a lesson or a course and tracks it',
+    milestone: 'M3',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2537,
+    dependsOn: ['TCH-002', 'TCH-003', 'PROG-004'],
+    goal:
+      'Assign a lesson or a whole course to students and/or groups, with an optional due date that ' +
+      'never locks; done is PROG-004\'s attempted lesson, at any time (docs/decisions/0141 Decisions 13 ' +
+      'and 14).',
+    acceptance: [
+      'A migration: assignments (teacher, course, optional lesson, optional due date, note) with targets (a student or a group); a group\'s open homework applies to a student added later; the content is a course the teacher edits or a published course. Written, not applied; print rule.',
+      'TCH-003\'s reader also covers a course the teacher assigned to that student.',
+      'Studio: assign from the course editor and from a learner or group page; a homework page lists each assignment with, per student, done or not yet (PROG-004), best score and last activity.',
+      'Learner: "Homework" on /my (teacher, lesson or course, due date, ✓ when done, and the access state of a lesson the student cannot open yet); the lesson band shows a "Homework" pill with the due date. Past due reads "Was due <date>" in muted tokens, never destructive ones. Nothing locks.',
+      'Full protocol: another teacher cannot see or change an assignment; an unlinked student never receives one; positive controls printed. `npm run budget` before and after for /my and a lesson. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-006',
+    title: '"Ask the teacher" from an exercise or voice-task card',
+    milestone: 'M3',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2539,
+    dependsOn: ['TCH-004', 'TCH-005'],
+    goal:
+      'A student sends the exercise they are stuck on, with their answer, into the conversation ' +
+      '(docs/decisions/0141 Decision 10).',
+    acceptance: [
+      'Shown only to a linked student whose teacher edits the course or assigned it, with a picker when more than one teacher qualifies; absent for everyone else, including the Studio preview and the demo.',
+      'The composer opens with a frozen snapshot: the exercise as rendered and, after Check, the student\'s answer, with an "Include my answer" toggle. The message stores the snapshot, not a reference, so a later lesson edit does not change it.',
+      'In both threads the snapshot renders as a read-only card naming the course, lesson and "Exercise N", linking to the lesson.',
+      'The link and composer load lazily: `npm run budget` before and after for a free lesson, unchanged for a visitor who is not linked.',
+      'Snapshot building lives in a pure lib/ module under vitest, one case per item type and the voice task. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'COH-014',
+    title: 'A teacher adds dated events to a run or a group',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2541,
+    dependsOn: ['TCH-002'],
+    goal:
+      'The "other significant dates" ("Test day", "No call this week") for the calendar ' +
+      '(docs/decisions/0141 Decision 15).',
+    acceptance: [
+      'A migration: events (title, starts_at, optional ends_at, optional link; scope a run or a TCH-002 group), written through SECURITY DEFINER RPCs that check can_edit_course for a run and ownership for a group. Written, not applied; print rule.',
+      'Studio: add, edit and delete on the runs page (per run) and on the group page.',
+      'Readable by the run\'s live enrolees or the group\'s members only, through one SQL reader.',
+      'Full protocol: another run\'s enrolee, a revoked enrolee and a non-member see nothing; positive controls printed. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'COH-015',
+    title: 'Calendar on /my and in Studio',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2543,
+    dependsOn: ['COH-014', 'TCH-005'],
+    goal: 'One view of the dates that matter, for a learner and for a teacher (docs/decisions/0141 Decisions 15 and 16).',
+    acceptance: [
+      'One SQL read of a viewer\'s dated events: run start and end, every week\'s opening (the _lesson_access_at formula, past weeks included), calls by course_calls\' rules, homework due dates and COH-014 events. A learner gets their own; a teacher gets those across the courses they edit and their groups.',
+      'A server-rendered month grid at sm and up and an agenda list on a phone, on /my and at /studio/calendar; the month is in the URL; each event links to its lesson, call or homework.',
+      'Days are placed in the viewer\'s time zone; how the server learns it (cookie or hydration) is decided in the card and recorded in docs/decisions/.',
+      'No new dependency; app/components/ui/calendar.tsx is not used. `npm run budget` before and after for /my. Usable at 360px (no horizontal scroll, printed); docs/ui-decisions.md entry.',
+      'Full protocol on the reader: a call never reaches a basic enrolee; another teacher\'s events never appear; positive controls printed.',
+    ],
+  },
+  {
+    key: 'COH-016',
+    title: 'A private .ics calendar feed',
+    milestone: 'M3',
+    epic: 'COH',
+    type: 'task',
+    rank: 2545,
+    dependsOn: ['COH-015'],
+    goal: 'The same events in Google or Apple Calendar through a subscription URL (docs/decisions/0141 Decision 16).',
+    acceptance: [
+      'A migration: a per-user feed token stored hashed, created and rotated through an RPC; "Subscribe in your calendar" with Copy and Rotate on /my\'s calendar and in Studio. Written, not applied; print rule.',
+      'An unauthenticated GET /api/calendar/<token>.ics (in proxy.ts publicRoutes) returns COH-015\'s events for the token\'s user as RFC 5545 VEVENTs with stable UIDs; a rotated or unknown token returns 404.',
+      'The .ics builder is a pure lib/ module under vitest (escaping, line folding, UTC times).',
+      'The account export says whether a token exists, never the token; account deletion removes it.',
+      'Full protocol: one user\'s token never returns another\'s events; positive control: the owner subscribes from a phone calendar on production and sees a call. The live legal text describes what this card does; if it doesn\'t, stop and ask.',
+    ],
+  },
   {
     key: 'OPS-020',
     title: 'Cohort dry run on production (M3 exit)',
     milestone: 'M3',
     epic: 'OPS',
     type: 'task',
-    rank: 2520,
+    rank: 2590,
     dependsOn: [
       'ANON-016', 'CNT-011', 'COH-001', 'OPS-019', 'VOICE-002', 'VOICE-001', 'ANON-010', 'OPS-018',
       'CNT-012', 'CNT-014', 'AUTH-009', 'ANON-011', 'COH-002', 'AUTH-010', 'COH-003', 'COH-004',
       'CNT-013', 'VOICE-003', 'VOICE-004', 'VOICE-005', 'VOICE-006', 'VOICE-007', 'COH-005', 'PROG-001',
       'AUTH-011', 'ANON-012', 'OPS-010', 'SHELL-020', 'SHELL-021', 'AUTH-012',
+      // House-first teacher features (docs/decisions/0141 Decision 21).
+      'VOICE-008', 'PROG-004', 'OPS-024', 'PROG-005', 'TCH-001', 'TCH-002', 'TCH-003', 'TCH-004',
+      'TCH-005', 'TCH-006', 'COH-014', 'COH-015', 'COH-016',
     ],
     goal: 'Rehearse a whole cohort on production with test accounts on real phones.',
     acceptance: [
@@ -3057,6 +3295,7 @@ export const CARDS = [
       'One basic and one extended learner invited; claims made inside Telegram\'s in-app browser and in Safari.',
       'Recording and sending from iOS and Android; the partner reviews on her own device; feedback appears; the extended learner sees the next call; the final screen shows before/after; the learners page shows all of it.',
       'One learner is revoked and their access is gone; a learner in another run keeps theirs.',
+      'The partner as house teacher (docs/decisions/0141): a test student links through her join link, is put in a group and gets a lesson as homework with a due date; records three voice takes and sends the second; asks about an exercise from its card and gets her reply; she sees the student\'s answers in Studio; both calendars and the .ics feed show a call, a week opening and the due date.',
       'Every row involved is printed. The production `npm run budget` table is pasted, and free routes are unchanged from their M2 figures.',
     ],
     notes:
@@ -3356,10 +3595,12 @@ export const CARDS = [
   {
     key: 'PROG-004',
     title: 'What counts as an attempted lesson (theory-only, partial, the label)',
-    milestone: 'M4',
+    // Moved from M4 (owner, 2026-10-15, docs/decisions/0141 Decision 14):
+    // homework's "done" (TCH-005) uses this definition.
+    milestone: 'M3',
     epic: 'PROG',
     type: 'decision',
-    rank: 2680,
+    rank: 2523,
     dependsOn: [],
     goal:
       'Signed-in run on Future Imperfect, 2026-10-12. (1) Lessons 4 and 7 have no exercises, so they ' +
@@ -3502,6 +3743,147 @@ export const CARDS = [
       'Each row is a group labelled by its statement, or each button\'s accessible name includes the row number and statement.',
       'An RTL test finds a button by an accessible name that includes its statement.',
       'No visual change.',
+    ],
+  },
+  // Other teachers on manual seats (owner, 2026-10-15, docs/decisions/0141):
+  // the house-first features (M3) opened to teachers other than the partner.
+  {
+    key: 'OPS-025',
+    title: 'Teacher terms and data roles (gates the first external teacher)',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'decision',
+    rank: 2750,
+    dependsOn: ['OPS-024'],
+    goal:
+      'An external teacher brings their own students and sees their answers (docs/decisions/0141 ' +
+      'Decisions 1, 6 and 19). Whether a teacher is a separate controller or the platform their ' +
+      'processor, and what a teacher agrees to, is not covered by the live legal text.',
+    acceptance: [
+      'Options with evidence: the platform as sole controller with teachers as its authorised users; the teacher as controller and the platform as processor (a DPA); joint control.',
+      'For each: what the teacher signs, what the privacy policy tells a linked student, what changes in 0141 Decisions 6 and 7, and what account export and deletion must then do.',
+      'Whether a teacher may contact students outside the app, and what the platform does on a complaint about a teacher.',
+      'Output: a decision file, draft teacher terms for the owner, and the docs/handoff.md delta. No external teacher is onboarded before the owner decides.',
+    ],
+  },
+  {
+    key: 'TCH-007',
+    title: 'Author seats and /studio/authors',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2760,
+    dependsOn: [],
+    goal:
+      'An admin adds, extends and freezes teachers on manual seats; a seat is what lets a non-admin ' +
+      'create courses (docs/decisions/0141 Decisions 1, 2 and 18).',
+    acceptance: [
+      'A migration: seats (user, kind house or teacher, public name, expires_at nullable, notes, granted_by, created_at) with admin-only writes through SECURITY DEFINER RPCs; create_course (067, re-emitted) requires an active seat or admin; every existing course_editors holder is backfilled as an open-ended teacher seat (count printed). Written, not applied; print rule.',
+      '/studio/authors, admin-only (Studio\'s 404 otherwise), with a nav entry for admins: one row per seat with kind, public name, expiry state (active, expires in N days, lapsed), courses and linked-student counts; add by email; edit name and notes; extend; freeze now (expiry set to now). The owner marks the house seat on the page, not in a migration.',
+      'Full protocol: a non-admin cannot read or change seats; a user without a seat cannot create a course; positive controls printed. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+    notes: 'Do not add an external teacher on production before OPS-025 is decided.',
+  },
+  {
+    key: 'TCH-008',
+    title: 'A lapsed seat freezes the teacher\'s Studio',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2770,
+    dependsOn: ['TCH-007'],
+    goal:
+      'When a seat\'s expiry passes, the teacher can read but not change anything, and nobody loses ' +
+      'access (docs/decisions/0141 Decision 4).',
+    acceptance: [
+      'One SQL predicate (active seat or admin) on every Studio write path: lesson and course edits, publish, runs, calls, invites, grants, homework, groups, events, join-link rotation. Re-emitted bodies per the print rule; written, not applied.',
+      'Unchanged by a lapse: published courses, entitlements, enrolments, links, the teacher\'s reads, and replies in existing conversations and to voice recordings. A student cannot start a new conversation with a lapsed teacher.',
+      'Studio shows a read-only banner with the expiry date; write controls are disabled with the reason.',
+      'Full protocol: every write path refused for a lapsed seat, with a positive control by the same teacher after renewal; a learner\'s lesson access before and after the lapse, printed. The anonymous-path rows re-run if a lesson policy is touched.',
+    ],
+  },
+  {
+    key: 'TCH-009',
+    title: 'A teacher grants a linked student access to their course',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2780,
+    dependsOn: ['TCH-007', 'TCH-001'],
+    goal:
+      'A self-paced paid course is opened by its teacher for a student who paid them, through ' +
+      'course_entitlements (source grant). The entitlement function is unchanged (docs/decisions/0141 ' +
+      'Decision 5).',
+    acceptance: [
+      'A SECURITY DEFINER RPC grants or revokes a course_entitlements grant on a course the caller edits, for a live linked student only. Written, not applied; print rule.',
+      'Studio: Grant and Revoke per course on a linked student\'s page, and the grantees per course. The entitlement SQL function and RLS are untouched (diff printed).',
+      'Full protocol: another teacher\'s course and an unlinked user are refused; a granted student opens an entitled lesson and a revoked one does not; the anonymous-path rows re-run. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-010',
+    title: 'Listed courses: the catalogue shows promoted courses only',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2790,
+    dependsOn: ['TCH-007'],
+    goal:
+      'A teacher\'s course opens by its link but stays out of the public catalogue until an admin ' +
+      'promotes it (docs/decisions/0141 Decision 1).',
+    acceptance: [
+      'A migration: courses.listed (default false), backfilled true for every course published when it is applied (counts printed before and after); an admin-only RPC sets it. Written, not applied; print rule.',
+      'The landing catalogue, the hero CTA\'s course and the catalogue read listed courses only; an unlisted published course still opens by its URL.',
+      'Homework (TCH-005) offers the teacher\'s own courses and listed courses only.',
+      'An admin toggle on /studio/authors and in the course editor. `npm run budget` before and after for /; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'TCH-011',
+    title: '"By <name>" on a teacher\'s course page',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2800,
+    dependsOn: ['TCH-007'],
+    goal: 'A non-house teacher\'s course says whose it is (docs/decisions/0141 Decision 20).',
+    acceptance: [
+      'The course hero shows "By <public name>" / "Автор: <public name>" from the seat of the course\'s author_id (set by create_course, 067); a house course or a course without an author shows nothing. Read through SQL.',
+      'The catalogue card is unchanged. `npm run budget` before and after for a course page; usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  // Telegram pings for the teacher features: at the bottom of M4 with the
+  // reminders (docs/decisions/0141 Decisions 17 and 21).
+  {
+    key: 'TCH-012',
+    title: 'Telegram ping: a new message or reply',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2910,
+    dependsOn: ['COH-010', 'TCH-004'],
+    goal:
+      'A message (TCH-004) reaches the other side through the bot, for anyone who linked it (COH-010). ' +
+      'A Studio user can link the bot too.',
+    acceptance: [
+      '"Get messages in Telegram" in Studio links a teacher\'s chat through the COH-010 table and webhook.',
+      'A new message pings the recipient once, in the language saved at link time, with a link to the conversation, after the post succeeds; a send failure never fails the post; at most one ping per conversation per hour while unread (sent log).',
+      'Wording in a pure lib/ module under vitest, EN and RU. Live: a message to a linked test account arrives on production (printed).',
+    ],
+  },
+  {
+    key: 'TCH-013',
+    title: 'Telegram ping: new homework and due tomorrow',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2911,
+    dependsOn: ['COH-012', 'TCH-005'],
+    goal: 'Homework (TCH-005) reaches a linked student through the bot.',
+    acceptance: [
+      'Assigning homework pings each linked, not-stopped target student once (sent log per assignment and student), after the assignment is saved.',
+      'The daily cron (COH-012) sends one "due tomorrow" ping per not-done homework due in the next 24 hours, in the student\'s saved time zone; done homework sends nothing.',
+      'Printed on seeded data: one ping per student across two cron runs; a done or unlinked student gets none.',
     ],
   },
   {

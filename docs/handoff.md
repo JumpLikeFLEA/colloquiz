@@ -43,6 +43,18 @@ audience survey (21 respondents, October 2026; her caveat: a small, warm
 sample) reported missing. Still out of scope for both lines: spaced
 repetition, placement tests, a comprehensive curriculum, LLM grading.
 
+**A third line: teachers on manual seats (owner, 2026-10-15,
+docs/decisions/0141).** An English teacher pays, outside the app, for a seat
+with an expiry. With it they build their own courses in Studio, link their
+own students, group them, assign lessons or courses as homework, answer
+their questions in the app and see their answers. A teacher's courses are
+unlisted until an admin promotes one into the public catalogue. A lapsed
+seat freezes the teacher's Studio; nobody loses access they have. It is
+built **house first**: M3 gives all of it to the partner as the house
+teacher, M4 opens it to other teachers. The out-of-scope list above still
+holds; homework is a list of lessons with an optional due date, not a
+curriculum.
+
 ## The two surfaces
 
 **Colloquiz** — a general quiz platform. 16 subjects, Quick Play / Deep Dive /
@@ -294,6 +306,9 @@ What it means concretely:
   see "Milestones".
 - **One author today, but content carries an author id from day one.** It is
   one column and it is free now; retrofitting ownership later is not.
+  **Superseded as a plan (owner, 2026-10-15, docs/decisions/0141):** other
+  teachers will author on seats (M4). Until then the partner is the house
+  author and every teacher feature is built for her first.
 
 ## Content ownership
 
@@ -438,8 +453,18 @@ sales of evergreen courses are wanted.
   a sign-in (the partner marks which lessons stay open; see "Open
   questions"), and learner stats. It also carries authors building courses
   in Studio (added 2026-10-11, docs/decisions/0125). Merchant-of-record
-  checkout moves to a later, not-yet-numbered milestone.
-- **M4 — progression & polish**, including content export.
+  checkout moves to a later, not-yet-numbered milestone. **Grown
+  (owner, 2026-10-15, docs/decisions/0141):** before the cohort dry run
+  (OPS-020), the partner as the house teacher also gets choosing between
+  voice takes, stored answers, the student link, groups, messages with
+  "Ask the teacher" from a card, homework, and a calendar with an `.ics`
+  feed. PROG-004 moves into M3 for homework's "done".
+- **M4 — progression & polish**, including content export. **Grown (owner,
+  2026-10-15, docs/decisions/0141):** other teachers: seats managed at
+  `/studio/authors`, freeze on lapse, teacher-granted access, catalogue
+  promotion, "By <name>", and the teacher terms decision that gates the
+  first external teacher. The Telegram reminders (COH-010..013) move to
+  the bottom of M4.
 
 ## Deliberately out of scope for v1
 
@@ -526,4 +551,6 @@ sales of evergreen courses are wanted.
     through another browser. Guidance, not an enforced rule.
   - **Reminders:** yes, through a Telegram bot ("week 2 is open", "your
     feedback is ready"); which events and the wording are still to be
-    worked out. Whether this lands in M3 is open.
+    worked out. Whether this lands in M3 is open. **Settled (owner,
+    2026-10-14 and 2026-10-15, docs/decisions/0140 and 0141):** the events
+    are decided in 0140; the cards sit at the bottom of M4, not in M3.
