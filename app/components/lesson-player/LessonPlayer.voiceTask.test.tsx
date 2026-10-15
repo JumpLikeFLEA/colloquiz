@@ -127,6 +127,78 @@ describe("LessonPlayer — voice task", () => {
   });
 });
 
+async function recordAnother() {
+  fireEvent.click(await screen.findByRole("button", { name: "Record again" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Stop" }));
+  await screen.findByRole("button", { name: "Record again" });
+}
+
+describe("VoiceRecorder takes (VOICE-008)", () => {
+  it("lists each take with its own player, Delete and Send this take, and says they stay on the device", async () => {
+    installMedia();
+    const { container } = render(<VoiceTaskBlockView block={block} context={send()} />);
+    await record();
+    await recordAnother();
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(container.querySelectorAll("audio")).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Send this take" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Delete take 1" })).toBeDefined();
+    expect(screen.getByText(/stay on this device until you reload/)).toBeDefined();
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("Delete removes that take and revokes its blob URL", async () => {
+    installMedia();
+    render(<VoiceTaskBlockView block={block} context={send()} />);
+    await record();
+    await recordAnother();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete take 1" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it("a sixth recording is refused until a take is deleted", async () => {
+    installMedia();
+    render(<VoiceTaskBlockView block={block} context={{ mode: "practice" }} />);
+    await record();
+    for (let i = 1; i < 5; i++) await recordAnother();
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect((screen.getByRole("button", { name: "Record again" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("You have 5 takes. Delete one to record another.").length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete take 5" }));
+    expect((screen.getByRole("button", { name: "Record again" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("sends only the chosen take; the others stay listed; blob URLs are revoked on unmount", async () => {
+    installMedia();
+    const { unmount } = render(<VoiceTaskBlockView block={block} context={send()} />);
+    await record();
+    await recordAnother();
+
+    await act(async () => fireEvent.click(screen.getAllByRole("button", { name: "Send this take" })[1]));
+
+    expect(upload).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Sent. Waiting for feedback.")).toBeDefined();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+    unmount();
+    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
+  });
+
+  it("practice mode lists takes without Send", async () => {
+    installMedia();
+    render(<VoiceTaskBlockView block={block} context={{ mode: "practice" }} />);
+    await record();
+    await recordAnother();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "Send this take" })).toBeNull();
+  });
+});
+
 describe("VoiceRecorder (VOICE-005)", () => {
   it("unsupported browser (no MediaRecorder): the open-in-your-browser fallback", () => {
     render(<VoiceTaskBlockView block={block} context={send()} />);
@@ -141,7 +213,7 @@ describe("VoiceRecorder (VOICE-005)", () => {
     await record();
 
     expect(container.querySelector("audio")?.getAttribute("src")).toBe("blob:take");
-    expect(screen.queryByRole("button", { name: "Send" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Send this take" })).toBeNull();
     expect(track.stop).toHaveBeenCalled();
     expect(upload).not.toHaveBeenCalled();
     expect(submit).not.toHaveBeenCalled();
@@ -161,7 +233,7 @@ describe("VoiceRecorder (VOICE-005)", () => {
     await record();
     expect(upload).not.toHaveBeenCalled();
 
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Send" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Send this take" })));
 
     expect(upload).toHaveBeenCalledTimes(1);
     const args = upload.mock.calls[0][0] as { contentType: string; objectName: string; accessToken: string };
@@ -179,7 +251,7 @@ describe("VoiceRecorder (VOICE-005)", () => {
     render(<VoiceTaskBlockView block={block} context={send()} />);
     await record();
 
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Send" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Send this take" })));
     expect(await screen.findByText(/Sending failed/)).toBeDefined();
     expect(submit).not.toHaveBeenCalled();
 
@@ -194,10 +266,10 @@ describe("VoiceRecorder (VOICE-005)", () => {
     submit.mockResolvedValueOnce({ status: 403, error: "not_enrolled" });
     render(<VoiceTaskBlockView block={block} context={send()} />);
     await record();
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Send" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Send this take" })));
 
     expect(await screen.findByText(/can't be sent from this account/)).toBeDefined();
-    expect(screen.queryByRole("button", { name: "Send" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Send this take" })).toBeNull();
   });
 
   it("denied microphone: says so, and Record stays available", async () => {

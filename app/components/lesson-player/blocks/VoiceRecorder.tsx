@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Link2, Mic, Square } from "lucide-react";
+import { Link2, Mic, Square, Trash2 } from "lucide-react";
 import { voiceCopy } from "@/lib/alliengll/voiceCopy";
 import type { VoiceTaskBlock } from "@/lib/lessons";
 import {
@@ -14,13 +14,15 @@ import {
 } from "@/lib/voice/recorder";
 import { voiceObjectName, type VoiceMimeType } from "@/lib/voice/recording";
 import { postVoiceSubmission, sendVoiceTake, uploadVoiceTake } from "@/lib/voice/send";
+import { addTake, findTake, removeTake, takesFull } from "@/lib/voice/takes";
 import type { VoiceTaskSubmission, VoiceTasksContext } from "@/lib/voice/taskContext";
 import { SUBMIT_BUTTON_CLASS } from "../practice/practiceClasses";
 import { FeedbackContentView } from "./FeedbackContentView";
 
 /**
  * The voice recorder (VOICE-005, docs/decisions/0111): record -> listen ->
- * re-record -> send. Lives in the voice block's own chunk (LessonPlayer's
+ * record again -> send. Up to five takes are kept in memory and the learner
+ * sends the one they choose (VOICE-008, docs/decisions/0141 Decision 11). Lives in the voice block's own chunk (LessonPlayer's
  * `next/dynamic`), so a lesson without a voice task never downloads it.
  *
  * States, from the context the page built and what happens here:
@@ -43,7 +45,7 @@ const SECONDARY_BUTTON_CLASS =
 const NOTICE_CLASS = "rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground";
 const ERROR_NOTICE_CLASS = "rounded-xl bg-destructive-subtle px-3 py-2 text-sm text-destructive-text";
 
-type Take = { url: string; blob: Blob; mime: VoiceMimeType | null; submissionId: string };
+type Take = { id: string; url: string; blob: Blob; mime: VoiceMimeType | null; submissionId: string };
 type Phase = "idle" | "starting" | "recording" | "sending" | "send_failed";
 type Notice = { text: string; error: boolean };
 
@@ -63,7 +65,9 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   const [sent, setSent] = useState<VoiceTaskSubmission | null>(
     context.mode === "send" ? (context.submissions[block.id] ?? null) : null,
   );
-  const [take, setTake] = useState<Take | null>(null);
+  const [takes, setTakes] = useState<readonly Take[]>([]);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [failedId, setFailedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -91,6 +95,10 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   const locked = sent?.feedback != null;
 
   async function startRecording() {
+    if (takesFull(takes)) {
+      setNotice({ text: voiceCopy.takesFull, error: false });
+      return;
+    }
     setNotice(null);
     setPhase("starting");
     let stream: MediaStream;
@@ -135,7 +143,10 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
       const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
       const url = URL.createObjectURL(blob);
       urlsRef.current.push(url);
-      setTake({ url, blob, mime: resolveUploadMime(head, reported, requested), submissionId: crypto.randomUUID() });
+      const submissionId = crypto.randomUUID();
+      setTakes((list) =>
+        addTake(list, { id: submissionId, url, blob, mime: resolveUploadMime(head, reported, requested), submissionId }),
+      );
       setPhase("idle");
     };
 
@@ -155,14 +166,31 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
     if (recorder && recorder.state !== "inactive") recorder.stop();
   }
 
-  async function send() {
+  function deleteTake(id: string) {
+    const gone = findTake(takes, id);
+    if (!gone) return;
+    URL.revokeObjectURL(gone.url);
+    const at = urlsRef.current.indexOf(gone.url);
+    if (at >= 0) urlsRef.current.splice(at, 1);
+    setTakes((list) => removeTake(list, id));
+    setNotice(null);
+    if (failedId === id) {
+      setFailedId(null);
+      setPhase("idle");
+    }
+  }
+
+  async function send(id: string) {
+    const take = findTake(takes, id);
     if (!take || context.mode !== "send") return;
     if (!take.mime) {
       setNotice({ text: voiceCopy.noContainer, error: true });
       return;
     }
     setNotice(null);
+    setFailedId(null);
     setProgress(0);
+    setSendingId(id);
     setPhase("sending");
     const objectName = voiceObjectName(context.courseId, context.userId, take.submissionId, take.mime);
     const outcome = await sendVoiceTake(
@@ -194,20 +222,26 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
       case "sent":
         // The local take becomes the sent one; it plays from the blob URL
         // already in hand, no signed URL needed this visit.
+        // Its blob URL stays alive as the sent playback; other takes stay listed.
         setSent({ id: take.submissionId, playbackUrl: take.url, removed: false, feedback: null });
-        setTake(null);
+        setTakes((list) => removeTake(list, id));
+        setSendingId(null);
         setPhase("idle");
         return;
       case "practice":
         setMode("practice");
         setNotice({ text: voiceCopy.refused, error: false });
+        setSendingId(null);
         setPhase("idle");
         return;
       case "locked":
         setNotice({ text: voiceCopy.lockedMeanwhile, error: false });
+        setSendingId(null);
         setPhase("idle");
         return;
       default:
+        setSendingId(null);
+        setFailedId(id);
         setPhase("send_failed");
     }
   }
@@ -249,7 +283,8 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   }
 
   const busy = phase === "starting" || phase === "recording" || phase === "sending";
-  const showSent = sent !== null && take === null && phase !== "recording";
+  const showSent = sent !== null && phase !== "recording";
+  const full = takesFull(takes);
 
   return (
     <div className="mt-4 flex flex-col gap-3">
@@ -274,24 +309,51 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
         </div>
       )}
 
-      {take && phase !== "recording" && <audio controls preload="metadata" src={take.url} className="w-full" />}
+      {takes.length > 0 && (
+        <ul className="flex flex-col gap-2" aria-label={voiceCopy.takesLabel}>
+          {takes.map((take, i) => (
+            <li key={take.id} className="flex flex-col gap-2 rounded-xl border border-border p-3">
+              <p className="text-xs font-semibold text-muted-foreground">
+                {voiceCopy.take} {i + 1}
+              </p>
+              <audio controls preload="metadata" src={take.url} className="w-full" />
+              <div className="flex flex-wrap items-center gap-2">
+                {mode === "send" && !locked && (
+                  <button type="button" onClick={() => send(take.id)} disabled={busy} className={SUBMIT_BUTTON_CLASS}>
+                    {failedId === take.id ? voiceCopy.retry : voiceCopy.sendThisTake}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => deleteTake(take.id)}
+                  disabled={busy}
+                  className={SECONDARY_BUTTON_CLASS}
+                  aria-label={`${voiceCopy.deleteTake} ${voiceCopy.take.toLowerCase()} ${i + 1}`}
+                >
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  {voiceCopy.deleteTake}
+                </button>
+              </div>
+              {sendingId === take.id && (
+                <div className="flex flex-col gap-1" role="status">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-brand transition-[width]" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {voiceCopy.sending} {progress}%
+                  </p>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {phase === "recording" && (
         <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground" role="status">
           <span className="size-2.5 animate-pulse rounded-full bg-destructive" aria-hidden="true" />
           {voiceCopy.recording} {formatClock(elapsed)} / {formatClock(block.maxSeconds)}
         </p>
-      )}
-
-      {phase === "sending" && (
-        <div className="flex flex-col gap-1" role="status">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-brand transition-[width]" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {voiceCopy.sending} {progress}%
-          </p>
-        </div>
       )}
 
       {phase === "send_failed" && <p className={ERROR_NOTICE_CLASS}>{voiceCopy.uploadFailed}</p>}
@@ -304,18 +366,8 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
               <Square className="size-4" aria-hidden="true" />
               {voiceCopy.stop}
             </button>
-          ) : take && mode === "send" ? (
-            <>
-              <button type="button" onClick={send} disabled={busy} className={SUBMIT_BUTTON_CLASS}>
-                {phase === "send_failed" ? voiceCopy.retry : voiceCopy.send}
-              </button>
-              <button type="button" onClick={startRecording} disabled={busy} className={SECONDARY_BUTTON_CLASS}>
-                <Mic className="size-4" aria-hidden="true" />
-                {voiceCopy.recordAgain}
-              </button>
-            </>
-          ) : take || sent ? (
-            <button type="button" onClick={startRecording} disabled={busy} className={SECONDARY_BUTTON_CLASS}>
+          ) : takes.length > 0 || sent ? (
+            <button type="button" onClick={startRecording} disabled={busy || full} className={SECONDARY_BUTTON_CLASS}>
               <Mic className="size-4" aria-hidden="true" />
               {voiceCopy.recordAgain}
             </button>
@@ -328,7 +380,11 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
         </div>
       )}
 
-      {mode === "send" && sent && !locked && take && <p className="text-xs text-muted-foreground">{voiceCopy.resendNote}</p>}
+      {full && phase !== "recording" && <p className="text-xs text-muted-foreground">{voiceCopy.takesFull}</p>}
+      {takes.length > 0 && <p className="text-xs text-muted-foreground">{voiceCopy.takesNote}</p>}
+      {mode === "send" && sent && !locked && takes.length > 0 && (
+        <p className="text-xs text-muted-foreground">{voiceCopy.resendNote}</p>
+      )}
       {mode === "practice" && <p className="text-xs text-muted-foreground">{voiceCopy.practiceNote}</p>}
     </div>
   );

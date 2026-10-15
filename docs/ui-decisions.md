@@ -1793,3 +1793,16 @@ Appended to in the same commit as the change it records. Referenced from
   form's top was at −123 px at 360×800 and −35 px at 1440×900; now it is
   48 px at both. A form that fits is centred exactly as before (`/login`
   unchanged). Do not put `items-center` back on that panel.
+- Voice takes (2026-10-15, VOICE-008, docs/decisions/0141 Decision 11). The
+  voice-task card keeps up to five takes made on the page instead of the last
+  one. Each take is a bordered row (`rounded-xl border border-border p-3`)
+  with a "Take N" label, a native `<audio controls>`, "Send this take"
+  (`SUBMIT_BUTTON_CLASS`, send mode only) and "Delete" (the recorder's
+  secondary button with a `Trash2` icon). Below the list: "Your takes stay on
+  this device until you reload the page." Nothing is stored in IndexedDB or
+  localStorage. With five takes "Record again" is disabled and a line says
+  "You have 5 takes. Delete one to record another." A sent take leaves the
+  list and becomes the sent playback; the other takes stay. The cap, add and
+  delete rules are `lib/voice/takes.ts`. Sending, replace-until-feedback and
+  the post-feedback lock are unchanged. Existing classes and tokens only; not
+  measured at 360px. Do not persist takes without redoing 0141 Decision 11.
