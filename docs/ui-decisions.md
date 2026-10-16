@@ -1849,6 +1849,6 @@ Appended to in the same commit as the change it records. Referenced from
     `bg-brand-subtle text-brand-text` "Linked" pill, the source and date, and
     Remove behind an AlertDialog. Roster cards of linked learners get the same
     pill.
-  Not measured at 360px (migration unapplied, so the pages cannot render).
+  Not measured at 360px yet (076 applied 2026-10-16; `/join` budget 177.0 KB of 183).
   Do not show the join link after a reload: it is stored hashed. Do not put a
   teacher's `full_name` on the join page.

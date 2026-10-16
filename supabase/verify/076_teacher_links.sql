@@ -65,6 +65,7 @@ BEGIN
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
   VALUES ('v76-coh', 'Cohort', 'A2', 'published', 'cohort', 's', 'c') RETURNING id INTO v_course;
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (v_course, t, t), (v_course, t2, t2);
+  INSERT INTO lessons (course_id, ordinal, title, slug, access_level, week) VALUES (v_course, 1, 'W1', 'w1', 'entitled', 1);
   INSERT INTO course_runs (course_id, title, starts_at) VALUES (v_course, 'R', now() + interval '1 day') RETURNING id INTO v_run;
 
   -- 1. a non-teacher cannot create a join link; a teacher can --------------
