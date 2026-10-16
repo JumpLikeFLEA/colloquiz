@@ -20,6 +20,14 @@ description: How to build, run, and drive this app to verify changes end-to-end 
 - Auth form field ids: `#name`, `#email`, `#city`, `#password`, `#confirmPassword`; submit is `button[type=submit]`.
 - Routes: `/login`, `/signup` (unauthenticated); everything else redirects to `/login` via `proxy.ts` (this Next.js fork's middleware).
 
+## 360px check (part of the default procedure)
+Any change that adds or alters UI is measured at 360px before it is called verified, in every state the change introduces (signed out, signed in, empty and populated, and the saved RU choice where the page follows it).
+- `npm run viewport360 -- --base=http://localhost:3000 [--as=email:password] [--cookie=colloquiz_landing_lang=ru] --expect="<text the page must show>" /path ...` (`scripts/viewport360.ts`, system Edge via the repo's Playwright). It prints `scrollWidth/innerWidth` per path and lists elements that stick out; exit 1 on overflow, a non-2xx response, an empty page or a missing `--expect` text.
+- Always pass `--expect` with text only the intended state shows. A login bounce or an empty state measures 360/360 too, and a check that passes on the wrong page is not evidence (CLAUDE.md, working agreement).
+- States behind a click (an opened dialog, a `<details>`) are not reached by the script; open them in a scratch Playwright session and read `document.documentElement.scrollWidth` yourself.
+- Git Bash rewrites a leading `/path` argument into a Windows path; set `MSYS_NO_PATHCONV=1`.
+- Test users and fixtures follow the Admin API rules below and are deleted afterwards. Record the printed lines in the decision file or `docs/ui-decisions.md` entry ("Measured at 360px: ...").
+
 ## Test users: prefer the Admin API over the signup form
 Unless the signup FLOW is what you are testing, do not drive `/signup`. Create the
 user directly with the service-role key (`SUPABASE_SERVICE_ROLE_KEY` is in

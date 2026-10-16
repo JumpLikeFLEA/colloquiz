@@ -1849,6 +1849,10 @@ Appended to in the same commit as the change it records. Referenced from
     `bg-brand-subtle text-brand-text` "Linked" pill, the source and date, and
     Remove behind an AlertDialog. Roster cards of linked learners get the same
     pill.
-  Not measured at 360px yet (076 applied 2026-10-16; `/join` budget 177.0 KB of 183).
+  Measured at 360px (076 applied; `/join` budget 177.0 KB of 183): `scrollWidth/innerWidth
+  360/360` on /join (signed out, signed in unlinked, already linked, invalid
+  token, RU), the invite page with the statement, /my with a linked teacher
+  (EN and RU), and Studio Learners with a linked student. Not reached: the
+  opened Leave confirm and the Studio dialogs.
   Do not show the join link after a reload: it is stored hashed. Do not put a
   teacher's `full_name` on the join page.

@@ -40,6 +40,10 @@ that looks wrong.
   deletion gets the full protocol.
 - A hypothesis is labelled as one and is never used as input to the next step
   until it's verified.
+- UI work is measured at 360px in every state it adds (`npm run viewport360`,
+  see the verify skill) before it is called verified; the printed
+  `scrollWidth/innerWidth` goes in the card's evidence. "Not measured" is
+  written down, never implied.
 - `npm run check` must exit 0 before any commit. `npm test` must pass when
   anything under `lib/` changed. Both together are the pre-commit gate.
 
@@ -217,6 +221,7 @@ npm run check                      # tsc --noEmit && eslint .  — the static ga
 npm run lint / npm run lint:fix
 npm test                           # vitest, scoped to pure lib/ modules
 npm run dev
+npm run viewport360 -- --base=<origin> [--as=email:password] --expect="<text>" /path   # 360px overflow check
 npm run budget                     # cold-load JS byte budget per route (OPS-006), --url=<origin> to
                                     # point at an already-running server; kept out of `check` (slow)
 
