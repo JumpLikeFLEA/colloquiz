@@ -19,7 +19,9 @@ import { LocalTime, LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/Loc
 import { getLinkedStudents } from "@/lib/teacherLinksServer";
 import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
 import { groupsByStudent } from "@/lib/teacherGroups";
+import { groupAnswers, toAttemptRow, toLessonScoreRow } from "@/lib/learners/answers";
 import { LearnerGroups } from "./LearnerGroups";
+import { LinkedAnswers } from "./LinkedAnswers";
 import { LessonActivityCard } from "./LessonActivityCard";
 import { RecordingItem, type RecordingItemRow } from "./RecordingItem";
 
@@ -54,6 +56,22 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
   // TCH-002: grouping applies to students linked to the caller only.
   const isLinked = linkedStudents.some((s) => s.userId === userId);
   const memberOf = [...(groupsByStudent(memberRows).get(userId) ?? [])];
+  // TCH-003: answers and scores for a linked student only (078 returns nothing
+  // otherwise; a non-linked page makes no call and shows no scores).
+  const [attempts, scores] = isLinked
+    ? await Promise.all([
+        supabase.rpc("linked_student_attempts", { p_student: userId }),
+        supabase.rpc("linked_student_lesson_scores", { p_student: userId }),
+      ])
+    : [null, null];
+  if (attempts?.error) throw new Error(attempts.error.message);
+  if (scores?.error) throw new Error(scores.error.message);
+  const linkedAnswers = isLinked
+    ? groupAnswers(
+        ((attempts?.data ?? []) as Record<string, unknown>[]).map(toAttemptRow),
+        ((scores?.data ?? []) as Record<string, unknown>[]).map(toLessonScoreRow),
+      )
+    : null;
   if (roster.error) throw new Error(roster.error.message);
   if (lessons.error) throw new Error(lessons.error.message);
   if (recordings.error) throw new Error(recordings.error.message);
@@ -159,6 +177,8 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
           memberOf={memberOf}
         />
       )}
+
+      {linkedAnswers && <LinkedAnswers courses={courses} answers={linkedAnswers} />}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Lessons</h2>

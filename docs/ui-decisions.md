@@ -1882,3 +1882,16 @@ Appended to in the same commit as the change it records. Referenced from
   member + candidate, delete confirm open), Learners (unfiltered and group
   filtered) and the learner page. Do not show a group's name anywhere a
   student can see it in the app; the export is the one place.
+- Linked student's answers (2026-10-16, TCH-003, docs/decisions/0150, migration
+  078 not yet applied). On `/studio/learners/[userId]` for a student linked to
+  the teacher, an "Answers" section sits above "Lessons": one card per course
+  in the runs page's card frame, one native `<details>` row per lesson with a
+  `bg-brand-subtle text-brand-text` "Best: N%" pill (or a muted "N of M
+  answered" pill before the lesson is complete). Open, each exercise is a
+  bordered `rounded-xl` box: "Exercise N", the prompt, then each attempt as a
+  muted "Attempt k · time · E of P (n%)" line over the answer as plain text
+  lines. "No answer stored for this attempt." and "The answer can't be shown:
+  the exercise no longer reads." are muted lines. A non-linked learner's page
+  is unchanged and shows no scores. Existing classes and tokens only; 360px
+  NOT measured (078 unapplied, the section cannot load). Do not show scores for
+  a learner who is not linked.
