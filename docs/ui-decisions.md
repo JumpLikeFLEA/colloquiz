@@ -1824,3 +1824,31 @@ Appended to in the same commit as the change it records. Referenced from
   label "Attempted" becomes "Completed". /my has no lesson list, so no tile
   there. Existing tokens only; 360px not measured. Do not recompute
   completeness in TypeScript: `lesson_completion()` decides.
+- Teacher links (2026-10-16, TCH-001, docs/decisions/0148, migration 076 not
+  yet applied). Three surfaces, all composed from existing classes and tokens;
+  no new colours:
+  - `/join/[token]` on the English surface, in the invite page's frame: a
+    compact gradient band ("Teacher" glass pill, "Link to <name>"), then one
+    card holding the statement of what the teacher sees (`LinkStatementCard`:
+    a `bg-muted` box, a bulleted list, two muted sentences), the learner's
+    account, and "Join" (`SUBMIT_BUTTON_CLASS`, a form POST). Signed out: the
+    same statement and "Sign in or create an account" with `next` = the page.
+    An already-linked, own-link or invalid token gets its own card. Follows the
+    saved EN/RU choice, no toggle (the `/my` rule).
+  - The invite page shows the same statement, in English, above "Join the
+    course" whenever claiming will also link the learner to the invite's
+    creator.
+  - `/my` gains "Your teachers" between Courses and Feedback, shown only when
+    there is a link: one `rounded-2xl border bg-card` row per teacher with
+    "Linked since <date>" and a "Leave" button in the course page's Join-button
+    classes. Leave opens, in place, a sentence on what changes and "Yes, leave"
+    (a native `<details>`, no client JS).
+  - Studio Learners gains a panel above the roster: "Your student link"
+    (Create/Rotate, the invite dialog's link field with Copy, a confirm before
+    replacing the link) and "N linked students" rows with a
+    `bg-brand-subtle text-brand-text` "Linked" pill, the source and date, and
+    Remove behind an AlertDialog. Roster cards of linked learners get the same
+    pill.
+  Not measured at 360px (migration unapplied, so the pages cannot render).
+  Do not show the join link after a reload: it is stored hashed. Do not put a
+  teacher's `full_name` on the join page.

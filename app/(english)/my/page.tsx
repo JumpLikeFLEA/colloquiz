@@ -8,6 +8,8 @@ import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/a
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
 import { getSignedInAccount } from "@/lib/signedInAccount";
+import type { MyTeacher } from "@/lib/teacherLinks";
+import { getMyTeachers } from "@/lib/teacherLinksServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
@@ -52,7 +54,7 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  * LocalDateTime, already shipped by the cohort course page.
  */
 export default async function MyPage() {
-  const home = await getLearnerHome(new Date());
+  const [home, teachers] = await Promise.all([getLearnerHome(new Date()), getMyTeachers()]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
   const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
@@ -103,6 +105,20 @@ export default async function MyPage() {
           )}
         </section>
 
+        {teachers.length > 0 && (
+          <section className="flex flex-col gap-6" data-my="teachers">
+            <SectionHeading title={m.teachersTitle} />
+            <p className="-mt-3 text-sm text-muted-foreground">{m.teachersLead}</p>
+            <ul className="flex flex-col gap-3">
+              {teachers.map((teacher) => (
+                <li key={teacher.linkId}>
+                  <TeacherRow lang={lang} teacher={teacher} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {(hasEnrolment || home.feedback.length > 0) && (
           <section className="flex flex-col gap-6" data-my="feedback">
             <SectionHeading title={m.feedbackTitle} />
@@ -128,6 +144,44 @@ export default async function MyPage() {
 
 function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {
   return lang === "ru" ? "ru-RU" : "en-GB";
+}
+
+// Leave is a native <details> with a confirm button inside, so the step is
+// confirmed with no client JS (the AccountMenu <details> precedent,
+// docs/decisions/0086). The button posts a plain form to
+// /api/teacher-links/leave.
+function TeacherRow({ lang, teacher }: { lang: SurfaceLang; teacher: MyTeacher }) {
+  const m = myCopy[lang];
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="break-words text-sm font-semibold text-foreground sm:text-base">{teacher.teacherName}</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            {m.linkedSince} <time dateTime={teacher.linkedAt}>
+              {new Date(teacher.linkedAt).toLocaleDateString(localeFor(lang), { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}
+            </time>
+          </p>
+        </div>
+        <details className="group">
+          <summary
+            className={`${LINK_BUTTON_CLASS} cursor-pointer list-none group-open:hidden [&::-webkit-details-marker]:hidden`}
+          >
+            {m.leave}
+          </summary>
+          <form action="/api/teacher-links/leave" method="post" className="flex flex-col gap-3">
+            <input type="hidden" name="linkId" value={teacher.linkId} />
+            <p className="max-w-sm text-sm text-muted-foreground">{m.leaveConfirm(teacher.teacherName)}</p>
+            <div className="flex flex-wrap gap-2">
+              <button type="submit" className={LINK_BUTTON_CLASS}>
+                {m.leaveConfirmYes}
+              </button>
+            </div>
+          </form>
+        </details>
+      </div>
+    </div>
+  );
 }
 
 function NextCall({ lang, call }: { lang: SurfaceLang; call: NonNullable<LearnerHome["nextCall"]> }) {

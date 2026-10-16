@@ -19,6 +19,7 @@ const baseSources = {
   voiceSubmissions: [],
   voiceAudio: {},
   finalComments: [],
+  teacherLinks: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -423,6 +424,29 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
   });
 
   it("is format version 8", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(8);
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(9);
+  });
+});
+
+describe("buildExportPayload — teacher_links (TCH-001)", () => {
+  it("is empty for a reader who never linked", () => {
+    expect(buildExportPayload(baseSources, []).teacher_links).toEqual([]);
+  });
+
+  it("exports active and ended links with who ended them", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        teacherLinks: [
+          { link_id: "l1", teacher_name: "Anna", source: "join_link", linked_at: "2026-10-01T00:00:00Z", ended_at: null, ended_by: null },
+          { link_id: "l2", teacher_name: "Boris", source: "run_invite", linked_at: "2026-09-01T00:00:00Z", ended_at: "2026-09-20T00:00:00Z", ended_by: "you" },
+        ],
+      },
+      [],
+    );
+    expect(payload.teacher_links).toEqual([
+      { link_id: "l1", teacher_name: "Anna", source: "join_link", linked_at: "2026-10-01T00:00:00Z", ended_at: null, ended_by: null },
+      { link_id: "l2", teacher_name: "Boris", source: "run_invite", linked_at: "2026-09-01T00:00:00Z", ended_at: "2026-09-20T00:00:00Z", ended_by: "you" },
+    ]);
   });
 });

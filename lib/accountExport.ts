@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 8;
+export const EXPORT_FORMAT_VERSION = 9;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -27,6 +27,7 @@ export const EXPORT_CONTENTS = [
   "Invites you claimed — the name and contact the course author wrote on your invite",
   "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
   "Final comments — the author's published closing comment for each course run you joined",
+  "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -123,6 +124,16 @@ export type FinalCommentRow = {
   courses: unknown;
 };
 
+export type TeacherLinkRow = {
+  link_id: string;
+  teacher_name: string;
+  source: string;
+  linked_at: string;
+  ended_at: string | null;
+  /** 'you' | 'teacher' | 'unknown' (076 my_teacher_links); null while active. */
+  ended_by: string | null;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -142,6 +153,7 @@ export type ExportSources = {
   /** Submission id -> the take's audio, base64. Absent for a removed take. */
   voiceAudio: Readonly<Record<string, string>>;
   finalComments: FinalCommentRow[];
+  teacherLinks: TeacherLinkRow[];
 };
 
 /**
@@ -273,6 +285,19 @@ export function buildExportPayload(
     // but an editor of the course also reads drafts (061), so a learner who
     // edits the course they joined would otherwise export a draft.
     final_comments: src.finalComments.filter((row) => row.published_at).map(exportFinalComment),
+
+    // TCH-001 (docs/decisions/0148; privacy-policy.md section 8): the links
+    // this reader is the STUDENT in, ended ones too. Read through
+    // my_teacher_links (076); the table has no grants. The teacher's side is
+    // not exported: those rows describe other people.
+    teacher_links: src.teacherLinks.map((row) => ({
+      link_id: row.link_id,
+      teacher_name: row.teacher_name,
+      source: row.source,
+      linked_at: row.linked_at,
+      ended_at: row.ended_at,
+      ended_by: row.ended_by,
+    })),
   };
 }
 

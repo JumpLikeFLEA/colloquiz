@@ -8,9 +8,11 @@ import {
   scopeRoster,
   toRosterRow,
 } from "@/lib/learners/roster";
+import { getJoinLinkState, getLinkedStudents } from "@/lib/teacherLinksServer";
 import { LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { LearnerCard } from "./LearnerCard";
 import { LearnerFilters } from "./LearnerFilters";
+import { StudentLinksPanel } from "./StudentLinksPanel";
 
 // /studio/learners — the roster (AUTH-011, docs/decisions/0109 Decision 8,
 // 0116). Who may see which learner is decided in SQL: learner_roster()
@@ -34,8 +36,16 @@ export default async function LearnersPage({
 
   const filters = parseLearnerFilters(await searchParams);
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("learner_roster");
+  const [{ data, error }, linkState, linkedStudents] = await Promise.all([
+    supabase.rpc("learner_roster"),
+    getJoinLinkState(),
+    getLinkedStudents(),
+  ]);
   if (error) throw new Error(error.message);
+  // TCH-001: the roster is activity-derived and unchanged; a linked student
+  // is a separate, explicit relationship (0141 Decision 3), so the panel
+  // lists them whether or not they appear in it.
+  const linkedIds = new Set(linkedStudents.map((s) => s.userId));
 
   const allRows = ((data ?? []) as Record<string, unknown>[]).map(toRosterRow);
   const options = rosterFilterOptions(allRows, filters.course);
@@ -58,6 +68,8 @@ export default async function LearnersPage({
         {allRows.length > 0 && <LearnerFilters filters={filters} options={options} />}
       </div>
 
+      {linkState && <StudentLinksPanel linkState={linkState} students={linkedStudents} />}
+
       {allRows.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-muted-foreground rounded-2xl border border-dashed border-border text-sm text-center px-4">
           No learners yet. A learner appears here once they open a lesson while signed in, or join a run.
@@ -74,7 +86,11 @@ export default async function LearnersPage({
           ) : (
             <div className="space-y-3">
               {rows.map((row) => (
-                <LearnerCard key={`${row.courseId}:${row.userId}:${row.enrolmentId ?? "none"}`} row={row} />
+                <LearnerCard
+                  key={`${row.courseId}:${row.userId}:${row.enrolmentId ?? "none"}`}
+                  row={row}
+                  linked={linkedIds.has(row.userId)}
+                />
               ))}
             </div>
           )}

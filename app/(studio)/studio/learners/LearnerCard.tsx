@@ -24,7 +24,7 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-export function LearnerCard({ row }: { row: RosterRow }) {
+export function LearnerCard({ row, linked = false }: { row: RosterRow; linked?: boolean }) {
   const label = learnerLabel(row);
   const revoked = row.enrolmentRevokedAt !== null;
 
@@ -37,6 +37,9 @@ export function LearnerCard({ row }: { row: RosterRow }) {
               {label}
             </Link>
           </h3>
+          {linked && (
+            <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-brand-subtle text-brand-text">Linked</span>
+          )}
           {row.tier && (
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-muted text-muted-foreground">
               {row.tier === "extended" ? "Extended" : "Basic"}

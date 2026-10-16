@@ -9,6 +9,7 @@ import { SUBMIT_BUTTON_CLASS } from "@/app/components/lesson-player/practice/pra
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
 import { GradientBackdrop } from "../../HeroDecor";
+import { LinkStatementCard } from "../../LinkStatementCard";
 import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../surfaceClasses";
 import { inviteCopy } from "./inviteCopy";
 
@@ -124,6 +125,7 @@ function InviteState({
       return (
         <>
           <Title>{inviteCopy.pending.title}</Title>
+          {preview.teacherName && <LinkStatementCard lang="en" teacherName={preview.teacherName} />}
           <Body>{inviteCopy.pending.signedOutBody}</Body>
           <Link href={`/login?${new URLSearchParams({ next: here }).toString()}`} className={SUBMIT_BUTTON_CLASS}>
             {inviteCopy.pending.signedOutCta}
@@ -143,6 +145,9 @@ function InviteState({
     return (
       <>
         <Title>{inviteCopy.pending.title}</Title>
+        {/* TCH-001: claiming also links the learner to the invite's creator
+            (076), so the statement is shown before the button that does it. */}
+        {preview.teacherName && <LinkStatementCard lang="en" teacherName={preview.teacherName} />}
         <Body>
           {signedIn.email ? (
             <>

@@ -154,6 +154,14 @@ const ROUTES: RouteBudget[] = [
   // plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
   // Re-derive both from a real `npm run budget` run before raising it.
   { path: "/invite/00000000000000000000000000000000", budgetKB: 183, guardForbiddenSignatures: true },
+  // TCH-001 (docs/decisions/0148): a teacher's student link. Same shape as
+  // the invite page above (Server Components, the Join action a plain form
+  // POST), so it ships the layout's and next/link's JS only. An unknown
+  // token (this path) renders the same chunks as a live one. Needs migration
+  // 076 on the target: with it missing the preview RPC errors and the page
+  // throws (a FAIL, not a silent pass). budgetKB starts at the invite
+  // page's and is re-derived from a real `npm run budget` run (0148).
+  { path: "/join/00000000000000000000000000000000", budgetKB: 183, guardForbiddenSignatures: true },
   // COH-005 (docs/decisions/0115): the before/after screen, signed out (its
   // sign-in card) — the run is scripts/seed-local-fixtures.ts's cohort
   // fixture at a fixed id; without that seed the page 404s, a hard FAIL.

@@ -68,6 +68,9 @@ export type InvitePreview =
       runStartsAt: string;
       tier: InviteTier;
       alreadyEnrolled: boolean;
+      /** TCH-001 (076): the invite creator's name when claiming also links
+       * the learner to them; null when it won't. */
+      teacherName: string | null;
     };
 
 const PREVIEW_STATES = new Set(["pending", "claimed_by_you", "used", "expired", "revoked"]);
@@ -87,6 +90,7 @@ export function parseInvitePreview(raw: unknown): InvitePreview {
     runStartsAt: String(r.run_starts_at ?? ""),
     tier: r.tier === "extended" ? "extended" : "basic",
     alreadyEnrolled: r.already_enrolled === true,
+    teacherName: typeof r.teacher_name === "string" && r.teacher_name.trim() !== "" ? r.teacher_name : null,
   };
 }
 

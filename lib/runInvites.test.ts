@@ -23,7 +23,14 @@ describe("parseInvitePreview", () => {
       runStartsAt: "2026-10-07T16:30:27.430019+00:00",
       tier: "basic",
       alreadyEnrolled: false,
+      teacherName: null,
     });
+  });
+
+  it("reads the teacher the claim would link to (TCH-001), null when absent or blank", () => {
+    expect(parseInvitePreview({ ...PENDING, teacher_name: "Anna" })).toMatchObject({ teacherName: "Anna" });
+    expect(parseInvitePreview({ ...PENDING, teacher_name: null })).toMatchObject({ teacherName: null });
+    expect(parseInvitePreview({ ...PENDING, teacher_name: "  " })).toMatchObject({ teacherName: null });
   });
 
   it.each(["claimed_by_you", "used", "expired", "revoked"])("keeps the %s state", (state) => {

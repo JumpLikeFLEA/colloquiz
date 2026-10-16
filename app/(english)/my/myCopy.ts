@@ -30,6 +30,13 @@ type MyStrings = {
   finalComment: string;
   openLesson: string;
   openBeforeAfter: string;
+  teachersTitle: string;
+  teachersLead: string;
+  linkedSince: string;
+  leave: string;
+  leaveConfirm: (teacher: string) => string;
+  leaveConfirmYes: string;
+  leaveCancel: string;
 };
 
 export const myCopy: Record<SurfaceLang, MyStrings> = {
@@ -55,6 +62,13 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     finalComment: "Итоговый комментарий",
     openLesson: "Открыть урок",
     openBeforeAfter: "До и после",
+    teachersTitle: "Ваши преподаватели",
+    teachersLead: "Преподаватель видит ваши ответы и результаты, пока вы подключены. Отключиться можно в любой момент.",
+    linkedSince: "Подключены с",
+    leave: "Отключиться",
+    leaveConfirm: (teacher) => `Отключиться от ${teacher}? Преподаватель перестанет видеть ваши ответы и результаты. Переписка останется у вас обоих, но новые сообщения будут недоступны.`,
+    leaveConfirmYes: "Да, отключиться",
+    leaveCancel: "Отмена",
   },
   en: {
     metaTitle: "My courses",
@@ -78,5 +92,12 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     finalComment: "Final comment",
     openLesson: "Open lesson",
     openBeforeAfter: "Before and after",
+    teachersTitle: "Your teachers",
+    teachersLead: "A teacher sees your answers and scores while you are linked. You can leave at any time.",
+    linkedSince: "Linked since",
+    leave: "Leave",
+    leaveConfirm: (teacher) => `Leave ${teacher}? They will no longer see your answers or scores. Your conversation stays readable to both of you but takes no new messages.`,
+    leaveConfirmYes: "Yes, leave",
+    leaveCancel: "Cancel",
   },
 };
