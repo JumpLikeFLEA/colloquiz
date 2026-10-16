@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Inbox, Library, LogOut, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
+import { ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -24,9 +24,20 @@ const workItems: NavItem[] = [
   { label: "Courses", href: "/studio/courses", icon: Library },
   { label: "Reviews", href: "/studio/reviews", icon: MessageSquareText },
   { label: "Learners", href: "/studio/learners", icon: Users },
+  { label: "Messages", href: "/studio/messages", icon: MessageSquare },
 ];
 
-function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badge?: number | null }) {
+function NavLink({
+  item,
+  active,
+  badge,
+  badgeLabel,
+}: {
+  item: NavItem;
+  active: boolean;
+  badge?: number | null;
+  badgeLabel?: string;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -50,7 +61,7 @@ function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badg
       {badge != null && badge > 0 && (
         <span
           className="shrink-0 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-brand text-white text-[11px] font-medium leading-none"
-          aria-label={`${badge} waiting for feedback`}
+          aria-label={`${badge} ${badgeLabel ?? "waiting for feedback"}`}
         >
           {badge}
         </span>
@@ -59,7 +70,16 @@ function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badg
   );
 }
 
-export function StudioSidebar({ isAdmin, waitingCount }: { isAdmin: boolean; waitingCount: number | null }) {
+export function StudioSidebar({
+  isAdmin,
+  waitingCount,
+  unansweredCount,
+}: {
+  isAdmin: boolean;
+  waitingCount: number | null;
+  /** Threads whose last message is the student's (TCH-004); null hides it. */
+  unansweredCount: number | null;
+}) {
   const pathname = usePathname();
 
   // "View site" and the admin link leave Studio, so they never show as active.
@@ -91,7 +111,8 @@ export function StudioSidebar({ isAdmin, waitingCount }: { isAdmin: boolean; wai
               key={item.href}
               item={item}
               active={pathname === item.href || (!item.exact && pathname.startsWith(item.href + "/"))}
-              badge={item.href === "/studio" ? waitingCount : null}
+              badge={item.href === "/studio" ? waitingCount : item.href === "/studio/messages" ? unansweredCount : null}
+              badgeLabel={item.href === "/studio/messages" ? "unanswered" : undefined}
             />
           ))}
         </nav>

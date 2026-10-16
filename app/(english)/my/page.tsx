@@ -3,13 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, ExternalLink, Video } from "lucide-react";
+import { ArrowRight, ExternalLink, MessageSquare, Video } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import type { MyTeacher } from "@/lib/teacherLinks";
 import { getMyTeachers } from "@/lib/teacherLinksServer";
+import { unreadTotal, type Thread } from "@/lib/messages/messages";
+import { getThreads } from "@/lib/messages/messagesServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
@@ -54,7 +56,11 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  * LocalDateTime, already shipped by the cohort course page.
  */
 export default async function MyPage() {
-  const [home, teachers] = await Promise.all([getLearnerHome(new Date()), getMyTeachers()]);
+  const [home, teachers, threads] = await Promise.all([
+    getLearnerHome(new Date()),
+    getMyTeachers(),
+    getStudentThreads(),
+  ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
   const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
@@ -71,7 +77,7 @@ export default async function MyPage() {
             back={{ href: "/#catalogue", label: m.backToCatalogue }}
             // Sign-out from here returns to `/`: `/my` itself would only
             // bounce a signed-out visitor to the sign-in page.
-            account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} lang={lang} next="/" />}
+            account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={GLASS_PILL_CLASS}>{m.eyebrow}</span>
@@ -104,6 +110,28 @@ export default async function MyPage() {
             </ul>
           )}
         </section>
+
+        {threads.length > 0 && (
+          <section className="flex flex-col gap-6" data-my="messages">
+            <SectionHeading title={m.messagesTitle} />
+            <Link href="/my/messages" className={`${LIFT_CARD_CLASS} flex items-center gap-3 p-4 sm:p-5`}>
+              <span className={ICON_TILE_CLASS}>
+                <MessageSquare className="size-4" aria-hidden="true" />
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                <p className="min-w-0 flex-1 text-sm font-semibold text-foreground sm:text-base">{m.messagesOpen}</p>
+                {unreadTotal(threads) > 0 ? (
+                  <span className="inline-flex w-fit items-center rounded-full bg-brand px-2 py-0.5 text-xs font-medium text-white">
+                    {m.messagesNew(unreadTotal(threads))}
+                  </span>
+                ) : (
+                  <span className={MUTED_PILL_CLASS}>{m.messagesNone}</span>
+                )}
+              </div>
+              <ArrowRight className="size-3.5 flex-none text-brand-text" aria-hidden="true" />
+            </Link>
+          </section>
+        )}
 
         {teachers.length > 0 && (
           <section className="flex flex-col gap-6" data-my="teachers">
@@ -140,6 +168,18 @@ export default async function MyPage() {
       </div>
     </main>
   );
+}
+
+// The Messages row is a courtesy on the learner home: if the read fails (079
+// not yet applied, a transient error) the row is left out and the page, which
+// does not depend on it, still renders. /my/messages itself reads strictly.
+async function getStudentThreads(): Promise<Thread[]> {
+  try {
+    return await getThreads("student");
+  } catch (e) {
+    console.error("/my: message_threads failed", e);
+    return [];
+  }
 }
 
 function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {

@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { SidebarProvider } from "@/app/components/ui/sidebar";
 import { getCourseAccess } from "@/lib/courseAccess";
 import { waitingCount } from "@/lib/studio/inbox";
-import { getWaitingRows } from "./inboxData";
+import { unansweredThreads } from "@/lib/messages/messages";
+import { getTeacherThreads, getWaitingRows } from "./inboxData";
 import { StudioSidebar, StudioTopbar } from "./StudioSidebar";
 
 // The Studio gate (SHELL-020, docs/decisions/0109 Decision 3). proxy.ts
@@ -27,9 +28,14 @@ export default async function StudioLayout({ children }: { children: React.React
     console.error("Studio badge: review_queue failed", e);
   }
 
+  // The Messages badge (TCH-004, docs/decisions/0151 Decision 7): unanswered
+  // threads from the same cached read the inbox lists. null hides it.
+  const threads = await getTeacherThreads();
+  const unanswered = threads ? unansweredThreads(threads).length : null;
+
   return (
     <SidebarProvider>
-      <StudioSidebar isAdmin={isAdmin} waitingCount={waiting} />
+      <StudioSidebar isAdmin={isAdmin} waitingCount={waiting} unansweredCount={unanswered} />
       {/* min-w-0: same reason as the Colloquiz (main) layout — a flex item
           otherwise refuses to shrink below its widest unbreakable content. */}
       <div className="flex min-w-0 min-h-svh flex-1 flex-col">

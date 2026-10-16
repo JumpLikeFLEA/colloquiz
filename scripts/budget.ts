@@ -180,6 +180,15 @@ const ROUTES: RouteBudget[] = [
   // precedent, docs/decisions/0057). Re-derive both from a real
   // `npm run budget` run before raising it.
   { path: "/my", budgetKB: 180, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
+  // TCH-004 (docs/decisions/0151): the learner's message list, signed in as the
+  // same learner-home fixture. It ships the layout's JS only: the composer
+  // lives on the thread page (/my/messages/[teacherId]), whose URL carries a
+  // per-seed profile id and so has no stable entry here. Needs migration 079 on
+  // the target (without it the list read throws, a FAIL). Measured 175.9 KB on
+  // the local stack; budgetKB is that plus ~4.5% headroom (the PLAY-012
+  // precedent, docs/decisions/0057). Re-derive both from a real
+  // `npm run budget` run before raising it.
+  { path: "/my/messages", budgetKB: 184, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────

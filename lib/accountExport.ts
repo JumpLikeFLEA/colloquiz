@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 10;
+export const EXPORT_FORMAT_VERSION = 11;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -29,6 +29,7 @@ export const EXPORT_CONTENTS = [
   "Final comments — the author's published closing comment for each course run you joined",
   "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
   "Teacher groups — the names of the private groups a linked teacher has put you in",
+  "Messages — your conversations with teachers: what each of you wrote, and when",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -141,6 +142,19 @@ export type GroupMembershipRow = {
   added_at: string;
 };
 
+/** One row of `my_conversations_export` (079): a message with its conversation. */
+export type ConversationExportRow = {
+  conversation_id: string;
+  teacher_name: string;
+  is_open: boolean;
+  message_id: string;
+  /** 'you' | 'teacher'. */
+  author: string;
+  body: unknown;
+  created_at: string;
+  read_at: string | null;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -162,6 +176,7 @@ export type ExportSources = {
   finalComments: FinalCommentRow[];
   teacherLinks: TeacherLinkRow[];
   teacherGroups: GroupMembershipRow[];
+  conversations: ConversationExportRow[];
 };
 
 /**
@@ -316,7 +331,42 @@ export function buildExportPayload(
       teacher_name: row.teacher_name,
       added_at: row.added_at,
     })),
+
+    // TCH-004 (docs/decisions/0151; privacy-policy.md section 8): the
+    // conversations the reader is the STUDENT in, ended links included
+    // (a closed conversation is still theirs). Read through
+    // my_conversations_export (079); the tables have no grants. The teacher's
+    // side is not exported: those rows describe other people.
+    teacher_conversations: exportConversations(src.conversations),
   };
+}
+
+/** Flat message rows (ordered by conversation, then time) to one entry per conversation. */
+function exportConversations(rows: readonly ConversationExportRow[]) {
+  const byId = new Map<
+    string,
+    {
+      conversation_id: string;
+      teacher_name: string;
+      open: boolean;
+      messages: { message_id: string; from: string; content: unknown; sent_at: string; read_at: string | null }[];
+    }
+  >();
+  for (const row of rows) {
+    let conv = byId.get(row.conversation_id);
+    if (!conv) {
+      conv = { conversation_id: row.conversation_id, teacher_name: row.teacher_name, open: row.is_open, messages: [] };
+      byId.set(row.conversation_id, conv);
+    }
+    conv.messages.push({
+      message_id: row.message_id,
+      from: row.author,
+      content: row.body ?? null,
+      sent_at: row.created_at,
+      read_at: row.read_at,
+    });
+  }
+  return [...byId.values()];
 }
 
 function exportFinalComment(row: FinalCommentRow) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildExportPayload } from "./accountExport";
+import { buildExportPayload, type ConversationExportRow } from "./accountExport";
 
 const baseSources = {
   accountId: "user-1",
@@ -21,6 +21,7 @@ const baseSources = {
   finalComments: [],
   teacherLinks: [],
   teacherGroups: [],
+  conversations: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -424,8 +425,8 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
     expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
   });
 
-  it("is format version 8", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(10);
+  it("is format version 11", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(11);
   });
 });
 
@@ -467,6 +468,56 @@ describe("buildExportPayload — teacher_groups (TCH-002)", () => {
     );
     expect(payload.teacher_groups).toEqual([
       { group_name: "Evening class", teacher_name: "Anna", added_at: "2026-10-02T00:00:00Z" },
+    ]);
+  });
+});
+
+describe("buildExportPayload — teacher_conversations (TCH-004)", () => {
+  const body = (text: string) => ({ paragraphs: [{ runs: [{ text }] }] });
+  const row = (over: Partial<ConversationExportRow>): ConversationExportRow => ({
+    conversation_id: "c1",
+    teacher_name: "Anna",
+    is_open: true,
+    message_id: "m1",
+    author: "you",
+    body: body("hi"),
+    created_at: "2026-10-16T10:00:00Z",
+    read_at: null,
+    ...over,
+  });
+
+  it("is empty for a reader who never wrote to a teacher", () => {
+    expect(buildExportPayload(baseSources, []).teacher_conversations).toEqual([]);
+  });
+
+  it("groups messages by conversation, keeping their order, who wrote them and whether it is closed", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        conversations: [
+          row({ message_id: "m1" }),
+          row({ message_id: "m2", author: "teacher", body: body("hello"), created_at: "2026-10-16T11:00:00Z", read_at: "2026-10-16T12:00:00Z" }),
+          row({ conversation_id: "c2", teacher_name: "Boris", is_open: false, message_id: "m3" }),
+        ],
+      },
+      [],
+    );
+    expect(payload.teacher_conversations).toEqual([
+      {
+        conversation_id: "c1",
+        teacher_name: "Anna",
+        open: true,
+        messages: [
+          { message_id: "m1", from: "you", content: body("hi"), sent_at: "2026-10-16T10:00:00Z", read_at: null },
+          { message_id: "m2", from: "teacher", content: body("hello"), sent_at: "2026-10-16T11:00:00Z", read_at: "2026-10-16T12:00:00Z" },
+        ],
+      },
+      {
+        conversation_id: "c2",
+        teacher_name: "Boris",
+        open: false,
+        messages: [{ message_id: "m3", from: "you", content: body("hi"), sent_at: "2026-10-16T10:00:00Z", read_at: null }],
+      },
     ]);
   });
 });

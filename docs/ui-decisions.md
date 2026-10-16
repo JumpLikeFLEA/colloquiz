@@ -1897,3 +1897,46 @@ Appended to in the same commit as the change it records. Referenced from
   with the section closed, and 360/360 with a lesson row open (two exercises,
   three attempts, a long title and prompt). Do not show scores for
   a learner who is not linked.
+- Messages (2026-10-16, TCH-004, docs/decisions/0151, migration 079 not yet
+  applied to the hosted project). One conversation per linked pair, in the app.
+  Composed from existing classes and tokens; no new colours:
+  - Learner: `/my/messages` (the saved EN/RU choice, no toggle, the `/my` rule)
+    is `/my`'s band, then one `LIFT_CARD_CLASS` row per teacher (step-tile
+    `MessageSquare` icon, the name, a `bg-brand text-white` "N new" pill, a muted
+    "Closed" pill, "Open" or "Start a conversation"). `/my/messages/[teacherId]`
+    is the same band with the teacher's name as the `h1`, then the thread, then
+    the composer, or, once the link has ended, a dashed "This conversation is
+    closed" note in place of the composer. `/my` gains a "Messages" section
+    between Courses and Your teachers: one row to `/my/messages` with "N new" or
+    a muted "No new messages", shown only when the learner has a link or a
+    conversation.
+  - The account chip gets a `bg-destructive` dot with a white ring while a
+    teacher reply is unread, its accessible name gains "Unread messages: N", and
+    the card gains a "Messages (N)" link in the other links' classes. Server
+    markup only; no client JS.
+  - Thread (shared by both surfaces): bubbles at `max-w-[85%]`, the reader's own
+    in `bg-brand-subtle` and right-aligned, the other party's in `bg-muted` and
+    left-aligned, a `text-xs text-muted-foreground` line under each with who and
+    the local time, and a `bg-brand text-white` "New" pill on a message the
+    reader had not read. Bodies are the feedback format (`FeedbackContentView`).
+    The composer is the feedback editor's textarea with its Bold bar, hint and
+    character count (`N / 2,000`, `text-destructive-text` over the cap), a
+    `bg-brand` Send button and an inline `destructive-subtle` error line. No
+    realtime: a page load shows new messages.
+  - Studio: a "Messages" nav entry under Learners with a `bg-brand` badge from
+    the unanswered count (AppSidebar's duels badge classes); the inbox gains an
+    "Unanswered questions" section between "Waiting for feedback" and
+    "Unpublished drafts" (the inbox's link rows, "Last message N ago", a warning
+    pill with the unread count). `/studio/messages` lists conversations newest
+    first, then "Linked students you haven't written to" (so a teacher can write
+    first), with Unanswered / unread / Closed pills. `/studio/messages/[studentId]`
+    has the learner page's back link, the label as `h1`, the thread and the
+    composer, or the closed note. Studio's chrome stays English.
+  Measured at 360px (079 applied locally): `scrollWidth/innerWidth 360/360` on
+  `/my` (dot and Messages row), `/my` with the account card open, `/my/messages`,
+  `/my/messages/<teacher>` (a long unbroken word, bold, "New" pills, unread),
+  `/studio` (unanswered row), `/studio/messages`, `/studio/messages/<student>`
+  (also with a 2,001-character draft), and the closed state of both threads and
+  of both lists. Not reached: the composer's error line (a refused send).
+  Do not show a sender when the reader read their message: no read receipt is
+  shown or returned to the sender (0151 Decision 5).

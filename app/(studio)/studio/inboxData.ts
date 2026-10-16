@@ -4,6 +4,8 @@ import { listAuthoredCourses } from "@/lib/courseAuthoring";
 import type { CourseAccess } from "@/lib/courseAccess";
 import { toFinalCommentRow, toReviewRow, type FinalCommentRow, type ReviewRow } from "@/lib/reviews/queue";
 import type { InboxCall } from "@/lib/studio/inbox";
+import type { Thread } from "@/lib/messages/messages";
+import { getThreads } from "@/lib/messages/messagesServer";
 
 // AUTH-012 — the inbox's reads (docs/decisions/0118). Who may see which row
 // is decided in SQL: review_queue() / review_final_comments() (062) and
@@ -80,3 +82,18 @@ export async function getEditorCalls(access: CourseAccess): Promise<InboxCall[]>
   }
   return calls;
 }
+
+/** The teacher's message threads, for the nav badge (layout.tsx) and the
+ * inbox's "Unanswered questions" (page.tsx). ONE cached read, so the two
+ * can't disagree (TCH-004, docs/decisions/0151 Decision 7). Fail-soft: null
+ * on error, because Studio's main page and every page's nav sit on it and the
+ * rest of the inbox does not depend on it (079 may not be applied yet). The
+ * inbox says it could not load them rather than showing an empty list. */
+export const getTeacherThreads = cache(async (): Promise<Thread[] | null> => {
+  try {
+    return await getThreads("teacher");
+  } catch (e) {
+    console.error("Studio: message_threads failed", e);
+    return null;
+  }
+});

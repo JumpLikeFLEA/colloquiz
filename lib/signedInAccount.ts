@@ -2,6 +2,7 @@ import { cache } from "react";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isStudioEditor } from "@/lib/studioEditor";
+import { getUnreadMessageCount } from "@/lib/messages/messagesServer";
 
 /**
  * SHELL-019 (docs/decisions/0086) — who, if anyone, is signed in, for the
@@ -22,10 +23,23 @@ import { isStudioEditor } from "@/lib/studioEditor";
  * docs/decisions/0109 Decision 4) drives the menu's "Studio" link: two
  * parallel reads (lib/studioEditor.ts), made only once a user is known, so
  * an anonymous visitor still pays nothing.
+ *
+ * `unreadMessages` (TCH-004, docs/decisions/0151) is the account chip's dot:
+ * unread teacher replies, read in parallel with the editor check and
+ * fail-soft (getUnreadMessageCount), so a signed-in learner pays one more
+ * indexed read and the chrome can't break a page. /my/messages/[teacherId]
+ * marks a thread read BEFORE it first calls this, because cache() would
+ * otherwise keep the pre-read count for the rest of the request.
  */
-export const getSignedInAccount = cache(async (): Promise<{ email: string | null; isEditor: boolean } | null> => {
-  const supabase = await createClient();
-  const user = await authUserFrom(supabase);
-  if (!user) return null;
-  return { email: user.email, isEditor: await isStudioEditor(supabase, user.id) };
-});
+export const getSignedInAccount = cache(
+  async (): Promise<{ email: string | null; isEditor: boolean; unreadMessages: number } | null> => {
+    const supabase = await createClient();
+    const user = await authUserFrom(supabase);
+    if (!user) return null;
+    const [isEditor, unreadMessages] = await Promise.all([
+      isStudioEditor(supabase, user.id),
+      getUnreadMessageCount(supabase),
+    ]);
+    return { email: user.email, isEditor, unreadMessages };
+  },
+);

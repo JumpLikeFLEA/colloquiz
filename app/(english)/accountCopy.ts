@@ -24,6 +24,11 @@ type AccountStrings = {
    * English (docs/decisions/0109), and "Studio" is its name, so both
    * languages use it. */
   studio: string;
+  /** The link to /my/messages, shown only while a teacher reply is unread
+   * (TCH-004, docs/decisions/0151): "Messages (2)". */
+  messages: string;
+  /** The chip's accessible name when there are unread replies: "Unread messages: 2". */
+  unreadLabel: string;
 };
 
 export const accountCopy: Record<SurfaceLang, AccountStrings> = {
@@ -33,6 +38,8 @@ export const accountCopy: Record<SurfaceLang, AccountStrings> = {
     signOut: "Выйти",
     myCourses: "Мои курсы",
     studio: "Studio",
+    messages: "Сообщения",
+    unreadLabel: "Непрочитанные сообщения:",
   },
   en: {
     signedInAs: "Signed in as",
@@ -40,5 +47,7 @@ export const accountCopy: Record<SurfaceLang, AccountStrings> = {
     signOut: "Sign out",
     myCourses: "My courses",
     studio: "Studio",
+    messages: "Messages",
+    unreadLabel: "Unread messages:",
   },
 };

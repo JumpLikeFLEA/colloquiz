@@ -86,13 +86,15 @@ export async function proxy(request: NextRequest) {
   //
   // /my (PROG-002, docs/decisions/0120) is the learner home on the English
   // surface: any signed-in user, so a signed-out visitor goes to
-  // /login?next=/my. Exact path only: nothing lives under it.
+  // /login?next=/my. TCH-004 (docs/decisions/0151) puts /my/messages under it,
+  // so /my and everything below it is gated.
   const isProtectedRoute =
     pathname === '/app' ||
     pathname.startsWith('/app/') ||
     pathname === '/studio' ||
     pathname.startsWith('/studio/') ||
-    pathname === '/my'
+    pathname === '/my' ||
+    pathname.startsWith('/my/')
 
   if (!user && !isAuthRoute && isProtectedRoute && request.nextUrl.searchParams.has('code')) {
     // A Supabase OAuth/PKCE code landed on a non-callback path (e.g. Supabase

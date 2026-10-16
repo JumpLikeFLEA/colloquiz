@@ -65,7 +65,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
         <GradientBackdrop />
         <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
           <BandTopBar
-            account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} lang={lang} next={here} />}
+            account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={here} />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={GLASS_PILL_CLASS}>{m.eyebrow}</span>

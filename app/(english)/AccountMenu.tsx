@@ -1,4 +1,4 @@
-import { BookOpen, LogOut, PenTool, UserRound } from "lucide-react";
+import { BookOpen, LogOut, MessageSquare, PenTool, UserRound } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { accountInitial } from "@/lib/accountInitial";
 import { accountCopy } from "./accountCopy";
@@ -27,6 +27,12 @@ import { accountCopy } from "./accountCopy";
  * at /my (PROG-002, docs/decisions/0120), first in the card. Also a plain
  * `<a>`: no client JS, and nothing here needs a soft navigation.
  *
+ * While a teacher's reply is unread (TCH-004, docs/decisions/0151) the chip
+ * carries a dot and the card a "Messages (N)" link to /my/messages. Both are
+ * server markup from the `unread` prop; the count is read in
+ * getSignedInAccount, fail-soft, so it adds no client JS and no way for the
+ * chrome to break a page.
+ *
  * The band clips only horizontally (`overflow-x-clip`, GRADIENT_BAND_CLASS)
  * and has no transform, so the `fixed` layer still covers the viewport and
  * the card may hang below the band onto the page: with My courses and Studio
@@ -40,22 +46,26 @@ export function AccountMenu({
   lang,
   next,
   studio,
+  unread = 0,
 }: {
   email: string | null;
   lang: SurfaceLang;
   next: string;
   studio: boolean;
+  /** Unread teacher replies; 0 shows nothing. */
+  unread?: number;
 }) {
   const a = accountCopy[lang];
   const initial = accountInitial(email);
-  const status = email ? `${a.signedInAs} ${email}` : a.signedIn;
+  const base = email ? `${a.signedInAs} ${email}` : a.signedIn;
+  const status = unread > 0 ? `${base}. ${a.unreadLabel} ${unread}` : base;
 
   return (
     <details className="group relative z-30">
       <summary
         aria-label={status}
         title={status}
-        className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white group-open:before:fixed group-open:before:inset-0 group-open:before:cursor-default group-open:before:content-[''] [&::-webkit-details-marker]:hidden"
+        className="relative flex size-11 cursor-pointer list-none items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white group-open:before:fixed group-open:before:inset-0 group-open:before:cursor-default group-open:before:content-[''] [&::-webkit-details-marker]:hidden"
       >
         <span
           aria-hidden="true"
@@ -63,6 +73,13 @@ export function AccountMenu({
         >
           {initial ?? <UserRound className="size-4" />}
         </span>
+        {unread > 0 && (
+          <span
+            aria-hidden="true"
+            data-unread-dot
+            className="absolute right-0.5 top-0.5 size-3 rounded-full bg-destructive ring-2 ring-white"
+          />
+        )}
       </summary>
       <div className="absolute right-0 top-full z-10 mt-2 flex w-64 max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-lg">
         {email ? (
@@ -80,6 +97,20 @@ export function AccountMenu({
           <BookOpen className="size-4" aria-hidden="true" />
           {a.myCourses}
         </a>
+        {unread > 0 && (
+          // A plain <a> like its neighbours (zero client JS, see above). The
+          // no-html-link-for-pages rule began flagging this href when
+          // /my/messages/[teacherId] was added (TCH-004); the /my and /studio
+          // anchors above were not flagged. Cause not investigated.
+          // eslint-disable-next-line @next/next/no-html-link-for-pages
+          <a
+            href="/my/messages"
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <MessageSquare className="size-4" aria-hidden="true" />
+            {a.messages} ({unread})
+          </a>
+        )}
         {studio && (
           <a
             href="/studio"

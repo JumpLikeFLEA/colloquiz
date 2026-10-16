@@ -37,6 +37,11 @@ type MyStrings = {
   leaveConfirm: (teacher: string) => string;
   leaveConfirmYes: string;
   leaveCancel: string;
+  /** The Messages section (TCH-004, docs/decisions/0151). */
+  messagesTitle: string;
+  messagesOpen: string;
+  messagesNew: (n: number) => string;
+  messagesNone: string;
 };
 
 export const myCopy: Record<SurfaceLang, MyStrings> = {
@@ -69,6 +74,10 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     leaveConfirm: (teacher) => `Отключиться от ${teacher}? Преподаватель перестанет видеть ваши ответы и результаты. Переписка останется у вас обоих, но новые сообщения будут недоступны.`,
     leaveConfirmYes: "Да, отключиться",
     leaveCancel: "Отмена",
+    messagesTitle: "Сообщения",
+    messagesOpen: "Переписка с преподавателями",
+    messagesNew: (n) => `Новых: ${n}`,
+    messagesNone: "Нет новых сообщений",
   },
   en: {
     metaTitle: "My courses",
@@ -99,5 +108,9 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     leaveConfirm: (teacher) => `Leave ${teacher}? They will no longer see your answers or scores. Your conversation stays readable to both of you but takes no new messages.`,
     leaveConfirmYes: "Yes, leave",
     leaveCancel: "Cancel",
+    messagesTitle: "Messages",
+    messagesOpen: "Conversations with your teachers",
+    messagesNew: (n) => `${n} new`,
+    messagesNone: "No new messages",
   },
 };

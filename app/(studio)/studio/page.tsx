@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, ChevronRight, FilePenLine, Mic, type LucideIcon } from "lucide-react";
+import { CalendarClock, ChevronRight, FilePenLine, MessageSquare, Mic, type LucideIcon } from "lucide-react";
 import { getCourseAccess } from "@/lib/courseAccess";
 import {
   ageLabel,
@@ -13,7 +13,8 @@ import {
 } from "@/lib/studio/inbox";
 import { LocalTime, LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { weekLabel } from "./reviews/statusLabels";
-import { getDraftRows, getEditorCalls, getWaitingRows } from "./inboxData";
+import { threadPath, unansweredThreads } from "@/lib/messages/messages";
+import { getDraftRows, getEditorCalls, getTeacherThreads, getWaitingRows } from "./inboxData";
 
 // /studio — the "Needs attention" inbox (AUTH-012, docs/decisions/0109
 // Decision 5, 0118), across every course the caller edits. Rows come from
@@ -136,7 +137,12 @@ export default async function StudioInbox() {
   const access = await getCourseAccess();
   if (!access.isAdmin && access.editableCourseIds.length === 0) notFound();
 
-  const [waitingRows, drafts, calls] = await Promise.all([getWaitingRows(), getDraftRows(), getEditorCalls(access)]);
+  const [waitingRows, drafts, calls, threads] = await Promise.all([
+    getWaitingRows(),
+    getDraftRows(),
+    getEditorCalls(access),
+    getTeacherThreads(),
+  ]);
   // The request's clock, read once so every age and the call window agree.
   const now = new Date();
 
@@ -147,15 +153,25 @@ export default async function StudioInbox() {
   const draftTotal = [...voiceDrafts, ...finalDrafts].reduce((n, g) => n + g.count, 0);
   const soon = upcomingCalls(calls, now);
 
-  const nothing = waiting.length === 0 && voiceDrafts.length === 0 && finalDrafts.length === 0 && soon.length === 0;
+  // "Unanswered" is decided in SQL (message_threads, 079): the last message is
+  // the student's and the link is live. null: the read failed (see inboxData).
+  const questions = threads ? unansweredThreads(threads) : null;
+
+  const nothing =
+    waiting.length === 0 &&
+    voiceDrafts.length === 0 &&
+    finalDrafts.length === 0 &&
+    soon.length === 0 &&
+    questions !== null &&
+    questions.length === 0;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Needs attention</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Recordings waiting for your feedback, drafts you haven&apos;t published, and calls coming up, across every
-          course you edit.
+          Recordings waiting for your feedback, questions from your students, drafts you haven&apos;t published, and
+          calls coming up, across every course you edit.
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           Times are in your timezone (<LocalTimeZone />).
@@ -183,6 +199,27 @@ export default async function StudioInbox() {
                     nouns="recordings"
                     verb="sent"
                     now={now}
+                  />
+                ))}
+              </div>
+            )}
+          </Section>
+
+          <Section title="Unanswered questions" count={questions?.length ?? 0}>
+            {questions === null ? (
+              <div className={EMPTY_BOX}>Couldn&apos;t load your students&apos; messages. Try again in a moment.</div>
+            ) : questions.length === 0 ? (
+              <div className={EMPTY_BOX}>No unanswered questions.</div>
+            ) : (
+              <div className="space-y-2">
+                {questions.map((t) => (
+                  <RowLink
+                    key={t.peerId}
+                    href={threadPath("teacher", t.peerId)}
+                    icon={MessageSquare}
+                    title={t.peerLabel}
+                    detail={t.lastAt ? `Last message ${ageLabel(t.lastAt, now)} ago` : "No messages yet"}
+                    pill={t.unreadCount > 0 ? `${t.unreadCount} unread` : undefined}
                   />
                 ))}
               </div>
