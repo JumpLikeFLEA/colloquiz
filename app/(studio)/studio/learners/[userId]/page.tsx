@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
 import { InlineContentSchema } from "@/lib/lessons/inline";
 import { inlinePlainText } from "@/lib/lessons/plainText";
@@ -49,8 +49,8 @@ export const metadata = { title: "Learner" };
 const SOURCE_LABEL = { instagram: "Instagram", telegram: "Telegram", direct: "Direct link" } as const;
 
 export default async function LearnerPage({ params }: { params: Promise<{ userId: string }> }) {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   const userId = parseLearnerId((await params).userId);
   if (!userId) notFound();

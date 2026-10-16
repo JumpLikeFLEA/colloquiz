@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, MessageSquare } from "lucide-react";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { ageLabel } from "@/lib/studio/inbox";
 import { getThreads } from "@/lib/messages/messagesServer";
 import { threadPath, type Thread } from "@/lib/messages/messages";
@@ -60,7 +60,7 @@ function ThreadRow({ t, now }: { t: Thread; now: Date }) {
 
 export default async function StudioMessages() {
   const access = await getCourseAccess();
-  if (!access.isAdmin && access.editableCourseIds.length === 0) notFound();
+  if (!canEnterStudio(access)) notFound();
 
   const threads = await getThreads("teacher");
   // The request's clock, read once so every age agrees.

@@ -10,7 +10,7 @@
 --
 -- Cases:
 --   N  signed in, no course_editors row         -> forbidden, no course
---   E  editor of another course (C0)            -> ok, course_editors row
+--   E  editor of another course (C0), with a seat -> ok, course_editors row
 --                                                  (granted_by = E)
 --   A  admin                                     -> ok, no course_editors row
 --   anon                                         -> no EXECUTE
@@ -46,6 +46,10 @@ BEGIN
   VALUES ('verify-c0-' || v_tag, 'Verify C0', 'A2', 'draft', v_a)
   RETURNING id INTO v_c0;
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (v_c0, v_e, v_a);
+  -- 082 (TCH-007): create_course needs an active seat, not just an editor row.
+  -- E gets the open-ended teacher seat 082's backfill gives every editor; the
+  -- no-seat and lapsed-seat cells are in supabase/verify/082_author_seats.sql.
+  INSERT INTO author_seats (user_id, kind, public_name, granted_by) VALUES (v_e, 'teacher', 'Verify E', v_a);
 
   -- anon: no EXECUTE.
   IF has_function_privilege('anon', 'create_course(text,text,text,text)', 'execute') THEN

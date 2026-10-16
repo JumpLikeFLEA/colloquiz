@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { SidebarProvider } from "@/app/components/ui/sidebar";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { waitingCount } from "@/lib/studio/inbox";
 import { unansweredThreads } from "@/lib/messages/messages";
 import { getTeacherThreads, getWaitingRows } from "./inboxData";
@@ -14,8 +14,8 @@ import { StudioSidebar, StudioTopbar } from "./StudioSidebar";
 // pages below still check can_edit_course(id) itself, and RLS underneath
 // both is the actual boundary.
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   // The Inbox badge (AUTH-012, docs/decisions/0118): the same cached
   // review_queue call the inbox lists, so the two can't disagree. A failed
@@ -35,7 +35,7 @@ export default async function StudioLayout({ children }: { children: React.React
 
   return (
     <SidebarProvider>
-      <StudioSidebar isAdmin={isAdmin} waitingCount={waiting} unansweredCount={unanswered} />
+      <StudioSidebar isAdmin={access.isAdmin} waitingCount={waiting} unansweredCount={unanswered} />
       {/* min-w-0: same reason as the Colloquiz (main) layout — a flex item
           otherwise refuses to shrink below its widest unbreakable content. */}
       <div className="flex min-w-0 min-h-svh flex-1 flex-col">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarClock, ChevronRight, FilePenLine, MessageSquare, Mic, type LucideIcon } from "lucide-react";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import {
   ageLabel,
   CALL_WINDOW_DAYS,
@@ -135,7 +135,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
 
 export default async function StudioInbox() {
   const access = await getCourseAccess();
-  if (!access.isAdmin && access.editableCourseIds.length === 0) notFound();
+  if (!canEnterStudio(access)) notFound();
 
   const [waitingRows, drafts, calls, threads] = await Promise.all([
     getWaitingRows(),

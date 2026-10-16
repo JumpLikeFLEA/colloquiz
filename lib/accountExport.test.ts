@@ -23,6 +23,7 @@ const baseSources = {
   teacherGroups: [],
   conversations: [],
   homework: [],
+  authorSeat: null,
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -426,8 +427,8 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
     expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
   });
 
-  it("is format version 12", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(12);
+  it("is format version 13", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(13);
   });
 });
 
@@ -568,5 +569,45 @@ describe("buildExportPayload — homework (TCH-005)", () => {
       { teacher_name: "Anna", course_title: "Future Imperfect", lesson_title: "True or false", due_on: "2026-10-20", note: "Do this first", assigned_at: "2026-10-16T10:00:00Z" },
       { teacher_name: "Anna", course_title: "Grammar drilling", lesson_title: null, due_on: null, note: null, assigned_at: "2026-10-17T10:00:00Z" },
     ]);
+  });
+});
+
+describe("buildExportPayload — author_seat (TCH-007)", () => {
+  it("is null for a reader without a seat", () => {
+    expect(buildExportPayload(baseSources, []).author_seat).toBeNull();
+  });
+
+  it("carries the reader's own seat, notes included, under the export's field names", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        authorSeat: {
+          kind: "teacher",
+          public_name: "Anna",
+          expires_at: "2027-01-31T23:59:59Z",
+          notes: "Paid for a year",
+          created_at: "2026-10-16T10:00:00Z",
+        },
+      },
+      [],
+    );
+    expect(payload.author_seat).toEqual({
+      kind: "teacher",
+      public_name: "Anna",
+      expires_at: "2027-01-31T23:59:59Z",
+      notes: "Paid for a year",
+      granted_at: "2026-10-16T10:00:00Z",
+    });
+  });
+
+  it("keeps an open-ended seat's null expiry", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        authorSeat: { kind: "house", public_name: "Anna", expires_at: null, notes: null, created_at: "2026-10-16T10:00:00Z" },
+      },
+      [],
+    );
+    expect(payload.author_seat).toMatchObject({ kind: "house", expires_at: null, notes: null });
   });
 });

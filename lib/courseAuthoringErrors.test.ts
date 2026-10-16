@@ -58,6 +58,12 @@ describe("courseAuthoringErrorResponse", () => {
     expect(body.error).not.toBe("Something went wrong.");
   });
 
+  it("maps 082's seat_lapsed to a 403 with its own message", () => {
+    const { status, body } = courseAuthoringErrorResponse("seat_lapsed");
+    expect(status).toBe(403);
+    expect(body.error).toContain("seat");
+  });
+
   it("maps the invite rate limit to a 429", () => {
     expect(courseAuthoringErrorResponse("rate_limited").status).toBe(429);
   });

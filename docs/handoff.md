@@ -51,8 +51,11 @@ their questions in the app and see their answers. A teacher's courses are
 unlisted until an admin promotes one into the public catalogue. A lapsed
 seat freezes the teacher's Studio; nobody loses access they have. It is
 built **house first**: M3 gives all of it to the partner as the house
-teacher, M4 opens it to other teachers. The out-of-scope list above still
-holds; homework is a list of lessons with an optional due date, not a
+teacher, M4 opens it to other teachers. Seats are built (TCH-007,
+docs/decisions/0154, migration 082, not yet applied to hosted): an admin adds,
+extends and freezes them at `/studio/authors`, and creating a course needs an
+active seat or admin; the rest of Studio does not yet freeze on a lapsed seat
+(TCH-008). The out-of-scope list above still holds; homework is a list of lessons with an optional due date, not a
 curriculum.
 
 ## The two surfaces

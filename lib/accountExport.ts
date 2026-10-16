@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 12;
+export const EXPORT_FORMAT_VERSION = 13;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -170,6 +170,17 @@ export type HomeworkExportRow = {
   assigned_at: string;
 };
 
+/** The reader's own row of `my_author_seat_export` (082), or none. */
+export type AuthorSeatExportRow = {
+  kind: string;
+  public_name: string;
+  /** null for an open-ended seat. */
+  expires_at: string | null;
+  /** The admin's private notes about the seat. */
+  notes: string | null;
+  created_at: string;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -193,6 +204,8 @@ export type ExportSources = {
   teacherGroups: GroupMembershipRow[];
   conversations: ConversationExportRow[];
   homework: HomeworkExportRow[];
+  /** TCH-007 (082): the reader's own author seat, or null. */
+  authorSeat: AuthorSeatExportRow | null;
 };
 
 /**
@@ -366,6 +379,20 @@ export function buildExportPayload(
       note: row.note,
       assigned_at: row.assigned_at,
     })),
+
+    // TCH-007 (docs/decisions/0154 Decision 8): the reader's own author seat,
+    // from my_author_seat_export (082): kind, public name, expiry, and the
+    // admin's notes about it, which are data about this account. null for
+    // anyone without a seat. Nobody else's seat is ever returned.
+    author_seat: src.authorSeat
+      ? {
+          kind: src.authorSeat.kind,
+          public_name: src.authorSeat.public_name,
+          expires_at: src.authorSeat.expires_at,
+          notes: src.authorSeat.notes,
+          granted_at: src.authorSeat.created_at,
+        }
+      : null,
   };
 }
 

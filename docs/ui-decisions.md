@@ -2025,3 +2025,34 @@ Appended to in the same commit as the change it records. Referenced from
   voice task's card in a browser, and the dialog's error line.
   Do not draw the answer key in the card, and do not refresh the lesson page
   after sending (it re-renders the player with a new attemptId).
+- Author seats (2026-10-16, TCH-007, docs/decisions/0154, migration 082 applied to
+  the local stack only, not yet to the hosted project). Studio only; composed from
+  existing classes and tokens, no new colours:
+  - `/studio/authors`, admin only (a seated teacher gets Studio's 404), with an
+    "Authors" nav entry for admins, last (`UserCog`). An "Add a teacher" card
+    (email, optional public name, optional "Through" date, notes, "Add seat"), then
+    one `rounded-2xl border bg-card` card per seat: the public name (wraps), a
+    House (`bg-brand-subtle text-brand-text`) or Teacher (muted) pill, a state
+    pill (active and open-ended `bg-brand-subtle text-brand-text`, ending within 7
+    days `bg-warning-subtle text-warning`, lapsed `bg-destructive-subtle
+    text-destructive-text`), the contact, a `dl` of expiry / courses / linked
+    students (2 columns, 3 at `sm`), the notes, and outlined buttons Edit, Extend,
+    Freeze now (hidden on a lapsed seat) and Mark as house seat / Make a regular
+    seat. Edit and Extend are Radix dialogs (`max-h-[calc(100dvh-2rem)]`, scroll
+    inside); Freeze is an AlertDialog. The notes field says they are private to
+    admins and included in the teacher's data export.
+  - Extend's +1/+3/+12-month buttons only fill the date field; the admin confirms
+    it with "Set date", or chooses "No expiry".
+  - A lapsed seat reads in the destructive-subtle set because this page is the
+    admin's, not the learner's: "Nothing demotivates the learner" does not apply.
+  - A seated teacher with no course yet can open Studio and sees "New course"; a
+    lapsed seat's `create_course` answers with its own message.
+  Measured at 360px (local stack, `scrollWidth/innerWidth`): 360/360 on
+  `/studio/authors` with 5 seats (a 66-character unbroken name, a long contact, a
+  750-character note, a house seat, a seat ending in 3 days), with the Edit dialog
+  open, the Extend dialog open with a date filled, the Freeze confirm open, the
+  unknown-email error toast showing, and after adding a sixth seat; 360/360 on
+  `/studio/courses` for a seated teacher with no course. Not reached: the empty
+  list ("No seats yet.") and the Add form's other error toasts.
+  Do not show the page to a non-admin, and do not decide "active" in the client:
+  `author_seats_list()` returns `is_active`.

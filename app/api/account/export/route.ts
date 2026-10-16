@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { ACHIEVEMENTS } from "@/lib/achievements";
-import { buildExportPayload, exportFilename, type VoiceSubmissionRow } from "@/lib/accountExport";
+import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type VoiceSubmissionRow } from "@/lib/accountExport";
 import { VOICE_BUCKET } from "@/lib/voice/recording";
 
 /**
@@ -65,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -144,11 +144,13 @@ export async function GET() {
         supabase.rpc("my_conversations_export"),
         // TCH-005: homework that applies to the caller (080).
         supabase.rpc("my_homework_export"),
+        // TCH-007: the caller's own author seat, if any (082).
+        supabase.rpc("my_author_seat_export"),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -194,6 +196,7 @@ export async function GET() {
         teacherGroups: teacherGroupsRes.data ?? [],
         conversations: conversationsRes.data ?? [],
         homework: homeworkRes.data ?? [],
+        authorSeat: ((authorSeatRes.data ?? []) as AuthorSeatExportRow[])[0] ?? null,
       },
       ACHIEVEMENTS,
     );

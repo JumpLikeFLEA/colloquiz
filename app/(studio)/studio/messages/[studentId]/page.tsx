@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { authUserFrom } from "@/lib/auth";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
 import { getConversationMessages, getThreads, markConversationRead } from "@/lib/messages/messagesServer";
 import { PEER_ID_PATTERN } from "@/lib/messages/messages";
@@ -38,7 +38,7 @@ export default async function StudioMessageThread({ params }: { params: Promise<
   if (!PEER_ID_PATTERN.test(studentId)) notFound();
 
   const access = await getCourseAccess();
-  if (!access.isAdmin && access.editableCourseIds.length === 0) notFound();
+  if (!canEnterStudio(access)) notFound();
 
   const supabase = await createClient();
   const user = await authUserFrom(supabase);

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
+import { ClipboardList, ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, UserCog, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -27,6 +27,9 @@ const workItems: NavItem[] = [
   { label: "Homework", href: "/studio/homework", icon: ClipboardList },
   { label: "Messages", href: "/studio/messages", icon: MessageSquare },
 ];
+
+// Author seats (TCH-007): admin only, shown last. The page 404s for anyone else.
+const authorsItem: NavItem = { label: "Authors", href: "/studio/authors", icon: UserCog };
 
 function NavLink({
   item,
@@ -107,7 +110,7 @@ export function StudioSidebar({
 
       <SidebarContent className="px-3 py-4">
         <nav className="flex flex-col gap-1">
-          {workItems.map((item) => (
+          {(isAdmin ? [...workItems, authorsItem] : workItems).map((item) => (
             <NavLink
               key={item.href}
               item={item}

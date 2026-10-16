@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
 import {
   countLearners,
@@ -34,8 +34,8 @@ export default async function LearnersPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   const filters = parseLearnerFilters(await searchParams);
   const supabase = await createClient();

@@ -8,6 +8,8 @@
  */
 export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: string }> = {
   forbidden: { status: 403, message: "You don't have permission to edit this course." },
+  // create_course (082): the caller has an author seat, but it has expired or been frozen.
+  seat_lapsed: { status: 403, message: "Your author seat has ended, so you can't create new courses. Ask the admin to extend it." },
   course_not_found: { status: 404, message: "That course no longer exists." },
   lesson_not_found: { status: 404, message: "That lesson no longer exists." },
   invalid_title: { status: 400, message: "Please enter a title." },

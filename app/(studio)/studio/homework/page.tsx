@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { AssignHomeworkButton } from "./AssignHomework";
 import { HomeworkCard } from "./HomeworkCard";
 import { loadAssignContext, loadHomeworkViews } from "./data";
@@ -13,8 +13,8 @@ import { loadAssignContext, loadHomeworkViews } from "./data";
 export const metadata = { title: "Homework" };
 
 export default async function HomeworkPage() {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   const [{ views, labelOf, groupNames }, assign] = await Promise.all([loadHomeworkViews(), loadAssignContext()]);
   const today = new Date();

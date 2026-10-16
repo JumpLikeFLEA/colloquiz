@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
 import { InlineContentSchema } from "@/lib/lessons/inline";
 import { inlinePlainText } from "@/lib/lessons/plainText";
@@ -38,8 +38,8 @@ export default async function ReviewsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   const filters = parseReviewFilters(await searchParams);
   const supabase = await createClient();

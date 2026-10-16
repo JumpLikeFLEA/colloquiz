@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { getTeacherGroups } from "@/lib/teacherGroupsServer";
 import { GroupsManager } from "./GroupsManager";
 
@@ -12,8 +12,8 @@ import { GroupsManager } from "./GroupsManager";
 export const metadata = { title: "Groups" };
 
 export default async function GroupsPage() {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   const groups = await getTeacherGroups();
 

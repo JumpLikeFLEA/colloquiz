@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { getLinkedStudents } from "@/lib/teacherLinksServer";
 import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
 import { membersByGroup } from "@/lib/teacherGroups";
@@ -20,8 +20,8 @@ export const metadata = { title: "Group" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function GroupPage({ params }: { params: Promise<{ groupId: string }> }) {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
-  if (!isAdmin && editableCourseIds.length === 0) notFound();
+  const access = await getCourseAccess();
+  if (!canEnterStudio(access)) notFound();
 
   const { groupId } = await params;
   if (!UUID.test(groupId)) notFound();

@@ -1,5 +1,5 @@
 import { ShieldAlert } from "lucide-react";
-import { getCourseAccess } from "@/lib/courseAccess";
+import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { listAuthoredCourses } from "@/lib/courseAuthoring";
 import { CoursesListView } from "./CoursesListView";
 
@@ -8,12 +8,14 @@ import { CoursesListView } from "./CoursesListView";
 // 0025 Decision 1). Signed-out or neither → Forbidden. `getCourseAccess`
 // mirrors the SQL `can_edit_course` grant model (own course_editors rows,
 // self-filtered — see lib/courseAccess.ts), not a re-derived permission.
-// Everyone past that gate may create a course: create_course (067) allows
-// an admin or any caller with a course_editors row (docs/decisions/0125 D2).
+// Everyone past that gate sees "New course"; create_course (082) lets an
+// admin or an active author seat through and answers anyone else with its own
+// message (docs/decisions/0125 D2, 0154).
 export default async function AdminCoursesPage() {
-  const { isAdmin, editableCourseIds } = await getCourseAccess();
+  const access = await getCourseAccess();
+  const { isAdmin, editableCourseIds } = access;
 
-  if (!isAdmin && editableCourseIds.length === 0) {
+  if (!canEnterStudio(access)) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <ShieldAlert className="size-12 text-muted-foreground mb-4" />
