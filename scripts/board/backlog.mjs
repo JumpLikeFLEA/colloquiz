@@ -3189,7 +3189,7 @@ export const CARDS = [
     epic: 'TCH',
     type: 'task',
     rank: 2537,
-    dependsOn: ['TCH-002', 'TCH-003', 'PROG-004'],
+    dependsOn: ['TCH-002', 'TCH-003', 'PROG-004', 'PROG-006'],
     goal:
       'Assign a lesson or a whole course to students and/or groups, with an optional due date that ' +
       'never locks; done is PROG-004\'s attempted lesson, at any time (docs/decisions/0141 Decisions 13 ' +
@@ -3286,7 +3286,7 @@ export const CARDS = [
       'CNT-013', 'VOICE-003', 'VOICE-004', 'VOICE-005', 'VOICE-006', 'VOICE-007', 'COH-005', 'PROG-001',
       'AUTH-011', 'ANON-012', 'OPS-010', 'SHELL-020', 'SHELL-021', 'AUTH-012',
       // House-first teacher features (docs/decisions/0141 Decision 21).
-      'VOICE-008', 'PROG-004', 'OPS-024', 'PROG-005', 'TCH-001', 'TCH-002', 'TCH-003', 'TCH-004',
+      'VOICE-008', 'PROG-004', 'PROG-006', 'OPS-024', 'PROG-005', 'TCH-001', 'TCH-002', 'TCH-003', 'TCH-004',
       'TCH-005', 'TCH-006', 'COH-014', 'COH-015', 'COH-016',
     ],
     goal: 'Rehearse a whole cohort on production with test accounts on real phones.',
@@ -3619,13 +3619,34 @@ export const CARDS = [
     ],
   },
   {
+    key: 'PROG-006',
+    title: 'Implement the complete-lesson rule (0143)',
+    milestone: 'M3',
+    epic: 'PROG',
+    type: 'task',
+    rank: 2524,
+    dependsOn: ['PROG-004'],
+    goal:
+      'PROG-004 decided what counts (docs/decisions/0143): a lesson with exercises is complete when ' +
+      'every exercise has been answered at least once, on any version the learner played; a lesson ' +
+      'with none is complete when the learner has a lesson_opens row (056). An in-progress lesson ' +
+      'counts toward no "N of M", average or homework done, and shows "N из M заданий" with no score.',
+    acceptance: [
+      'Before writing the migration, confirm with the owner that 056 is applied to the hosted project (probe PostgREST or ask; do not assume).',
+      'One migration re-emitting get_course_attempt_summary (050), learner_roster (063), the learner detail (064) and course_stats (065) from their latest bodies with the 0143 rule; the exercise count comes from the played version\'s own document, not lessons.published_item_count. Written, not applied; migration-number and re-emitted-body print rule (section header).',
+      'Full protocol on seeded data: a lesson answered in full on a superseded version stays complete after a republish; a partial lesson is excluded; a zero-exercise lesson with and without an open row; an anonymous-migrated attempt with no open row still completes; positive controls printed, no check passes on an empty result.',
+      'Copy: RU stays "пройдено уроков"; EN becomes "lessons completed" in app/(english)/courses/[courseSlug]/courseCopy.ts (lines 78, 122) and app/(english)/my/myCopy.ts (lines 47, 70); a new in-progress tile string "N из M заданий" (EN/RU per the surface). Copy language: stop and ask if the EN wording of the tile is not given.',
+      'Course page and /my show the in-progress tile without a score and exclude it from the two progress numbers; completeness comes from SQL, never recomputed in TypeScript. Usable at 360px; docs/ui-decisions.md entry; npm run budget printed for the touched English routes.',
+    ],
+  },
+  {
     key: 'PROG-003',
     title: 'Resume where the learner left off',
     milestone: 'M4',
     epic: 'PROG',
     type: 'task',
     rank: 2690,
-    dependsOn: ['PROG-004'],
+    dependsOn: ['PROG-004', 'PROG-006'],
     goal:
       'After five lessons the course page CTA still read "Начать первый бесплатный урок" and opened ' +
       'lesson 1: the CTA is always the first open lesson ' +
