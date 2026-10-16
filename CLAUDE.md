@@ -210,9 +210,7 @@ refactor.
 - Root: `proxy.ts` (route gating, `publicRoutes` — the English landing and
   free lessons join this list),
   `next.config.ts` (headers, report-only CSP, remote image host),
-  `eslint.config.mjs` (flat config), `DEVELOPMENT-MAP.md` (layered task map
-  over the board; refreshed when a card reaches Done — see "Working on a
-  board issue" step 8).
+  `eslint.config.mjs` (flat config).
 
 Exact commands:
 
@@ -313,14 +311,6 @@ Steps:
    backlog.mjs.
 7. If new work turns up, propose a new issue (title + acceptance) instead of
    doing it inside this one.
-8. When a card reaches Done — you tell me, or `board-status.mjs` shows `Done`
-   for a card `DEVELOPMENT-MAP.md` still lists as outstanding — update the map
-   in the same pass: drop the card from its layer, re-check what its
-   completion unblocked, and re-state any ordering it changed (a dependency
-   cut, a new blocker, a proposed issue now filed). Every count the map quotes
-   is re-derived from printed output; never carry a number forward or
-   hand-edit one. Update the map's `Last synced` line to the board snapshot it
-   was checked against.
 
 `--no-approval` does not lift these:
 
