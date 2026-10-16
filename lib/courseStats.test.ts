@@ -8,7 +8,7 @@ function row(over: Record<string, unknown>): Record<string, unknown> {
     lesson_ordinal: 1,
     week: null,
     opened_learners: 7,
-    attempted_learners: 5,
+    completed_learners: 5,
     block_id: "b1",
     block_position: 2,
     block_type: "selection",
@@ -28,9 +28,9 @@ describe("groupCourseStats", () => {
     const out = groupCourseStats([
       row({ block_id: "b1", block_position: 2 }),
       row({ block_id: "b2", block_position: 5, block_type: "slots", block_avg: 0.25 }),
-      row({ lesson_id: "l2", lesson_title: "Lesson 2", lesson_ordinal: 2, opened_learners: 3, attempted_learners: 1, week: 2, block_id: "c1" }),
+      row({ lesson_id: "l2", lesson_title: "Lesson 2", lesson_ordinal: 2, opened_learners: 3, completed_learners: 1, week: 2, block_id: "c1" }),
     ]);
-    expect(out.map((l) => [l.lessonId, l.opened, l.attempted, l.week])).toEqual([
+    expect(out.map((l) => [l.lessonId, l.opened, l.completed, l.week])).toEqual([
       ["l1", 7, 5, null],
       ["l2", 3, 1, 2],
     ]);

@@ -24,7 +24,7 @@ const base: PublicCourseLesson = {
 function row(lesson: Partial<PublicCourseLesson>) {
   render(
     <ol>
-      <LessonListItem lang="en" href="/x" position={1} lesson={{ ...base, ...lesson }} showFreeBadge={false} bestPercent={null} />
+      <LessonListItem lang="en" href="/x" position={1} lesson={{ ...base, ...lesson }} showFreeBadge={false} progress={{ complete: false, bestPercent: null, inProgress: null }} />
     </ol>,
   );
 }

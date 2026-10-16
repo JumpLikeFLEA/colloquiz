@@ -1813,3 +1813,14 @@ Appended to in the same commit as the change it records. Referenced from
   unchanged (invite name, email, @username). No new classes or tokens; 360px
   not yet measured because the migration is unapplied. Do not add a separate
   username column to the UI.
+- Lesson completion on the course page (2026-10-16, PROG-006, docs/decisions/
+  0143 + 0147, migration 075 not yet applied). A lesson row's ✓ and "Best: N%"
+  now mean COMPLETE (every exercise answered, or opened when it has none), not
+  "has an attempt". A partly answered lesson gets a muted pill
+  (`bg-muted text-muted-foreground`, the "Opens <date>" tokens) reading
+  "N из M заданий" / "N of M exercises", no ✓ and no score, and counts toward
+  neither progress number. EN "lessons attempted" is now "lessons completed"
+  (course hero and /my); RU "пройдено уроков" is unchanged. Studio course stats
+  label "Attempted" becomes "Completed". /my has no lesson list, so no tile
+  there. Existing tokens only; 360px not measured. Do not recompute
+  completeness in TypeScript: `lesson_completion()` decides.

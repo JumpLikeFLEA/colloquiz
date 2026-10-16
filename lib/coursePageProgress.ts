@@ -95,24 +95,68 @@ export function firstOpenLessonLink<
 }
 
 /**
- * Per-lesson best score and course-wide progress, kept as pure functions
- * over an explicit attempts map rather than a live query — ANON-002
- * (localStorage store) and ANON-003 (`lesson_attempts` table + RPC) are
- * still open, so no attempt is recorded anywhere in this system today, for
- * anyone. Called with an empty map until one of those lands; `{}` isn't a
- * stub value standing in for real data, it's the actually-correct current
- * state (zero attempts exist), so "0 attempted / N, no average yet" and "no
- * best-score badge" are what this page should show right now. See
- * docs/decisions/0059-shell008-course-page.md for the reasoning and what
- * ANON-002/003 need to wire in here later.
+ * What `get_course_attempt_summary` (migration 075, docs/decisions/0143)
+ * reports for a lesson the caller has answered or completed. `complete` is
+ * decided in SQL (every exercise answered, or a zero-exercise lesson that was
+ * opened); nothing here recomputes it. `bestPercent` is null unless the lesson
+ * is complete through its exercises, so an in-progress lesson carries no score.
  */
-export type LessonAttemptSummary = { bestPercent: number };
+export type LessonAttemptSummary = {
+  bestPercent: number | null;
+  complete: boolean;
+  exercisesAnswered: number;
+  exercisesTotal: number;
+};
 export type AttemptsByLessonSlug = Readonly<Record<string, LessonAttemptSummary>>;
+
+/** Shape of one `get_course_attempt_summary` row. */
+export type AttemptSummaryRow = {
+  lesson_slug: string;
+  best_percent: number | null;
+  complete: boolean;
+  exercises_answered: number;
+  exercises_total: number;
+};
+
+export function attemptsFromSummaryRows(rows: readonly AttemptSummaryRow[]): AttemptsByLessonSlug {
+  const map: Record<string, LessonAttemptSummary> = {};
+  for (const r of rows) {
+    map[r.lesson_slug] = {
+      bestPercent: r.best_percent,
+      complete: r.complete,
+      exercisesAnswered: r.exercises_answered,
+      exercisesTotal: r.exercises_total,
+    };
+  }
+  return map;
+}
 
 export function bestScoreForLesson(slug: string, attempts: AttemptsByLessonSlug): number | null {
   return attempts[slug]?.bestPercent ?? null;
 }
 
+/** A lesson's row state on the course page: completed (with or without a
+ * score), in progress (some but not all exercises answered, no score), or
+ * neither. */
+export type LessonRowProgress = {
+  complete: boolean;
+  bestPercent: number | null;
+  inProgress: { answered: number; total: number } | null;
+};
+
+export function lessonRowProgress(slug: string, attempts: AttemptsByLessonSlug): LessonRowProgress {
+  const a = attempts[slug];
+  if (!a) return { complete: false, bestPercent: null, inProgress: null };
+  if (a.complete) return { complete: true, bestPercent: a.bestPercent, inProgress: null };
+  return {
+    complete: false,
+    bestPercent: null,
+    inProgress: a.exercisesAnswered > 0 ? { answered: a.exercisesAnswered, total: a.exercisesTotal } : null,
+  };
+}
+
+/** `attempted` is the number of COMPLETED lessons (0143); the field name is
+ * kept so the callers and copy keys do not churn. */
 export type CourseProgress = { attempted: number; total: number; averagePercent: number | null };
 
 export function courseProgress(
@@ -120,12 +164,12 @@ export function courseProgress(
   attempts: AttemptsByLessonSlug,
 ): CourseProgress {
   const total = lessons.length;
-  const attemptedScores = lessons
-    .map((l) => attempts[l.slug]?.bestPercent)
-    .filter((p): p is number => p !== undefined);
-  if (attemptedScores.length === 0) return { attempted: 0, total, averagePercent: null };
-  const sum = attemptedScores.reduce((acc, p) => acc + p, 0);
-  return { attempted: attemptedScores.length, total, averagePercent: Math.round(sum / attemptedScores.length) };
+  const completed = lessons.filter((l) => attempts[l.slug]?.complete === true);
+  const scores = completed
+    .map((l) => attempts[l.slug].bestPercent)
+    .filter((p): p is number => p !== null);
+  const averagePercent = scores.length === 0 ? null : Math.round(scores.reduce((acc, p) => acc + p, 0) / scores.length);
+  return { attempted: completed.length, total, averagePercent };
 }
 
 /**

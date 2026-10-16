@@ -187,13 +187,15 @@ immediately. There is no per-lesson purchase and no drip release.
 - **Display the best score, always.** Every attempt is stored; the best is
   what is shown. A retake can never lower a visible number.
 - **Course progress is TWO numbers, never blended into one:** lessons
-  attempted out of total, and the average score across ATTEMPTED lessons only.
+  completed out of total, and the average score across COMPLETED lessons only
+  (a lesson is complete per docs/decisions/0143: every exercise answered, or
+  opened when it has none).
   A single blended percentage punishes a learner for lessons they have not
   reached yet, which contradicts the principle above.
   - Candidate presentation, postponed to the catalogue-card work: a ring for
     completion with the average inside it. Recorded, not decided.
-- **Completion** = every lesson attempted at least once. Not "every lesson
-  passed" — there is no passing score.
+- **Completion** = every lesson complete (0143), not merely attempted. Not
+  "every lesson passed" — there is no passing score.
 
 ## Performance boundary
 

@@ -1,7 +1,7 @@
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicCourse } from "@/lib/coursePage";
-import { courseProgress, type AttemptsByLessonSlug, type CourseProgress } from "@/lib/coursePageProgress";
+import { attemptsFromSummaryRows, courseProgress, type AttemptsByLessonSlug, type CourseProgress } from "@/lib/coursePageProgress";
 import {
   feedbackItems,
   listedCourses,
@@ -94,9 +94,7 @@ export async function getLearnerHome(now: Date): Promise<LearnerHome | null> {
       published.map(async (c) => {
         const { data, error } = await supabase.rpc("get_course_attempt_summary", { p_course_id: c.id });
         if (error) throw new Error(error.message);
-        const attempts: Record<string, { bestPercent: number }> = {};
-        for (const row of data ?? []) attempts[row.lesson_slug] = { bestPercent: row.best_percent };
-        return [c.id, attempts] as const;
+        return [c.id, attemptsFromSummaryRows(data ?? [])] as const;
       }),
     ),
     supabase

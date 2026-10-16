@@ -29,7 +29,7 @@ export type LessonStat = {
   ordinal: number;
   week: number | null;
   opened: number;
-  attempted: number;
+  completed: number;
   exercises: ExerciseStat[];
 };
 
@@ -58,7 +58,7 @@ export function groupCourseStats(rows: readonly Record<string, unknown>[]): Less
         ordinal: num(r.lesson_ordinal),
         week: (r.week as number | null) ?? null,
         opened: num(r.opened_learners),
-        attempted: num(r.attempted_learners),
+        completed: num(r.completed_learners),
         exercises: [],
       };
       out.set(lessonId, l);

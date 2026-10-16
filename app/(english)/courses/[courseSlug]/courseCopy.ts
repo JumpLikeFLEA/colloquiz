@@ -32,6 +32,8 @@ type CourseStrings = {
   signInBadge: string;
   paidBadge: string;
   bestScoreLabel: string;
+  /** The in-progress lesson tile (0143): exercises answered, no score. */
+  inProgressLabel: (answered: number, total: number) => string;
   aboutTitle: string;
   lessonsEyebrow: string;
   lessonsTitle: string;
@@ -85,6 +87,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     signInBadge: "Нужен вход",
     paidBadge: "Платный",
     bestScoreLabel: "Лучший",
+    inProgressLabel: (answered, total) => `${answered} из ${total} заданий`,
     aboutTitle: "О курсе",
     lessonsEyebrow: "Программа",
     lessonsTitle: "Уроки курса",
@@ -119,7 +122,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     startFirstFree: "Start the first free lesson",
     startCourse: "Start the course",
     allFree: "Whole course free",
-    progressAttempted: "lessons attempted",
+    progressAttempted: "lessons completed",
     progressAverage: "average score",
     progressOf: "of",
     lessons: { one: "lesson", other: "lessons" },
@@ -129,6 +132,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     signInBadge: "Sign in to open",
     paidBadge: "Paid",
     bestScoreLabel: "Best",
+    inProgressLabel: (answered, total) => `${answered} of ${total} exercises`,
     aboutTitle: "About the course",
     lessonsEyebrow: "Syllabus",
     lessonsTitle: "Lessons",

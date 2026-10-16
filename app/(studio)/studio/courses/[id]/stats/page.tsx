@@ -100,8 +100,8 @@ function LessonStatCard({ lesson, number }: { lesson: LessonStat; number: number
             <dd className="font-medium text-foreground">{pluralize(lesson.opened, "learner")}</dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Attempted</dt>
-            <dd className="font-medium text-foreground">{pluralize(lesson.attempted, "learner")}</dd>
+            <dt className="text-xs text-muted-foreground">Completed</dt>
+            <dd className="font-medium text-foreground">{pluralize(lesson.completed, "learner")}</dd>
           </div>
         </dl>
       </div>

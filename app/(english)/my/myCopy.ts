@@ -67,7 +67,7 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     coursesTitle: "Courses",
     coursesEmpty: "You haven't started a course yet.",
     browseCourses: "Browse courses",
-    attempted: "lessons attempted",
+    attempted: "lessons completed",
     of: "of",
     average: "average score",
     tierBasic: "Basic",

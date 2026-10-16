@@ -1,7 +1,7 @@
 import { CalendarClock } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { groupLessonsByWeek } from "@/lib/cohortCoursePage";
-import { bestScoreForLesson, type AttemptsByLessonSlug, type PublicCourseLesson } from "@/lib/coursePageProgress";
+import { lessonRowProgress, type AttemptsByLessonSlug, type PublicCourseLesson } from "@/lib/coursePageProgress";
 import { LocalDateTime } from "../../LocalDateTime";
 import { courseCopy } from "./courseCopy";
 import { LessonListItem } from "./LessonListItem";
@@ -56,7 +56,7 @@ export function CohortLessonList({
                 position={lesson.position}
                 lesson={lesson}
                 showFreeBadge={showFreeBadge(lesson)}
-                bestPercent={bestScoreForLesson(lesson.slug, attempts)}
+                progress={lessonRowProgress(lesson.slug, attempts)}
                 headingTag="h4"
                 opensAt={
                   lesson.state === "scheduled" && lesson.opensAt && !group.opensAt ? (

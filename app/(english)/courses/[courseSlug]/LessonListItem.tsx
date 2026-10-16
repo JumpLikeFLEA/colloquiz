@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { CalendarClock, Check, ChevronRight, Clock, ListChecks } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
-import type { PublicCourseLesson } from "@/lib/coursePageProgress";
+import type { LessonRowProgress, PublicCourseLesson } from "@/lib/coursePageProgress";
 import { pluralize } from "@/lib/pluralCategory";
 import { LIFT_CARD_CLASS } from "../../surfaceClasses";
 import { courseCopy } from "./courseCopy";
@@ -25,7 +25,9 @@ import { courseCopy } from "./courseCopy";
  * `showFreeBadge` is set: the page drops it when every lesson is free (D3),
  * where it would repeat on every row. A paid lesson gets no lock: there is
  * no forced order (docs/handoff.md), and the paid preview is M3. An
- * attempted lesson (D2) gets a ✓ on its tile and its best score.
+ * completed lesson (D2, 0143) gets a ✓ on its tile and, when it has
+ * exercises, its best score; an in-progress one gets "N of M exercises" and
+ * no score.
  *
  * COH-004 (docs/decisions/0108): `opensAt` is a `scheduled` lesson's
  * "Opens <date>" (the page passes it only when the week header doesn't
@@ -38,7 +40,7 @@ export function LessonListItem({
   position,
   lesson,
   showFreeBadge,
-  bestPercent,
+  progress,
   opensAt = null,
   headingTag: Heading = "h3",
 }: {
@@ -47,7 +49,7 @@ export function LessonListItem({
   position: number;
   lesson: PublicCourseLesson;
   showFreeBadge: boolean;
-  bestPercent: number | null;
+  progress: LessonRowProgress;
   opensAt?: ReactNode;
   headingTag?: "h3" | "h4";
 }) {
@@ -74,7 +76,7 @@ export function LessonListItem({
       <Link href={href} className={`${LIFT_CARD_CLASS} flex items-start gap-4 p-4 sm:items-center sm:p-5`}>
         <span className="relative flex size-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-sm font-semibold text-white shadow-md shadow-brand/30">
           {position}
-          {bestPercent !== null && (
+          {progress.complete && (
             <span
               aria-hidden="true"
               className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-success-subtle text-success ring-2 ring-card"
@@ -102,9 +104,14 @@ export function LessonListItem({
                 {c.opensOn} {opensAt}
               </span>
             )}
-            {bestPercent !== null && (
+            {progress.bestPercent !== null && (
               <span className="inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success">
-                {c.bestScoreLabel}: {bestPercent}%
+                {c.bestScoreLabel}: {progress.bestPercent}%
+              </span>
+            )}
+            {progress.inProgress && (
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {c.inProgressLabel(progress.inProgress.answered, progress.inProgress.total)}
               </span>
             )}
           </div>

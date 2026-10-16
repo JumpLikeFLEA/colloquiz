@@ -1,6 +1,6 @@
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { AttemptsByLessonSlug } from "@/lib/coursePageProgress";
+import { attemptsFromSummaryRows, type AttemptsByLessonSlug } from "@/lib/coursePageProgress";
 
 /**
  * ANON-005 — the course page's real replacement for the `{}` placeholder
@@ -22,9 +22,5 @@ export async function getCourseAttemptSummary(courseId: string): Promise<Attempt
   const { data, error } = await supabase.rpc("get_course_attempt_summary", { p_course_id: courseId });
   if (error) throw new Error(error.message);
 
-  const map: Record<string, { bestPercent: number }> = {};
-  for (const row of data ?? []) {
-    map[row.lesson_slug] = { bestPercent: row.best_percent };
-  }
-  return map;
+  return attemptsFromSummaryRows(data ?? []);
 }

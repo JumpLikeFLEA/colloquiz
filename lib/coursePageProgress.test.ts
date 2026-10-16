@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   attachLessonStates,
+  attemptsFromSummaryRows,
   bestScoreForLesson,
+  lessonRowProgress,
   courseProgress,
   courseTotals,
   firstOpenLesson,
@@ -86,26 +88,88 @@ describe("firstOpenLesson", () => {
   });
 });
 
+const done = (bestPercent: number | null, answered = 3, total = 3) => ({
+  bestPercent,
+  complete: true,
+  exercisesAnswered: answered,
+  exercisesTotal: total,
+});
+const partial = (answered: number, total: number) => ({
+  bestPercent: null,
+  complete: false,
+  exercisesAnswered: answered,
+  exercisesTotal: total,
+});
+
 describe("bestScoreForLesson", () => {
   it("is null when the lesson has no recorded attempt", () => {
     expect(bestScoreForLesson("a", {})).toBeNull();
   });
 
   it("returns the stored best percent", () => {
-    expect(bestScoreForLesson("a", { a: { bestPercent: 80 } })).toBe(80);
+    expect(bestScoreForLesson("a", { a: done(80) })).toBe(80);
+  });
+});
+
+describe("attemptsFromSummaryRows", () => {
+  it("maps the SQL columns, keeping a NULL score as null", () => {
+    expect(
+      attemptsFromSummaryRows([
+        { lesson_slug: "a", best_percent: 67, complete: true, exercises_answered: 2, exercises_total: 2 },
+        { lesson_slug: "b", best_percent: null, complete: false, exercises_answered: 1, exercises_total: 3 },
+      ]),
+    ).toEqual({ a: done(67, 2, 2), b: partial(1, 3) });
+  });
+});
+
+describe("lessonRowProgress", () => {
+  it("is empty for a lesson with no row", () => {
+    expect(lessonRowProgress("a", {})).toEqual({ complete: false, bestPercent: null, inProgress: null });
+  });
+
+  it("reports a completed lesson's score, and a completed zero-exercise lesson with none", () => {
+    expect(lessonRowProgress("a", { a: done(80) }).bestPercent).toBe(80);
+    const z = lessonRowProgress("a", { a: done(null, 0, 0) });
+    expect(z).toEqual({ complete: true, bestPercent: null, inProgress: null });
+  });
+
+  it("reports an in-progress lesson as N of M with no score", () => {
+    expect(lessonRowProgress("a", { a: partial(2, 25) })).toEqual({
+      complete: false,
+      bestPercent: null,
+      inProgress: { answered: 2, total: 25 },
+    });
   });
 });
 
 describe("courseProgress", () => {
-  it("is 0 attempted with no average when the attempts map is empty", () => {
+  it("is 0 completed with no average when the attempts map is empty", () => {
     const lessons = [lesson({ slug: "a", ordinal: 1 }), lesson({ slug: "b", ordinal: 2 })];
     expect(courseProgress(lessons, {})).toEqual({ attempted: 0, total: 2, averagePercent: null });
   });
 
-  it("averages only the attempted lessons, never blending in the unattempted ones", () => {
+  it("averages only the completed lessons, never blending in the unreached ones", () => {
     const lessons = [lesson({ slug: "a", ordinal: 1 }), lesson({ slug: "b", ordinal: 2 }), lesson({ slug: "c", ordinal: 3 })];
-    const attempts = { a: { bestPercent: 60 }, b: { bestPercent: 100 } };
+    const attempts = { a: done(60), b: done(100) };
     expect(courseProgress(lessons, attempts)).toEqual({ attempted: 2, total: 3, averagePercent: 80 });
+  });
+
+  it("counts an in-progress lesson toward neither number (0143 Decision 2)", () => {
+    const lessons = [lesson({ slug: "a", ordinal: 1 }), lesson({ slug: "b", ordinal: 2 })];
+    expect(courseProgress(lessons, { a: done(60), b: partial(2, 25) })).toEqual({
+      attempted: 1,
+      total: 2,
+      averagePercent: 60,
+    });
+  });
+
+  it("counts a completed zero-exercise lesson but leaves it out of the average", () => {
+    const lessons = [lesson({ slug: "a", ordinal: 1 }), lesson({ slug: "b", ordinal: 2 })];
+    expect(courseProgress(lessons, { a: done(60), b: done(null, 0, 0) })).toEqual({
+      attempted: 2,
+      total: 2,
+      averagePercent: 60,
+    });
   });
 });
 

@@ -7,7 +7,7 @@ import { getCohortView } from "@/lib/cohortView";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getSignedInAccount } from "@/lib/signedInAccount";
-import { bestScoreForLesson, courseProgress, courseTotals, firstOpenLesson } from "@/lib/coursePageProgress";
+import { courseProgress, lessonRowProgress, courseTotals, firstOpenLesson } from "@/lib/coursePageProgress";
 // Direct path, not the `@/app/components/lesson-player` barrel: that barrel
 // also re-exports LessonPlayer + practiceRenderer (dnd-kit and every
 // per-type practice renderer, PLAY-012), which this route never uses but a
@@ -177,7 +177,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                   position={i + 1}
                   lesson={lesson}
                   showFreeBadge={lesson.accessLevel === "anyone" && !totals.allFree}
-                  bestPercent={bestScoreForLesson(lesson.slug, attempts)}
+                  progress={lessonRowProgress(lesson.slug, attempts)}
                 />
               ))}
             </ol>
