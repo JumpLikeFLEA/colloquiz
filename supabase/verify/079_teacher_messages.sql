@@ -55,6 +55,20 @@ RETURNS TEXT LANGUAGE sql AS $$
                 p_teacher, p_student, p_json, p_key)
 $$;
 
+-- A script run in ONE transaction (the Supabase SQL editor does this) gives
+-- every message the same NOW(), so "the last message" would be decided by a
+-- random uuid tie-break. In the app each message is its own transaction and
+-- ties cannot occur. This trigger gives each seeded message its own
+-- timestamp; it is DDL inside the transaction and rolls back with the rest.
+CREATE FUNCTION public._verify079_clock() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.created_at := clock_timestamp();
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER aa_verify079_clock BEFORE INSERT ON teacher_messages
+  FOR EACH ROW EXECUTE FUNCTION public._verify079_clock();
+
 DO $$
 DECLARE
   t  UUID := gen_random_uuid();   -- teacher, linked to s
