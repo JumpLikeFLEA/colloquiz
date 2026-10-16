@@ -2026,7 +2026,7 @@ Appended to in the same commit as the change it records. Referenced from
   Do not draw the answer key in the card, and do not refresh the lesson page
   after sending (it re-renders the player with a new attemptId).
 - Author seats (2026-10-16, TCH-007, docs/decisions/0154, migration 082 applied to
-  the local stack only, not yet to the hosted project). Studio only; composed from
+  the local stack and, by the owner, to the hosted project). Studio only; composed from
   existing classes and tokens, no new colours:
   - `/studio/authors`, admin only (a seated teacher gets Studio's 404), with an
     "Authors" nav entry for admins, last (`UserCog`). An "Add a teacher" card

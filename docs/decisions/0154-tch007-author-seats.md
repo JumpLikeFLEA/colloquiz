@@ -2,10 +2,13 @@
 
 Status: built; migration 082 written and applied to the local stack twice,
 where `supabase/verify/082_author_seats.sql` prints `TCH-007 PASS: 082 full
-protocol`. **Not applied to the hosted project**, as the card asks ("Written,
-not applied"). A read-only probe on 2026-10-16 found 080 and 081 present on
-hosted, `author_seats` absent, and 3 distinct `course_editors` holders (the
-backfill's expected count there, minus any deleted accounts). Decided
+protocol`. It was written, not applied, as the card asks; the owner then applied
+it to the hosted project and ran the verify script there (2026-10-16). A
+read-only probe before showed 080 and 081 present, `author_seats` absent and 3
+distinct `course_editors` holders; the probe after shows 3 seats, 0 editors
+without a seat, all 3 open-ended teacher seats, the 9 new functions, and no
+`@verify.test` user left behind. Migration history repaired for 082
+(`migration list --linked` shows 082 on both sides). Decided
 unattended under `--no-approval`; each call below is one the owner can
 overturn.
 
@@ -110,6 +113,8 @@ the teacher, and the teacher terms (OPS-025).
 - Migration applied twice locally; the backfill NOTICE printed `2 distinct
   course_editors holders, 0 on deleted accounts skipped, 2 seats added`, then
   `0 seats added` on the second run.
+- Hosted, 2026-10-16: owner-applied 082 and ran the verify script without
+  errors; probes above.
 - 360px: see the `docs/ui-decisions.md` entry.
 
 ## What would make us revisit this
