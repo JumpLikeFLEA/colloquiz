@@ -1,4 +1,6 @@
+import { parseAttachment, type Attachment } from "../askTeacher/snapshot";
 import { FeedbackContentSchema, feedbackTextLength, type FeedbackContent } from "../feedback/content";
+import { MESSAGE_MAX_CHARS } from "./limits";
 
 // TCH-004 — messages between a linked student and their teacher (migration
 // 079, docs/decisions/0151). Pure: the shapes 079's functions return, the
@@ -9,9 +11,7 @@ import { FeedbackContentSchema, feedbackTextLength, type FeedbackContent } from 
 // in lib/messages/messagesServer.ts so a Client Component can import these
 // without pulling in the server Supabase client.
 
-/** The cap on a message's text, mirroring 079's `_message_body_valid`. The
- * database decides; this is for the composer's counter and the route's 400. */
-export const MESSAGE_MAX_CHARS = 2000;
+export { MESSAGE_MAX_CHARS } from "./limits";
 
 /** A conversation peer's id in a URL (a profile uuid). */
 export const PEER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -76,6 +76,8 @@ export type MessageRow = {
   body: unknown;
   created_at: string;
   read_at: string | null;
+  /** TCH-006 (081): the frozen exercise a student attached, or null. */
+  attachment?: unknown;
 };
 
 export type ConversationMessage = {
@@ -87,10 +89,16 @@ export type ConversationMessage = {
   createdAt: string;
   /** Whether the reader had already read it when the page loaded. */
   read: boolean;
+  /** TCH-006: the exercise or voice task attached to this message. */
+  attachment: Attachment | null;
+  /** An attachment is stored but no longer parses: shown as a muted line,
+   * never silently dropped. */
+  attachmentUnreadable: boolean;
 };
 
 export function toMessage(row: MessageRow): ConversationMessage {
   const parsed = FeedbackContentSchema.safeParse(row.body);
+  const attachment = parseAttachment(row.attachment);
   return {
     id: row.message_id,
     mine: row.mine,
@@ -98,6 +106,8 @@ export function toMessage(row: MessageRow): ConversationMessage {
     createdAt: row.created_at,
     // Only the other party's messages can be "new" to the reader.
     read: row.mine || row.read_at != null,
+    attachment,
+    attachmentUnreadable: row.attachment != null && attachment === null,
   };
 }
 
@@ -110,7 +120,15 @@ export function parseMessageBody(raw: unknown): FeedbackContent | null {
 }
 
 /** `send_teacher_message`'s refusals (079) and the HTTP answer for each. */
-export type SendError = "unauthenticated" | "forbidden" | "invalid_body" | "not_linked" | "closed" | "rate_limited";
+export type SendError =
+  | "unauthenticated"
+  | "forbidden"
+  | "invalid_body"
+  | "not_linked"
+  | "closed"
+  | "rate_limited"
+  | "attachment_invalid"
+  | "attachment_not_allowed";
 
 const SEND_ERRORS: Record<SendError, { status: number; message: string }> = {
   unauthenticated: { status: 401, message: "Not signed in." },
@@ -118,6 +136,8 @@ const SEND_ERRORS: Record<SendError, { status: number; message: string }> = {
   invalid_body: { status: 400, message: `A message needs some text and is at most ${MESSAGE_MAX_CHARS} characters.` },
   not_linked: { status: 403, message: "You aren't linked to this person." },
   closed: { status: 409, message: "This conversation is closed: the link has ended." },
+  attachment_invalid: { status: 400, message: "The exercise can't be attached. Reload the lesson and try again." },
+  attachment_not_allowed: { status: 403, message: "You can't ask this teacher about this exercise." },
   rate_limited: { status: 429, message: "You've sent a lot of messages in the last hour. Please try again a little later." },
 };
 

@@ -6,7 +6,7 @@ import { Bold } from "lucide-react";
 import { feedbackTextLength } from "@/lib/feedback/content";
 import { feedbackFromMarkup, toggleBold } from "@/lib/feedback/markup";
 import { markupFromClipboardHtml, type PasteNode } from "@/lib/feedback/paste";
-import { MESSAGE_MAX_CHARS } from "@/lib/messages/messages";
+import { MESSAGE_MAX_CHARS } from "@/lib/messages/limits";
 
 /**
  * TCH-004 (docs/decisions/0151) — the box a message is written in, for the
@@ -24,6 +24,12 @@ import { MESSAGE_MAX_CHARS } from "@/lib/messages/messages";
  * thread: no realtime (0141 Decision 8). The route and send_teacher_message
  * (079) decide whether the message is allowed; the counter and the disabled
  * button here are a courtesy.
+ *
+ * TCH-006 (docs/decisions/0153): the lesson page's "Ask the teacher" dialog
+ * reuses this box. It passes `attachment` (the frozen exercise, sent with the
+ * message) and `onSent`, which REPLACES the refresh: refreshing the lesson
+ * page re-renders the player with a new attemptId (the 0086 note), so a sent
+ * question must never refresh it.
  */
 export type ComposerLabels = {
   label: string;
@@ -40,10 +46,16 @@ export function MessageComposer({
   teacherId,
   studentId,
   labels,
+  attachment,
+  onSent,
 }: {
   teacherId: string;
   studentId: string;
   labels: ComposerLabels;
+  /** The frozen exercise to send with the message (TCH-006). */
+  attachment?: unknown;
+  /** Called after a successful send, instead of refreshing the page. */
+  onSent?: () => void;
 }) {
   const router = useRouter();
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -101,7 +113,7 @@ export function MessageComposer({
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teacherId, studentId, body: content }),
+        body: JSON.stringify({ teacherId, studentId, body: content, ...(attachment ? { attachment } : {}) }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -109,7 +121,8 @@ export function MessageComposer({
         return;
       }
       setText("");
-      router.refresh();
+      if (onSent) onSent();
+      else router.refresh();
     } catch {
       setError(labels.failed);
     } finally {

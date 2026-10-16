@@ -79,6 +79,35 @@ describe("toMessage", () => {
     const m = toMessage({ message_id: "m3", author_id: B, mine: false, body: { nope: 1 }, created_at: "t", read_at: null });
     expect(m.content).toBeNull();
   });
+
+  // TCH-006: the frozen exercise a student attached.
+  const stored = {
+    v: 1, kind: "exercise", courseSlug: "c", courseTitle: "C", lessonSlug: "l", lessonTitle: "L", lessonId: "x",
+    versionId: "y", blockId: "b1", number: 2, block: { id: "b1", kind: "practice" },
+  };
+  it("has no attachment on a plain message", () => {
+    const m = toMessage({ message_id: "m4", author_id: A, mine: true, body: body("hi"), created_at: "t", read_at: null, attachment: null });
+    expect(m.attachment).toBeNull();
+    expect(m.attachmentUnreadable).toBe(false);
+    expect(toMessage({ message_id: "m4", author_id: A, mine: true, body: body("hi"), created_at: "t", read_at: null }).attachmentUnreadable).toBe(false);
+  });
+  it("reads a stored attachment", () => {
+    const m = toMessage({ message_id: "m5", author_id: A, mine: true, body: body("hi"), created_at: "t", read_at: null, attachment: stored });
+    expect(m.attachment).toMatchObject({ kind: "exercise", number: 2, lessonTitle: "L" });
+    expect(m.attachmentUnreadable).toBe(false);
+  });
+  it("flags an attachment that no longer parses instead of dropping it", () => {
+    const m = toMessage({ message_id: "m6", author_id: A, mine: true, body: body("hi"), created_at: "t", read_at: null, attachment: { v: 2 } });
+    expect(m.attachment).toBeNull();
+    expect(m.attachmentUnreadable).toBe(true);
+  });
+});
+
+describe("sendErrorResponse for attachments", () => {
+  it("maps the two attachment refusals to 400 and 403", () => {
+    expect(sendErrorResponse("attachment_invalid").status).toBe(400);
+    expect(sendErrorResponse("attachment_not_allowed").status).toBe(403);
+  });
 });
 
 describe("parseMessageBody", () => {

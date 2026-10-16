@@ -1,6 +1,7 @@
 import type { ConversationMessage } from "@/lib/messages/messages";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
+import { AttachmentCard, type AttachmentLabels } from "./AttachmentCard";
 import { MessageTime } from "./MessageTime";
 
 /**
@@ -15,6 +16,11 @@ import { MessageTime } from "./MessageTime";
  * use). A message the reader had not read when the page loaded carries a
  * "New" pill; it is read from `read`, which the page captured before it
  * marked the thread read.
+ *
+ * TCH-006 (docs/decisions/0153): a message a student sent from an exercise
+ * carries a read-only AttachmentCard under its text, naming the course, lesson
+ * and "Exercise N" and linking to the lesson. A stored attachment that no
+ * longer parses is a muted line, not a silent gap.
  */
 export function MessageThread({
   messages,
@@ -23,7 +29,14 @@ export function MessageThread({
 }: {
   messages: readonly ConversationMessage[];
   locale: "en-GB" | "ru-RU";
-  labels: { you: string; them: string; newMessage: string; unreadable: string };
+  labels: {
+    you: string;
+    them: string;
+    newMessage: string;
+    unreadable: string;
+    attachment: AttachmentLabels;
+    attachmentUnreadable: string;
+  };
 }) {
   return (
     <ol className="flex flex-col gap-3" data-messages="thread">
@@ -39,6 +52,12 @@ export function MessageThread({
             ) : (
               <p className="text-muted-foreground">{labels.unreadable}</p>
             )}
+            {m.attachment && (
+              <div className="mt-3">
+                <AttachmentCard attachment={m.attachment} labels={labels.attachment} />
+              </div>
+            )}
+            {m.attachmentUnreadable && <p className="mt-3 text-muted-foreground">{labels.attachmentUnreadable}</p>}
           </div>
           <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
             <span>{m.mine ? labels.you : labels.them}</span>

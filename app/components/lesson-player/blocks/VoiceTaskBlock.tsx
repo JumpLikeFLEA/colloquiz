@@ -19,6 +19,9 @@ import { VoiceRecorder } from "./VoiceRecorder";
  * With no `context` (the admin preview, the demo, tests) it keeps the
  * placeholder: a disabled Record button. The microphone is allowed only on
  * the lesson route (next.config.ts), so a working recorder there would fail.
+ *
+ * TCH-006: a linked student's lesson client puts "Ask the teacher" at the
+ * foot of the card through `context.renderAsk`; nobody else has one.
  */
 export function VoiceTaskBlockView({ block, context }: { block: VoiceTaskBlock; context?: VoiceTasksContext }) {
   return (
@@ -44,6 +47,7 @@ export function VoiceTaskBlockView({ block, context }: { block: VoiceTaskBlock; 
           <span className="text-xs text-muted-foreground">{voiceCopy.previewNote}</span>
         </div>
       )}
+      {context?.renderAsk?.(block.id)}
     </div>
   );
 }

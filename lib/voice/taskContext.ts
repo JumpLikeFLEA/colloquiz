@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { FeedbackContentSchema, type FeedbackContent } from "../feedback/content";
 
 /**
@@ -26,7 +27,7 @@ export type VoiceTaskSubmission = {
   feedback: FeedbackContent | null;
 };
 
-export type VoiceTasksContext =
+type VoiceTasksMode =
   | { mode: "practice" }
   | {
       mode: "send";
@@ -36,6 +37,17 @@ export type VoiceTasksContext =
       /** The current take per voice block id, when there is one. */
       submissions: Record<string, VoiceTaskSubmission>;
     };
+
+export type VoiceTasksContext = VoiceTasksMode & {
+  /**
+   * TCH-006 (docs/decisions/0153): the "Ask the teacher" link for a voice
+   * task's card. Never part of what the server sends (a function does not
+   * cross the RSC boundary): the linked student's lesson client adds it, so a
+   * lesson page for anyone else carries no trace of it. The voice block chunk
+   * calls it with the block's id and draws what it returns inside its card.
+   */
+  renderAsk?: (blockId: string) => ReactNode;
+};
 
 export type EnrolmentRow = { id: string; enrolledAt: string; runStartsAt: string };
 

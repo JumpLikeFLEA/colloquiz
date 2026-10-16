@@ -426,8 +426,8 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
     expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
   });
 
-  it("is format version 11", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(11);
+  it("is format version 12", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(12);
   });
 });
 
@@ -509,17 +509,26 @@ describe("buildExportPayload — teacher_conversations (TCH-004)", () => {
         teacher_name: "Anna",
         open: true,
         messages: [
-          { message_id: "m1", from: "you", content: body("hi"), sent_at: "2026-10-16T10:00:00Z", read_at: null },
-          { message_id: "m2", from: "teacher", content: body("hello"), sent_at: "2026-10-16T11:00:00Z", read_at: "2026-10-16T12:00:00Z" },
+          { message_id: "m1", from: "you", content: body("hi"), attachment: null, sent_at: "2026-10-16T10:00:00Z", read_at: null },
+          { message_id: "m2", from: "teacher", content: body("hello"), attachment: null, sent_at: "2026-10-16T11:00:00Z", read_at: "2026-10-16T12:00:00Z" },
         ],
       },
       {
         conversation_id: "c2",
         teacher_name: "Boris",
         open: false,
-        messages: [{ message_id: "m3", from: "you", content: body("hi"), sent_at: "2026-10-16T10:00:00Z", read_at: null }],
+        messages: [{ message_id: "m3", from: "you", content: body("hi"), attachment: null, sent_at: "2026-10-16T10:00:00Z", read_at: null }],
       },
     ]);
+  });
+
+  it("carries the frozen exercise a student attached (TCH-006), whole, and null when there is none", () => {
+    const attachment = { v: 1, kind: "exercise", number: 2, block: { id: "b" }, response: { order: ["a"] } };
+    const payload = buildExportPayload(
+      { ...baseSources, conversations: [row({ message_id: "m1", attachment }), row({ message_id: "m2" })] },
+      [],
+    );
+    expect(payload.teacher_conversations[0].messages.map((m) => m.attachment)).toEqual([attachment, null]);
   });
 });
 

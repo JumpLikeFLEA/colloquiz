@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 11;
+export const EXPORT_FORMAT_VERSION = 12;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -154,6 +154,8 @@ export type ConversationExportRow = {
   body: unknown;
   created_at: string;
   read_at: string | null;
+  /** TCH-006 (081): the frozen exercise the student attached, or null. */
+  attachment?: unknown;
 };
 
 /** One row of `my_homework_export` (080): homework that currently applies to the reader. */
@@ -375,7 +377,14 @@ function exportConversations(rows: readonly ConversationExportRow[]) {
       conversation_id: string;
       teacher_name: string;
       open: boolean;
-      messages: { message_id: string; from: string; content: unknown; sent_at: string; read_at: string | null }[];
+      messages: {
+        message_id: string;
+        from: string;
+        content: unknown;
+        attachment: unknown;
+        sent_at: string;
+        read_at: string | null;
+      }[];
     }
   >();
   for (const row of rows) {
@@ -388,6 +397,9 @@ function exportConversations(rows: readonly ConversationExportRow[]) {
       message_id: row.message_id,
       from: row.author,
       content: row.body ?? null,
+      // TCH-006 (privacy-policy.md section 8): a frozen copy of the exercise,
+      // and the answer if the student included it. Whole, as stored.
+      attachment: row.attachment ?? null,
       sent_at: row.created_at,
       read_at: row.read_at,
     });

@@ -8,6 +8,7 @@ import { getConversationMessages, getThreads, markConversationRead } from "@/lib
 import { PEER_ID_PATTERN } from "@/lib/messages/messages";
 import { MessageComposer, type ComposerLabels } from "@/app/components/messages/MessageComposer";
 import { MessageThread } from "@/app/components/messages/MessageThread";
+import { attachmentLabelsEn } from "@/lib/alliengll/askTeacherCopy";
 
 // /studio/messages/[studentId] — one conversation, as the TEACHER, keyed by
 // the student's profile id (TCH-004, docs/decisions/0151 Decision 3). Keying by
@@ -78,6 +79,8 @@ export default async function StudioMessageThread({ params }: { params: Promise<
             them: thread.peerLabel,
             newMessage: "New",
             unreadable: "This message can’t be shown.",
+            attachment: attachmentLabelsEn,
+            attachmentUnreadable: attachmentLabelsEn.unreadableAttachment,
           }}
         />
       )}

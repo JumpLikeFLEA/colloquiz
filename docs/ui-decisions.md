@@ -1986,3 +1986,42 @@ Appended to in the same commit as the change it records. Referenced from
   toast, the dialogs' error box.
   Do not colour a past due date destructive, and do not show a group's name to a
   student in the app.
+- Ask the teacher (2026-10-16, TCH-006, docs/decisions/0153, migration 081
+  applied to the local stack and, through the hosted-apply gate, to hosted).
+  Composed from existing classes and tokens; no new colours:
+  - Lesson page: for a signed-in student with a teacher who edits the course
+    or assigned the lesson, every exercise card and voice-task card ends with a
+    text button, "Ask the teacher" (`MessageCircleQuestion`, `text-brand-text`,
+    `min-h-11`, underline on hover). Nobody else sees it: not a visitor, not a
+    student nobody qualifies for, not the Studio preview or the demo.
+  - It opens a Radix dialog (`ui/dialog`, `max-h-[calc(100dvh-2rem)]`, scrolls
+    inside): "Ask the teacher" and one muted sentence; "To" as radio rows
+    (`rounded-xl border`, `min-h-11`) when more than one teacher qualifies, or
+    "To: <name>" when one; "What your teacher will see", the frozen copy as a
+    read-only card in its own scroll box (`max-h-60`); an "Include my answer"
+    checkbox (`accent-brand`, on after Check, disabled with "Check your answer
+    first if you want to include it." before); the existing message box; and,
+    once sent, "Sent" with a success icon, "Open the conversation"
+    (`SUBMIT_BUTTON_CLASS`, new tab) and "Close". English, like the rest of the
+    lesson chrome.
+  - In both threads a message from an exercise carries, under its text and
+    inside the bubble, `AttachmentCard`: `rounded-xl border bg-card p-3`, the
+    course · lesson line (`text-xs text-muted-foreground`, truncated) over
+    "Exercise N" or "Voice task" (`font-semibold`), together a link to the
+    lesson's exercise; the prompt (`font-medium`), what the exercise offered
+    (bulleted, muted) and, under a rule, "Answer" and the student's answer, or
+    "Answer not included." `/my` follows the saved EN/RU choice, Studio is
+    English. The card never shows which option is right.
+  - Loading: the link is part of a lazy chunk only a linked student's lesson
+    downloads; the dialog behind it is a second chunk fetched on the first click.
+    `npm run budget`, free lesson 257.2 to 257.4 KB (the loader stub; 0153
+    "Budget" says why it is not zero).
+  Measured at 360px (`scrollWidth/innerWidth`, local stack, seeded student and
+  two teachers): 360/360 on the lesson with the links, the dialog unanswered
+  with two teachers (one with a long name), answered with the answer included,
+  with a long unbroken question typed, in the sent state (dialog 16 to 344 px
+  wide, never past the viewport), `/my/messages/<teacher>` (EN and RU) and
+  `/studio/messages/<student>`, each with an attachment card. Not reached: a
+  voice task's card in a browser, and the dialog's error line.
+  Do not draw the answer key in the card, and do not refresh the lesson page
+  after sending (it re-renders the player with a new attemptId).

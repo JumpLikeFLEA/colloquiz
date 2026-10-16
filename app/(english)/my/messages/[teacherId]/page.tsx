@@ -88,7 +88,14 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
           <MessageThread
             messages={messages}
             locale={lang === "ru" ? "ru-RU" : "en-GB"}
-            labels={{ you: m.you, them: thread.peerLabel, newMessage: m.newMessage, unreadable: m.unreadable }}
+            labels={{
+              you: m.you,
+              them: thread.peerLabel,
+              newMessage: m.newMessage,
+              unreadable: m.unreadable,
+              attachment: m.attachment,
+              attachmentUnreadable: m.attachmentUnreadable,
+            }}
           />
         )}
 

@@ -5,12 +5,14 @@ import { getSignedInAccount } from "@/lib/signedInAccount";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { bestScoreForLesson } from "@/lib/coursePageProgress";
 import { getVoiceTasksContext } from "@/lib/voiceTaskContext";
+import { getAskTeacherOptions } from "@/lib/askTeacher/askTeacherServer";
 import { homeworkForLesson, homeworkPillText } from "@/lib/homework/homework";
 import { getMyHomework } from "@/lib/homework/homeworkServer";
 import { AccountMenu } from "../../../AccountMenu";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
 import { LessonUnavailable } from "./LessonUnavailable";
+import { LinkedLesson } from "./LinkedLesson";
 import { StripBackLink } from "./StripBackLink";
 
 /**
@@ -99,6 +101,12 @@ export default async function LessonPage({
 
   const attemptId = crypto.randomUUID();
 
+  // TCH-006 (docs/decisions/0153): the teachers this student may ask about the
+  // lesson, started now and awaited below so it overlaps the other reads. Read
+  // for a signed-in learner only: an anonymous visitor pays nothing, and a
+  // learner nobody qualifies for gets no link and downloads no dialog code.
+  const askPromise = signedIn ? getAskTeacherOptions(lesson.lessonId) : null;
+
   // docs/decisions/0088 — the same "Best" the course page shows for this
   // lesson. A failed read shows no note rather than failing the lesson.
   let previousBestPercent: number | null = null;
@@ -117,22 +125,41 @@ export default async function LessonPage({
   );
   const voiceTasks = hasVoiceTask ? await getVoiceTasksContext(lesson.lessonId, lesson.courseId) : undefined;
 
-  return (
-    <LessonPageClient
-      header={band}
-      backLink={<StripBackLink courseSlug={courseSlug} />}
-      document={lesson.document}
-      lessonTitle={lesson.title}
-      attemptId={attemptId}
-      courseSlug={courseSlug}
-      nextLesson={nav?.next ?? null}
-      lessonVersionId={lesson.lessonVersionId}
-      isSignedIn={lesson.isSignedIn}
-      lessonPath={`/courses/${courseSlug}/${lessonSlug}`}
-      previousBestPercent={previousBestPercent}
-      voiceTasks={voiceTasks}
-    />
-  );
+  const ask = askPromise ? await askPromise : null;
+
+  const pageProps = {
+    header: band,
+    backLink: <StripBackLink courseSlug={courseSlug} />,
+    document: lesson.document,
+    lessonTitle: lesson.title,
+    attemptId,
+    courseSlug,
+    nextLesson: nav?.next ?? null,
+    lessonVersionId: lesson.lessonVersionId,
+    isSignedIn: lesson.isSignedIn,
+    lessonPath: `/courses/${courseSlug}/${lessonSlug}`,
+    previousBestPercent,
+    voiceTasks,
+  };
+
+  // TCH-006 (docs/decisions/0153): a student with a teacher to ask gets the
+  // sibling client with the "Ask the teacher" links, as a lazy chunk; everyone
+  // else gets the page client untouched.
+  if (ask) {
+    return (
+      <LinkedLesson
+        {...pageProps}
+        askTeacher={{
+          studentId: ask.studentId,
+          teachers: ask.teachers,
+          course: { slug: courseSlug, title: lesson.courseTitle },
+          lesson: { id: lesson.lessonId, slug: lessonSlug, title: lesson.title },
+          versionId: lesson.lessonVersionId,
+        }}
+      />
+    );
+  }
+  return <LessonPageClient {...pageProps} />;
 }
 
 async function getHomeworkPill(courseId: string, lessonSlug: string): Promise<string | null> {

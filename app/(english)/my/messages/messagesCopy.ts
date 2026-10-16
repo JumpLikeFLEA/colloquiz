@@ -1,5 +1,6 @@
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { ComposerLabels } from "@/app/components/messages/MessageComposer";
+import type { AttachmentLabels } from "@/app/components/messages/AttachmentCard";
 
 /**
  * The learner's messages pages' strings (TCH-004, docs/decisions/0151). Both
@@ -28,6 +29,8 @@ type MessagesStrings = {
   you: string;
   newMessage: string;
   unreadable: string;
+  attachment: AttachmentLabels;
+  attachmentUnreadable: string;
   composer: ComposerLabels;
 };
 
@@ -51,6 +54,15 @@ export const messagesCopy: Record<SurfaceLang, MessagesStrings> = {
     you: "Вы",
     newMessage: "Новое",
     unreadable: "Это сообщение не удаётся показать.",
+    attachment: {
+      exercise: "Задание",
+      voiceTask: "Голосовое задание",
+      answer: "Ответ",
+      answerNotIncluded: "Ответ не приложен.",
+      answerUnreadable: "Ответ не удаётся показать.",
+      exerciseUnreadable: "Задание не удаётся показать.",
+    },
+    attachmentUnreadable: "Приложенное задание не удаётся показать.",
     composer: {
       label: "Ваше сообщение",
       bold: "Жирный",
@@ -80,6 +92,15 @@ export const messagesCopy: Record<SurfaceLang, MessagesStrings> = {
     you: "You",
     newMessage: "New",
     unreadable: "This message can’t be shown.",
+    attachment: {
+      exercise: "Exercise",
+      voiceTask: "Voice task",
+      answer: "Answer",
+      answerNotIncluded: "Answer not included.",
+      answerUnreadable: "The answer can’t be shown.",
+      exerciseUnreadable: "The exercise can’t be shown.",
+    },
+    attachmentUnreadable: "The attached exercise can’t be shown.",
     composer: {
       label: "Your message",
       bold: "Bold",
