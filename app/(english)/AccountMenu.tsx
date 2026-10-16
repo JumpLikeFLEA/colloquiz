@@ -27,9 +27,11 @@ import { accountCopy } from "./accountCopy";
  * at /my (PROG-002, docs/decisions/0120), first in the card. Also a plain
  * `<a>`: no client JS, and nothing here needs a soft navigation.
  *
- * The band is `overflow-hidden` with no transform, so the `fixed` layer
- * still covers the viewport, and the card is tall enough to fit inside even
- * the compact lesson band. The card uses the popover tokens, not the
+ * The band clips only horizontally (`overflow-x-clip`, GRADIENT_BAND_CLASS)
+ * and has no transform, so the `fixed` layer still covers the viewport and
+ * the card may hang below the band onto the page: with My courses and Studio
+ * it is taller than the compact bands, and a band clipping both axes cut it
+ * off. The card uses the popover tokens, not the
  * band's translucent white: it has to be readable over the gradient and
  * over the page content alike.
  */

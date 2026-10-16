@@ -7,9 +7,12 @@
 
 /** The full-bleed brand gradient. Dark in both themes, so white text on it
  * needs no dark-mode variant (0078 Decision 1). Pair with `GradientBackdrop`
- * (HeroDecor.tsx) inside a `relative overflow-hidden` parent. */
+ * (HeroDecor.tsx), which clips its own glow orbs. The band clips only
+ * horizontally (`overflow-x-clip`, which unlike `overflow-x-hidden` leaves
+ * the y axis `visible`): the account menu's card hangs below a compact band
+ * and was cut off when the band clipped both axes. */
 export const GRADIENT_BAND_CLASS =
-  "relative overflow-hidden bg-gradient-to-br from-brand-deep via-brand to-brand-accent text-white";
+  "relative overflow-x-clip bg-gradient-to-br from-brand-deep via-brand to-brand-accent text-white";
 
 /** Entry animation for hero text (tw-animate-css, CSS only). `fill-mode-both`
  * holds each line at its start state through its stagger delay instead of

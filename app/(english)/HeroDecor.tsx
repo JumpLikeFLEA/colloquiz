@@ -16,9 +16,11 @@ import { Clock, Gift, GraduationCap, MessageCircleQuestion } from "lucide-react"
  * be rendered more than once on a page without colliding pattern ids.
  */
 
+/** Clips itself, so the band around it need not clip vertically (see
+ * `GRADIENT_BAND_CLASS`). */
 export function GradientBackdrop() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle,white_1.5px,transparent_1.5px)] [background-size:28px_28px] opacity-[0.08]" />
       <div className="absolute -right-24 -top-24 size-96 rounded-full bg-white/10 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 size-96 rounded-full bg-brand-accent/40 blur-3xl" />
