@@ -44,12 +44,12 @@ function row(over: Partial<RosterRow>): RosterRow {
 
 describe("parseLearnerFilters", () => {
   it("keeps UUIDs, lower-cased", () => {
-    expect(parseLearnerFilters({ course: A.toUpperCase(), run: RUN_A1 })).toEqual({ course: A, run: RUN_A1 });
+    expect(parseLearnerFilters({ course: A.toUpperCase(), run: RUN_A1 })).toEqual({ course: A, run: RUN_A1, group: null });
   });
 
   it("drops anything that isn't a UUID", () => {
-    expect(parseLearnerFilters({ course: "x'; drop", run: ["nope", RUN_A1] })).toEqual({ course: null, run: null });
-    expect(parseLearnerFilters({})).toEqual({ course: null, run: null });
+    expect(parseLearnerFilters({ course: "x'; drop", run: ["nope", RUN_A1], group: "nope" })).toEqual({ course: null, run: null, group: null });
+    expect(parseLearnerFilters({})).toEqual({ course: null, run: null, group: null });
   });
 
   it("takes the first of a repeated param", () => {
@@ -59,14 +59,15 @@ describe("parseLearnerFilters", () => {
 
 describe("learnerFiltersQuery", () => {
   it("drops empty filters", () => {
-    expect(learnerFiltersQuery({ course: null, run: null })).toBe("");
-    expect(learnerFiltersQuery({ course: A, run: null })).toBe(`?course=${A}`);
-    expect(learnerFiltersQuery({ course: A, run: RUN_A1 })).toBe(`?course=${A}&run=${RUN_A1}`);
+    expect(learnerFiltersQuery({ course: null, run: null, group: null })).toBe("");
+    expect(learnerFiltersQuery({ course: A, run: null, group: null })).toBe(`?course=${A}`);
+    expect(learnerFiltersQuery({ course: A, run: RUN_A1, group: null })).toBe(`?course=${A}&run=${RUN_A1}`);
+    expect(learnerFiltersQuery({ course: null, run: null, group: RUN_B })).toBe(`?group=${RUN_B}`);
   });
 
   it("round-trips through parseLearnerFilters", () => {
-    const q = new URLSearchParams(learnerFiltersQuery({ course: A, run: RUN_A1 }));
-    expect(parseLearnerFilters(Object.fromEntries(q))).toEqual({ course: A, run: RUN_A1 });
+    const q = new URLSearchParams(learnerFiltersQuery({ course: A, run: RUN_A1, group: RUN_B }));
+    expect(parseLearnerFilters(Object.fromEntries(q))).toEqual({ course: A, run: RUN_A1, group: RUN_B });
   });
 });
 
@@ -78,19 +79,30 @@ describe("scopeRoster", () => {
   ];
 
   it("no filter keeps every row", () => {
-    expect(scopeRoster(rows, { course: null, run: null })).toHaveLength(3);
+    expect(scopeRoster(rows, { course: null, run: null, group: null })).toHaveLength(3);
   });
 
   it("course filter keeps that course's rows, enrolled or not", () => {
-    expect(scopeRoster(rows, { course: A, run: null }).map((r) => r.userId)).toEqual(["u1", "u2"]);
+    expect(scopeRoster(rows, { course: A, run: null, group: null }).map((r) => r.userId)).toEqual(["u1", "u2"]);
   });
 
   it("run filter keeps only that run's enrolment rows", () => {
-    expect(scopeRoster(rows, { course: null, run: RUN_A1 }).map((r) => r.userId)).toEqual(["u1"]);
+    expect(scopeRoster(rows, { course: null, run: RUN_A1, group: null }).map((r) => r.userId)).toEqual(["u1"]);
   });
 
   it("a run from another course than the course filter matches nothing", () => {
-    expect(scopeRoster(rows, { course: A, run: RUN_B })).toEqual([]);
+    expect(scopeRoster(rows, { course: A, run: RUN_B, group: null })).toEqual([]);
+  });
+
+  it("group filter keeps only the group's members", () => {
+    const f = { course: null, run: null, group: RUN_B };
+    expect(scopeRoster(rows, f, new Set(["u2", "u3"])).map((r) => r.userId)).toEqual(["u2", "u3"]);
+  });
+
+  it("a group filter with no member set matches nothing, not everything", () => {
+    const f = { course: null, run: null, group: RUN_B };
+    expect(scopeRoster(rows, f, null)).toEqual([]);
+    expect(scopeRoster(rows, f, new Set())).toEqual([]);
   });
 });
 

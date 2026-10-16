@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 9;
+export const EXPORT_FORMAT_VERSION = 10;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -28,6 +28,7 @@ export const EXPORT_CONTENTS = [
   "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
   "Final comments — the author's published closing comment for each course run you joined",
   "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
+  "Teacher groups — the names of the private groups a linked teacher has put you in",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -134,6 +135,12 @@ export type TeacherLinkRow = {
   ended_by: string | null;
 };
 
+export type GroupMembershipRow = {
+  group_name: string;
+  teacher_name: string;
+  added_at: string;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -154,6 +161,7 @@ export type ExportSources = {
   voiceAudio: Readonly<Record<string, string>>;
   finalComments: FinalCommentRow[];
   teacherLinks: TeacherLinkRow[];
+  teacherGroups: GroupMembershipRow[];
 };
 
 /**
@@ -297,6 +305,16 @@ export function buildExportPayload(
       linked_at: row.linked_at,
       ended_at: row.ended_at,
       ended_by: row.ended_by,
+    })),
+
+    // TCH-002 (docs/decisions/0149; 0144 Q2): the names of the groups a
+    // teacher has put this reader in, the one place a student sees them.
+    // Read through my_group_memberships (077); names and the teacher only,
+    // never the other members.
+    teacher_groups: src.teacherGroups.map((row) => ({
+      group_name: row.group_name,
+      teacher_name: row.teacher_name,
+      added_at: row.added_at,
     })),
   };
 }

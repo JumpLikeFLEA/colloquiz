@@ -65,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -138,11 +138,13 @@ export async function GET() {
           .order("published_at", { ascending: false }),
         // TCH-001: links the caller is the student in, ended ones too (076).
         supabase.rpc("my_teacher_links"),
+        // TCH-002: names of the groups a teacher put the caller in (077).
+        supabase.rpc("my_group_memberships"),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -185,6 +187,7 @@ export async function GET() {
         voiceAudio,
         finalComments: finalCommentsRes.data ?? [],
         teacherLinks: teacherLinksRes.data ?? [],
+        teacherGroups: teacherGroupsRes.data ?? [],
       },
       ACHIEVEMENTS,
     );

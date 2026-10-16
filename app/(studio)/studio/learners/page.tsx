@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +10,8 @@ import {
   toRosterRow,
 } from "@/lib/learners/roster";
 import { getJoinLinkState, getLinkedStudents } from "@/lib/teacherLinksServer";
+import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
+import { membersByGroup } from "@/lib/teacherGroups";
 import { LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { LearnerCard } from "./LearnerCard";
 import { LearnerFilters } from "./LearnerFilters";
@@ -36,20 +39,29 @@ export default async function LearnersPage({
 
   const filters = parseLearnerFilters(await searchParams);
   const supabase = await createClient();
-  const [{ data, error }, linkState, linkedStudents] = await Promise.all([
+  const [{ data, error }, linkState, allLinkedStudents, groups, memberRows] = await Promise.all([
     supabase.rpc("learner_roster"),
     getJoinLinkState(),
     getLinkedStudents(),
+    getTeacherGroups(),
+    getGroupMemberRows(),
   ]);
   if (error) throw new Error(error.message);
   // TCH-001: the roster is activity-derived and unchanged; a linked student
   // is a separate, explicit relationship (0141 Decision 3), so the panel
   // lists them whether or not they appear in it.
-  const linkedIds = new Set(linkedStudents.map((s) => s.userId));
+  const linkedIds = new Set(allLinkedStudents.map((s) => s.userId));
+  // TCH-002: the Group filter narrows the roster and the linked list to one
+  // of the caller's own groups. A group id that isn't theirs has no members
+  // here, so it shows nobody rather than everybody.
+  const groupMembers = filters.group ? (membersByGroup(memberRows).get(filters.group) ?? new Set<string>()) : null;
+  const linkedStudents = groupMembers
+    ? allLinkedStudents.filter((s) => groupMembers.has(s.userId))
+    : allLinkedStudents;
 
   const allRows = ((data ?? []) as Record<string, unknown>[]).map(toRosterRow);
   const options = rosterFilterOptions(allRows, filters.course);
-  const rows = scopeRoster(allRows, filters);
+  const rows = scopeRoster(allRows, filters, groupMembers);
   const people = countLearners(rows);
 
   return (
@@ -65,7 +77,17 @@ export default async function LearnersPage({
             timezone (<LocalTimeZone />).
           </p>
         </div>
-        {allRows.length > 0 && <LearnerFilters filters={filters} options={options} />}
+        {(allRows.length > 0 || groups.length > 0) && (
+          <LearnerFilters filters={filters} options={options} groups={groups.map((g) => ({ id: g.id, name: g.name }))} />
+        )}
+        {linkState && (
+          <Link
+            href="/studio/learners/groups"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+          >
+            {groups.length === 0 ? "Groups" : `Groups (${groups.length})`}
+          </Link>
+        )}
       </div>
 
       {linkState && <StudentLinksPanel linkState={linkState} students={linkedStudents} />}

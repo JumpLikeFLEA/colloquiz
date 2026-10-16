@@ -16,6 +16,10 @@ import {
 import { learnerLabel, reviewFiltersQuery } from "@/lib/reviews/queue";
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
 import { LocalTime, LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
+import { getLinkedStudents } from "@/lib/teacherLinksServer";
+import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
+import { groupsByStudent } from "@/lib/teacherGroups";
+import { LearnerGroups } from "./LearnerGroups";
 import { LessonActivityCard } from "./LessonActivityCard";
 import { RecordingItem, type RecordingItemRow } from "./RecordingItem";
 
@@ -39,11 +43,17 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
   if (!userId) notFound();
 
   const supabase = await createClient();
-  const [roster, lessons, recordings] = await Promise.all([
+  const [roster, lessons, recordings, linkedStudents, teacherGroups, memberRows] = await Promise.all([
     supabase.rpc("learner_roster"),
     supabase.rpc("learner_lessons", { p_user_id: userId }),
     supabase.rpc("learner_recordings", { p_user_id: userId }),
+    getLinkedStudents(),
+    getTeacherGroups(),
+    getGroupMemberRows(),
   ]);
+  // TCH-002: grouping applies to students linked to the caller only.
+  const isLinked = linkedStudents.some((s) => s.userId === userId);
+  const memberOf = [...(groupsByStudent(memberRows).get(userId) ?? [])];
   if (roster.error) throw new Error(roster.error.message);
   if (lessons.error) throw new Error(lessons.error.message);
   if (recordings.error) throw new Error(recordings.error.message);
@@ -141,6 +151,14 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
           </p>
         </div>
       </div>
+
+      {isLinked && (
+        <LearnerGroups
+          studentId={userId}
+          groups={teacherGroups.map((g) => ({ id: g.id, name: g.name }))}
+          memberOf={memberOf}
+        />
+      )}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Lessons</h2>

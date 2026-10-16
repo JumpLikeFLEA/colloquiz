@@ -33,7 +33,8 @@ export type RosterRow = {
   voicesAnswered: number;
 };
 
-export type LearnerFilters = { course: string | null; run: string | null };
+/** `group` is a teacher group id (TCH-002, migration 077): the page turns it into a member set. */
+export type LearnerFilters = { course: string | null; run: string | null; group: string | null };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -45,9 +46,11 @@ function first(v: string | string[] | undefined): string | undefined {
 export function parseLearnerFilters(params: Record<string, string | string[] | undefined>): LearnerFilters {
   const course = first(params.course);
   const run = first(params.run);
+  const group = first(params.group);
   return {
     course: course && UUID.test(course) ? course.toLowerCase() : null,
     run: run && UUID.test(run) ? run.toLowerCase() : null,
+    group: group && UUID.test(group) ? group.toLowerCase() : null,
   };
 }
 
@@ -56,14 +59,26 @@ export function learnerFiltersQuery(f: Partial<LearnerFilters>): string {
   const q = new URLSearchParams();
   if (f.course) q.set("course", f.course);
   if (f.run) q.set("run", f.run);
+  if (f.group) q.set("group", f.group);
   const s = q.toString();
   return s ? `?${s}` : "";
 }
 
 /** A run filter keeps only that run's enrolment rows; a run from another
- * course than the course filter matches nothing. */
-export function scopeRoster(rows: readonly RosterRow[], f: LearnerFilters): RosterRow[] {
-  return rows.filter((r) => (!f.course || r.courseId === f.course) && (!f.run || r.runId === f.run));
+ * course than the course filter matches nothing. A group filter keeps only
+ * the learners in `groupMembers` (the caller's own group, TCH-002); an unknown
+ * group has no members, so it matches nothing rather than everything. */
+export function scopeRoster(
+  rows: readonly RosterRow[],
+  f: LearnerFilters,
+  groupMembers: ReadonlySet<string> | null = null,
+): RosterRow[] {
+  return rows.filter(
+    (r) =>
+      (!f.course || r.courseId === f.course) &&
+      (!f.run || r.runId === f.run) &&
+      (!f.group || (groupMembers?.has(r.userId) ?? false)),
+  );
 }
 
 export type RosterFilterOptions = {

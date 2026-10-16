@@ -1856,3 +1856,27 @@ Appended to in the same commit as the change it records. Referenced from
   opened Leave confirm and the Studio dialogs.
   Do not show the join link after a reload: it is stored hashed. Do not put a
   teacher's `full_name` on the join page.
+- Teacher groups (2026-10-16, TCH-002, docs/decisions/0149, migration 077 not
+  yet applied). Studio only; no learner-facing page shows a group. Composed
+  from existing classes and tokens; no new colours:
+  - Learners gains a "Groups" outlined link under the filters
+    ("Groups (N)" once there are some) and a third Select, "Group" ("All
+    students" or one of the teacher's groups), shown only when the teacher has
+    a group. It narrows the roster and the linked-students list.
+  - `/studio/learners/groups`: a "New group" field + "Create group" (the
+    student-link panel's input and `bg-brand` button), then one
+    `rounded-2xl border bg-card` link row per group with a name and "N
+    students".
+  - `/studio/learners/groups/[groupId]`: a "← Groups" back link, the name, a
+    Name card (input + Rename), the members (a row each with Remove), "Add
+    students" (a checkbox list of linked students not yet in the group, rows
+    `min-h-11`, and "Add N to group"), and an outlined "Delete group" that
+    opens an AlertDialog.
+  - A linked learner's page gains a "Groups" section above Lessons: one
+    checkbox per group, each toggle one call; with no groups, a dashed box
+    linking to the groups page.
+  - Wherever Studio names a group (New group, Name, Add students, the
+    learner page's Groups) a `text-xs text-muted-foreground` line reads
+    "Students see the names of groups they are in only in their data export."
+  360px not measured: the pages need migration 077. Do not show a group's name
+  anywhere a student can see it in the app; the export is the one place.

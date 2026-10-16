@@ -20,6 +20,7 @@ const baseSources = {
   voiceAudio: {},
   finalComments: [],
   teacherLinks: [],
+  teacherGroups: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -424,7 +425,7 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
   });
 
   it("is format version 8", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(9);
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(10);
   });
 });
 
@@ -447,6 +448,25 @@ describe("buildExportPayload — teacher_links (TCH-001)", () => {
     expect(payload.teacher_links).toEqual([
       { link_id: "l1", teacher_name: "Anna", source: "join_link", linked_at: "2026-10-01T00:00:00Z", ended_at: null, ended_by: null },
       { link_id: "l2", teacher_name: "Boris", source: "run_invite", linked_at: "2026-09-01T00:00:00Z", ended_at: "2026-09-20T00:00:00Z", ended_by: "you" },
+    ]);
+  });
+});
+
+describe("buildExportPayload — teacher_groups (TCH-002)", () => {
+  it("is empty for a reader in no group", () => {
+    expect(buildExportPayload(baseSources, []).teacher_groups).toEqual([]);
+  });
+
+  it("exports group names with the teacher and date, nothing else", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        teacherGroups: [{ group_name: "Evening class", teacher_name: "Anna", added_at: "2026-10-02T00:00:00Z" }],
+      },
+      [],
+    );
+    expect(payload.teacher_groups).toEqual([
+      { group_name: "Evening class", teacher_name: "Anna", added_at: "2026-10-02T00:00:00Z" },
     ]);
   });
 });

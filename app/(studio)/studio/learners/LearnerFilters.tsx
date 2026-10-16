@@ -10,7 +10,16 @@ import { learnerFiltersQuery, type LearnerFilters as Filters, type RosterFilterO
 
 const ANY = "any";
 
-export function LearnerFilters({ filters, options }: { filters: Filters; options: RosterFilterOptions }) {
+export function LearnerFilters({
+  filters,
+  options,
+  groups = [],
+}: {
+  filters: Filters;
+  options: RosterFilterOptions;
+  /** The teacher's own groups (TCH-002); the Group select shows only when there are some. */
+  groups?: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const go = (next: Partial<Filters>) => router.push(`/studio/learners${learnerFiltersQuery({ ...filters, ...next })}`);
 
@@ -47,6 +56,22 @@ export function LearnerFilters({ filters, options }: { filters: Filters; options
           ))}
         </SelectContent>
       </Select>
+
+      {(groups.length > 0 || filters.group) && (
+        <Select value={filters.group ?? ANY} onValueChange={(v) => go({ group: v === ANY ? null : v })}>
+          <SelectTrigger className="w-full sm:w-48" aria-label="Group">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ANY}>All students</SelectItem>
+            {groups.map((g) => (
+              <SelectItem key={g.id} value={g.id}>
+                {g.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }
