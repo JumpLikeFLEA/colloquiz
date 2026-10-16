@@ -1,8 +1,7 @@
 # 0150 — TCH-003: a linked student's answers and scores in Studio
 
-Status: built; migration 078 written, **not applied**; its verify script
-(`supabase/verify/078_linked_student_answers.sql`) written, **not run** (no
-database reachable from the session). Decided unattended under
+Status: built; migration 078 applied by the owner and its verify script
+(`supabase/verify/078_linked_student_answers.sql`) run by the owner: success. Decided unattended under
 `--no-approval`; each call below is one the owner can overturn.
 
 ## Context

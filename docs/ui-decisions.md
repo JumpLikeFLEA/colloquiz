@@ -1893,5 +1893,7 @@ Appended to in the same commit as the change it records. Referenced from
   lines. "No answer stored for this attempt." and "The answer can't be shown:
   the exercise no longer reads." are muted lines. A non-linked learner's page
   is unchanged and shows no scores. Existing classes and tokens only; 360px
-  NOT measured (078 unapplied, the section cannot load). Do not show scores for
+  measured (078 applied): `scrollWidth/innerWidth 360/360` on the learner page
+  with the section closed, and 360/360 with a lesson row open (two exercises,
+  three attempts, a long title and prompt). Do not show scores for
   a learner who is not linked.
