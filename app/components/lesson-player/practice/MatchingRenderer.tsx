@@ -83,7 +83,7 @@ export function MatchingRenderer({
 }: {
   item: MatchingItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   if (item.payload.presentation === "sort") {
     return <BucketRenderer item={item} attemptId={attemptId} onScore={onScore} />;
@@ -98,7 +98,7 @@ function PairsMatchingRenderer({
 }: {
   item: MatchingItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   const leftIds = useMemo(() => item.payload.left.map((element) => element.id), [item]);
   const rightOptions = useMemo(() => shuffleForItem(item.payload.right, attemptId, item.id), [item, attemptId]);
@@ -125,9 +125,10 @@ function PairsMatchingRenderer({
   const sensors = useLessonPlayerSensors();
 
   function submit() {
-    const scored = scoreItem(item, buildMatchingResponse(pairs));
+    const response = buildMatchingResponse(pairs);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   function fillFromChip(rightId: string) {

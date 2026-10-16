@@ -71,7 +71,7 @@ export interface PracticeRendererProps {
    * makes a best-effort upload of it (ANON-005; see
    * `LessonPlayer`'s own doc comment) — nothing here awaits or surfaces that
    * network call. */
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }
 
 /** What `LessonPlayerProps.renderProgress` is handed (docs/decisions/0079
@@ -266,7 +266,7 @@ export function LessonPlayer({
     return <LessonPlayerError errors={parsed.errors} />;
   }
 
-  function handleScore(blockId: string, result: ItemScoreResult) {
+  function handleScore(blockId: string, result: ItemScoreResult, response: unknown) {
     setResults((prev) => ({ ...prev, [blockId]: result }));
 
     // ANON-013 — every learner's attempt goes to the local store, signed in
@@ -280,6 +280,7 @@ export function LessonPlayer({
       blockId,
       earned: result.earned,
       possible: result.possible,
+      response,
     });
     if (!isSignedIn) return;
     void recordSignedInAttempt(attemptStore);
@@ -348,7 +349,7 @@ function LessonPlayerBody({
   document: LessonDocument;
   results: LessonSessionResults;
   attemptId: string;
-  onScore: (itemId: string, result: ItemScoreResult) => void;
+  onScore: (itemId: string, result: ItemScoreResult, response: unknown) => void;
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
@@ -427,7 +428,7 @@ function LessonPlayerBody({
                         answered={results[block.id] !== undefined}
                       />
                       {practiceRenderer ? (
-                        practiceRenderer({ block, attemptId, onScore: (result) => onScore(block.id, result) })
+                        practiceRenderer({ block, attemptId, onScore: (result, response) => onScore(block.id, result, response) })
                       ) : (
                         <PracticeBlockPlaceholder block={block} />
                       )}

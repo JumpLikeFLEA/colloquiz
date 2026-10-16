@@ -3,6 +3,7 @@ import {
   ATTEMPT_STORAGE_KEY,
   createAttemptStore,
   toRecordAttemptPayload,
+  withinByteCap,
   uploadPendingAttempts,
   type AttemptStorageBackend,
 } from "./attemptStore";
@@ -163,9 +164,30 @@ describe("createAttemptStore", () => {
 describe("toRecordAttemptPayload", () => {
   it("maps stored attempts to record_lesson_attempts's own snake_case field names", () => {
     expect(toRecordAttemptPayload([attempt1, attempt2])).toEqual([
-      { attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 2 },
-      { attempt_id: "a2", lesson_version_id: "v1", block_id: "b1", earned: 2, possible: 2 },
+      { attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 2, response: null },
+      { attempt_id: "a2", lesson_version_id: "v1", block_id: "b1", earned: 2, possible: 2, response: null },
     ]);
+  });
+
+  it("sends the stored response, and null for an older entry without one", () => {
+    const withResponse = { ...attempt1, response: { selected: ["o2"] } };
+    expect(toRecordAttemptPayload([withResponse, attempt2]).map((p) => p.response)).toEqual([
+      { selected: ["o2"] },
+      null,
+    ]);
+  });
+
+  it("withinByteCap keeps responses under the cap and nulls them all over it", () => {
+    const payload = toRecordAttemptPayload([{ ...attempt1, response: { text: "x".repeat(50) } }]);
+    expect(withinByteCap(payload, 10_000)).toBe(payload);
+    expect(withinByteCap(payload, 100).map((p) => p.response)).toEqual([null]);
+  });
+
+  it("round-trips a response through the store (what the claim path uploads)", () => {
+    const backend = { getItem: () => null, setItem: vi.fn() };
+    const store = createAttemptStore(backend);
+    store.record({ ...attempt1, response: { order: ["b", "a"] } });
+    expect(toRecordAttemptPayload(store.getAll())[0].response).toEqual({ order: ["b", "a"] });
   });
 
   it("maps an empty list to an empty list", () => {
@@ -213,8 +235,8 @@ describe("uploadPendingAttempts", () => {
     expect(result).toBe("uploaded");
     expect(supabase.rpc).toHaveBeenCalledWith("record_lesson_attempts", {
       p_attempts: [
-        { attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 2 },
-        { attempt_id: "a2", lesson_version_id: "v1", block_id: "b1", earned: 2, possible: 2 },
+        { attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 2, response: null },
+        { attempt_id: "a2", lesson_version_id: "v1", block_id: "b1", earned: 2, possible: 2, response: null },
       ],
     });
     expect(store.getAll()).toEqual([]);

@@ -38,7 +38,7 @@ export function SelectionGridRenderer({
   onScore,
 }: {
   item: SelectionGridItem;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   const [answers, setAnswers] = useState<Map<string, boolean>>(new Map());
   const [result, setResult] = useState<ItemScoreResult | null>(null);
@@ -51,9 +51,10 @@ export function SelectionGridRenderer({
   );
 
   function submit() {
-    const scored = scoreItem(item, buildSelectionGridResponse(answers));
+    const response = buildSelectionGridResponse(answers);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   return (

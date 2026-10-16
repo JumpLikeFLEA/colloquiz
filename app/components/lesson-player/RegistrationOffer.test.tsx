@@ -134,7 +134,7 @@ describe("RegistrationOffer", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
-          attempts: [{ attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 1 }],
+          attempts: [{ attempt_id: "a1", lesson_version_id: "v1", block_id: "b1", earned: 1, possible: 1, response: null }],
         }),
       }),
     );

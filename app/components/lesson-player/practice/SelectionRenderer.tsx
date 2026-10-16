@@ -34,7 +34,7 @@ export function SelectionRenderer({
 }: {
   item: SelectionItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   const options = useMemo(() => shuffleForItem(item.payload.options, attemptId, item.id), [item, attemptId]);
   const [selected, setSelected] = useState<string[]>([]);
@@ -53,9 +53,10 @@ export function SelectionRenderer({
       : undefined;
 
   function submit() {
-    const scored = scoreItem(item, buildSelectionResponse(selected));
+    const response = buildSelectionResponse(selected);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   return (

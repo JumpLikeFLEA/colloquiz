@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { PENDING_CLAIM_PAYLOAD_MAX_BYTES } from "./lessonPlayer/attemptStore";
 
 /**
  * ANON-006 — pure helpers for the cross-browser claim mechanism (0048 §2,
@@ -13,8 +14,9 @@ import crypto from "crypto";
 const TOKEN_BYTES = 16;
 
 /** Mirrors the CHECK on pending_claims.payload in migration 049. Kept in one
- * place so the route's pre-flight rejection and the DB's hard cap agree. */
-export const PENDING_CLAIM_PAYLOAD_MAX_BYTES = 16384;
+ * place (the attempt store, which the client stash also needs) so the route's
+ * pre-flight rejection, the client and the DB's hard cap agree. */
+export { PENDING_CLAIM_PAYLOAD_MAX_BYTES };
 
 /** A fresh, unguessable claim token. Generated server-side (not by the
  * client) so its randomness quality is ours to guarantee. */

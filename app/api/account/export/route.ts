@@ -94,7 +94,7 @@ export async function GET() {
         supabase.rpc("get_my_duels"),
         supabase
           .from("lesson_attempts")
-          .select("id, lesson_version_id, block_id, earned, possible, created_at")
+          .select("id, lesson_version_id, block_id, earned, possible, response, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
         supabase

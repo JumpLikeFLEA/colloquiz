@@ -30,6 +30,10 @@ export type StoredAttempt = {
   blockId: string;
   earned: number;
   possible: number;
+  /** PROG-005 (0141 Decision 7): the learner's answer as the item type's
+   * own response shape (`lib/items/<type>`), JSON-serialisable. Absent on an
+   * entry stored before this field existed; the payload sends that as null. */
+  response?: unknown;
   /** ISO 8601. Informational only (ordering in a future review UI); nothing
    * here scores or sorts by it today. */
   recordedAt: string;
@@ -170,7 +174,7 @@ export function createAttemptStore(backend?: AttemptStorageBackend): AttemptStor
  * hands it unchanged to `claim_pending_claim` -> `record_lesson_attempts`
  * once claimed). */
 export function toRecordAttemptPayload(
-  attempts: readonly Pick<StoredAttempt, "attemptId" | "lessonVersionId" | "blockId" | "earned" | "possible">[],
+  attempts: readonly Pick<StoredAttempt, "attemptId" | "lessonVersionId" | "blockId" | "earned" | "possible" | "response">[],
 ) {
   return attempts.map((a) => ({
     attempt_id: a.attemptId,
@@ -178,7 +182,24 @@ export function toRecordAttemptPayload(
     block_id: a.blockId,
     earned: a.earned,
     possible: a.possible,
+    response: a.response ?? null,
   }));
+}
+
+/** Mirrors the CHECK on pending_claims.payload in migration 049; the one TS
+ * copy, imported by lib/pendingClaims.ts. */
+export const PENDING_CLAIM_PAYLOAD_MAX_BYTES = 16384;
+
+/** The payload with every `response` nulled when its serialisation exceeds
+ * `maxBytes`. For the cross-browser stash (pending_claims caps its payload,
+ * 049): losing the answers is better than losing the whole stash, and the
+ * scores still migrate. */
+export function withinByteCap(
+  payload: ReturnType<typeof toRecordAttemptPayload>,
+  maxBytes: number,
+): ReturnType<typeof toRecordAttemptPayload> {
+  if (new TextEncoder().encode(JSON.stringify(payload)).length <= maxBytes) return payload;
+  return payload.map((p) => ({ ...p, response: null }));
 }
 
 export type UploadResult = "uploaded" | "no-session" | "empty";

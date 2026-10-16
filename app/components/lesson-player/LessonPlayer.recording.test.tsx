@@ -71,9 +71,14 @@ describe("LessonPlayer — ANON-005 attempt recording", () => {
           block_id: "playground-selection",
           earned: 1,
           possible: 1,
+          // PROG-005: the answer travels with its score; null here would mean
+          // the renderer's response never reached the store.
+          response: expect.anything(),
         }),
       ],
     });
+    const sent = rpc.mock.calls.find(([fn]) => fn === "record_lesson_attempts")![1].p_attempts[0];
+    expect(sent.response).not.toBeNull();
   });
 
   it("never imports the Supabase client for a signed-out learner", async () => {

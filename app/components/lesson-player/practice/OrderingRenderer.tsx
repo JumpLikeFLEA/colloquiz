@@ -46,7 +46,7 @@ export function OrderingRenderer({
 }: {
   item: OrderingItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   const elementIds = useMemo(() => item.payload.elements.map((element) => element.id), [item]);
   const elementsById = useMemo(
@@ -75,9 +75,10 @@ export function OrderingRenderer({
   const sensors = useLessonPlayerSensors(sortableKeyboardCoordinates);
 
   function submit() {
-    const scored = scoreItem(item, buildOrderingResponse(order));
+    const response = buildOrderingResponse(order);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   function handleDragStart(event: DragStartEvent) {

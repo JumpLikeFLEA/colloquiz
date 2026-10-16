@@ -5,7 +5,12 @@ import Link from "next/link";
 import { Mail, Lock } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { isInAppBrowser, isOAuthProviderAvailable } from "@/lib/inAppBrowser";
-import { createAttemptStore, toRecordAttemptPayload } from "@/lib/lessonPlayer/attemptStore";
+import {
+  createAttemptStore,
+  PENDING_CLAIM_PAYLOAD_MAX_BYTES,
+  toRecordAttemptPayload,
+  withinByteCap,
+} from "@/lib/lessonPlayer/attemptStore";
 import { oauthQueryParams, type OAuthProvider } from "@/lib/authRedirect";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
 import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/ProviderIcons";
@@ -56,7 +61,9 @@ export function RegistrationOffer({ lessonPath }: { lessonPath: string }) {
     const response = await fetch("/api/pending-claims", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ attempts: toRecordAttemptPayload(attempts) }),
+      body: JSON.stringify({
+        attempts: withinByteCap(toRecordAttemptPayload(attempts), PENDING_CLAIM_PAYLOAD_MAX_BYTES),
+      }),
     });
     if (!response.ok) {
       // Best-effort: a failed stash means the cross-browser migration is

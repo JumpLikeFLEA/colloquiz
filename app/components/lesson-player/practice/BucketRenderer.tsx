@@ -71,7 +71,7 @@ export function BucketRenderer({
 }: {
   item: MatchingItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   const statements = useMemo(
     () => shuffleForItem(item.payload.left, attemptId, item.id),
@@ -96,9 +96,10 @@ export function BucketRenderer({
   const sensors = useLessonPlayerSensors();
 
   function submit() {
-    const scored = scoreItem(item, buildMatchingResponse(pairs));
+    const response = buildMatchingResponse(pairs);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   function placeActiveInBucket(bucketId: string) {

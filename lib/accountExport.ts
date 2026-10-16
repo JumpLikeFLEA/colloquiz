@@ -42,6 +42,8 @@ export type LessonAttemptRow = {
   block_id: string;
   earned: number;
   possible: number;
+  /** PROG-005: the stored answer; null for a row without one. */
+  response?: unknown;
   created_at: string;
 };
 
@@ -227,6 +229,7 @@ export function buildExportPayload(
       block_id: row.block_id,
       earned: row.earned,
       possible: row.possible,
+      response: row.response ?? null,
       recorded_at: row.created_at,
     })),
 

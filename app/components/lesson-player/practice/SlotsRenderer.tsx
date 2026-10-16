@@ -65,7 +65,7 @@ export function SlotsRenderer({
 }: {
   item: SlotsItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
 }) {
   const segments = useMemo(
     () => splitPromptOnGaps(item.payload.prompt, item.payload.gaps.length),
@@ -234,7 +234,7 @@ function TypedSlots({
   segments,
 }: {
   item: SlotsItem;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
   segments: string[] | null;
 }) {
   const { gaps, prompt } = item.payload;
@@ -247,9 +247,10 @@ function TypedSlots({
   );
 
   function submit() {
-    const scored = scoreItem(item, buildSlotsResponse(answers));
+    const response = buildSlotsResponse(answers);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   return (
@@ -324,7 +325,7 @@ function DragSlots({
 }: {
   item: SlotsItem;
   attemptId: string;
-  onScore: (result: ItemScoreResult) => void;
+  onScore: (result: ItemScoreResult, response: unknown) => void;
   segments: string[] | null;
 }) {
   const { gaps, prompt } = item.payload;
@@ -349,9 +350,10 @@ function DragSlots({
   const sensors = useLessonPlayerSensors();
 
   function submit() {
-    const scored = scoreItem(item, buildSlotsResponseFromChips(placedChip, chipTextById));
+    const response = buildSlotsResponseFromChips(placedChip, chipTextById);
+    const scored = scoreItem(item, response);
     setResult(scored);
-    onScore(scored);
+    onScore(scored, response);
   }
 
   function fillFromChip(chipId: string) {

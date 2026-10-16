@@ -41,7 +41,7 @@ function lessonBlocks() {
  * `scoreItem` actually produced, without replacing any per-type renderer. */
 function spiedRenderer(spy: (result: ItemScoreResult) => void) {
   return (props: PracticeRendererProps) =>
-    practiceRenderer({ ...props, onScore: (result) => { spy(result); props.onScore(result); } });
+    practiceRenderer({ ...props, onScore: (result, response) => { spy(result); props.onScore(result, response); } });
 }
 
 afterEach(() => {
