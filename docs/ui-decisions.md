@@ -1939,3 +1939,50 @@ Appended to in the same commit as the change it records. Referenced from
   of both lists. Not reached: the composer's error line (a refused send).
   Do not show a sender when the reader read their message: no read receipt is
   shown or returned to the sender (0151 Decision 5).
+- Homework (2026-10-16, TCH-005, docs/decisions/0152, migration 080 applied to
+  the local stack only, not yet to the hosted project). Composed from existing
+  classes and tokens; no new colours:
+  - Studio: a "Homework" nav entry under Learners (`ClipboardList`).
+    `/studio/homework` is a heading, a muted line ("A due date is information
+    only: nothing locks…"), an outlined "Assign homework" button and one
+    `rounded-2xl border bg-card` card per assignment: the title ("Course ·
+    Lesson", or "Course · whole course"), a muted due pill ("Due 20 Oct", "Was
+    due 13 Oct"), a "N of M done" pill (`bg-brand-subtle text-brand-text` once
+    everyone is done, else muted), a muted "Course not published: students
+    don't see it" pill where it applies, the note, a "For:" line, Edit and
+    Delete (outlined buttons; Delete confirms in an AlertDialog), and a native
+    `<details>` "Students (N)" listing each recipient with a Done / "k of n
+    lessons" / "Not yet" pill, "Best: N%" and the last activity.
+  - The assign dialog (course select unless fixed, "What" select with "The
+    whole course" first, a date input, a note with an N / 500 counter, a "Who"
+    checkbox list of groups then students at `min-h-11`) opens from the course
+    editor, a linked learner's page (student ticked) and a group's page (group
+    ticked). The groups list carries the "Students see the names of groups they
+    are in only in their data export." line. A "Homework" section with a short
+    link-row list sits on the course editor (published courses only), a linked
+    learner's page (above Answers) and a group's page (above Name).
+  - A linked student's Answers section now also lists the lessons the teacher
+    assigned but does not edit. A linked student with no activity yet opens
+    their page instead of a 404.
+  - Learner: `/my` gains "Homework" between Courses and Messages (EN/RU with
+    the saved choice, no toggle): one `LIFT_CARD_CLASS` row per assignment with
+    the step-tile icon (a check once done), the lesson or course title, "from
+    <teacher>", the note, and muted pills: "Due 21 Oct" / "Was due 18 Oct",
+    "k of n lessons" for a course, "Sign in to open" / "Not available yet" /
+    "Opens <date>" for a lesson the student cannot open yet. "Done" is the only
+    brand-coloured pill. Past due is never a destructive colour and nothing
+    locks.
+  - The lesson band gains a glass pill with a clipboard icon: "Homework",
+    "Homework · due 21 Oct", "Homework · was due 1 Oct" or "Homework ✓", on the
+    open and the paid/scheduled/sign-in states, for a signed-in learner whose
+    teacher assigned the lesson or its course.
+  Measured at 360px (`scrollWidth/innerWidth`, local stack, seeded teacher and
+  students): 360/360 on `/my` (EN and RU), the lesson page with the pill,
+  `/studio/homework` (closed and with every `<details>` open), the same page
+  with the assign dialog, the edit dialog and the delete confirm open,
+  `/studio/learners`, a linked learner's page (with activity and with none),
+  a group's page and the course editor. `npm run budget` before and after:
+  `/my` 171.5 / 171.5 KB, the free lesson 256.0 / 256.0 KB. Not reached: a
+  toast, the dialogs' error box.
+  Do not colour a past due date destructive, and do not show a group's name to a
+  student in the app.

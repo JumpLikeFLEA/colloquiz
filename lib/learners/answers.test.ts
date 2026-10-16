@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupAnswers, toAttemptRow, toLessonScoreRow } from "./answers";
+import { groupAnswers, mergeAssignedLessons, toAttemptRow, toLessonScoreRow } from "./answers";
 
 const block = {
   id: "b1", kind: "practice", type: "selection",
@@ -47,5 +47,34 @@ describe("groupAnswers", () => {
 
   it("empty input is empty", () => {
     expect(groupAnswers([], []).size).toBe(0);
+  });
+});
+
+describe("mergeAssignedLessons", () => {
+  const edited = [{ courseId: "c1", courseTitle: "Own", lessons: [{ lessonId: "l1", lessonTitle: "One", lessonOrdinal: 1 }] }];
+  const row = (course: string, lesson: string, ordinal = 1) => ({
+    course_id: course,
+    course_title: `T-${course}`,
+    lesson_id: lesson,
+    lesson_title: `L-${lesson}`,
+    lesson_ordinal: ordinal,
+  });
+
+  it("appends an assigned lesson of a course the teacher does not edit", () => {
+    const out = mergeAssignedLessons(edited, [row("c2", "l9")]);
+    expect(out.map((c) => c.courseId)).toEqual(["c1", "c2"]);
+    expect(out[1].lessons).toEqual([{ lessonId: "l9", lessonTitle: "L-l9", lessonOrdinal: 1 }]);
+  });
+  it("adds to an existing course without duplicating a lesson", () => {
+    const out = mergeAssignedLessons(edited, [row("c1", "l1"), row("c1", "l2", 2)]);
+    expect(out).toHaveLength(1);
+    expect(out[0].lessons.map((l) => l.lessonId)).toEqual(["l1", "l2"]);
+  });
+  it("does not mutate its input", () => {
+    mergeAssignedLessons(edited, [row("c1", "l2", 2)]);
+    expect(edited[0].lessons).toHaveLength(1);
+  });
+  it("is the edited list when nothing was assigned", () => {
+    expect(mergeAssignedLessons(edited, [])).toEqual(edited);
   });
 });

@@ -19,7 +19,18 @@ import { LocalTime, LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/Loc
 import { getLinkedStudents } from "@/lib/teacherLinksServer";
 import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
 import { groupsByStudent } from "@/lib/teacherGroups";
-import { groupAnswers, toAttemptRow, toLessonScoreRow } from "@/lib/learners/answers";
+import {
+  groupAnswers,
+  mergeAssignedLessons,
+  toAttemptRow,
+  toLessonScoreRow,
+  type AnswerCourse,
+  type AssignedLessonRow,
+} from "@/lib/learners/answers";
+import { homeworkForStudent } from "@/lib/homework/homework";
+import { AssignHomeworkButton } from "../../homework/AssignHomework";
+import { loadAssignContext, loadHomeworkViews } from "../../homework/data";
+import { HomeworkSummary } from "../../homework/HomeworkSummary";
 import { LearnerGroups } from "./LearnerGroups";
 import { LinkedAnswers } from "./LinkedAnswers";
 import { LessonActivityCard } from "./LessonActivityCard";
@@ -58,14 +69,21 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
   const memberOf = [...(groupsByStudent(memberRows).get(userId) ?? [])];
   // TCH-003: answers and scores for a linked student only (078 returns nothing
   // otherwise; a non-linked page makes no call and shows no scores).
-  const [attempts, scores] = isLinked
+  // TCH-005: the same readers also cover the lessons and courses the teacher
+  // assigned this student (080); linked_student_assigned_lessons titles the ones
+  // the teacher does not edit.
+  const [attempts, scores, assigned, assignCtx, homework] = isLinked
     ? await Promise.all([
         supabase.rpc("linked_student_attempts", { p_student: userId }),
         supabase.rpc("linked_student_lesson_scores", { p_student: userId }),
+        supabase.rpc("linked_student_assigned_lessons", { p_student: userId }),
+        loadAssignContext(),
+        loadHomeworkViews(),
       ])
-    : [null, null];
+    : [null, null, null, null, null];
   if (attempts?.error) throw new Error(attempts.error.message);
   if (scores?.error) throw new Error(scores.error.message);
+  if (assigned?.error) throw new Error(assigned.error.message);
   const linkedAnswers = isLinked
     ? groupAnswers(
         ((attempts?.data ?? []) as Record<string, unknown>[]).map(toAttemptRow),
@@ -81,7 +99,9 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
     .filter((r) => r.userId === userId);
   const lessonRows = ((lessons.data ?? []) as Record<string, unknown>[]).map(toLessonActivityRow);
   const takeRows = ((recordings.data ?? []) as Record<string, unknown>[]).map(toRecordingRow);
-  if (rosterRows.length === 0 && lessonRows.length === 0 && takeRows.length === 0) notFound();
+  // A linked student with no activity yet is still a page: homework links here
+  // for students who have not started (TCH-005).
+  if (!isLinked && rosterRows.length === 0 && lessonRows.length === 0 && takeRows.length === 0) notFound();
 
   // Sign the takes under the editor's own session: the bucket's SELECT
   // policy (060) is what lets an editor of the course hear them.
@@ -108,11 +128,13 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
   const item = (r: { submissionId: string }) => items.get(r.submissionId)!;
 
   const courses = groupLessonsByCourse(lessonRows);
+  const answerCourses: AnswerCourse[] = mergeAssignedLessons(courses, (assigned?.data ?? []) as AssignedLessonRow[]);
   const enrolments = groupRecordings(takeRows);
 
   const head = rosterRows[0];
   const email = head?.learnerEmail ?? null;
-  const label = head ? learnerLabel(rosterRows.find((r) => r.inviteeName) ?? head) : "Learner";
+  const linkedLabel = linkedStudents.find((x) => x.userId === userId)?.label || null;
+  const label = head ? learnerLabel(rosterRows.find((r) => r.inviteeName) ?? head) : (linkedLabel ?? "Learner");
   const contacts = [...new Set(rosterRows.map((r) => r.inviteeContact).filter((c): c is string => !!c))];
   const acquisition = rosterRows.find((r) => r.acquisitionSource) ?? null;
   const lastActive = rosterRows
@@ -178,7 +200,25 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
         />
       )}
 
-      {linkedAnswers && <LinkedAnswers courses={courses} answers={linkedAnswers} />}
+      {isLinked && assignCtx && homework && (
+        <HomeworkSummary
+          title="Homework"
+          homework={homeworkForStudent(homework.views, userId)}
+          studentId={userId}
+          empty="Nothing assigned to this student yet."
+          today={new Date()}
+          action={
+            <AssignHomeworkButton
+              courses={assignCtx.courses}
+              students={assignCtx.students}
+              groups={assignCtx.groups}
+              preset={{ studentId: userId }}
+            />
+          }
+        />
+      )}
+
+      {linkedAnswers && <LinkedAnswers courses={answerCourses} answers={linkedAnswers} />}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Lessons</h2>

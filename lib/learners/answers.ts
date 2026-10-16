@@ -114,3 +114,38 @@ export function groupAnswers(attempts: AttemptRow[], scores: LessonScoreRow[]): 
   }
   return out;
 }
+
+/** A course and the lessons whose answers can be listed under it. */
+export type AnswerCourse = {
+  courseId: string;
+  courseTitle: string;
+  lessons: { lessonId: string; lessonTitle: string; lessonOrdinal: number }[];
+};
+
+/** A row of linked_student_assigned_lessons() (080). */
+export type AssignedLessonRow = {
+  course_id: string;
+  course_title: string;
+  lesson_id: string;
+  lesson_title: string;
+  lesson_ordinal: number;
+};
+
+/**
+ * The lessons the teacher edits (learner_lessons, 064) plus the lessons they
+ * only assigned (080), as the courses the Answers section lists. A lesson
+ * already present is not added twice; a course not yet present is appended in
+ * the SQL order. Which lessons may be read is decided in SQL: this only titles
+ * the ones the reader returns.
+ */
+export function mergeAssignedLessons(edited: readonly AnswerCourse[], assigned: readonly AssignedLessonRow[]): AnswerCourse[] {
+  const out = new Map<string, AnswerCourse>(edited.map((c) => [c.courseId, { ...c, lessons: [...c.lessons] }]));
+  for (const r of assigned) {
+    const course = out.get(r.course_id) ?? { courseId: r.course_id, courseTitle: r.course_title, lessons: [] };
+    if (!course.lessons.some((l) => l.lessonId === r.lesson_id)) {
+      course.lessons.push({ lessonId: r.lesson_id, lessonTitle: r.lesson_title, lessonOrdinal: num(r.lesson_ordinal) });
+    }
+    out.set(r.course_id, course);
+  }
+  return [...out.values()];
+}

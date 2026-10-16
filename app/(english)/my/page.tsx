@@ -3,13 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, ExternalLink, MessageSquare, Video } from "lucide-react";
+import { ArrowRight, Check, ClipboardList, ExternalLink, MessageSquare, Video } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import type { MyTeacher } from "@/lib/teacherLinks";
 import { getMyTeachers } from "@/lib/teacherLinksServer";
+import { dueState, formatDueDate, homeworkHref, type MyHomework } from "@/lib/homework/homework";
+import { getMyHomework } from "@/lib/homework/homeworkServer";
 import { unreadTotal, type Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
@@ -56,10 +58,11 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  * LocalDateTime, already shipped by the cohort course page.
  */
 export default async function MyPage() {
-  const [home, teachers, threads] = await Promise.all([
+  const [home, teachers, threads, homework] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
     getStudentThreads(),
+    getStudentHomework(),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
@@ -110,6 +113,20 @@ export default async function MyPage() {
             </ul>
           )}
         </section>
+
+        {homework.length > 0 && (
+          <section className="flex flex-col gap-6" data-my="homework">
+            <SectionHeading title={m.homeworkTitle} />
+            <p className="-mt-3 text-sm text-muted-foreground">{m.homeworkLead}</p>
+            <ul className="flex flex-col gap-3">
+              {homework.map((h) => (
+                <li key={h.id}>
+                  <HomeworkRow lang={lang} homework={h} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {threads.length > 0 && (
           <section className="flex flex-col gap-6" data-my="messages">
@@ -182,6 +199,18 @@ async function getStudentThreads(): Promise<Thread[]> {
   }
 }
 
+// Like the Messages row, the Homework section is a courtesy: if the read fails
+// (080 not yet applied, a transient error) the section is left out and the page
+// still renders.
+async function getStudentHomework(): Promise<MyHomework[]> {
+  try {
+    return await getMyHomework();
+  } catch (e) {
+    console.error("/my: my_homework failed", e);
+    return [];
+  }
+}
+
 function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {
   return lang === "ru" ? "ru-RU" : "en-GB";
 }
@@ -221,6 +250,58 @@ function TeacherRow({ lang, teacher }: { lang: SurfaceLang; teacher: MyTeacher }
         </details>
       </div>
     </div>
+  );
+}
+
+// One assignment (TCH-005, docs/decisions/0152). The whole row is a link to the
+// lesson or course; the access state of a lesson the learner cannot open yet is
+// _lesson_access_at's, read in SQL, shown as a muted pill. The due date reads
+// "Due 20 Oct", and once past "Was due 20 Oct" in the same muted tokens: never
+// a destructive colour, and nothing locks (docs/handoff.md, "Scoring and
+// progress").
+function HomeworkRow({ lang, homework: h }: { lang: SurfaceLang; homework: MyHomework }) {
+  const m = myCopy[lang];
+  const today = new Date();
+  const locale = localeFor(lang);
+  const past = dueState(h.dueOn, today) === "past";
+  const access =
+    h.access === "needs_sign_in"
+      ? m.homeworkNeedsSignIn
+      : h.access === "needs_entitlement"
+        ? m.homeworkNeedsEntitlement
+        : h.access === "scheduled" && h.opensAt
+          ? m.homeworkOpensOn(new Date(h.opensAt).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" }))
+          : null;
+  return (
+    <Link href={homeworkHref(h)} className={`${LIFT_CARD_CLASS} flex gap-3 p-4 sm:p-5`} data-homework-done={h.done}>
+      <span className={ICON_TILE_CLASS}>
+        {h.done ? <Check className="size-4" aria-hidden="true" /> : <ClipboardList className="size-4" aria-hidden="true" />}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <p className="break-words text-sm font-semibold text-foreground sm:text-base">
+          {h.lessonTitle ?? h.courseTitle}
+          {!h.lessonTitle && <span className="font-normal text-muted-foreground"> · {m.homeworkWholeCourse}</span>}
+        </p>
+        <p className="break-words text-xs text-muted-foreground sm:text-sm">
+          {h.lessonTitle && <>{h.courseTitle} · </>}
+          {m.homeworkFrom(h.teacherName)}
+        </p>
+        {h.note && <p className="whitespace-pre-line break-words text-sm text-foreground">{h.note}</p>}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {h.done && <span className={SMALL_PILL_CLASS}>{m.homeworkDone}</span>}
+          {!h.done && !h.lessonId && h.totalLessons > 1 && (
+            <span className={MUTED_PILL_CLASS}>{m.homeworkProgress(h.doneLessons, h.totalLessons)}</span>
+          )}
+          {h.dueOn && (
+            <span className={MUTED_PILL_CLASS}>
+              {(past ? m.homeworkWasDue : m.homeworkDue)(formatDueDate(h.dueOn, locale, today))}
+            </span>
+          )}
+          {access && !h.done && <span className={MUTED_PILL_CLASS}>{access}</span>}
+        </div>
+      </div>
+      <ArrowRight className="size-3.5 flex-none self-center text-brand-text" aria-hidden="true" />
+    </Link>
   );
 }
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Clock, ListChecks } from "lucide-react";
+import { ClipboardList, Clock, ListChecks } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { pluralize } from "@/lib/pluralCategory";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
@@ -36,6 +36,7 @@ export function LessonBand({
   estimatedMinutes,
   itemCount,
   account,
+  homework = null,
 }: {
   courseSlug: string;
   courseTitle: string;
@@ -45,6 +46,9 @@ export function LessonBand({
   estimatedMinutes: number | null;
   itemCount: number;
   account: ReactNode;
+  /** The signed-in learner's homework pill text for this lesson (TCH-005,
+   * docs/decisions/0152), already formatted; null shows no pill. */
+  homework?: string | null;
 }) {
   const p = alliengllCopy.player;
 
@@ -67,6 +71,12 @@ export function LessonBand({
               <span className={GLASS_PILL_CLASS}>
                 <Clock className="size-3.5" aria-hidden="true" />
                 {estimatedMinutes} {p.minutesLabel}
+              </span>
+            )}
+            {homework && (
+              <span className={GLASS_PILL_CLASS} data-homework-pill>
+                <ClipboardList className="size-3.5" aria-hidden="true" />
+                {homework}
               </span>
             )}
             {itemCount > 0 && (

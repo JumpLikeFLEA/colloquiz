@@ -1,11 +1,11 @@
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
-import type { CourseLessons } from "@/lib/learners/detail";
-import type { LessonAnswers } from "@/lib/learners/answers";
+import type { AnswerCourse, LessonAnswers } from "@/lib/learners/answers";
 
 // A linked student's answers and best scores (TCH-003, docs/decisions/0150).
 // Rendered only for a student linked to the caller; the rows come from
-// linked_student_attempts() / linked_student_lesson_scores() (078), which
-// return nothing otherwise. Native <details>: no client JS.
+// linked_student_attempts() / linked_student_lesson_scores() (078, widened by
+// 080 to the lessons and courses the teacher assigned: docs/decisions/0152),
+// which return nothing otherwise. Native <details>: no client JS.
 
 const pct = (earned: number, possible: number) => Math.round((100 * earned) / possible);
 
@@ -13,7 +13,7 @@ export function LinkedAnswers({
   courses,
   answers,
 }: {
-  courses: CourseLessons[];
+  courses: AnswerCourse[];
   answers: Map<string, LessonAnswers>;
 }) {
   const shown = courses

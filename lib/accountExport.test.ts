@@ -22,6 +22,7 @@ const baseSources = {
   teacherLinks: [],
   teacherGroups: [],
   conversations: [],
+  homework: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -518,6 +519,45 @@ describe("buildExportPayload — teacher_conversations (TCH-004)", () => {
         open: false,
         messages: [{ message_id: "m3", from: "you", content: body("hi"), sent_at: "2026-10-16T10:00:00Z", read_at: null }],
       },
+    ]);
+  });
+});
+
+describe("buildExportPayload — homework (TCH-005)", () => {
+  it("is empty for a reader nobody assigned anything to", () => {
+    expect(buildExportPayload(baseSources, []).homework).toEqual([]);
+  });
+
+  it("lists the teacher, the content, the due date and the note, without the assignment id", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        homework: [
+          {
+            assignment_id: "a1",
+            teacher_name: "Anna",
+            course_title: "Future Imperfect",
+            lesson_title: "True or false",
+            due_on: "2026-10-20",
+            note: "Do this first",
+            assigned_at: "2026-10-16T10:00:00Z",
+          },
+          {
+            assignment_id: "a2",
+            teacher_name: "Anna",
+            course_title: "Grammar drilling",
+            lesson_title: null,
+            due_on: null,
+            note: null,
+            assigned_at: "2026-10-17T10:00:00Z",
+          },
+        ],
+      },
+      [],
+    );
+    expect(payload.homework).toEqual([
+      { teacher_name: "Anna", course_title: "Future Imperfect", lesson_title: "True or false", due_on: "2026-10-20", note: "Do this first", assigned_at: "2026-10-16T10:00:00Z" },
+      { teacher_name: "Anna", course_title: "Grammar drilling", lesson_title: null, due_on: null, note: null, assigned_at: "2026-10-17T10:00:00Z" },
     ]);
   });
 });

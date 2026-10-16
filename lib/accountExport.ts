@@ -30,6 +30,7 @@ export const EXPORT_CONTENTS = [
   "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
   "Teacher groups — the names of the private groups a linked teacher has put you in",
   "Messages — your conversations with teachers: what each of you wrote, and when",
+  "Homework — the lessons and courses a linked teacher assigned you, with any due date and note",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -155,6 +156,18 @@ export type ConversationExportRow = {
   read_at: string | null;
 };
 
+/** One row of `my_homework_export` (080): homework that currently applies to the reader. */
+export type HomeworkExportRow = {
+  assignment_id: string;
+  teacher_name: string;
+  course_title: string;
+  /** null for a whole-course assignment. */
+  lesson_title: string | null;
+  due_on: string | null;
+  note: string | null;
+  assigned_at: string;
+};
+
 export type ExportSources = {
   accountId: string;
   email: string | null;
@@ -177,6 +190,7 @@ export type ExportSources = {
   teacherLinks: TeacherLinkRow[];
   teacherGroups: GroupMembershipRow[];
   conversations: ConversationExportRow[];
+  homework: HomeworkExportRow[];
 };
 
 /**
@@ -338,6 +352,18 @@ export function buildExportPayload(
     // my_conversations_export (079); the tables have no grants. The teacher's
     // side is not exported: those rows describe other people.
     teacher_conversations: exportConversations(src.conversations),
+
+    // TCH-005 (docs/decisions/0152; privacy-policy.md section 8): the homework
+    // that currently applies to the reader, from my_homework_export (080). The
+    // teacher's name and the content's titles; no other recipient.
+    homework: src.homework.map((row) => ({
+      teacher_name: row.teacher_name,
+      course_title: row.course_title,
+      lesson_title: row.lesson_title,
+      due_on: row.due_on,
+      note: row.note,
+      assigned_at: row.assigned_at,
+    })),
   };
 }
 

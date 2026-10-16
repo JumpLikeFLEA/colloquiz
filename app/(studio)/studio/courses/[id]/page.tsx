@@ -5,6 +5,10 @@ import { getAuthoredCourseDetail } from "@/lib/courseAuthoring";
 import { getCourseRuns } from "@/lib/courseRuns";
 import { runPhase } from "@/lib/cohortSchedule";
 import { createClient } from "@/lib/supabase/server";
+import { homeworkForCourse } from "@/lib/homework/homework";
+import { AssignHomeworkButton } from "../../homework/AssignHomework";
+import { loadAssignContext, loadHomeworkViews } from "../../homework/data";
+import { HomeworkSummary } from "../../homework/HomeworkSummary";
 import { CourseDetailView } from "./CourseDetailView";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
@@ -30,10 +34,11 @@ export default async function AdminCourseDetailPage({
     );
   }
 
-  const [detail, runs, deleteBlockers] = await Promise.all([
+  const [detail, runs, deleteBlockers, homework] = await Promise.all([
     getAuthoredCourseDetail(id, isAdmin),
     getCourseRuns(id),
     getDeleteBlockers(id),
+    getHomeworkSection(id),
   ]);
   if (!detail) notFound();
   // Display only (AUTH-010): which notice and locks to show. The RPCs
@@ -44,6 +49,24 @@ export default async function AdminCourseDetailPage({
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} deleteBlockers={deleteBlockers} />
+      {homework && (
+        <div className="mt-8">
+          <HomeworkSummary
+            title="Homework"
+            homework={homework.views}
+            empty="Nothing assigned from this course yet."
+            today={now}
+            action={
+              <AssignHomeworkButton
+                courses={homework.courses}
+                students={homework.students}
+                groups={homework.groups}
+                preset={{ courseId: id }}
+              />
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -59,4 +82,18 @@ async function getDeleteBlockers(courseId: string): Promise<string[] | null> {
   }
   const result = data as { ok: boolean; blockers?: string[] };
   return result.ok ? (result.blockers ?? []) : null;
+}
+
+// TCH-005: the course's assignments and what the assign dialog needs. null when
+// a read fails (080 not applied, a transient error) or the course has no
+// lesson to assign, so the editor still renders and simply shows no section.
+async function getHomeworkSection(courseId: string) {
+  try {
+    const [ctx, hw] = await Promise.all([loadAssignContext(), loadHomeworkViews()]);
+    if (!ctx.courses.some((c) => c.id === courseId)) return null;
+    return { ...ctx, views: homeworkForCourse(hw.views, courseId) };
+  } catch (e) {
+    console.error("course editor: homework section:", e);
+    return null;
+  }
 }

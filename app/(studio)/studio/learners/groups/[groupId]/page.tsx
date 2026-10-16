@@ -5,6 +5,10 @@ import { getCourseAccess } from "@/lib/courseAccess";
 import { getLinkedStudents } from "@/lib/teacherLinksServer";
 import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
 import { membersByGroup } from "@/lib/teacherGroups";
+import { homeworkForGroup } from "@/lib/homework/homework";
+import { AssignHomeworkButton } from "../../../homework/AssignHomework";
+import { loadAssignContext, loadHomeworkViews } from "../../../homework/data";
+import { HomeworkSummary } from "../../../homework/HomeworkSummary";
 import { GroupDetail } from "./GroupDetail";
 
 // /studio/learners/groups/[groupId] — one group (TCH-002, docs/decisions/
@@ -23,10 +27,12 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
   if (!UUID.test(groupId)) notFound();
   const id = groupId.toLowerCase();
 
-  const [groups, memberRows, students] = await Promise.all([
+  const [groups, memberRows, students, assignCtx, homework] = await Promise.all([
     getTeacherGroups(),
     getGroupMemberRows(),
     getLinkedStudents(),
+    loadAssignContext(),
+    loadHomeworkViews(),
   ]);
   const group = groups.find((g) => g.id === id);
   if (!group) notFound();
@@ -48,6 +54,20 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
         </Link>
         <h1 className="text-2xl font-bold text-foreground break-all">{group.name}</h1>
       </div>
+      <HomeworkSummary
+        title="Homework"
+        homework={homeworkForGroup(homework.views, id)}
+        empty="Nothing assigned to this group yet."
+        today={new Date()}
+        action={
+          <AssignHomeworkButton
+            courses={assignCtx.courses}
+            students={assignCtx.students}
+            groups={assignCtx.groups}
+            preset={{ groupId: id }}
+          />
+        }
+      />
       <GroupDetail groupId={id} name={group.name} members={members} candidates={candidates} />
     </div>
   );

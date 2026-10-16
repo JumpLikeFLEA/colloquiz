@@ -5,6 +5,8 @@ import { getSignedInAccount } from "@/lib/signedInAccount";
 import { getCourseAttemptSummary } from "@/lib/courseAttempts";
 import { bestScoreForLesson } from "@/lib/coursePageProgress";
 import { getVoiceTasksContext } from "@/lib/voiceTaskContext";
+import { homeworkForLesson, homeworkPillText } from "@/lib/homework/homework";
+import { getMyHomework } from "@/lib/homework/homeworkServer";
 import { AccountMenu } from "../../../AccountMenu";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
@@ -60,6 +62,10 @@ export default async function LessonPage({
   // SHELL-019 (docs/decisions/0086): the account chip, always English here
   // (lesson chrome, docs/decisions/0080 Decision 5).
   const signedIn = await getSignedInAccount();
+  // TCH-005 (docs/decisions/0152): a signed-in learner whose teacher assigned
+  // this lesson (or its course) sees a "Homework" pill with the due date. A
+  // failed read shows no pill rather than failing the lesson.
+  const homework = signedIn ? await getHomeworkPill(lesson.courseId, lessonSlug) : null;
   const band = (
     <LessonBand
       courseSlug={courseSlug}
@@ -69,6 +75,7 @@ export default async function LessonPage({
       position={nav && { index: nav.position, total: nav.total }}
       estimatedMinutes={lesson.estimatedMinutes}
       itemCount={lesson.itemCount}
+      homework={homework}
       account={
         signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={`/courses/${courseSlug}/${lessonSlug}`} />
       }
@@ -126,4 +133,14 @@ export default async function LessonPage({
       voiceTasks={voiceTasks}
     />
   );
+}
+
+async function getHomeworkPill(courseId: string, lessonSlug: string): Promise<string | null> {
+  try {
+    const h = homeworkForLesson(await getMyHomework(), courseId, lessonSlug);
+    return h ? homeworkPillText(h, new Date()) : null;
+  } catch (err) {
+    console.error("failed to read the lesson's homework", err);
+    return null;
+  }
 }

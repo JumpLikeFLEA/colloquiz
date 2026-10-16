@@ -42,6 +42,18 @@ type MyStrings = {
   messagesOpen: string;
   messagesNew: (n: number) => string;
   messagesNone: string;
+  /** The Homework section (TCH-005, docs/decisions/0152). */
+  homeworkTitle: string;
+  homeworkLead: string;
+  homeworkFrom: (teacher: string) => string;
+  homeworkWholeCourse: string;
+  homeworkDue: (date: string) => string;
+  homeworkWasDue: (date: string) => string;
+  homeworkDone: string;
+  homeworkProgress: (done: number, total: number) => string;
+  homeworkNeedsSignIn: string;
+  homeworkNeedsEntitlement: string;
+  homeworkOpensOn: (date: string) => string;
 };
 
 export const myCopy: Record<SurfaceLang, MyStrings> = {
@@ -78,6 +90,17 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     messagesOpen: "Переписка с преподавателями",
     messagesNew: (n) => `Новых: ${n}`,
     messagesNone: "Нет новых сообщений",
+    homeworkTitle: "Домашнее задание",
+    homeworkLead: "Задания от ваших преподавателей. Срок — просто ориентир: ничего не закрывается.",
+    homeworkFrom: (teacher) => `от ${teacher}`,
+    homeworkWholeCourse: "весь курс",
+    homeworkDue: (date) => `Срок: ${date}`,
+    homeworkWasDue: (date) => `Срок был ${date}`,
+    homeworkDone: "Готово",
+    homeworkProgress: (done, total) => `${done} из ${total} уроков`,
+    homeworkNeedsSignIn: "Нужно войти в аккаунт",
+    homeworkNeedsEntitlement: "Урок пока недоступен",
+    homeworkOpensOn: (date) => `Откроется ${date}`,
   },
   en: {
     metaTitle: "My courses",
@@ -112,5 +135,16 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     messagesOpen: "Conversations with your teachers",
     messagesNew: (n) => `${n} new`,
     messagesNone: "No new messages",
+    homeworkTitle: "Homework",
+    homeworkLead: "Tasks from your teachers. A due date is a guide: nothing locks.",
+    homeworkFrom: (teacher) => `from ${teacher}`,
+    homeworkWholeCourse: "whole course",
+    homeworkDue: (date) => `Due ${date}`,
+    homeworkWasDue: (date) => `Was due ${date}`,
+    homeworkDone: "Done",
+    homeworkProgress: (done, total) => `${done} of ${total} lessons`,
+    homeworkNeedsSignIn: "Sign in to open",
+    homeworkNeedsEntitlement: "Not available yet",
+    homeworkOpensOn: (date) => `Opens ${date}`,
   },
 };

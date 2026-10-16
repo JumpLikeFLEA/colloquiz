@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
+import { ClipboardList, ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -24,6 +24,7 @@ const workItems: NavItem[] = [
   { label: "Courses", href: "/studio/courses", icon: Library },
   { label: "Reviews", href: "/studio/reviews", icon: MessageSquareText },
   { label: "Learners", href: "/studio/learners", icon: Users },
+  { label: "Homework", href: "/studio/homework", icon: ClipboardList },
   { label: "Messages", href: "/studio/messages", icon: MessageSquare },
 ];
 
