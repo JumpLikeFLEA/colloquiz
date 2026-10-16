@@ -1,9 +1,17 @@
 # 0151 — TCH-004: messages between a linked student and their teacher
 
-Status: built; migration 079 written, **not applied to the hosted project**.
-Replayed from 001 on a local Supabase stack (079 applies cleanly) and
-`supabase/verify/079_teacher_messages.sql` passes there ("TCH-004 PASS"). Decided
-unattended under `--no-approval`; each call below is one the owner can overturn.
+Status: built; migration 079 applied by the owner and its verify script
+(`supabase/verify/079_teacher_messages.sql`) run by the owner in the SQL editor:
+success (no assertion raised; the editor shows no notices). Also replayed from
+001 on a local Supabase stack, where the script passes. Decided unattended under
+`--no-approval`; each call below is one the owner can overturn.
+
+The first hosted run failed on "t thread is no longer unanswered": the SQL editor
+runs the script in one transaction, so both messages had the same `NOW()` and
+"last message" fell to a random uuid tie-break (the unfixed script passed 4 of 12
+local runs). The script now stamps each seeded message with `clock_timestamp()`
+through a trigger that rolls back with it; the migration was not at fault, and
+real messages are separate transactions.
 
 ## Context
 

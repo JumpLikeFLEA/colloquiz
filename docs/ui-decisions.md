@@ -1897,8 +1897,7 @@ Appended to in the same commit as the change it records. Referenced from
   with the section closed, and 360/360 with a lesson row open (two exercises,
   three attempts, a long title and prompt). Do not show scores for
   a learner who is not linked.
-- Messages (2026-10-16, TCH-004, docs/decisions/0151, migration 079 not yet
-  applied to the hosted project). One conversation per linked pair, in the app.
+- Messages (2026-10-16, TCH-004, docs/decisions/0151, migration 079 applied). One conversation per linked pair, in the app.
   Composed from existing classes and tokens; no new colours:
   - Learner: `/my/messages` (the saved EN/RU choice, no toggle, the `/my` rule)
     is `/my`'s band, then one `LIFT_CARD_CLASS` row per teacher (step-tile
