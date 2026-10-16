@@ -29,3 +29,15 @@ Migration 074 is written, not applied.
 Revisit: if a published lesson's answer exceeds the cap (check the NULL rate
 of `response` where `earned > 0` after applying); if PROG-003 needs answers for
 a block whose attempt was never recorded.
+
+## Verification (074 applied by the owner, 2026-10-16)
+
+Run against the hosted project with two temporary users, deleted after
+(cleanup printed: both deleted, 0 leftover attempts). One RPC call by user A
+with four elements on a free lesson version: a response, no response, an
+earned 9 / possible 3 with a 5000-character response, and an explicit null.
+Result: `inserted: 4`; A read back all four rows (response kept on the first;
+NULL on the other three, the third also capped to earned 3 of 3); B read `[]`;
+anon got "permission denied for table lesson_attempts"; A's direct UPDATE got
+"permission denied for table lesson_attempts"; the service role saw 4 rows
+(so B's `[]` is not an empty table).
