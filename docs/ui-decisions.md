@@ -1806,3 +1806,10 @@ Appended to in the same commit as the change it records. Referenced from
   delete rules are `lib/voice/takes.ts`. Sending, replace-until-feedback and
   the post-feedback lock are unchanged. Existing classes and tokens only; not
   measured at 360px. Do not persist takes without redoing 0141 Decision 11.
+- Studio shows a Telegram learner's @username (2026-10-16, AUTH-019,
+  docs/decisions/0145, migration 073, not yet applied). Where Studio showed a
+  learner's email (roster, learner page, review queue, inbox), an account with
+  no email shows "@username" from its Telegram identity. The label order is
+  unchanged (invite name, email, @username). No new classes or tokens; 360px
+  not yet measured because the migration is unapplied. Do not add a separate
+  username column to the UI.

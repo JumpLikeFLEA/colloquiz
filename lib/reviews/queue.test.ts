@@ -148,6 +148,10 @@ describe("learnerLabel / toReviewRow", () => {
     expect(learnerLabel({ learnerEmail: "a@x", inviteeName: "Maria" })).toBe("Maria");
     expect(learnerLabel({ learnerEmail: "a@x", inviteeName: "  " })).toBe("a@x");
   });
+  it("falls back to the @username 073 puts in learner_email for a Telegram learner", () => {
+    expect(learnerLabel({ learnerEmail: "@likeflea", inviteeName: null })).toBe("@likeflea");
+    expect(learnerLabel({ learnerEmail: "@likeflea", inviteeName: "Maria" })).toBe("Maria");
+  });
   it("maps the RPC's snake_case row", () => {
     const r = toReviewRow({
       course_id: A, course_title: "A", run_id: RUN_A, run_title: null, run_starts_at: "s", run_ends_at: "e",
