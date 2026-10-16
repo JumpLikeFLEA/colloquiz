@@ -1856,8 +1856,7 @@ Appended to in the same commit as the change it records. Referenced from
   opened Leave confirm and the Studio dialogs.
   Do not show the join link after a reload: it is stored hashed. Do not put a
   teacher's `full_name` on the join page.
-- Teacher groups (2026-10-16, TCH-002, docs/decisions/0149, migration 077 not
-  yet applied). Studio only; no learner-facing page shows a group. Composed
+- Teacher groups (2026-10-16, TCH-002, docs/decisions/0149, migration 077). Studio only; no learner-facing page shows a group. Composed
   from existing classes and tokens; no new colours:
   - Learners gains a "Groups" outlined link under the filters
     ("Groups (N)" once there are some) and a third Select, "Group" ("All
@@ -1878,5 +1877,8 @@ Appended to in the same commit as the change it records. Referenced from
   - Wherever Studio names a group (New group, Name, Add students, the
     learner page's Groups) a `text-xs text-muted-foreground` line reads
     "Students see the names of groups they are in only in their data export."
-  360px not measured: the pages need migration 077. Do not show a group's name
-  anywhere a student can see it in the app; the export is the one place.
+  Measured at 360px (077 applied): `scrollWidth/innerWidth 360/360` on the
+  groups list (empty, one group, with a toast), the group page (no members,
+  member + candidate, delete confirm open), Learners (unfiltered and group
+  filtered) and the learner page. Do not show a group's name anywhere a
+  student can see it in the app; the export is the one place.

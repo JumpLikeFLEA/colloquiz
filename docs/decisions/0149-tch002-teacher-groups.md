@@ -1,10 +1,10 @@
 # 0149 — TCH-002: a teacher groups their linked students
 
-Status: built; migration 077 written, **not applied**; its verify script
-(`supabase/verify/077_teacher_groups.sql`) written, **not run** (migrations
-are applied by the owner, and the script needs 077 in place). Decided
-unattended under `--no-approval`; each call below is one the owner can
-overturn.
+Status: built; migration 077 applied by the owner and `supabase/verify/
+077_teacher_groups.sql` passed (owner-reported, 2026-10-16). Studio flows
+driven end to end in Edge against the hosted project and measured at 360px
+(see "Verified"). Decided unattended under `--no-approval`; each call below
+is one the owner can overturn.
 
 ## Context
 
@@ -89,10 +89,28 @@ check did not fire.
     `my_group_memberships` or `teacher_groups*`; only `app/api/account/export`
     does.
 
-## Not done
+## Verified
 
-- 077 applied and `supabase/verify/077_teacher_groups.sql` run.
-- 360px measurement of the new Studio pages (they 500 without 077).
+Throwaway users (an admin teacher, a second admin teacher, two students) made
+with the Admin API, driven in system Edge at 360x800 against `npm run dev`,
+then deleted (leftovers: 0 groups, 0 links, 0 profiles). 32 checks passed:
+
+- create, duplicate name in another case refused with a sentence, rename,
+  add a student, untick from the learner page persists;
+- Group filter narrows the linked list from 2 to 1; an unknown group id
+  shows 0 linked students;
+- the student's export is 200, format 10, lists `Evenings` with the teacher's
+  name; `/my` shows no group name;
+- the other teacher gets 404 on the group page;
+- ending the link empties the group of that student.
+
+`scrollWidth/innerWidth` 360/360 on: groups (empty), group page (no members),
+group page (member + candidate), groups with a toast showing, Learners
+(unfiltered), Learners (group filter), the learner page, the delete confirm
+open, groups with one group.
+
+Not reached: the Rename and Add dialogs have none (inline); a group with many
+students at 360px.
 
 ## Revisit if
 
