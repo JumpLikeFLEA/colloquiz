@@ -50,12 +50,65 @@ that looks wrong.
 ### Stop and ask before anything irreversible
 
 - **Never push.** I review and push.
-- **Never apply a migration.** Migrations are written to
-  `supabase/migrations/NNN_*.sql` and handed to me with the SQL to run; I
-  apply them against the hosted database myself. This is the established
-  pattern and it is not negotiable — the database is hosted and shared.
+- **Hosted migrations and verify scripts: apply only through the gate below.**
+  Migrations are written to `supabase/migrations/NNN_*.sql`. A session may apply
+  one to the hosted database, and run its verify script there, without asking
+  me, only when EVERY item of "The hosted-apply gate" holds. If any item fails
+  or is unclear, hand it to me with the SQL to run, as before. The database is
+  hosted and shared; the gate is what makes that safe.
 - Deleting data, rewriting history, rotating keys, and anything at all
-  against the live Supabase project or the Vercel production deployment.
+  against the live Supabase project or the Vercel production deployment —
+  except the gated migration and verify-script runs above.
+
+#### The hosted-apply gate (owner, 2026-10-16)
+
+All of these, in this order, each with its printed output as evidence:
+
+1. **Local first, thoroughly.** The migration is applied to the local stack
+   (`docker exec -i supabase_db_colloquiz psql -U postgres -d postgres
+   -v ON_ERROR_STOP=1 < supabase/migrations/NNN_*.sql`, or `db reset`), and
+   re-applied once to show it is safe to re-apply. Its verify script
+   (`supabase/verify/NNN_*.sql`, the card's full protocol, positive control
+   beside every denial) prints its PASS line. Every earlier verify script for a
+   function the migration re-emits or a table it touches is re-run and prints
+   PASS. `npm run check && npm test` exit 0. "All passes are green" means all
+   of these, not most.
+2. **Print rule re-checked** (the M3 section header in `scripts/board/
+   backlog.mjs`): latest migration and latest `delete_my_account` body, right
+   before applying.
+3. **Hosted probed read-only first**, with `npx supabase@2.120.0 db query
+   --linked "<select>" -o json`: every object the migration REQUIRES exists,
+   and the objects it creates do not exist yet (or the card says why they do).
+   The number on the "Latest applied" line is re-derived this way, never
+   carried forward.
+4. **Not destructive.** No `DROP TABLE`/`DROP COLUMN`, `TRUNCATE`, or `DELETE`/
+   `UPDATE` of existing rows, no change that makes existing rows invalid, no
+   key or role rotation. Any of those still needs my word, per file.
+5. **One file at a time, in number order, by `db query --linked -f
+   supabase/migrations/NNN_*.sql`**, then record it with `npx
+   supabase@2.120.0 migration repair --status applied NNN --linked` so the
+   hosted history stays in step. The history was brought level on 2026-10-16
+   (owner's instruction: 039 through 080 marked applied; `migration list
+   --linked` then matched 80 of 80). Do NOT use `supabase db push`: it applies
+   every pending file in one go and records them, and this repo applies one
+   gated file at a time. Never `repair` a version that was not applied, and
+   never `--status reverted`, without asking.
+6. **After applying, probe again** (the objects now exist, the re-emitted
+   function bodies are the new ones) and run the verify script on hosted with
+   the same command (`db query --linked -f supabase/verify/NNN_*.sql`). It
+   seeds inside a transaction and ends in `ROLLBACK`; confirm afterwards with a
+   read-only count that no seeded row remains. Post the hosted before/after
+   probes and the PASS line in the card's evidence comment (the #150
+   precedent).
+7. **Stop on any surprise.** A migration or verify script that errors, prints
+   FAIL, or leaves a row behind on hosted is not retried and not patched on
+   the spot: report it with the exact output and stop. The fix is a new
+   migration, written and gated like any other.
+
+The Supabase CLI is run as `npx supabase@2.120.0` (nothing to install); it is
+linked to the hosted project and authenticated by `SUPABASE_ACCESS_TOKEN` in
+`.env.local`. The local stack's keys are the public demo keys; the hosted keys
+are never printed, committed or pasted into a comment.
 
 ### Standing rules this repo has paid for
 
@@ -167,12 +220,14 @@ refactor.
     equality in `scoring.ts` for course items. **Planned (M0).**
   - `lib/entitlement.ts` — the client-side MIRROR of the entitlement SQL
     function. Mirror only; the function is the authority. **Planned (M3).**
-- `supabase/migrations/NNN_*.sql` — schema. Numbered, applied by me, never by
-  a session. Latest applied: 055 (owner-confirmed 2026-10-10 that every
-  migration through 055 is applied to the hosted project; 055's hosted
-  before/after counts are in #150's comments. This line had read 049 while
-  050 through 055 went in. Re-derive by probing PostgREST or ask, never carry
-  this number forward by assumption).
+- `supabase/migrations/NNN_*.sql` — schema. Numbered, applied in order, by me
+  or by a session that passed "The hosted-apply gate". Latest applied: 055
+  (owner-confirmed 2026-10-10 that every migration through 055 is applied to
+  the hosted project; 055's hosted before/after counts are in #150's comments;
+  a read-only probe on 2026-10-16 found everything through 080 present). This
+  line had read 049 while 050 through 055 went in. Re-derive by probing
+  (`db query --linked`, the gate's item 3) or ask, never carry this number
+  forward by assumption.
 - `scripts/`
   - `scripts/board/` — `backlog.mjs` (board data, incl. `rankOf()`),
     `bootstrap-board.mjs` (backlog → GitHub issues/board), `board-move.mjs`,
@@ -315,9 +370,10 @@ Steps:
 `--no-approval` does not lift these:
 
 - Never push.
-- Never apply a migration.
-- Anything irreversible: writes to the hosted database, deleting data,
-  rewriting history.
+- Apply a migration or run a verify script on hosted only through "The
+  hosted-apply gate"; the flag does not relax any item of it.
+- Anything else irreversible: other writes to the hosted database, deleting
+  data, rewriting history.
 - `type:decision` issues — present options and stop; the flag is a no-op here.
 - A choice that changes the shape of the deliverable: a schema change, a new
   npm dependency, a new item type, a change to the entitlement rule, or
@@ -338,8 +394,9 @@ and which of the above you nearly hit, so the review has something to check.
 - A dependency satisfaction audit (step 1) recommends anything other than
   "genuinely blocks".
 - 5 or more cards in Verify. Cards in Hold don't count.
-- A migration is ready to apply and nothing further can be verified without
-  it.
+- A migration is ready to apply and "The hosted-apply gate" cannot be passed
+  (an item fails, the migration is destructive, or hosted shows a state the
+  card did not expect): stop with the evidence, don't apply.
 
 ## Interrupting the active session
 
@@ -381,7 +438,7 @@ SESSION HANDOFF <UTC timestamp>
 - Card / plan step done / next step
 - Commits this session
 - Open hypotheses (labelled, unverified)
-- Migrations written but not applied
+- Migrations written but not applied (and any applied to hosted, with the gate's evidence)
 - Stops nearly hit
 - Context at handoff: <pct>% / <tokens>
 - Resume command: work on next [--no-approval]
