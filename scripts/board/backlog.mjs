@@ -3139,7 +3139,7 @@ export const CARDS = [
     acceptance: [
       'A migration: teacher-owned groups (name) and memberships; a member must be a live linked student of that teacher; a student may be in several groups. Written, not applied; print rule.',
       'Studio: create, rename and delete a group; add and remove members from the group page and from a learner\'s page; Learners gains a Group filter (URL-driven, the existing filter row).',
-      'No learner-facing page shows a group or its name. A link that ends removes the student from that teacher\'s groups. The export follows OPS-024\'s text.',
+      'No learner-facing page shows a group or its name in the app. The learner\'s data export includes the names of groups they are in (docs/decisions/0144 Q2). Everywhere Studio names a group (create, rename, add members), a muted line tells the teacher that students see group names in their data export. A link that ends removes the student from that teacher\'s groups.',
       'Full protocol: another teacher cannot read or change a group; a non-linked user cannot be added; positive controls printed. Usable at 360px; docs/ui-decisions.md entry.',
     ],
   },
@@ -3154,7 +3154,7 @@ export const CARDS = [
     goal:
       'For a linked student, the teacher sees every attempt\'s answer per exercise and the best lesson ' +
       'score (docs/decisions/0141 Decision 6). This supersedes 0109 Decision 8 for linked students ' +
-      'only; TCH-005 extends the scope to assigned courses.',
+      'only; TCH-005 extends the scope to the lessons and courses assigned.',
     acceptance: [
       'A SECURITY DEFINER reader returns a student\'s attempts with responses only to a teacher with a live link to that student, on courses the teacher edits; unlinked, ended-link and other-teacher callers get nothing. Written, not applied; print rule.',
       '/studio/learners/[userId] for a linked student: per lesson the best score and, per exercise, each attempt\'s time, earned/possible and answer. A non-linked learner\'s page is unchanged (no scores).',
@@ -3178,7 +3178,7 @@ export const CARDS = [
       'Learner: /my/messages (saved EN/RU) with one conversation per teacher; a dot on the account chip and a count on /my while a teacher reply is unread. The chip stays zero client JS; `npm run budget` before and after for / and /my.',
       'Studio: /studio/messages (conversations newest first, then the thread); the inbox gains "Unanswered questions" (last message from the student) and the nav a badge, both from one cached read. The teacher may write first.',
       'Bodies use the feedback format (**bold**, blank line = paragraph), rendered by FeedbackContentView.',
-      'The account export includes the learner\'s conversations; delete_my_account removes the learner\'s messages per ADR 0002 (re-emitted per the print rule).',
+      'The account export includes the learner\'s conversations; delete_my_account removes the whole conversation, both sides, with its attachments and snapshots (docs/decisions/0144 Q4; re-emitted per the print rule).',
       'Full protocol: a third user cannot read or post; an unlinked learner cannot start one; the rate limit fires; positive controls printed. The live legal text describes what this card does; if it doesn\'t, stop and ask. Usable at 360px; docs/ui-decisions.md entry.',
     ],
   },
@@ -3196,7 +3196,7 @@ export const CARDS = [
       'and 14).',
     acceptance: [
       'A migration: assignments (teacher, course, optional lesson, optional due date, note) with targets (a student or a group); a group\'s open homework applies to a student added later; the content is a course the teacher edits or a published course. Written, not applied; print rule.',
-      'TCH-003\'s reader also covers a course the teacher assigned to that student.',
+      'TCH-003\'s reader also covers the lessons and courses the teacher assigned to that student, and no more: a teacher who assigned one lesson reads answers for that lesson only, not the rest of its course (docs/decisions/0144; privacy 1.5 section 5). Full protocol: a single-lesson assignment returns nothing for the course\'s other lessons; positive control printed.',
       'Studio: assign from the course editor and from a learner or group page; a homework page lists each assignment with, per student, done or not yet (PROG-004), best score and last activity.',
       'Learner: "Homework" on /my (teacher, lesson or course, due date, ✓ when done, and the access state of a lesson the student cannot open yet); the lesson band shows a "Homework" pill with the due date. Past due reads "Was due <date>" in muted tokens, never destructive ones. Nothing locks.',
       'Full protocol: another teacher cannot see or change an assignment; an unlinked student never receives one; positive controls printed. `npm run budget` before and after for /my and a lesson. Usable at 360px; docs/ui-decisions.md entry.',

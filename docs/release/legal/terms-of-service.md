@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.1 · Last updated 2026-10-08
+Version 1.2 · Last updated 2026-10-16
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/terms/page.tsx`
 > renders it; edit here first. Fill every `[BRACKETED]` placeholder before publication.
@@ -63,6 +63,10 @@ Colloquiz is a self-study quiz platform. It offers subject quizzes, custom and s
 quizzes, collaborative study groups, 1-v-1 duels, progress tracking, and gamification
 features such as experience points, streaks, levels and achievements.
 
+Colloquiz also offers short English courses: lessons with practice exercises that are
+scored as you go. While you are signed in, your answers and scores are saved to your
+account as part of your progress.
+
 Colloquiz itself is **free to use**: we take no payment from you. Some courses on the
 Service are paid; their authors sell them, not us (see "Paid courses" below). Nothing you
 have already earned — results, XP, achievements — will be taken away or put behind a
@@ -92,7 +96,7 @@ You agree not to:
 - upload content you do not have the right to share, including copyrighted questions or
   material copied from a textbook, exam board or another platform;
 - impersonate anyone, or choose a public name intended to mislead;
-- harass, spam or abuse other users through groups, duels, shared quizzes or feedback;
+- harass, spam or abuse other users through groups, duels, shared quizzes, feedback or messages;
 - attempt to gain unauthorised access to the Service, other accounts, or the underlying
   infrastructure; probe, scan or test its security without our written permission;
 - scrape, bulk-download or systematically extract the question library;

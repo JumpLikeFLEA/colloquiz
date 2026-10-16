@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.4 · Last updated 2026-10-14
+Version 1.5 · Last updated 2026-10-16
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -58,6 +58,7 @@ that produces legal or similarly significant effects.
 | Feedback and question reports | When you submit them | To fix problems and moderate the question bank |
 | Telegram identity — if you sign in with Telegram: an identifier Telegram issues for this Service (not your Telegram account number), your name and your username, as Telegram returns them | Sign-in with Telegram | Account identity and sign-in. Instead of an email address, a Telegram account has a username, which is what a course author sees |
 | Voice recordings — if you send one for a voice task in a cohort course: the audio | You, in the voice task | So the course author can listen and answer in writing, and so you can compare your first and last recording |
+| Messages — if you write to a teacher you have linked to: what you write and, if you choose, a frozen copy of an exercise and your answer to it | You, in the messages page or the "Ask the teacher" link on an exercise | So you can ask your teacher a question about the content or a task. Only you and that teacher see it |
 | Invite contact label — an author's note of a name and a contact (email or @telegram) for someone they invite to a course | The course author, not you | To send you the invite. Only the course author sees it |
 
 ### 3.2 Data created as you use the Service
@@ -73,6 +74,11 @@ that produces legal or similarly significant effects.
 | Notifications and your notification preferences | To tell you about things that concern you inside the app |
 | Quizzes you create or share, and share links you generate | To provide those features |
 | English lesson practice-item attempts — each item you complete, its score, and which lesson block it belongs to | To score your lesson and show your progress, and, if you started before signing in, to carry that progress onto your account once you do |
+| Your answers — for each practice item you complete while signed in, the answer you gave, in addition to its score | To show your answers back to you, to let a lesson resume where you left off, and, if you have linked to a teacher (section 5), to let that teacher see them |
+| Teacher links — which teacher you linked to, when, and when and by whom it ended | To make the teacher features work only for people who chose them |
+| Homework a linked teacher assigns you — the lesson or course, the optional due date and a note | To show you what your teacher asked for. A due date never locks a lesson |
+| Private groups — a name a teacher gives to a set of their linked students, and whether you are in it | The teacher's own organisation of their students. You are not shown the group's name in the app |
+| Calendar feed token — if you turn on "Subscribe in your calendar": a private web address for your dates | So your calendar app can show them. We store only a hashed form of the token |
 | English lesson opens — which lessons you opened while signed in, and when | To show you your progress, and to show the author of the course how learners move through it |
 | Cohort enrolments — if you join a cohort course: the run, your tier, when you joined and, if it happened, when your access was ended (for example after a refund) | To give you access to the course and to open its lessons week by week |
 | The author's written feedback on a voice task, and a final comment — if you join a cohort course | So you can read it under your recording |
@@ -160,6 +166,9 @@ name or feedback.
 | Signing you in with Telegram, if you choose it | **Contract** (Art. 6(1)(b)) — the sign-in method you asked for |
 | Running a cohort course you joined: your enrolments (run and tier), opening its lessons week by week, recording which lessons you opened, and your voice recordings with the author's written feedback and final comment | **Contract** (Art. 6(1)(b)) — providing the course you joined |
 | A course author seeing, in a cohort course you joined, your email or Telegram username, your invite's contact label, how you found the course, and your activity in it | **Contract** (Art. 6(1)(b)) — running the course you joined |
+| Storing the answers you give while signed in, so they can be shown back to you and a lesson can resume | **Contract** (Art. 6(1)(b)) — saving your answers and scores as part of your progress is part of the Service, as Terms section 4 describes. Where a reader holds that this goes beyond what the contract needs, **legitimate interests** (Art. 6(1)(f)) — giving you your answers back. You can object (section 8) |
+| A teacher you have linked to seeing your answers and scores, writing to you, grouping you and assigning you homework | **Contract** (Art. 6(1)(b)) — the teacher relationship you asked for by linking, after the app has told you what the teacher will see. We considered consent and did not choose it: a link made by claiming a run invite is a step to join a course you have chosen, so consent to it would not be freely given. You can leave a link at any time whatever the basis (section 5) |
+| The calendar feed, if you turn it on | **Contract** (Art. 6(1)(b)) — a feature of the Service that you switch on yourself; turning it off, or replacing the address, stops it |
 | A course author seeing, in a free course, your email or Telegram username, how you found the course, and your activity in it, including lesson opens | **Legitimate interests** (Art. 6(1)(f)) — helping the author run and improve the course and reach its learners. You can object (section 8) |
 | An author's contact label for you before you have claimed an invite | **Legitimate interests** — sending the invite you were offered |
 | Recording which course and arrival channel you signed up from | **Legitimate interests** — learning which courses and channels bring learners, so we know which courses to make; one record per account, never updated, and not recorded under Global Privacy Control or Do Not Track |
@@ -185,6 +194,17 @@ Some information is visible to other users by design:
 
 Your email address is not shown to other learners.
 
+**Teachers you link to.** A "teacher" is a course author you choose to link to, by opening their student link or by claiming an invite they created. Before you confirm, the app tells you what they will see. If you link:
+
+- the teacher sees, for lessons in courses they edit and for lessons and courses they assigned you as homework (for a single assigned lesson, that lesson only), each of your attempts with the answer you gave to each exercise, its score, and your best score for the lesson. They do not see your answers in other lessons or courses, your quiz results or any other Colloquiz data;
+- you and the teacher can write to each other in one conversation. Nobody else reads it. You can attach a frozen copy of an exercise, and your answer to it if you tick that box;
+- the teacher can put you in private groups, which are their own labels, not shown to you in the app (they are included in your data export), other learners or other teachers, and can assign you homework;
+- you can leave at any time in My courses › Your teachers, and the teacher can remove you. When a link ends, the teacher can no longer see your answers or scores, you are taken out of their groups, and they can no longer assign you homework. The conversation stays readable to both of you and takes no new messages. Copies of an exercise or answer you attached stay in it until you delete your account.
+
+Storing your answers does not depend on a link: we store them for every signed-in learner, and only you, and teachers you are linked to as described above, can read them. If you never link, no teacher sees them.
+
+**Dates and the calendar feed.** A teacher can add dated events (such as a test day) to a run or a group; they contain nothing about you and are shown to the people in that run or group. If you turn on the calendar feed, your calendar app (for example Google or Apple Calendar) fetches your dates from a private address and keeps them under its own terms. Anyone who has the address can read your dates, so do not share it; you can replace it at any time, which stops the old one working.
+
 **Course authors.** In this policy, "the course author" means anyone who edits the
 course. The author of a course you take while signed in, free or paid, sees your email
 address or Telegram username; your invite's contact label (if you were invited); how you
@@ -192,7 +212,7 @@ found the course (the course and the arrival channel); and your activity in that
 lessons opened and completed, recordings sent and answered, and your last activity. The
 purpose is to run the course and contact you about it. The author also sees, for each
 exercise, the average score of signed-in learners, shown only when at least 5 learners
-attempted it, and never the score of an individual learner. For a cohort course you joined
+attempted it, and, unless you have linked to that author as a teacher (below), never the score of an individual learner. For a cohort course you joined
 this rests on contract; for a free course it rests on legitimate interests, and you can
 object (section 8).
 
@@ -239,6 +259,11 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | Invite contact labels | Once you claim the invite, kept with your enrolment and deleted when you delete your account. A label never claimed is deleted 30 days after the invite expires or is revoked |
 | Cohort enrolments | Until you close your account; then **deleted outright** |
 | English lesson opens | Until you close your account; then **deleted outright** |
+| Your answers | Until you close your account; then **deleted outright** |
+| Teacher links | Until you close your account; then **deleted outright**. Ending a link does not delete your answers |
+| Messages, with any exercise or answer attached | Until you close your account; then **deleted outright** |
+| Private groups and homework naming you | Until the link ends or you close your account, whichever comes first; then removed from the teacher's groups and homework |
+| Calendar feed token | Until you replace it or close your account |
 | Cross-device claim stash (pre-signup lesson scores held server-side) | Deleted when the confirmation link is first used; if never used, unusable after 7 days and deleted at the next sign-up after that |
 | IP address logged when creating a cross-device claim stash | 1 hour |
 
@@ -249,7 +274,7 @@ Under the GDPR / UK GDPR you have the right to:
 - **Access** your data, and to receive a **portable copy**. You can do this yourself,
   immediately: **Settings › Data and privacy › Export my data** produces a complete JSON
   file of your profile, results, achievements, group memberships, duel history,
-  English lesson practice attempts, the course and channel you signed up from, the
+  English lesson practice attempts with the answers you gave, the course and channel you signed up from, your teacher links, your conversations with teachers, the names of any private groups a teacher has put you in, the homework assigned to you, whether you have a calendar feed (never its token), the
   lessons you opened, your cohort enrolments, your Telegram identity, and the author's
   written feedback and final comment. The export includes a copy of your voice
   recordings, and an invite contact label is included once you have claimed it.
@@ -273,7 +298,8 @@ When you delete your account we, immediately and irreversibly:
 - erase your name, public name, city and profile picture;
 - remove your notifications, notification preferences and any in-progress quiz;
 - remove you from all leaderboards;
-- erase your English lesson practice attempts outright — see the contrast below;
+- erase your English lesson practice attempts and the answers stored with them outright — see the contrast below;
+- end your teacher links, delete your conversations with teachers in full (both sides, with anything attached), take you out of their groups and homework, and delete your calendar feed token;
 - erase the record of which course and channel you signed up from;
 - erase your voice recordings, the author's written feedback and final comment, your
   cohort enrolments, your lesson opens, the invite contact label kept with your
@@ -287,8 +313,9 @@ answering, and aggregate subject statistics would otherwise be destroyed or corr
 This is permitted under Art. 17(3) and Art. 89 — anonymised data is no longer personal
 data. Your English lesson practice attempts, and the course data listed above, are different:
 apart from the per-exercise averages described in section 5, which include no one's
-identity, nothing else in the Service reads another learner's attempts or recordings, so
-there is no one else's data at stake, and they are deleted outright rather than kept
+identity, nothing in the Service reads your attempts, answers or recordings except you,
+the author of the course and, for attempts and answers, a teacher you have linked to. No
+other user's record depends on them, so they are deleted outright rather than kept
 anonymised. Once deleted, your attempts no longer count toward those averages.
 
 If you would prefer a different outcome, email privacy@colloquiz.app and we will discuss what
