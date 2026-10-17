@@ -2321,3 +2321,20 @@ Appended to in the same commit as the change it records. Referenced from
   any width 320–1600 (8px steps); 360/360 light and dark, EN and RU.
   `npm run budget`: `/` 177.9 / 177.9 KB. Do not split the block back into
   cards, and do not widen the sticker's overhang below `xl`.
+- English sign-in screen in the Alina Cher violet (2026-10-17, SHELL-029,
+  docs/decisions/0169). `AuthScreen`'s root takes `surface-alina` when the entry
+  is English (`isEnglishSurfaceEntry`: `/login` or `/signup` with a `next`
+  outside `/app`), so the gradient panel, the Sign In and Create Account
+  buttons, the links and the consent checkbox read the violet `--brand*` set;
+  dark uses the surface's dark values. The class is on the screen root, not on
+  `EnglishAuthPanel` alone, so the panel and the form never disagree. A
+  Colloquiz entry carries no class and stays indigo. Colour only: no new
+  tokens, fonts or layout. Measured at 360px and 1280px, light and dark (Edge,
+  `next dev`, local stack): `scrollWidth/innerWidth` 360/360 and 1280/1280 on
+  `/login?next=/`, `/signup?next=/` and `/login`; Sign In background
+  `rgb(91, 63, 217)` on the English entries, `rgb(79, 70, 229)` on `/login`.
+  `npm run budget` `/login`: 287.9 / 287.9 KB of 380 (the route measures plain
+  `/login`; the English entry is the same component and bundle). Not measured:
+  the "Check your email" and forgot-password views, and a signed-in session.
+  Do not move the class onto `EnglishAuthPanel` alone, and do not put it on a
+  Colloquiz entry.

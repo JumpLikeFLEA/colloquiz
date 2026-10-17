@@ -351,7 +351,12 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
   }
 
   return (
-    <div className="flex h-full">
+    // SHELL-029 (docs/decisions/0169): an English entry wears the violet
+    // locally. This layout is Colloquiz's, so <html> never carries
+    // `surface-alina`; the class on this wrapper re-points --brand* for the
+    // panel AND the form, so a violet panel never sits beside indigo buttons.
+    // A Colloquiz entry gets no class and stays indigo.
+    <div className={englishEntry ? "flex h-full surface-alina" : "flex h-full"}>
       {/* Left decorative panel */}
       {englishEntry ? <EnglishAuthPanel /> : <AuthLeftPanel />}
 
