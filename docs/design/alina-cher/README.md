@@ -9,6 +9,7 @@ that uses an asset decides how it reaches the page.
 | `dino-big.svg` | 2026-10-17 | SHELL-027 | Comic panel, top left: "English in my head" / "английский в моей голове". A big dinosaur roaring, with violet sound lines. |
 | `dino-small.svg` | 2026-10-17 | SHELL-027 | Comic panel, bottom left: "English I speak" / "английский, когда говорю". A small dinosaur with a sweat drop. The "uhh… um" / "ээ...мм" speech bubble is not in the file. |
 | `alina-photo.png` | 2026-10-17 | SHELL-027 | Alina's photo for the hero bio block. Portrait, 1080 × 1920 PNG, 1.65 MB, kept as the original. The design shows it as a circle. SHELL-027 crops it to the face and serves a small square copy from `public/images/` through next/image; this original is never served. |
+| `picker-hero-{ru,en}-{360,1440}-{light,dark}.png` (8 files) | 2026-10-17 | SHELL-026, SHELL-027 | Renders of the hero preview in the owner's VIS-003 picker (https://claude.ai/artifact/4W1URX12TKGJhyiAQMEovZ) with the picked values (docs/decisions/0162), made by Claude with Playwright at 2x. They are NOT the owner's mockups: the headline is Unbounded 800, which the owner knows differs from the mockup's face. The mockups themselves are not in the repo. |
 
 Colours hardcoded in the SVGs, as sent (the owner's design values):
 
