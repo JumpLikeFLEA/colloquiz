@@ -2,9 +2,10 @@
 
 Status: built; migration 087 written and applied to the local stack twice, where
 `supabase/verify/087_teacher_course_grants.sql` prints `TCH-009 PASS: 087 full
-protocol (76 asserted cells)`. Written, not applied to hosted, as the card asks.
-Decided unattended under `--no-approval`; each call below is one the owner can
-overturn.
+protocol (76 asserted cells)`. Written, not applied, as the card asks; the owner
+then asked for it to be applied to the hosted project, and it was, through the
+hosted-apply gate (2026-10-17, see "Hosted" below). Decided unattended under
+`--no-approval`; each call below is one the owner can overturn.
 
 ## Context
 
@@ -106,9 +107,26 @@ NULL`). Nothing wrote a grant from the app before this card.
   (086 before it); latest `delete_my_account` body `086_calendar_feed.sql`, not
   re-emitted.
 
+## Hosted
+
+Gate run 2026-10-17, in order. Print rule right before applying: latest migration
+`087_teacher_course_grants.sql`, latest `delete_my_account` body
+`086_calendar_feed.sql`. Read-only probe first (`migration list --linked`: 001
+through 086 on both sides, 087 local only; `pg_proc`: `_studio_can_write`,
+`_teacher_linked`, `can_edit_course`, `my_calendar`, `calendar_events`,
+`calendar_feed` present, none of the four new functions; `course_entitlements` has
+`revoked_at`; 38 guarded functions, 3 seats, 0 teacher grants, 0 `@verify.test`
+users). Applied with `db query --linked -f`, then `migration repair --status
+applied 087`. Probe after: the four functions exist, anon cannot execute any,
+authenticated can; 40 guarded functions. Verify script run on hosted: a copy whose
+last line raises instead of notices, because `db query` does not return NOTICEs;
+its output is `TCH-009 PASS: 087 full protocol (76 asserted cells)` (the unmodified
+script also exits clean, with no output). Afterwards a read-only count: 0
+`@verify.test` users, 0 `v87-` courses, 0 teacher grants, 3 seats, 0 links.
+
 ## Not in this card
 
-Applying 087 to hosted (the gate, one file in number order); a teacher seeing the
+A teacher seeing the
 grants of a student whose link ended; a purchase flow (parked, docs/handoff.md,
 "Payments"); the teacher terms and data roles (OPS-025).
 

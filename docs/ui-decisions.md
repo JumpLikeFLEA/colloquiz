@@ -2199,7 +2199,7 @@ Appended to in the same commit as the change it records. Referenced from
   in a component: use the tokens, and do not use `--ink` as the colour of text on
   the marker.
 - Course access (2026-10-17, TCH-009, docs/decisions/0164, migration 087 applied to
-  the local stack only, not to the hosted project). Studio only; a student sees
+  the local stack and, through the hosted-apply gate, to hosted). Studio only; a student sees
   nothing new. Composed from the group page's row frame, button classes and
   AlertDialog confirm; no new colours:
   - A linked student's page (`/studio/learners/[userId]`) gains "Course access"

@@ -65,7 +65,7 @@ extends and freezes them at `/studio/authors`, and creating a course needs an
 active seat or admin; a lapsed seat freezes the rest of Studio (TCH-008,
 docs/decisions/0155, migration 083, owner-applied 2026-10-17). A teacher opens a self-paced paid
 course for a linked student who paid them outside the app, through a `course_entitlements`
-grant (TCH-009, docs/decisions/0164, migration 087, local stack only so far). The out-of-scope list above still holds; homework is a list of lessons with an optional due date, not a
+grant (TCH-009, docs/decisions/0164, migration 087, applied to hosted 2026-10-17). The out-of-scope list above still holds; homework is a list of lessons with an optional due date, not a
 curriculum.
 
 ## The two surfaces
