@@ -4171,9 +4171,9 @@ export const CARDS = [
       '`npm run budget` before and after for /, at or under 180 KB. Usable at 360px; docs/ui-decisions.md entry.',
     ],
     notes:
-      'The comic-panel dinosaurs arrived 2026-10-17 as SVG files: docs/design/alina-cher/dino-big.svg ' +
-      'and dino-small.svg (see the README there; their hex colours become tokens or currentColor if ' +
-      'inlined under app/). Alina\'s photo must still arrive as a file; a screenshot is not an asset.',
+      'Assets arrived 2026-10-17 in docs/design/alina-cher/ (see the README there): dino-big.svg and ' +
+      'dino-small.svg (their hex colours become tokens or currentColor if inlined under app/), and ' +
+      'alina-photo.png (1080x1920 original; crop a small square copy into public/images/).',
   },
   {
     key: 'SHELL-028',
