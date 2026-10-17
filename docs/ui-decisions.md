@@ -2057,7 +2057,7 @@ Appended to in the same commit as the change it records. Referenced from
   Do not show the page to a non-admin, and do not decide "active" in the client:
   `author_seats_list()` returns `is_active`.
 - Frozen Studio (2026-10-17, TCH-008, docs/decisions/0155, migration 083 applied to the
-  local stack, not to hosted). While the signed-in teacher cannot write (an admin
+  local stack and, by the owner, to hosted). While the signed-in teacher cannot write (an admin
   always can; so can an active seat), every Studio page shows, above its content,
   a `rounded-2xl border bg-warning-subtle` banner with a `Lock` icon: a
   `text-warning` title ("Your author seat has ended: Studio is read-only"), then

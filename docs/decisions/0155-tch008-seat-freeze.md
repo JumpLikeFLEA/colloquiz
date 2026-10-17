@@ -2,8 +2,13 @@
 
 Status: built; migration 083 written and applied to the local stack twice,
 where `supabase/verify/083_seat_freeze.sql` prints `TCH-008 PASS: 083 full
-protocol (126 asserted cells)`. **Written, not applied to hosted**, as the card
-asks. Decided unattended under `--no-approval`; each call below is one the
+protocol (126 asserted cells)`. It was written, not applied, as the card asks;
+the owner then applied it to the hosted project and ran the verify script there
+(2026-10-17, reported as success). A read-only probe afterwards shows 37 guarded
+functions, the 3 new helpers, the 3 lesson-images policies carrying the
+predicate, 3 seats (0 lapsed) and no `@verify.test` user left behind. Migration
+history repaired for 083 (`migration list --linked` shows 083 on both sides; it
+was blank on the remote side before). Decided unattended under `--no-approval`; each call below is one the
 owner can overturn.
 
 ## Context

@@ -55,7 +55,7 @@ teacher, M4 opens it to other teachers. Seats are built (TCH-007,
 docs/decisions/0154, migration 082, owner-applied 2026-10-16): an admin adds,
 extends and freezes them at `/studio/authors`, and creating a course needs an
 active seat or admin; a lapsed seat freezes the rest of Studio (TCH-008,
-docs/decisions/0155, migration 083, applied to the local stack, not yet to hosted). The out-of-scope list above still holds; homework is a list of lessons with an optional due date, not a
+docs/decisions/0155, migration 083, owner-applied 2026-10-17). The out-of-scope list above still holds; homework is a list of lessons with an optional due date, not a
 curriculum.
 
 ## The two surfaces
