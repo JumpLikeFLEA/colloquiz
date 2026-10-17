@@ -2117,3 +2117,34 @@ Appended to in the same commit as the change it records. Referenced from
   pages with the seat lapsed and "Add event" disabled. Not reached: the toast.
   Do not show an event's group name to a student, and do not decide who may edit in the
   client: `calendar_events()` returns `can_manage` and the RPCs refuse regardless.
+- Calendar (2026-10-17, COH-015, docs/decisions/0159, migration 085 applied to the local
+  stack only until the hosted gate). One server-rendered month, no client JS, composed from
+  existing classes and tokens (no new colours, `ui/calendar.tsx` unused):
+  - `/my` gains a "Calendar" section (`SectionHeading`, EN/RU with the saved choice, no
+    toggle) between Homework and Messages, shown only when the learner has at least one date.
+    Studio gains `/studio/calendar` and a "Calendar" nav entry (`CalendarDays`) under
+    Messages; its chrome is English.
+  - Header row: previous and next month icon buttons and a "Today" link (`min-h-11`,
+    the outlined `rounded-xl border bg-card` link look), the month name between them. The
+    month is `?month=YYYY-MM`; an unreadable value falls back to the current month. A muted
+    line names the time zone, or says times are in UTC when the zone is not known.
+  - At `sm` and up a `<table>` in a `rounded-2xl border bg-card` frame, Monday first, a
+    `bg-muted` weekday header, days of neighbouring months on `bg-muted/40`, today's number
+    in a `bg-brand text-white` circle. Below `sm` an agenda: one heading per day that has
+    something (weekday, day, month) over rounded chips, an empty month a dashed box. Both are
+    in the HTML and CSS chooses.
+  - A chip is `rounded-lg`: run start/end and week openings and homework in `bg-muted`
+    (homework is quiet on purpose: a due date never reads as an alarm, 0152), calls and
+    events in `bg-brand-subtle text-brand-text`. A done homework gets a small check. Text
+    wraps (`break-words`); in the grid the second line (time and course) is clamped to one
+    line with the full text as a tooltip.
+  - The page learns the viewer's zone from a cookie (`colloquiz_tz`) an inline script
+    writes, reloading once when it was missing or different (0159 Decision 7).
+  Measured at 360px (`scrollWidth/innerWidth`, local stack, a seeded learner and teacher,
+  an event title with a 34-letter unbroken word): 360/360 on `/my`
+  (October, with every kind of item), `/my?month=2026-11`, `/my?month=2099-01` (empty month),
+  `/my` with the saved RU choice, and `/studio/calendar`. Checked in Edge at 1280px and 360px
+  with the zone Europe/Belgrade: the call at 14:41 on 20 Oct reads 13:41 on 27 Oct, across
+  the 25 Oct clock change. `npm run budget`: `/my` 171.5 KB before and after.
+  Do not shift a homework due date into the viewer's zone, and do not add client JS to
+  learn the zone.

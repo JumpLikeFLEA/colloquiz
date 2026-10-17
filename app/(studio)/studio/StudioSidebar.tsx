@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, UserCog, Users, type LucideIcon } from "lucide-react";
+import { CalendarDays, ClipboardList, ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, UserCog, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -26,6 +26,7 @@ const workItems: NavItem[] = [
   { label: "Learners", href: "/studio/learners", icon: Users },
   { label: "Homework", href: "/studio/homework", icon: ClipboardList },
   { label: "Messages", href: "/studio/messages", icon: MessageSquare },
+  { label: "Calendar", href: "/studio/calendar", icon: CalendarDays },
 ];
 
 // Author seats (TCH-007): admin only, shown last. The page 404s for anyone else.

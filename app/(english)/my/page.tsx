@@ -12,11 +12,14 @@ import type { MyTeacher } from "@/lib/teacherLinks";
 import { getMyTeachers } from "@/lib/teacherLinksServer";
 import { dueState, formatDueDate, homeworkHref, type MyHomework } from "@/lib/homework/homework";
 import { getMyHomework } from "@/lib/homework/homeworkServer";
+import { getCalendarPageData, type CalendarPageData } from "@/lib/calendar/calendarServer";
 import { unreadTotal, type Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
+import { CalendarView } from "@/app/components/calendar/CalendarView";
+import { TimeZoneSync } from "@/app/components/calendar/TimeZoneSync";
 import { AccountMenu } from "../AccountMenu";
 import { BandTopBar } from "../BandTopBar";
 import { GradientBackdrop } from "../HeroDecor";
@@ -57,12 +60,14 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  * (owner, 2026-10-11). A Server Component; its only client JS is
  * LocalDateTime, already shipped by the cohort course page.
  */
-export default async function MyPage() {
-  const [home, teachers, threads, homework] = await Promise.all([
+export default async function MyPage({ searchParams }: { searchParams: Promise<{ month?: string | string[] }> }) {
+  const { month: rawMonth } = await searchParams;
+  const [home, teachers, threads, homework, calendar] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
     getStudentThreads(),
     getStudentHomework(),
+    getStudentCalendar(typeof rawMonth === "string" ? rawMonth : undefined),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
@@ -128,6 +133,15 @@ export default async function MyPage() {
           </section>
         )}
 
+        {calendar && calendar.items.length > 0 && (
+          <section id="calendar" className="flex scroll-mt-6 flex-col gap-6" data-my="calendar">
+            <TimeZoneSync />
+            <SectionHeading title={m.calendarTitle} />
+            <p className="-mt-3 text-sm text-muted-foreground">{m.calendarLead}</p>
+            <CalendarView {...calendar} lang={lang} basePath="/my" />
+          </section>
+        )}
+
         {threads.length > 0 && (
           <section className="flex flex-col gap-6" data-my="messages">
             <SectionHeading title={m.messagesTitle} />
@@ -185,6 +199,18 @@ export default async function MyPage() {
       </div>
     </main>
   );
+}
+
+// The calendar is a courtesy on the learner home, like Messages: if its read
+// fails (085 not yet applied, a transient error) the section is left out and
+// the rest of /my renders. /studio/calendar reads strictly.
+async function getStudentCalendar(rawMonth: string | undefined): Promise<CalendarPageData | null> {
+  try {
+    return await getCalendarPageData("learner", rawMonth);
+  } catch (e) {
+    console.error("/my: my_calendar failed", e);
+    return null;
+  }
 }
 
 // The Messages row is a courtesy on the learner home: if the read fails (079

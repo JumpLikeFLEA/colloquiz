@@ -45,6 +45,9 @@ type MyStrings = {
   /** The Homework section (TCH-005, docs/decisions/0152). */
   homeworkTitle: string;
   homeworkLead: string;
+  /** The calendar section (COH-015, docs/decisions/0159). */
+  calendarTitle: string;
+  calendarLead: string;
   homeworkFrom: (teacher: string) => string;
   homeworkWholeCourse: string;
   homeworkDue: (date: string) => string;
@@ -92,6 +95,8 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     messagesNone: "Нет новых сообщений",
     homeworkTitle: "Домашнее задание",
     homeworkLead: "Задания от ваших преподавателей. Срок — просто ориентир: ничего не закрывается.",
+    calendarTitle: "Календарь",
+    calendarLead: "Старт курса, открытие недель, звонки, сроки домашних заданий и события от преподавателей.",
     homeworkFrom: (teacher) => `от ${teacher}`,
     homeworkWholeCourse: "весь курс",
     homeworkDue: (date) => `Срок: ${date}`,
@@ -137,6 +142,8 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     messagesNone: "No new messages",
     homeworkTitle: "Homework",
     homeworkLead: "Tasks from your teachers. A due date is a guide: nothing locks.",
+    calendarTitle: "Calendar",
+    calendarLead: "When your course starts, when each week opens, calls, homework due dates and events from your teachers.",
     homeworkFrom: (teacher) => `from ${teacher}`,
     homeworkWholeCourse: "whole course",
     homeworkDue: (date) => `Due ${date}`,

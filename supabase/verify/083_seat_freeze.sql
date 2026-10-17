@@ -272,7 +272,7 @@ BEGIN
       WHERE pronamespace = 'public'::regnamespace
         AND (prosrc ILIKE '%can_edit_course(%' OR prosrc ILIKE '%_is_teacher(%' OR prosrc ILIKE '%_teacher_linked(%')
         AND prosrc NOT LIKE '%_studio_can_write(%'),
-    '_homework_recipients,_lesson_access_at,_teacher_readable_lessons,calendar_events,claim_run_invite,course_calls,course_delete_blockers,course_run_invites,course_stats,homework_assignable,join_teacher,learner_lessons,learner_recordings,learner_roster,linked_student_assigned_lessons,linked_student_attempts,linked_student_lesson_scores,message_threads,my_conversations_export,my_teacher_join_link_state,review_final_comments,review_queue,run_invite_preview,save_final_comment,save_voice_feedback,teacher_join_preview,teacher_linked_students');
+    '_homework_recipients,_lesson_access_at,_teacher_readable_lessons,calendar_events,claim_run_invite,course_calls,course_delete_blockers,course_run_invites,course_stats,homework_assignable,join_teacher,learner_lessons,learner_recordings,learner_roster,linked_student_assigned_lessons,linked_student_attempts,linked_student_lesson_scores,message_threads,my_calendar,my_conversations_export,my_teacher_join_link_state,review_final_comments,review_queue,run_invite_preview,save_final_comment,save_voice_feedback,teacher_join_preview,teacher_linked_students');
 
   -- ── 1. Before the lapse -----------------------------------------------------
   PERFORM pg_temp.check_eq('active seat: studio_can_write is true',
