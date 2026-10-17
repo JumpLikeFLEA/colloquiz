@@ -33,3 +33,9 @@ export const GLASS_PILL_CLASS =
  * rows. */
 export const LIFT_CARD_CLASS =
   "group rounded-2xl border border-border bg-card outline-none transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-lg hover:shadow-brand/10 focus-visible:ring-2 focus-visible:ring-brand motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+
+/** The Alina Cher primary button on the paper ground (SHELL-027, docs/decisions/
+ * 0165): violet fill, ink outline, the hard offset shadow. It presses down on
+ * `active`; the lift and press are dropped under prefers-reduced-motion. */
+export const OFFSET_CTA_CLASS =
+  "group inline-flex min-h-12 items-center gap-2 rounded-xl border-2 border-ink bg-brand px-6 py-3 text-base font-semibold text-white shadow-offset outline-none transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--offset-shadow)] active:translate-y-0.5 active:shadow-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-paper motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0";

@@ -22,12 +22,17 @@ export function LanguageToggle({
   lang,
   label,
   onChange,
+  tone = "band",
 }: {
   lang: SurfaceLang;
   /** Accessible name of the group ("Language" / "Язык"). */
   label: string;
   onChange?: (lang: SurfaceLang) => void;
+  /** "band" is white-on-gradient (course pages); "paper" sits on the page
+   * ground, as on the Alina Cher landing header (SHELL-027). */
+  tone?: "band" | "paper";
 }) {
+  const paper = tone === "paper";
   const [shown, setShown] = useOptimistic(lang);
   const [, startTransition] = useTransition();
 
@@ -41,7 +46,11 @@ export function LanguageToggle({
   }
 
   return (
-    <div role="group" aria-label={label} className="flex gap-0.5 rounded-lg bg-white/10 p-0.5 ring-1 ring-white/20">
+    <div
+      role="group"
+      aria-label={label}
+      className={`flex gap-0.5 rounded-lg p-0.5 ring-1 ${paper ? "bg-card ring-border" : "bg-white/10 ring-white/20"}`}
+    >
       {(["en", "ru"] as const).map((code) => (
         <button
           key={code}
@@ -49,8 +58,10 @@ export function LanguageToggle({
           onClick={() => choose(code)}
           aria-pressed={shown === code}
           lang={code}
-          className={`min-w-11 cursor-pointer rounded-md px-2.5 py-2 text-xs font-semibold tracking-wide transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white ${
-            shown === code ? "bg-white text-brand-deep shadow-sm" : "text-white/75 hover:text-white"
+          className={`min-w-11 cursor-pointer rounded-md px-2.5 py-2 text-xs font-semibold tracking-wide transition-colors outline-none focus-visible:ring-2 ${
+            paper
+              ? `focus-visible:ring-brand ${shown === code ? "bg-brand text-white" : "text-muted-foreground hover:text-foreground"}`
+              : `focus-visible:ring-white ${shown === code ? "bg-white text-brand-deep shadow-sm" : "text-white/75 hover:text-white"}`
           }`}
         >
           {code.toUpperCase()}

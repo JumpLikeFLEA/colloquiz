@@ -20,10 +20,12 @@ import { landingCopy } from "./landingCopy";
  * (2026-09-28, option 1a "Catalogue-first") — a column of full-width stacked
  * cards on a 390px screen was mostly whitespace per card.
  *
- * A course with no cover gets a brand-gradient tile showing its level
- * (0078) instead of the grey "no cover" caption, which read as a broken
- * image in a grid of real covers. Hover lifts the card and slowly zooms the
- * cover; both are dropped under prefers-reduced-motion.
+ * A course with no cover gets a tile showing its level (0078) instead of the
+ * grey "no cover" caption, which read as a broken image in a grid of real
+ * covers; since SHELL-027 (docs/decisions/0165) it is a grid-paper tile with
+ * the level in the display face, not a gradient. The card has the Alina Cher
+ * ink outline and offset shadow; hover lifts it and slowly zooms the cover,
+ * both dropped under prefers-reduced-motion.
  */
 export function CourseCard({ course, lang }: { course: CatalogueCourse; lang: SurfaceLang }) {
   const t = landingCopy[lang];
@@ -37,7 +39,7 @@ export function CourseCard({ course, lang }: { course: CatalogueCourse; lang: Su
   return (
     <Link
       href={`/courses/${course.slug}`}
-      className="group flex h-full flex-row gap-3 rounded-2xl border border-border bg-card p-3 outline-none transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-lg hover:shadow-brand/10 focus-visible:ring-2 focus-visible:ring-brand motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:flex-col sm:p-4"
+      className="group flex h-full flex-row gap-3 rounded-2xl border-2 border-ink bg-card p-3 shadow-offset outline-none transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--offset-shadow)] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-paper motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:flex-col sm:p-4"
     >
       <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-muted sm:aspect-video sm:h-auto sm:w-full">
         {course.coverImageUrl ? (
@@ -49,20 +51,18 @@ export function CourseCard({ course, lang }: { course: CatalogueCourse; lang: Su
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 80px"
           />
         ) : (
-          <div className="relative flex h-full items-center justify-center overflow-hidden bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-[radial-gradient(circle,white_1px,transparent_1px)] [background-size:16px_16px] opacity-10"
-            />
-            <span className="relative text-lg font-semibold tracking-tight text-white/90 sm:text-4xl">{course.level}</span>
+          <div className="grid-paper relative flex h-full items-center justify-center overflow-hidden bg-brand-subtle">
+            <span className="relative font-display text-lg font-extrabold tracking-tight text-brand-text sm:text-4xl">
+              {course.level}
+            </span>
           </div>
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="inline-flex w-fit items-center rounded-full bg-brand-subtle px-2 py-0.5 text-xs font-medium text-brand-text">
+        <span className="inline-flex w-fit items-center rounded-full bg-highlight px-2 py-0.5 text-xs font-semibold text-highlight-foreground">
           {course.level}
         </span>
-        <h3 className="text-sm font-semibold text-foreground sm:text-base">{course.title}</h3>
+        <h3 className="text-sm font-bold text-foreground sm:text-base">{course.title}</h3>
         {course.subtitle && <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm">{course.subtitle}</p>}
         {meta && (
           <p className="mt-auto flex items-center gap-1.5 pt-1 text-xs font-medium text-muted-foreground">

@@ -53,6 +53,7 @@ export function AccountMenu({
   next,
   studio,
   unread = 0,
+  tone = "band",
 }: {
   email: string | null;
   /** Telegram username (no "@") for an account with no email (SHELL-024). */
@@ -62,7 +63,11 @@ export function AccountMenu({
   studio: boolean;
   /** Unread teacher replies; 0 shows nothing. */
   unread?: number;
+  /** "band" is the white chip on a gradient band; "paper" is a brand-filled
+   * chip for the page ground (the Alina Cher landing header, SHELL-027). */
+  tone?: "band" | "paper";
 }) {
+  const paper = tone === "paper";
   const a = accountCopy[lang];
   // An email account shows its email; an account with none shows its Telegram
   // username as "@name" (SHELL-024); with neither, the generic icon and copy.
@@ -76,11 +81,15 @@ export function AccountMenu({
       <summary
         aria-label={status}
         title={status}
-        className="relative flex size-11 cursor-pointer list-none items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white group-open:before:fixed group-open:before:inset-0 group-open:before:cursor-default group-open:before:content-[''] [&::-webkit-details-marker]:hidden"
+        className={`relative flex size-11 cursor-pointer list-none items-center justify-center rounded-full outline-none focus-visible:ring-2 ${paper ? "focus-visible:ring-brand" : "focus-visible:ring-white"} group-open:before:fixed group-open:before:inset-0 group-open:before:cursor-default group-open:before:content-[''] [&::-webkit-details-marker]:hidden`}
       >
         <span
           aria-hidden="true"
-          className="flex size-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-brand-deep shadow-sm ring-2 ring-white/30 transition-shadow group-hover:ring-white/60"
+          className={`flex size-9 items-center justify-center rounded-full text-sm font-semibold shadow-sm ring-2 transition-shadow ${
+            paper
+              ? "bg-brand text-white ring-border group-hover:ring-brand/40"
+              : "bg-white text-brand-deep ring-white/30 group-hover:ring-white/60"
+          }`}
         >
           {initial ?? <UserRound className="size-4" />}
         </span>
@@ -88,7 +97,7 @@ export function AccountMenu({
           <span
             aria-hidden="true"
             data-unread-dot
-            className="absolute right-0.5 top-0.5 size-3 rounded-full bg-destructive ring-2 ring-white"
+            className={`absolute right-0.5 top-0.5 size-3 rounded-full bg-destructive ring-2 ${paper ? "ring-background" : "ring-white"}`}
           />
         )}
       </summary>

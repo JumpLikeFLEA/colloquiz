@@ -2224,3 +2224,34 @@ Appended to in the same commit as the change it records. Referenced from
   after a revoke, and with the seat lapsed. Not reached: a toast.
   Do not offer Close access on a row the teacher did not make, and do not decide
   the state in the client: `teacher_grantable_courses()` returns it.
+- Alina Cher landing (2026-10-17, SHELL-027, docs/decisions/0165), SUPERSEDING
+  the 0078 landing layout (the gradient hero band, `HeroDemo`, the word chips,
+  the value strip and the gradient closing card); the EN/RU toggle, its cookie
+  and the sticky-footer rules stand. `/` is grid paper (`.grid-paper`) from the
+  header to the footer:
+  - Header: wordmark (`font-display`), the tagline "английский с умом" in
+    `font-accent` with the oval round "с умом" (Russian in both languages),
+    Courses, the toggle and Log in or the account chip, in their `paper` tone
+    (`LanguageToggle` and `AccountMenu` take `tone`; the default is the old
+    white-on-gradient look, so the course and lesson bands are unchanged).
+  - Hero: eyebrow, headline with "without the stress" / "без напряжения" on the
+    marker, subtitle, a violet button with an ink outline and the offset shadow
+    (`OFFSET_CTA_CLASS`), an "All courses" underlined link, a bio line (Alina's
+    photo in a circle, "Courses made by Alina", Instagram and YouTube), and the
+    comic panel with a yellow "10-15 minutes a day" sticker. No About me, no
+    reviews.
+  - Catalogue cards: ink outline, offset shadow, yellow level pill; a course with
+    no cover gets a grid-paper tile with the level in the display face. How it
+    works is record / feedback / compare, with yellow numeral tiles. The closing
+    CTA is a yellow card with ink text.
+  - New tokens `--comic-cell`, `--comic-frame`, `--comic-dino-big`,
+    `--comic-dino-small`, `--comic-drop` in `:root` and `.dark` (0162's table).
+    The dinosaur outline follows `--ink`, so it is a light line in dark.
+  - `SectionHeading` gained `display`; off by default, the course page keeps its
+    heading until SHELL-028. Removed: `HeroDemo`, `HeroChips`, `valueIcons`,
+    `.landing-float`.
+  Measured at 360px: `scrollWidth/innerWidth 360/360` (`npm run viewport360`,
+  and Edge in light and dark, EN and RU); 1440/1440 at 1440px. `npm run budget`
+  `/`: 179.1 KB before, 178.1 KB after, of 180. Not measured: a signed-in `/`.
+  Do not put the gradient band or the demo back on `/`, and do not drop the
+  dinosaur outline to `--comic-frame` in dark (too faint to read as a line).

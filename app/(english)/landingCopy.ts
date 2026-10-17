@@ -9,49 +9,45 @@
  * Every claim below is one docs/handoff.md already makes about the product
  * (lesson length, levels, free first lessons, explanations, ~1 hour per
  * course, a percentage rather than pass/fail) — no learner counts or other
- * figures that nothing measures (docs/decisions/0078).
+ * figures that nothing measures (docs/decisions/0078). The Alina Cher copy
+ * (the hero split, the comic panel, the bio, the voice-task steps) is new in
+ * SHELL-027 and pending the owner's review (docs/decisions/0165).
  */
 
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { PluralForms } from "@/lib/pluralCategory";
 
 /**
- * The hero mini-demo's item: `i2` from the `exit-check` lesson of
- * authored/courses/future-imperfect.json, copied here as marketing copy —
- * nothing reads the authored file at runtime (docs/handoff.md, "PDF treated
- * as the source of truth"). Language-neutral: it is an English exercise in
- * both locales; only its feedback strings are translated below.
+ * The brand tagline, "английский с умом" (docs/decisions/0156 Decision 11).
+ * Russian in both locales, as in the owner's English mockup; `mark` is the
+ * word group the hand-drawn oval goes around.
  */
-export const heroDemoItem = {
-  prompt: "Humans ___ on the Moon since 1969.",
-  options: [
-    { id: "a", text: "walked" },
-    { id: "b", text: "have walked" },
-    { id: "c", text: "are walking" },
-  ],
-  correctOptionId: "b",
+export const TAGLINE = { lead: "английский", mark: "с умом" } as const;
+
+/** Alina's public profiles (docs/decisions/0156 Decision 14). */
+export const SOCIAL_LINKS = {
+  instagram: "https://www.instagram.com/alliengll/",
+  youtube: "https://www.youtube.com/@AlinaCherBlog",
 } as const;
 
 type LandingStrings = {
   wordmark: string;
   login: string;
+  navCourses: string;
   languageGroupLabel: string;
   heroEyebrow: string;
-  heroTitle: string;
+  /** The headline is `heroTitleLead` plain, then `heroTitleMark` on the marker. */
+  heroTitleLead: string;
+  heroTitleMark: string;
   heroSubtitle: string;
   ctaPrimary: string;
   noAccount: string;
   catalogueLink: string;
-  demo: {
-    label: string;
-    hint: string;
-    correct: string;
-    wrong: string;
-    why: string;
-    retry: string;
-    source: string;
-  };
-  values: { title: string; text: string }[];
+  bio: string;
+  followLabel: string;
+  instagram: string;
+  youtube: string;
+  comic: { head: string; speak: string; um: string; sticker: string };
   catalogueEyebrow: string;
   coursesHeading: string;
   catalogueSubtitle: string;
@@ -61,6 +57,7 @@ type LandingStrings = {
   empty: string;
   stepsEyebrow: string;
   stepsHeading: string;
+  stepsSubtitle: string;
   steps: { title: string; text: string }[];
   closingTitle: string;
   closingText: string;
@@ -70,29 +67,26 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
   ru: {
     wordmark: "Alina Cher",
     login: "Войти",
+    navCourses: "Курсы",
     languageGroupLabel: "Язык",
     heroEyebrow: "Мини-курсы английского · A2–B2",
-    heroTitle: "Английский без напряжения",
+    heroTitleLead: "Английский",
+    heroTitleMark: "без напряжения",
     heroSubtitle:
       "Короткие курсы для тех, кто хочет понимать и говорить по-английски — на телефоне, в удобном темпе.",
     ctaPrimary: "Начать бесплатно",
     noAccount: "Для бесплатных уроков регистрация не нужна.",
     catalogueLink: "Все курсы",
-    demo: {
-      label: "Попробуйте прямо сейчас",
-      hint: "Выберите вариант",
-      correct: "Верно!",
-      wrong: "Не совсем.",
-      why: "«Since 1969» — мост из прошлого в настоящее, поэтому нужен present perfect: have walked.",
-      retry: "Ещё раз",
-      source: "Задание из курса «Future Imperfect»",
+    bio: "Курсы делает Алина",
+    followLabel: "Алина в соцсетях",
+    instagram: "Instagram",
+    youtube: "YouTube",
+    comic: {
+      head: "английский в моей голове",
+      speak: "английский, когда говорю",
+      um: "ээ...мм",
+      sticker: "10–15 минут в день",
     },
-    values: [
-      { title: "10–15 минут", text: "Один урок помещается в перерыв." },
-      { title: "Уровни A2–B2", text: "Для тех, кто уже знает основы." },
-      { title: "Первые уроки бесплатно", text: "Без регистрации — просто начните." },
-      { title: "Разбор каждой ошибки", text: "Объясняем, почему ответ верный или нет." },
-    ],
     catalogueEyebrow: "Каталог",
     coursesHeading: "Курсы",
     catalogueSubtitle: "Около часа на курс — его можно пройти за неделю.",
@@ -101,11 +95,12 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     minutes: "мин",
     empty: "Курсы скоро появятся — загляните позже.",
     stepsEyebrow: "Как это устроено",
-    stepsHeading: "Три шага до первого урока",
+    stepsHeading: "Скажите, услышьте, сравните",
+    stepsSubtitle: "Голосовые задания есть в курсах с потоком.",
     steps: [
-      { title: "Выберите курс", text: "Грамматика, слова, фразы — короткие темы, а не учебник целиком." },
-      { title: "Пройдите урок с телефона", text: "Немного теории, потом задания — и так несколько раз." },
-      { title: "Разберите ошибки", text: "У каждого ответа есть объяснение. Результат — в процентах, без «провалов»." },
+      { title: "Запишите голос", text: "Ответьте на голосовое задание вслух, прямо с телефона." },
+      { title: "Получите отклик", text: "Автор послушает вашу запись и ответит письменно." },
+      { title: "Сравните", text: "В конце запишите тот же ответ ещё раз и услышьте разницу." },
     ],
     closingTitle: "Первый урок — в одно касание",
     closingText: "Без регистрации и без оплаты.",
@@ -113,28 +108,25 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
   en: {
     wordmark: "Alina Cher",
     login: "Log in",
+    navCourses: "Courses",
     languageGroupLabel: "Language",
     heroEyebrow: "English mini-courses · A2–B2",
-    heroTitle: "English without the stress",
+    heroTitleLead: "English",
+    heroTitleMark: "without the stress",
     heroSubtitle: "Short courses for A2–B2 learners. Study on your phone, at your own pace.",
     ctaPrimary: "Start for free",
     noAccount: "Free lessons don’t need an account.",
     catalogueLink: "All courses",
-    demo: {
-      label: "Try it right now",
-      hint: "Pick an option",
-      correct: "Correct!",
-      wrong: "Not quite.",
-      why: "“Since 1969” is a bridge from the past to now, so it takes the present perfect: have walked.",
-      retry: "Try again",
-      source: "From the course “Future Imperfect”",
+    bio: "Courses made by Alina",
+    followLabel: "Alina on social media",
+    instagram: "Instagram",
+    youtube: "YouTube",
+    comic: {
+      head: "English in my head",
+      speak: "English I speak",
+      um: "uhh… um",
+      sticker: "10–15 minutes a day",
     },
-    values: [
-      { title: "10–15 minutes", text: "A lesson fits into a coffee break." },
-      { title: "Levels A2–B2", text: "For learners who know the basics." },
-      { title: "First lessons free", text: "No sign-up — just start." },
-      { title: "Every mistake explained", text: "See why each answer is right or wrong." },
-    ],
     catalogueEyebrow: "Catalogue",
     coursesHeading: "Courses",
     catalogueSubtitle: "About an hour per course — finish one in a week.",
@@ -143,11 +135,12 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     minutes: "min",
     empty: "Courses are coming soon — check back later.",
     stepsEyebrow: "How it works",
-    stepsHeading: "Three steps to your first lesson",
+    stepsHeading: "Speak, hear back, compare",
+    stepsSubtitle: "Voice tasks are part of cohort courses.",
     steps: [
-      { title: "Pick a course", text: "Grammar, vocabulary, phrases — short topics, not a whole textbook." },
-      { title: "Play a lesson on your phone", text: "A bit of theory, then exercises — repeated a few times." },
-      { title: "Learn from mistakes", text: "Every answer comes with an explanation. Your score is a percentage — no fails." },
+      { title: "Record", text: "Answer a voice task out loud, right on your phone." },
+      { title: "Get feedback", text: "The author listens and writes back to you." },
+      { title: "Compare", text: "Record the same prompt again at the end and hear the difference." },
     ],
     closingTitle: "Your first lesson is one tap away",
     closingText: "No sign-up, no payment.",

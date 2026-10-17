@@ -138,6 +138,13 @@
   --paper: #faf9fe;
   --grid-line: #f0eff5;
   --offset-shadow: #1e1a3a;
+  /* The landing's comic panel (SHELL-027, docs/decisions/0162 "Comic panel",
+     light values from the owner's SVGs in docs/design/alina-cher/). */
+  --comic-cell: #ffffff;
+  --comic-frame: #1e1a3a;
+  --comic-dino-big: #e4def9;
+  --comic-dino-small: #f3f0fc;
+  --comic-drop: #dcd5f7;
 }
 
 .dark {
@@ -269,6 +276,11 @@
   --paper: #17142a;
   --grid-line: #232035;
   --offset-shadow: #0a0817;
+  --comic-cell: #211c3b;
+  --comic-frame: #4a4370;
+  --comic-dino-big: #3a3170;
+  --comic-dino-small: #2e2759;
+  --comic-drop: #4b3f99;
 }
 
 /* The English surface's violet (SHELL-026, docs/decisions/0162, 0156 Decision
@@ -352,6 +364,11 @@
   --color-grid-line: var(--grid-line);
   --color-offset-shadow: var(--offset-shadow);
   --shadow-offset: 4px 4px 0 0 var(--offset-shadow);
+  --color-comic-cell: var(--comic-cell);
+  --color-comic-frame: var(--comic-frame);
+  --color-comic-dino-big: var(--comic-dino-big);
+  --color-comic-dino-small: var(--comic-dino-small);
+  --color-comic-drop: var(--comic-drop);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
@@ -469,22 +486,6 @@
    English surface ships no animation library (framer-motion is a forbidden
    signature on English routes, scripts/budget.ts). No colours here. */
 
-/* Slow bob for the hero's decorative word chips; each chip offsets it with
-   its own animation-delay so they never move in step. */
-.landing-float {
-  animation: landing-float 6s ease-in-out infinite;
-}
-
-@keyframes landing-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
 /* Sections fade up as they scroll into view, driven by the scroll position
    itself (a view() timeline), not by JS. Progressive enhancement: where
    animation-timeline is unsupported the @supports block never applies and
@@ -511,7 +512,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-float,
   .reveal-on-scroll {
     animation: none;
   }

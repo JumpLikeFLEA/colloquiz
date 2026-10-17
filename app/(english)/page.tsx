@@ -1,16 +1,19 @@
+import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { getPublicCourse } from "@/lib/coursePage";
 import { firstOpenLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
 import { getSignedInAccount } from "@/lib/signedInAccount";
-import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
+import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { AccountMenu } from "./AccountMenu";
-import { GradientBackdrop, HeroChips, valueIcons } from "./HeroDecor";
+import { ComicPanel } from "./ComicPanel";
+import { HeroBio } from "./HeroBio";
 import { LandingContent } from "./LandingContent";
 
 /**
  * SHELL-010 — the landing page: header, hero, then the catalogue. Built
- * once, late (docs/handoff.md, "Visual work" §3's landing-page exception).
+ * once, late (docs/handoff.md, "Visual work" §3's landing-page exception);
+ * redesigned as the Alina Cher landing by SHELL-027 (docs/decisions/0165).
  * Data is fetched here, server-side; the EN/RU toggle and rendering live in
  * the Client Component `LandingContent`, whose strings come from
  * `./landingCopy.ts` — landing-page-only bilingual copy, kept separate from
@@ -55,10 +58,17 @@ export default async function EnglishLandingPage() {
   const signedIn = await getSignedInAccount();
   const account = signedIn
     ? {
-        en: <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next="/" />,
-        ru: <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="ru" next="/" />,
+        en: <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next="/" tone="paper" />,
+        ru: <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="ru" next="/" tone="paper" />,
       }
     : null;
+
+  // The hero's server-rendered pieces, once per language (SHELL-027): the
+  // client LandingContent picks one with the toggle, so they add no client JS.
+  const perLang = (render: (lang: SurfaceLang) => ReactNode): Record<SurfaceLang, ReactNode> => ({
+    en: render("en"),
+    ru: render("ru"),
+  });
 
   return (
     // flex-1 (not min-h-svh): the root layout's wrapper div already sizes
@@ -73,9 +83,8 @@ export default async function EnglishLandingPage() {
         courses={courses}
         heroHref={heroHref}
         initialLang={initialLang}
-        backdrop={<GradientBackdrop />}
-        heroChips={<HeroChips />}
-        valueIcons={valueIcons()}
+        heroBio={perLang((lang) => <HeroBio lang={lang} />)}
+        comic={perLang((lang) => <ComicPanel lang={lang} />)}
         account={account}
       />
     </main>

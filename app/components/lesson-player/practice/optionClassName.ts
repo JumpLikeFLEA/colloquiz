@@ -1,10 +1,9 @@
 /**
  * Option-row classes for a `selection` item, shared by the player's
- * `SelectionRenderer` and the landing page's hero mini-demo
- * (`app/(english)/HeroDemo.tsx`, docs/decisions/0078). Lives in its own
- * module so the landing page can import it by direct path without pulling
- * the renderer (lib/items, dnd-free but still the player chunk) into `/`'s
- * bundle. Moved verbatim out of SelectionRenderer.tsx — no class changed.
+ * `SelectionRenderer` and, until SHELL-027 removed it, the landing page's
+ * hero mini-demo (docs/decisions/0078, 0165). Lives in its own module so a
+ * caller can import it by direct path without pulling the renderer (lib/items,
+ * dnd-free but still the player chunk) into its bundle. Moved verbatim out of SelectionRenderer.tsx — no class changed.
  */
 export function optionClassName({
   isSelected,
