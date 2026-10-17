@@ -2170,3 +2170,13 @@ Appended to in the same commit as the change it records. Referenced from
   RU wording in a browser. `npm run budget`: `/my` 171.5 KB before, 174.0 KB after (limit 180).
   Do not show a stored address again (only its hash exists), and do not make Replace a
   one-click action: it breaks every calendar already subscribed.
+- English surface renamed Alliengll to Alina Cher (2026-10-17, SHELL-025,
+  docs/decisions/0161), superseding 0137's name (not its share-card layout). The
+  wordmark (landing, course and lesson bands), the tab-title suffix
+  (`· Alina Cher`), og:site_name, the share-card wordmark, the footer
+  copyright, the English auth panel heading and its mobile logo label, and the
+  calendar feed's name all read "Alina Cher". The Colloquiz panel is unchanged.
+  The tagline "английский с умом" is not shown anywhere yet (SHELL-027). No new
+  classes or tokens. Do not rename `lib/alliengll/*` or the
+  `alliengll.attempts.v1` storage key: the second would orphan saved anonymous
+  attempts.

@@ -23,7 +23,7 @@ const row = (over: Partial<FeedRow>): FeedRow => ({
 });
 
 const NOW = new Date("2026-10-17T12:00:00Z");
-const opts = { now: NOW, lang: "en" as const, calendarName: "Alliengll" };
+const opts = { now: NOW, lang: "en" as const, calendarName: "Alina Cher" };
 const octets = (s: string) => new TextEncoder().encode(s).length;
 
 describe("escapeText", () => {

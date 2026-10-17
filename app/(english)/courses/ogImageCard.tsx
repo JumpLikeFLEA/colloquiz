@@ -6,7 +6,7 @@ import { isOgDecodableCoverUrl } from "@/lib/courseCover";
  * SHELL-009 — shared JSX for the English surface's opengraph-image.tsx route
  * segments: the course and lesson cards, and since docs/decisions/0137 the
  * surface default (app/(english)/opengraph-image.tsx) and the invite card.
- * Every card carries the Alliengll wordmark at the top left; `eyebrow` is a
+ * Every card carries the Alina Cher wordmark at the top left; `eyebrow` is a
  * pill before the level ("You're invited" on an invite).
  * Not a route file itself (no `opengraph-image`/`page`/`layout` name), so
  * Next attaches no convention to it — a plain shared component the two

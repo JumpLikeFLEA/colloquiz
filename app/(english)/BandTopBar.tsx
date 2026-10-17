@@ -5,7 +5,7 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
 
 /**
  * The header row inside the course and lesson pages' gradient bands
- * (docs/decisions/0079 D9): the "Alliengll" wordmark linking home, then on
+ * (docs/decisions/0079 D9): the "Alina Cher" wordmark linking home, then on
  * the right an optional `toggle` (the course page's EN/RU `LanguageToggle`,
  * docs/decisions/0080; lesson pages pass none) and an optional back link
  * (to the catalogue, or to the course).

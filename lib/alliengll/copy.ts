@@ -1,5 +1,5 @@
 /**
- * Learner-facing chrome strings for the English (Alliengll) surface that
+ * Learner-facing chrome strings for the English (Alina Cher) surface that
  * have ONE fixed language each. The lesson page (player buttons, lesson
  * band, completion card, signup offer, paid-lesson notice) is ENGLISH
  * (owner, 2026-10-07, docs/decisions/0080 Decision 5, reversing the
@@ -23,16 +23,17 @@
  */
 
 export const alliengllCopy = {
-  // The English surface's external name (owner, 2026-10-14, docs/decisions/
-  // 0137): the `%s · Alliengll` title template, og:site_name and the share
-  // cards' alt text. Colloquiz (/app) keeps lib/site.ts's SITE_NAME.
-  siteName: "Alliengll",
+  // The English surface's external name (owner, 2026-10-17, docs/decisions/
+  // 0161, superseding 0137's "Alliengll"): the `%s · Alina Cher` title
+  // template, og:site_name and the share cards' alt text. Colloquiz (/app)
+  // keeps lib/site.ts's SITE_NAME.
+  siteName: "Alina Cher",
 
   // docs/decisions/0079 D9: the course and lesson pages' header wordmark,
   // the same literal display text as the landing header's (0078). Equal to
   // siteName since 0137; kept separate because one is a page element and
   // the other is metadata.
-  wordmark: "Alliengll",
+  wordmark: "Alina Cher",
 
   landing: {
     heroTitle: "Английский без напряжения",

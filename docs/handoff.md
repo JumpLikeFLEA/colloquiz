@@ -539,8 +539,8 @@ sales of evergreen courses are wanted.
   panel (0135); renaming them is a separate call. **Changed (owner,
   2026-10-17, docs/decisions/0156 Decision 11):** the English surface
   becomes **Alina Cher** ("английский с умом"), with a violet primary
-  colour on that surface only (Decision 12). Planned, SHELL-025 and
-  SHELL-026; until those land, the live name is still Alliengll.
+  colour on that surface only (Decision 12). The name is live (SHELL-025,
+  docs/decisions/0161); the violet is planned (SHELL-026).
 - ~~How Colloquiz is reached from the English surface — a toggle, a footer
   link, a nav entry — and whether a signed-in Colloquiz user lands on `/` or
   on their Colloquiz home.~~ **Answered (owner, 2026-09-24):** a footer link

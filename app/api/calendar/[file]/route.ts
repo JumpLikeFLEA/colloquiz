@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (data === null || !Array.isArray(data)) return NOT_FOUND();
 
   const lang = parseCalendarLang(request.nextUrl.searchParams.get("lang"));
-  const body = buildIcs(data as FeedRow[], { now: new Date(), lang, calendarName: "Alliengll" });
+  const body = buildIcs(data as FeedRow[], { now: new Date(), lang, calendarName: "Alina Cher" });
   return new NextResponse(body, {
     status: 200,
     headers: {

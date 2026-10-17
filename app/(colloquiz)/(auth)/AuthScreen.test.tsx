@@ -137,7 +137,7 @@ describe("AuthScreen — Colloquiz entry", () => {
 describe("AuthScreen — panel by entry (ANON-017)", () => {
   afterEach(cleanup);
 
-  it("English-surface next shows the Alliengll panel, not the quiz copy", () => {
+  it("English-surface next shows the Alina Cher panel, not the quiz copy", () => {
     render(<AuthScreen initialMode="login" redirectTo="/courses/future-imperfect/lesson-1" />);
     expect(screen.getByText(/save your progress/)).toBeTruthy();
     expect(screen.queryByText(/advertisement/)).toBeNull();

@@ -9,8 +9,8 @@ import { LanguageToggle } from "./LanguageToggle";
  * the shared `LanguageToggle` the course pages also carry (docs/decisions/
  * 0080, extending the 2026-09-28 landing exception in docs/handoff.md,
  * "Audience and language"); the login link is landing-only.
- * "Alliengll" is the English surface's name (owner, 2026-10-14,
- * docs/decisions/0137).
+ * "Alina Cher" is the English surface's name (owner, 2026-10-17,
+ * docs/decisions/0161, superseding 0137).
  *
  * The login link carries `next=/`: that is what marks /login as the English
  * entry point, so a signup there threads the funnel source (ANON-014,

@@ -24,8 +24,8 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  // The English surface's name is Alliengll (owner, 2026-10-14,
-  // docs/decisions/0137): the tab title, the `· Alliengll` suffix and
+  // The English surface's name is Alina Cher (owner, 2026-10-17,
+  // docs/decisions/0161, superseding 0137): the tab title, the `· Alina Cher` suffix and
   // og:site_name. Pages set their own title/description; Next fills
   // og:title/og:description from those.
   title: {

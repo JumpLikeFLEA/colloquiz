@@ -12,7 +12,7 @@ import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
  * there would ship that whole object to `/` (docs/decisions/0079, "Budget").
  */
 export const FOOTER_HEADING = "Colloquiz ↗";
-export const FOOTER_COPYRIGHT = "© 2026 Alliengll";
+export const FOOTER_COPYRIGHT = "© 2026 Alina Cher";
 
 export const footerCopy: Record<SurfaceLang, { desc: string; privacy: string }> = {
   ru: { desc: "Наше приложение с квизами", privacy: "Конфиденциальность" },

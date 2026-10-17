@@ -114,7 +114,7 @@ function EnglishAuthPanel() {
           <GraduationCap size={32} className="text-white" />
         </div>
         <div>
-          <h2 className="text-3xl text-white leading-tight">Alliengll</h2>
+          <h2 className="text-3xl text-white leading-tight">Alina Cher</h2>
           <p className="text-white/60 mt-3 text-sm leading-relaxed">Sign in to save your progress<br />and pick up where you left off.</p>
         </div>
       </div>
@@ -374,7 +374,7 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-brand-accent">
               <GraduationCap size={16} className="text-white" />
             </div>
-            <span className="font-semibold text-foreground">{englishEntry ? "Alliengll" : "Colloquiz"}</span>
+            <span className="font-semibold text-foreground">{englishEntry ? "Alina Cher" : "Colloquiz"}</span>
           </div>
 
           {emailSent ? (

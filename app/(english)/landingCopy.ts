@@ -68,7 +68,7 @@ type LandingStrings = {
 
 export const landingCopy: Record<SurfaceLang, LandingStrings> = {
   ru: {
-    wordmark: "Alliengll",
+    wordmark: "Alina Cher",
     login: "Войти",
     languageGroupLabel: "Язык",
     heroEyebrow: "Мини-курсы английского · A2–B2",
@@ -111,7 +111,7 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     closingText: "Без регистрации и без оплаты.",
   },
   en: {
-    wordmark: "Alliengll",
+    wordmark: "Alina Cher",
     login: "Log in",
     languageGroupLabel: "Language",
     heroEyebrow: "English mini-courses · A2–B2",
