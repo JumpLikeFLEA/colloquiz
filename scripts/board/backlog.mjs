@@ -3907,6 +3907,326 @@ export const CARDS = [
       'Printed on seeded data: one ping per student across two cron runs; a done or unlinked student gets none.',
     ],
   },
+  // AI voice feedback on every course and the "Alina Cher" redesign of the English learner
+  // surface (owner, 2026-10-17, docs/decisions/0156). Ranked above the Telegram reminders.
+  {
+    key: 'VOICE-009',
+    title: 'AssemblyAI and Claude measured on real takes',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2805,
+    dependsOn: [],
+    goal:
+      'Before anything is built on them, measure the two providers 0156 Decision 4 chose: ' +
+      'AssemblyAI for speech-to-text, which must keep the fillers and false starts ("I go, I went") ' +
+      'that the analysis highlights, and claude-sonnet-5-5 for the analysis.',
+    acceptance: [
+      'AssemblyAI on owner takes of 60, 180 and 600 s, recorded in webm, ogg and mp4, through its EU endpoint if one exists. Printed for each: whether the fillers and false starts survive, time to transcript, cost, and that a DELETE removes the transcript (a GET afterwards returns 404).',
+      'claude-sonnet-5-5 on at least 5 bench-style transcripts with a draft instruction and Zod structured output (messages.parse). Printed: latency, input, output and cache-read tokens, cost per analysis, and the share of highlight quotes found verbatim in the transcript.',
+      'The Vercel function duration limit for work started with after(), cited from Vercel\'s docs and measured on a preview deployment, against the slowest take above.',
+      'Output: a decision file with the figures, a recommended cap on analysed length if 600 s takes do not fit, and whether a webhook is needed. If AssemblyAI drops the disfluencies, stop and return to the owner (0156 "Revisit when").',
+    ],
+    notes: 'Owner recordings only; no learner audio. The owner approves the API spend before the runs.',
+  },
+  {
+    key: 'OPS-026',
+    title: 'Legal revision: AI feedback and recordings on free courses',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2810,
+    dependsOn: ['VOICE-009'],
+    goal:
+      'The live privacy policy says no personal data reaches an AI system (§12), that recordings are ' +
+      'collected only in cohort courses and that free-lesson practice never leaves the device; ' +
+      'subprocessors.md lists Anthropic as not a subprocessor. 0156 makes all of that untrue, so the ' +
+      'text changes before the feature goes live (0156 Decision 16).',
+    acceptance: [
+      'Drafts for docs/release/legal/privacy-policy.md: self-paced uploads by signed-in learners; transcription and AI analysis; retention (6 months after sending for self-paced, run end + 6 months for cohort; Day 1 quotes carried into the final analysis); that course authors hear and read free-course takes; §12 rewritten; terms-of-service.md where it describes voice review.',
+      'subprocessors.md: an AssemblyAI row and Anthropic moved into the processor list, each with the data sent, the processing location, the transfer basis and its DPA (confirmed, not assumed). Whether either provider trains on submitted data, and how it is turned off, is cited from its terms.',
+      'Material change per docs/decisions/0095: version bump, the in-app notice, and an "AI feedback" label on every analysis (EU AI Act Art. 50). Why GDPR Art. 22 does not apply is stated.',
+      'The owner reviews and publishes. Until then VOICE_ANALYSIS_MODE stays off in production (printed from the Vercel env list).',
+    ],
+  },
+  {
+    key: 'VIS-003',
+    title: 'Type and colour candidates for the Alina Cher look',
+    milestone: 'M4',
+    epic: 'VIS',
+    type: 'decision',
+    rank: 2815,
+    dependsOn: [],
+    goal:
+      'The redesign (0156 Decisions 12 and 13) needs a heavy display font and a handwritten accent font, ' +
+      'both with Cyrillic, and a violet. The screenshots are the only source, so the owner picks from ' +
+      'rendered candidates rather than from names.',
+    acceptance: [
+      'A temporary page at app/(studio)/studio/dev/type/page.tsx (Studio-only) renders the hero headline in RU and EN in 3-4 display fonts and the tagline in 3 handwritten fonts (all with Cyrillic; candidates such as Unbounded, Dela Gothic One, Rubik 800 / Caveat, Neucha, Bad Script), with the yellow marker, the hand-drawn oval, the grid paper and 2-3 violets.',
+      'Screenshots at 360 and 1440, light and dark. Printed: each font\'s woff2 size for the latin + cyrillic subsets, and each violet\'s contrast against white and against the paper background.',
+      'Options laid out; the owner picks. The page is deleted by SHELL-026.',
+    ],
+  },
+  {
+    key: 'VOICE-010',
+    title: 'Signed-in learners send voice takes on self-paced courses',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2820,
+    dependsOn: [],
+    goal:
+      'Today only a cohort enrolee can send a take (060 submit_voice_recording, 0110 Decision 2), and ' +
+      'the Storage policy needs an entitlement, so a free-course learner cannot upload at all. 0156 ' +
+      'Decisions 2, 3 and 7 open sending to any signed-in learner who can open the lesson.',
+    acceptance: [
+      'Migration 084: voice_submissions.enrolment_id becomes nullable, with a partial unique index on (user_id, lesson_id, block_id) WHERE enrolment_id IS NULL; no existing row changes. Re-emitted: submit_voice_recording (a self-paced slot when no enrolment opens the lesson), save_voice_feedback (refuses a self-paced take) and voice_purge_due (a self-paced take is due 6 months after submitted_at). The Storage INSERT policy adds a published course with an open lesson the caller may open. Written, not applied; print rule.',
+      'lib/voice/taskContext.ts gives send mode to a signed-in learner on an open lesson when VOICE_ANALYSIS_MODE is not off; anonymous stays practice. Vitest.',
+      'Full protocol: anonymous, signed-in, granted, enrolled and editor callers across anyone, signed_in and entitled lessons, positive controls printed. A seeded self-paced take is absent from review_queue and the Studio inbox. voice_purge_due lists a self-paced take at 6 months and not a day earlier (printed). The anonymous-path rows re-run.',
+    ],
+    notes: 'Not applied to hosted before OPS-026 is published: once 084 is there, a hand-made client could upload whatever the env flag says.',
+  },
+  {
+    key: 'VOICE-011',
+    title: 'Voice analyses: table, send ledger and caps',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2825,
+    dependsOn: ['VOICE-010'],
+    goal:
+      'Store one analysis per current take, count sends across replaces, and enforce 0156 Decision 6: ' +
+      'self-paced 3 analysed sends per task, cohort unlimited sends with the first 3 analysed, 10 ' +
+      'analyses per learner per day, and a hidden analysis gives its send back.',
+    acceptance: [
+      'Migration 085: voice_analyses (one row per take, ON DELETE CASCADE from voice_submissions; status, transcript, result JSONB, instruction, baseline take, prompt_version, model, usage, lease, hidden_at/hidden_by) and voice_analysis_sends (a ledger that outlives replaced takes; uncounted when hidden or failed on our side). A BEFORE INSERT trigger in the 026/038 shape raises PT429 on the caps. delete_my_account re-emitted from 082\'s body. Written, not applied; print rule.',
+      'A self-paced 4th send is refused before anything is replaced; a cohort 4th send is accepted and gets no analysis row; the 11th analysis in 24 h is refused with the next free time; after a hide, a send is accepted again; a late result for a replaced take writes nothing (all printed).',
+      'RLS: the owner reads their own non-hidden rows; an editor reads rows on courses they edit; no app role writes. hide_voice_analysis needs can_edit_course and _studio_can_write (083). Full protocol with positive controls beside every denial.',
+    ],
+  },
+  {
+    key: 'AUTH-020',
+    title: 'Expressions to listen for, on the voice task',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 2830,
+    dependsOn: [],
+    goal:
+      'The analysis looks for the lesson\'s chunks, so the author lists them on the voice task ' +
+      '(0156 Decision 8), one per line as on the bench.',
+    acceptance: [
+      'VoiceTaskBlockSchema (lib/lessons/taskBlocks.ts) gains an optional listenFor: string[] (at most 12 items, 1-60 characters each, unique after trimming). Every existing lesson document still parses (vitest over the authored course files).',
+      'VoiceTaskForm.tsx edits the list; a new after task starts with a copy of the before task\'s list. Publish, import-lesson, validate-course-file and the plain-text export carry the field.',
+      'Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'VOICE-012',
+    title: 'Transcribe, analyse and store a take',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2835,
+    dependsOn: ['VOICE-009', 'VOICE-011', 'AUTH-020'],
+    goal:
+      'A sent take becomes a stored analysis without a person in the loop (0156 Decisions 1, 4 and 5): ' +
+      'AssemblyAI transcript, then claude-sonnet-5-5 with structured output, validated before storing.',
+    acceptance: [
+      'Pure modules under lib/voice/analysis/ (mode, result schema, span validation, request building) under vitest: a highlight not found verbatim is dropped, overlaps are resolved, every count is computed from the kept highlights, and a quote containing markup stays plain text.',
+      'assemblyai.ts (fetch; no new npm dependency) and claude.ts (lazy client; model from VOICE_ANALYSIS_MODEL, default claude-sonnet-5-5; messages.parse with a Zod output format; the instruction as a cached system block; the server-side refusal fallback; a refusal or max_tokens ends the job failed and uncounted). The submit route starts the work in after() under a lease; a status route re-claims an expired lease; the daily cron fails rows stuck over 24 h.',
+      'Local run with real keys: a take reaches done; a step killed mid-way recovers on the next status poll; paused uploads and creates no analysis; the transcript is deleted at AssemblyAI after it is stored. Printed: neither provider\'s payload carries a user id, name or email.',
+    ],
+  },
+  {
+    key: 'VOICE-013',
+    title: 'The first and final instructions, version 1',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2840,
+    dependsOn: ['VOICE-012'],
+    goal:
+      'Draft the two instructions the bench used (0156 Decision 10): "first" sets a goal, "final" ' +
+      'compares with the stored first analysis and its goal. English output (Decision 5).',
+    acceptance: [
+      'Versioned instruction files (first.v1, final.v1); a changed instruction is a new file, and each stored analysis records its version. Learner speech is passed as data, never as instructions.',
+      'Routing under vitest: an after task gets final; every other task gets first; the goal card only for before; a final with no stored baseline runs as first.',
+      '8 owner transcripts run through both; the outputs are posted on the issue for the owner\'s sign-off before the card closes.',
+    ],
+  },
+  {
+    key: 'SHELL-025',
+    title: 'Rename the English surface to Alina Cher',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2845,
+    dependsOn: [],
+    goal: 'The English surface is called "Alina Cher", tagline "английский с умом" (0156 Decision 11, superseding 0137).',
+    acceptance: [
+      'lib/alliengll/copy.ts siteName and wordmark, the title template and og:site_name in app/(english)/layout.tsx, courses/ogImageCard.tsx, footerCopy.ts and the English auth panel in AuthScreen.tsx read Alina Cher. Internal module names and the Telegram bot username stay.',
+      '`rg Alliengll` over app/ and lib/ prints only module paths and the allowed leftovers, listed. A share card fetched and decoded shows the new wordmark. A decision file supersedes 0137 for the name.',
+      '`npm run budget` before and after for /.',
+    ],
+  },
+  {
+    key: 'SHELL-026',
+    title: 'Alina Cher foundation: violet, tokens and fonts',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2850,
+    dependsOn: ['VIS-003'],
+    goal:
+      'The shared base every redesign card builds on (0156 Decisions 12 and 13), with the fonts and ' +
+      'violet the owner picked in VIS-003.',
+    acceptance: [
+      'A surface class on the English root layout overrides --brand* with the violet, light and dark; it also works on a wrapper element outside that layout (the auth panel). New tokens in app/globals.css :root and .dark: highlight yellow, ink, grid line, offset shadow. Colloquiz and Studio stay indigo (screenshots); the hex-literal check passes; .design-sync/tw-input.css regenerated.',
+      'The chosen fonts load through next/font with the cyrillic subset; the accent font is not preloaded. The marker, the oval and the grid paper are server-rendered CSS/SVG, no client JS. The VIS-003 page is deleted.',
+      '`npm run budget` before and after for every English route; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'VOICE-014',
+    title: 'The learner\'s voice feedback view',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2855,
+    dependsOn: ['VOICE-012', 'SHELL-026'],
+    goal:
+      'The learner sees the bench\'s right-hand side under their recording, in the new look (0156 ' +
+      'Decisions 1, 5 and 8).',
+    acceptance: [
+      'Inside the voice-task card, labelled "AI feedback": the highlighted transcript with a tap-to-explain on each highlight, the count cards, lesson chunks in your speech, main error, how it sounds, what worked, and the goal (first) or goal reached, then -> now, stat deltas, next step and a collapsed Day 1 feedback (final).',
+      'Every state: analysing (polling that backs off and pauses in a hidden tab), failed, withdrawn, paused, the per-task and daily limits, and on a cohort course "AI limit reached; your teacher will still answer". A "Try to use" list on every task except a before task.',
+      'A lazy chunk. An RTL test shows markup inside a quote rendered as text. `npm run budget` before and after for the free lesson, a cohort lesson and a self-paced voice lesson. Usable at 360px in every state; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'VOICE-015',
+    title: 'Studio: analysed takes, and Hide',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2860,
+    dependsOn: ['VOICE-014'],
+    goal:
+      'The author sees every analysed take on her courses with its audio, self-paced ones included, and ' +
+      'can withdraw a wrong analysis (0156 Decision 9).',
+    acceptance: [
+      '/studio/voice lists analysed takes on the courses the caller edits (course, lesson, learner, sent, status), filterable by course; the detail shows signed audio and the learner\'s renderer, read-only.',
+      'Hide asks for confirmation; the learner then sees "Feedback withdrawn - send again" and the send is given back. Disabled under a lapsed seat (083).',
+      'The cohort review card shows the analysis beside the written-feedback box; the queue, the inbox and the published-feedback lock are unchanged, and a seeded self-paced take never appears in them. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'VOICE-016',
+    title: 'Voice analyses in export, erasure and the purge',
+    milestone: 'M4',
+    epic: 'VOICE',
+    type: 'task',
+    rank: 2865,
+    dependsOn: ['VOICE-011', 'VOICE-012'],
+    goal: 'Transcripts and analyses follow the audio (0156 Decision 7).',
+    acceptance: [
+      'lib/accountExport.ts includes the learner\'s transcripts and analyses, hidden ones too, through an own-rows SECURITY DEFINER function. Vitest.',
+      'The purge removes audio, transcript and analysis together, 6 months after sending for self-paced and 6 months after the run for cohort; ledger rows older than 6 months are deleted.',
+      'Full protocol on a seeded account: erasure leaves no analysis or ledger row; counts printed before and after.',
+    ],
+  },
+  {
+    key: 'OPS-027',
+    title: 'AI voice feedback goes live',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2870,
+    dependsOn: ['OPS-026', 'VOICE-013', 'VOICE-014', 'VOICE-015', 'VOICE-016'],
+    goal: 'Turn the feature on in production once the legal revision is published (0156 Decision 16).',
+    acceptance: [
+      'Migrations 084 and 085 applied through the hosted-apply gate, one at a time, with its evidence.',
+      'Production env set (keys, VOICE_ANALYSIS_MODEL, VOICE_ANALYSIS_MODE); spend limits set at AssemblyAI and Anthropic; the DPAs on file (OPS-026).',
+      'On production: a self-paced take and a cohort take each reach done; paused is checked and then set back to on (printed).',
+    ],
+  },
+  {
+    key: 'SHELL-027',
+    title: 'The Alina Cher landing',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2875,
+    dependsOn: ['SHELL-025', 'SHELL-026'],
+    goal:
+      'The landing from the owner\'s screenshots (0156 Decision 14), with the parts below the hero ' +
+      'designed here.',
+    acceptance: [
+      'Header: wordmark and tagline, Courses (#catalogue), the EN/RU toggle (0080), Log in or the account chip. Hero: the headline with the marker and the oval, the subtitle, "Start for free" through firstFreeLesson() (0070 Decision 2), "All courses", the bio line with Alina\'s photo (under public/images), the social row (https://www.instagram.com/alliengll/, https://www.youtube.com/@AlinaCherBlog), the comic panel and the "10-15 minutes a day" sticker. No About me and no reviews.',
+      'HeroDemo is removed; decoration stays server-rendered (0078). The catalogue, how-it-works (record, feedback, compare, with no AI promise before OPS-027) and the closing CTA restyled; the EN and RU copy is in landingCopy.ts, pending the owner\'s review.',
+      '`npm run budget` before and after for /, at or under 180 KB. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+    notes: 'The photo and the comic illustrations must arrive as files; a screenshot is not an asset.',
+  },
+  {
+    key: 'SHELL-028',
+    title: 'Course page and lesson chrome in the Alina Cher look',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2880,
+    dependsOn: ['SHELL-026'],
+    goal: 'The reel path from the landing to a lesson reads as one product (0156 Decision 13).',
+    acceptance: [
+      'The course hero, the lesson list, LessonBand, LessonProgressStrip and LessonCompletion restyled with the SHELL-026 tokens. Nothing about access, scoring or the one-tap path changes.',
+      '`npm run budget` before and after for the course page and the free lesson. Usable at 360px in each state; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'PROG-007',
+    title: '/my and the before/after screen in the Alina Cher look',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 2885,
+    dependsOn: ['SHELL-026', 'VOICE-014'],
+    goal: 'The learner\'s own pages carry the new look and the AI feedback (0156 Decisions 3 and 13).',
+    acceptance: [
+      '/my and /runs/[runId] restyled. /my lists the learner\'s analysed takes with a link to each lesson; /runs shows the final analysis beside the author\'s final comment.',
+      '`npm run budget` before and after for /my and /runs (signed in). Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'SHELL-029',
+    title: 'The English sign-in panel in the Alina Cher look',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2890,
+    dependsOn: ['SHELL-026'],
+    goal: 'A learner arriving at /login from the English surface sees the same product (0156 Decision 13).',
+    acceptance: [
+      'EnglishAuthPanel takes the surface class locally; the Colloquiz panel and form keep indigo (screenshots of both).',
+      '`npm run budget` before and after for /login. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'SHELL-030',
+    title: 'Landing: the Day 1 / Day 7 audio card',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2895,
+    dependsOn: ['SHELL-027'],
+    goal: 'The clickable before/after card from the screenshots, with the owner\'s clips (0156 Decision 14).',
+    acceptance: [
+      'Two short clips from the owner under public/, played through native audio elements with play controls that work by keyboard; the waveform is server-rendered.',
+      'Whose voice it is and that they agreed to its use is recorded in the decision file.',
+      '`npm run budget` before and after for /, at or under 180 KB. Usable at 360px; docs/ui-decisions.md entry.',
+    ],
+    notes: 'Waits on the owner\'s clips; the owner moves it to Hold until they arrive.',
+  },
   {
     key: 'CNT-017',
     title: 'Future Imperfect content and production data fixes',

@@ -42,6 +42,14 @@ speaking practice and a person who gives feedback — what the partner's
 audience survey (21 respondents, October 2026; her caveat: a small, warm
 sample) reported missing. Still out of scope for both lines: spaced
 repetition, placement tests, a comprehensive curriculum, LLM grading.
+**Exception (owner, 2026-10-17, docs/decisions/0156):** a voice take on
+any course, free, paid or cohort, gets an automatic AI analysis, shown to
+the learner at once. Speech-to-text keeps the fillers, then Claude marks
+the expressions the learner used, one main error, a goal, and how the
+final recording compares with the first. It is feedback, not a grade; it
+is never scored. On a cohort course it sits alongside the partner's
+written feedback. Planned (M4, VOICE-009..016, OPS-026/027); production
+stays without it until the legal revision (OPS-026) is published.
 
 **A third line: teachers on manual seats (owner, 2026-10-15,
 docs/decisions/0141).** An English teacher pays, outside the app, for a seat
@@ -362,7 +370,12 @@ by a person and never scored, so they don't touch `lib/items` or the
 `{ earned, possible }` contract. They are a third block kind beside theory
 and practice, outside the lesson score and outside "completion = every lesson
 attempted". The `free_text` rule above is unaffected; it is about auto-scored
-items.
+items. **Changed (owner, 2026-10-17, docs/decisions/0156):** a person no
+longer has to review a take before the learner hears back. Every take a
+signed-in learner sends gets an AI analysis at once, on every course. On a
+cohort course the partner's written feedback continues alongside it. The
+analysis is still never scored and still outside the lesson score and
+completion. Planned, M4.
 
 Per-type scoring and normalisation decisions are settled in
 `docs/decisions/0008`–`0015`. Read those before changing any scoring
@@ -469,7 +482,12 @@ sales of evergreen courses are wanted.
   `/studio/authors`, freeze on lapse, teacher-granted access, catalogue
   promotion, "By <name>", and the teacher terms decision that gates the
   first external teacher. The Telegram reminders (COH-010..013) move to
-  the bottom of M4.
+  the bottom of M4. **Grown again (owner, 2026-10-17,
+  docs/decisions/0156):** AI voice feedback on every course
+  (VOICE-009..016, AUTH-020, with the legal revision OPS-026 and the
+  go-live OPS-027), and the "Alina Cher" redesign of the whole English
+  learner surface (VIS-003, SHELL-025..030, PROG-007), ranked above the
+  Telegram reminders.
 
 ## Deliberately out of scope for v1
 
@@ -478,7 +496,9 @@ sales of evergreen courses are wanted.
   SRS only earns its keep in long-term comprehensive learning. Adding it would
   turn this into a language-learning app, which it is not. See "Product
   thesis".
-- LLM grading of free writing.
+- LLM grading of free writing. (Not to be confused with the automatic AI
+  analysis of voice takes, which is planned: 0156. That analysis is
+  feedback and is never scored.)
 - XP, leaderboards or achievements for English courses — English gets its own
   progression, separate from Colloquiz XP.
 - Full interface translation.
@@ -516,7 +536,11 @@ sales of evergreen courses are wanted.
   surface's name is **Alliengll**: its tab titles (`%s · Alliengll`),
   og:site_name and share cards. Colloquiz (`/app`) keeps its own name,
   same domain. The auth screens still read "Colloquiz" outside the English
-  panel (0135); renaming them is a separate call.
+  panel (0135); renaming them is a separate call. **Changed (owner,
+  2026-10-17, docs/decisions/0156 Decision 11):** the English surface
+  becomes **Alina Cher** ("английский с умом"), with a violet primary
+  colour on that surface only (Decision 12). Planned, SHELL-025 and
+  SHELL-026; until those land, the live name is still Alliengll.
 - ~~How Colloquiz is reached from the English surface — a toggle, a footer
   link, a nav entry — and whether a signed-in Colloquiz user lands on `/` or
   on their Colloquiz home.~~ **Answered (owner, 2026-09-24):** a footer link
