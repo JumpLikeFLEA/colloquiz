@@ -4193,6 +4193,24 @@ export const CARDS = [
     ],
   },
   {
+    key: 'SHELL-032',
+    title: 'Landing: the square comic panel; the old headline removed',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2878,
+    dependsOn: ['SHELL-031'],
+    goal:
+      'The comic panel is the owner\'s square four-quarter block (docs/design/alina-cher/owner-landing-hero-*.png), ' +
+      'and "Английский без напряжения" is gone from the whole surface (owner, 2026-10-17).',
+    acceptance: [
+      'The comic panel is one square framed block of four quarters, as in the screenshots: the big dinosaur top left on the light violet cell, "английский в моей голове" / "English in my head" top right, the small dinosaur with its "ээ...мм" / "uhh... um" bubble and the dashed line bottom left, "английский, когда говорю" / "English I speak" bottom right; the offset shadow and the round "10–15" sticker overlapping its top right corner. Server-rendered, tokens only, no client JS.',
+      '`rg "без напряжения" app lib` prints nothing. The share cards (/, invite, course and lesson fallbacks) and the English meta description use the SHELL-031 headline and subtitle instead of alliengllCopy.landing.heroTitle / heroSubtitle; a share card fetched and decoded shows it.',
+      'The account menu keeps "Вы вошли как" / "Вы вошли в аккаунт": accountCopy.ts is unchanged (owner, 2026-10-17), recorded in the decision file.',
+      '`npm run budget` before and after for /, at or under 180 KB. Usable at 360px, EN and RU, light and dark; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
     key: 'SHELL-028',
     title: 'Course page and lesson chrome in the Alina Cher look',
     milestone: 'M4',
