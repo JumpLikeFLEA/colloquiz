@@ -62,3 +62,21 @@ export const MILESTONE_TITLES = {
   M3: 'M3 — First paid cohort',
   M4: 'M4 — Progression & polish',
 };
+
+// `gh issue list` and `gh project item-list` return at most --limit rows and
+// say nothing when more exist. The old hardcoded 200 was crossed on
+// 2026-10-17 (203 board issues and 203 project items after the 0156 cards):
+// a bootstrap dry run then planned duplicate OPS-001..003 issues, and 3 of the
+// 19 new cards were missing from the item list. A result that fills the limit
+// is therefore treated as truncated, never trusted.
+export const GH_LIST_LIMIT = 1000;
+
+export function notTruncated(what, rows) {
+  if (rows.length >= GH_LIST_LIMIT) {
+    throw new Error(
+      `${what} returned ${rows.length} rows, the --limit of ${GH_LIST_LIMIT}: the list may be cut off. ` +
+        'Raise GH_LIST_LIMIT in scripts/board/config.mjs.',
+    );
+  }
+  return rows;
+}

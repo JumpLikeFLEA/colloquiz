@@ -7,7 +7,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { CARDS } from './backlog.mjs';
-import { OWNER, PROJECT_NUMBER, BOARD_LABEL, STATUS_COLUMNS } from './config.mjs';
+import { OWNER, PROJECT_NUMBER, BOARD_LABEL, STATUS_COLUMNS, GH_LIST_LIMIT, notTruncated } from './config.mjs';
 
 const HELP = `Usage: node scripts/board/board-move.mjs <KEY> "<column>"
 
@@ -28,7 +28,7 @@ function ghJson(args) {
 }
 
 function findIssueByKey(key) {
-  const issues = ghJson([
+  const issues = notTruncated('gh issue list', ghJson([
     'issue',
     'list',
     '--label',
@@ -38,8 +38,8 @@ function findIssueByKey(key) {
     '--json',
     'number,title,url',
     '--limit',
-    '200',
-  ]);
+    String(GH_LIST_LIMIT),
+  ]));
   for (const issue of issues) {
     const m = TITLE_RE.exec(issue.title);
     if (m && m[1] === key) return issue;
@@ -48,7 +48,8 @@ function findIssueByKey(key) {
 }
 
 function findProjectItemStatus(issueNumber) {
-  const data = ghJson(['project', 'item-list', String(PROJECT_NUMBER), '--owner', OWNER, '--format', 'json', '--limit', '200']);
+  const data = ghJson(['project', 'item-list', String(PROJECT_NUMBER), '--owner', OWNER, '--format', 'json', '--limit', String(GH_LIST_LIMIT)]);
+  notTruncated('gh project item-list', data.items);
   for (const item of data.items) {
     if (item.content && item.content.number === issueNumber) {
       return item.status ?? null;

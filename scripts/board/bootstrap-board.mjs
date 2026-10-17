@@ -35,7 +35,7 @@ import {
   PROJECT_NUMBER,
   STATUS_COLUMNS,
   BOARD_LABEL,
-  MILESTONE_TITLES,
+  MILESTONE_TITLES, GH_LIST_LIMIT, notTruncated,
 } from './config.mjs';
 
 const READY = STATUS_COLUMNS[0]; // "Ready" — first column in workflow order
@@ -180,7 +180,7 @@ function ensureMilestones(dryRun, log) {
 // known card key, or a key claimed by more than one issue. Conflicted keys
 // are reported and left untouched rather than silently duplicated.
 function fetchExistingBoardIssues(log) {
-  const issues = ghJson([
+  const issues = notTruncated('gh issue list', ghJson([
     'issue',
     'list',
     '--label',
@@ -190,8 +190,8 @@ function fetchExistingBoardIssues(log) {
     '--json',
     'number,title,body,milestone,labels,url',
     '--limit',
-    '200',
-  ]);
+    String(GH_LIST_LIMIT),
+  ]));
   const byKey = new Map();
   const conflictedKeys = new Set();
   const knownKeys = new Set(CARDS.map((c) => c.key));
@@ -225,7 +225,8 @@ function fetchExistingBoardIssues(log) {
 }
 
 function fetchProjectItemsByIssueNumber() {
-  const data = ghJson(['project', 'item-list', String(PROJECT_NUMBER), '--owner', OWNER, '--format', 'json', '--limit', '200']);
+  const data = ghJson(['project', 'item-list', String(PROJECT_NUMBER), '--owner', OWNER, '--format', 'json', '--limit', String(GH_LIST_LIMIT)]);
+  notTruncated('gh project item-list', data.items);
   const byNumber = new Map();
   for (const item of data.items) {
     if (item.content && typeof item.content.number === 'number') {

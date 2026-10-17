@@ -30,7 +30,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { CARDS, MILESTONES, rankOf } from './backlog.mjs';
-import { OWNER, PROJECT_NUMBER, BOARD_LABEL, HOLD_COLUMN } from './config.mjs';
+import { OWNER, PROJECT_NUMBER, BOARD_LABEL, HOLD_COLUMN, GH_LIST_LIMIT, notTruncated } from './config.mjs';
 
 const HELP = `Usage: node scripts/board/next-card.mjs
 
@@ -48,7 +48,7 @@ function ghJson(args) {
 }
 
 function fetchIssuesByKey() {
-  const issues = ghJson([
+  const issues = notTruncated('gh issue list', ghJson([
     'issue',
     'list',
     '--label',
@@ -58,8 +58,8 @@ function fetchIssuesByKey() {
     '--json',
     'number,title,state',
     '--limit',
-    '200',
-  ]);
+    String(GH_LIST_LIMIT),
+  ]));
   const byKey = new Map();
   for (const issue of issues) {
     const m = TITLE_RE.exec(issue.title);
@@ -69,7 +69,8 @@ function fetchIssuesByKey() {
 }
 
 function fetchStatusByIssueNumber() {
-  const data = ghJson(['project', 'item-list', String(PROJECT_NUMBER), '--owner', OWNER, '--format', 'json', '--limit', '200']);
+  const data = ghJson(['project', 'item-list', String(PROJECT_NUMBER), '--owner', OWNER, '--format', 'json', '--limit', String(GH_LIST_LIMIT)]);
+  notTruncated('gh project item-list', data.items);
   const byNumber = new Map();
   for (const item of data.items) {
     if (item.content && typeof item.content.number === 'number') {
