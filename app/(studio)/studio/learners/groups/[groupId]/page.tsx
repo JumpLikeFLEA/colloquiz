@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { getLinkedStudents } from "@/lib/teacherLinksServer";
+import { getCalendarEvents } from "@/lib/calendarEventsServer";
+import { eventsForGroup } from "@/lib/calendarEvents";
+import { CalendarEventsSection } from "@/app/(studio)/studio/CalendarEvents";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 import { getGroupMemberRows, getTeacherGroups } from "@/lib/teacherGroupsServer";
 import { membersByGroup } from "@/lib/teacherGroups";
 import { homeworkForGroup } from "@/lib/homework/homework";
@@ -27,12 +31,13 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
   if (!UUID.test(groupId)) notFound();
   const id = groupId.toLowerCase();
 
-  const [groups, memberRows, students, assignCtx, homework] = await Promise.all([
+  const [groups, memberRows, students, assignCtx, homework, events] = await Promise.all([
     getTeacherGroups(),
     getGroupMemberRows(),
     getLinkedStudents(),
     loadAssignContext(),
     loadHomeworkViews(),
+    getCalendarEvents(),
   ]);
   const group = groups.find((g) => g.id === id);
   if (!group) notFound();
@@ -68,6 +73,12 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
           />
         }
       />
+      {/* COH-014: dated events (084), seen by this group's students. */}
+      <section className="rounded-2xl border border-border bg-card px-4 py-3">
+        <WriteArea>
+          <CalendarEventsSection scope={{ kind: "group", groupId: id }} events={eventsForGroup(events, id)} />
+        </WriteArea>
+      </section>
       <GroupDetail groupId={id} name={group.name} members={members} candidates={candidates} />
     </div>
   );

@@ -258,19 +258,21 @@ BEGIN
     pg_temp.as_anon('SELECT public.studio_can_write()::text'), 'ERR:42501');
 
   -- Coverage: every function that guards on the predicate is the 35 write RPCs
-  -- plus the two messaging bodies and the predicate's own wrappers; every OTHER
-  -- function that uses an editor or teacher gate is a read, a learner-side
-  -- path, or a reply (listed, so a new unguarded write RPC fails here).
+  -- plus the two messaging bodies and the predicate's own wrappers, plus (084,
+  -- COH-014) _calendar_scope_check, the one check behind the three event
+  -- writes; every OTHER function that uses an editor or teacher gate is a
+  -- read, a learner-side path, or a reply (listed, so a new unguarded write
+  -- RPC fails here).
   PERFORM pg_temp.check_eq('guarded functions (prosrc calls _studio_can_write), excluding the helpers',
     (SELECT count(*)::text FROM pg_proc
       WHERE pronamespace = 'public'::regnamespace AND prosrc LIKE '%_studio_can_write(%'
-        AND proname NOT IN ('studio_can_write', '_studio_can_write')), '37');
+        AND proname NOT IN ('studio_can_write', '_studio_can_write')), '38');
   PERFORM pg_temp.check_eq('gate users WITHOUT the guard are exactly the reads, learner paths and replies',
     (SELECT string_agg(proname, ',' ORDER BY proname) FROM pg_proc
       WHERE pronamespace = 'public'::regnamespace
         AND (prosrc ILIKE '%can_edit_course(%' OR prosrc ILIKE '%_is_teacher(%' OR prosrc ILIKE '%_teacher_linked(%')
         AND prosrc NOT LIKE '%_studio_can_write(%'),
-    '_homework_recipients,_lesson_access_at,_teacher_readable_lessons,claim_run_invite,course_calls,course_delete_blockers,course_run_invites,course_stats,homework_assignable,join_teacher,learner_lessons,learner_recordings,learner_roster,linked_student_assigned_lessons,linked_student_attempts,linked_student_lesson_scores,message_threads,my_conversations_export,my_teacher_join_link_state,review_final_comments,review_queue,run_invite_preview,save_final_comment,save_voice_feedback,teacher_join_preview,teacher_linked_students');
+    '_homework_recipients,_lesson_access_at,_teacher_readable_lessons,calendar_events,claim_run_invite,course_calls,course_delete_blockers,course_run_invites,course_stats,homework_assignable,join_teacher,learner_lessons,learner_recordings,learner_roster,linked_student_assigned_lessons,linked_student_attempts,linked_student_lesson_scores,message_threads,my_conversations_export,my_teacher_join_link_state,review_final_comments,review_queue,run_invite_preview,save_final_comment,save_voice_feedback,teacher_join_preview,teacher_linked_students');
 
   -- ── 1. Before the lapse -----------------------------------------------------
   PERFORM pg_temp.check_eq('active seat: studio_can_write is true',

@@ -176,7 +176,7 @@ function GroupDetailInner({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The group is removed. The students stay linked to you and in your other groups. It can&apos;t be undone.
+              The group and its events are removed. The students stay linked to you and in your other groups. It can&apos;t be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

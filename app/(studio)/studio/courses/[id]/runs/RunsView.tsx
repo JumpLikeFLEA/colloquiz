@@ -27,6 +27,8 @@ import { CallDialog } from "./CallDialog";
 import { InviteDialog, TIER_LABELS } from "./InviteDialog";
 import { RunDialog } from "./RunDialog";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { CalendarEventsSection } from "@/app/(studio)/studio/CalendarEvents";
+import { eventsForRun, type CalendarEvent } from "@/lib/calendarEvents";
 
 // AUTH-010 — the runs page. Composed from the course editor's own classes
 // (section cards, row lists, icon buttons, status pills, AlertDialog
@@ -82,11 +84,13 @@ function RunsViewInner({
   courseTitle,
   format,
   runs,
+  events,
 }: {
   courseId: string;
   courseTitle: string;
   format: CourseFormat;
   runs: RunWithPhase[];
+  events: CalendarEvent[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -298,6 +302,11 @@ function RunsViewInner({
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* COH-014: dated events (084), seen by this run's live enrolees. */}
+                <div className="border-t border-border px-4 py-3">
+                  <CalendarEventsSection scope={{ kind: "run", runId: run.id }} events={eventsForRun(events, run.id)} />
                 </div>
 
                 <div className="border-t border-border px-4 py-3 space-y-2">

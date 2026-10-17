@@ -2095,3 +2095,25 @@ Appended to in the same commit as the change it records. Referenced from
   and tokens only. 360px not measured: the change is a string inside the
   existing truncating span, and a real no-email session was not available locally.
   Do not show a username for an account that has an email.
+- Calendar events (2026-10-17, COH-014, docs/decisions/0158, migration 084 applied to
+  the local stack only, not to the hosted project). Studio only; no learner page shows an
+  event until COH-015. Composed from the runs page's Calls list and CallDialog, and the
+  group page's card frame; no new colours:
+  - Each run card on `/studio/courses/[id]/runs` gains an "Events (N events, both tiers)"
+    section between Calls and Invites: the Calls header row with an "Add event" button, and
+    a divided list (`rounded-xl border`) with the title (wraps), the local start (and end), an
+    optional link (`break-all`) and Edit / Delete icon buttons.
+  - The group page gains the same section in a `rounded-2xl border bg-card` card above the
+    roster, headed "(N events, this group's students)".
+  - One Radix dialog for add and edit (`max-h-[calc(100dvh-2rem)]`, scrolls inside): Title,
+    Starts, Ends (optional), Link (optional), the existing `destructive-subtle` error box,
+    and a description saying who sees it ("They don't see the group's name." for a group).
+    Delete is the page's AlertDialog. Deleting a group's confirm now says its events go too.
+  - Both sections sit in `WriteArea`: a frozen seat disables Add, Edit and Delete.
+  Measured at 360px (local stack, seeded teacher, a long wrapping title and a long
+  unbroken link): `scrollWidth/innerWidth` 360/360 on the runs page and on the group page;
+  360/360 with the add dialog open (dialog 16 to 344 px), with its error box showing, after
+  a create, with the edit dialog and the delete confirm open, on both pages; 360/360 on both
+  pages with the seat lapsed and "Add event" disabled. Not reached: the toast.
+  Do not show an event's group name to a student, and do not decide who may edit in the
+  client: `calendar_events()` returns `can_manage` and the RPCs refuse regardless.

@@ -119,6 +119,13 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   },
   // Tier change (066, COH-007).
   enrolment_not_found: { status: 404, message: "That enrolment no longer exists." },
+  // Calendar events (084, COH-014). invalid_starts_at and invalid_url are
+  // shared with calls; the end and the title have their own wording.
+  event_not_found: { status: 404, message: "That event no longer exists." },
+  group_not_found: { status: 404, message: "That group no longer exists." },
+  invalid_scope: { status: 400, message: "An event belongs to one run or one group." },
+  invalid_event_title: { status: 400, message: "Enter a title of up to 120 characters." },
+  invalid_event_ends_at: { status: 400, message: "An event can't end before it starts." },
   // Course delete (068, AUTH-018). not_deletable is answered by the route
   // itself, from its blockers (lib/courseDelete.ts).
   title_mismatch: { status: 400, message: "The title you typed doesn't match the course title." },

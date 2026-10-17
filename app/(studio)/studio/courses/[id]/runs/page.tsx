@@ -4,6 +4,7 @@ import { canEditCourse } from "@/lib/courseAccess";
 import { getAuthoredCourseDetail } from "@/lib/courseAuthoring";
 import { getCourseRuns } from "@/lib/courseRuns";
 import { runPhase } from "@/lib/cohortSchedule";
+import { getCalendarEvents } from "@/lib/calendarEventsServer";
 import { getCourseRunInvites } from "@/lib/runInvitesServer";
 import { RunsView } from "./RunsView";
 
@@ -28,10 +29,13 @@ export default async function CourseRunsPage({ params }: { params: Promise<{ id:
   // includeEditors = false: this page needs only the course row.
   // Invites (COH-003): course_run_invites returns labels to editors only,
   // and this page is already gated on canEditCourse(id).
-  const [detail, runs, invites] = await Promise.all([
+  // Events (COH-014): calendar_events() returns this editor's own events;
+  // each run card filters to its run.
+  const [detail, runs, invites, events] = await Promise.all([
     getAuthoredCourseDetail(id, false),
     getCourseRuns(id),
     getCourseRunInvites(id),
+    getCalendarEvents(),
   ]);
   if (!detail) notFound();
 
@@ -46,6 +50,7 @@ export default async function CourseRunsPage({ params }: { params: Promise<{ id:
         courseId={id}
         courseTitle={detail.course.title}
         format={detail.course.format}
+        events={events}
         runs={runs.map((r) => ({
           ...r,
           phase: runPhase(r, now),
