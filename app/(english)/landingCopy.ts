@@ -9,9 +9,11 @@
  * Every claim below is one docs/handoff.md already makes about the product
  * (lesson length, levels, free first lessons, explanations, ~1 hour per
  * course, a percentage rather than pass/fail) — no learner counts or other
- * figures that nothing measures (docs/decisions/0078). The Alina Cher copy
- * (the hero split, the comic panel, the bio, the voice-task steps) is new in
- * SHELL-027 and pending the owner's review (docs/decisions/0165).
+ * figures that nothing measures (docs/decisions/0078). The hero, the bio,
+ * the social row and the comic panel are word for word the owner's mockups
+ * (docs/design/alina-cher/owner-landing-hero-*.png, SHELL-031,
+ * docs/decisions/0167), and "10+ лет" / "10+ years" is the owner's own claim
+ * about Alina. The Russian copy addresses the learner as "ты" (0167).
  */
 
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
@@ -19,10 +21,9 @@ import type { PluralForms } from "@/lib/pluralCategory";
 
 /**
  * The brand tagline, "английский с умом" (docs/decisions/0156 Decision 11).
- * Russian in both locales, as in the owner's English mockup; `mark` is the
- * word group the hand-drawn oval goes around.
+ * Russian in both locales, as in the owner's English mockup.
  */
-export const TAGLINE = { lead: "английский", mark: "с умом" } as const;
+export const TAGLINE = "английский с умом";
 
 /** Alina's public profiles (docs/decisions/0156 Decision 14). */
 export const SOCIAL_LINKS = {
@@ -35,19 +36,28 @@ type LandingStrings = {
   login: string;
   navCourses: string;
   languageGroupLabel: string;
-  heroEyebrow: string;
-  /** The headline is `heroTitleLead` plain, then `heroTitleMark` on the marker. */
-  heroTitleLead: string;
-  heroTitleMark: string;
+  /**
+   * The headline, in reading order: `lead`, then `marker` on the yellow
+   * marker, `middle`, then `oval` inside the hand-drawn oval.
+   */
+  heroTitle: { lead: string; marker: string; middle: string; oval: string };
   heroSubtitle: string;
   ctaPrimary: string;
-  noAccount: string;
   catalogueLink: string;
-  bio: string;
+  /** `name` is set in bold, then `text`. */
+  bio: { name: string; text: string };
   followLabel: string;
   instagram: string;
   youtube: string;
-  comic: { head: string; speak: string; um: string; sticker: string };
+  comic: {
+    head: string;
+    speak: string;
+    um: string;
+    /** The sticker: `figure` large, `unit` small under it. */
+    sticker: { figure: string; unit: string };
+    /** The line under the panel. */
+    note: string;
+  };
   catalogueEyebrow: string;
   coursesHeading: string;
   catalogueSubtitle: string;
@@ -69,23 +79,23 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     login: "Войти",
     navCourses: "Курсы",
     languageGroupLabel: "Язык",
-    heroEyebrow: "Мини-курсы английского · A2–B2",
-    heroTitleLead: "Английский",
-    heroTitleMark: "без напряжения",
-    heroSubtitle:
-      "Короткие курсы для тех, кто хочет понимать и говорить по-английски — на телефоне, в удобном темпе.",
+    heroTitle: { lead: "Ты знаешь", marker: "больше", middle: ", чем можешь", oval: "сказать" },
+    heroSubtitle: "Короткие курсы, которые переводят знания в речь.",
     ctaPrimary: "Начать бесплатно",
-    noAccount: "Для бесплатных уроков регистрация не нужна.",
     catalogueLink: "Все курсы",
-    bio: "Курсы делает Алина",
-    followLabel: "Алина в соцсетях",
+    bio: {
+      name: "Алина.",
+      text: "10+ лет помогаю взрослым заговорить свободно и создаю brain-friendly обучение.",
+    },
+    followLabel: "где я ещё рассказываю про мозг и язык",
     instagram: "Instagram",
     youtube: "YouTube",
     comic: {
       head: "английский в моей голове",
       speak: "английский, когда говорю",
       um: "ээ...мм",
-      sticker: "10–15 минут в день",
+      sticker: { figure: "10–15", unit: "минут в день" },
+      note: "это нормально: понимать и говорить — разные навыки",
     },
     catalogueEyebrow: "Каталог",
     coursesHeading: "Курсы",
@@ -93,14 +103,14 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     courses: { one: "курс", few: "курса", many: "курсов", other: "курса" },
     lessons: { one: "урок", few: "урока", many: "уроков", other: "урока" },
     minutes: "мин",
-    empty: "Курсы скоро появятся — загляните позже.",
+    empty: "Курсы скоро появятся — загляни позже.",
     stepsEyebrow: "Как это устроено",
-    stepsHeading: "Скажите, услышьте, сравните",
+    stepsHeading: "Скажи, услышь, сравни",
     stepsSubtitle: "Голосовые задания есть в курсах с потоком.",
     steps: [
-      { title: "Запишите голос", text: "Ответьте на голосовое задание вслух, прямо с телефона." },
-      { title: "Получите отклик", text: "Автор послушает вашу запись и ответит письменно." },
-      { title: "Сравните", text: "В конце запишите тот же ответ ещё раз и услышьте разницу." },
+      { title: "Запиши голос", text: "Ответь на голосовое задание вслух, прямо с телефона." },
+      { title: "Получи отклик", text: "Автор послушает твою запись и ответит письменно." },
+      { title: "Сравни", text: "В конце запиши тот же ответ ещё раз и услышь разницу." },
     ],
     closingTitle: "Первый урок — в одно касание",
     closingText: "Без регистрации и без оплаты.",
@@ -110,22 +120,23 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     login: "Log in",
     navCourses: "Courses",
     languageGroupLabel: "Language",
-    heroEyebrow: "English mini-courses · A2–B2",
-    heroTitleLead: "English",
-    heroTitleMark: "without the stress",
-    heroSubtitle: "Short courses for A2–B2 learners. Study on your phone, at your own pace.",
+    heroTitle: { lead: "You know", marker: "more", middle: " than you can", oval: "say" },
+    heroSubtitle: "Short courses that turn what you know into what you can say.",
     ctaPrimary: "Start for free",
-    noAccount: "Free lessons don’t need an account.",
     catalogueLink: "All courses",
-    bio: "Courses made by Alina",
-    followLabel: "Alina on social media",
+    bio: {
+      name: "Alina.",
+      text: "For 10+ years I’ve been helping adults speak English with confidence. I design brain-friendly courses.",
+    },
+    followLabel: "more on brains & language",
     instagram: "Instagram",
     youtube: "YouTube",
     comic: {
       head: "English in my head",
       speak: "English I speak",
-      um: "uhh… um",
-      sticker: "10–15 minutes a day",
+      um: "uhh... um",
+      sticker: { figure: "10–15", unit: "minutes a day" },
+      note: "it’s normal: understanding and speaking are different skills",
     },
     catalogueEyebrow: "Catalogue",
     coursesHeading: "Courses",

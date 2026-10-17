@@ -8,6 +8,7 @@ import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/a
 import { AccountMenu } from "./AccountMenu";
 import { ComicPanel } from "./ComicPanel";
 import { HeroBio } from "./HeroBio";
+import { HeroTitle } from "./HeroTitle";
 import { LandingContent } from "./LandingContent";
 
 /**
@@ -83,6 +84,7 @@ export default async function EnglishLandingPage() {
         courses={courses}
         heroHref={heroHref}
         initialLang={initialLang}
+        heroTitle={perLang((lang) => <HeroTitle lang={lang} />)}
         heroBio={perLang((lang) => <HeroBio lang={lang} />)}
         comic={perLang((lang) => <ComicPanel lang={lang} />)}
         account={account}

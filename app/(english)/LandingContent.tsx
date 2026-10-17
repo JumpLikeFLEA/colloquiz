@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import type { CatalogueCourse } from "@/lib/courseCatalogue";
 import { pluralize } from "@/lib/pluralCategory";
@@ -10,7 +10,6 @@ import { LandingHeader } from "./LandingHeader";
 import { PageLang } from "./HtmlLang";
 import { EnglishFooter } from "./EnglishFooter";
 import { CourseCard } from "./CourseCard";
-import { Marker } from "./AlinaMarks";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
 import { SectionHeading } from "./SectionHeading";
@@ -37,7 +36,9 @@ import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS } from "./surfaceClasses";
  * then the hero (headline with the marker, subtitle, the one-tap CTA, the bio
  * line and social row on the left; the comic panel and sticker on the right),
  * the catalogue, "how it works" (record, feedback, compare) and a closing
- * yellow card repeating the hero's one-tap link. `heroBio` and `comic` are
+ * yellow card repeating the hero's one-tap link. The hero's words are the
+ * owner's mockups (SHELL-031, docs/decisions/0167), which have no eyebrow and
+ * no "no account" line. `heroTitle`, `heroBio` and `comic` are
  * rendered server-side once per language by page.tsx and this component picks
  * one, so their markup costs no client JS (0078's rule, `account`'s pattern
  * from 0086); `account` is the header's account chip the same way, null for a
@@ -55,6 +56,7 @@ export function LandingContent({
   courses,
   heroHref,
   initialLang,
+  heroTitle,
   heroBio,
   comic,
   account,
@@ -62,6 +64,7 @@ export function LandingContent({
   courses: CatalogueCourse[];
   heroHref: string;
   initialLang: SurfaceLang;
+  heroTitle: Record<SurfaceLang, ReactNode>;
   heroBio: Record<SurfaceLang, ReactNode>;
   comic: Record<SurfaceLang, ReactNode>;
   account: Record<SurfaceLang, ReactNode> | null;
@@ -91,11 +94,8 @@ export function LandingContent({
 
           <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
             <div className="flex flex-col items-start gap-5">
-              <span className={`${HERO_ENTER_CLASS} text-xs font-semibold uppercase tracking-wider text-muted-foreground`}>
-                {t.heroEyebrow}
-              </span>
-              <h1 className={`${HERO_ENTER_CLASS} delay-75 font-display text-[2rem] font-extrabold leading-[1.2] tracking-tight text-foreground sm:text-5xl sm:leading-[1.2] lg:text-6xl lg:leading-[1.2]`}>
-                {t.heroTitleLead} <Marker>{t.heroTitleMark}</Marker>
+              <h1 className={`${HERO_ENTER_CLASS} font-display text-[2rem] font-extrabold leading-[1.2] tracking-tight text-foreground sm:text-5xl sm:leading-[1.2] lg:text-6xl lg:leading-[1.2]`}>
+                {heroTitle[lang]}
               </h1>
               <p className={`${HERO_ENTER_CLASS} delay-150 max-w-md text-base text-foreground/80 sm:text-lg`}>
                 {t.heroSubtitle}
@@ -110,10 +110,6 @@ export function LandingContent({
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
               </div>
-              <span className={`${HERO_ENTER_CLASS} delay-300 inline-flex items-center gap-1.5 text-sm text-muted-foreground`}>
-                <Check className="size-3.5" aria-hidden="true" />
-                {t.noAccount}
-              </span>
               <div className={`${HERO_ENTER_CLASS} delay-300`}>{heroBio[lang]}</div>
             </div>
 

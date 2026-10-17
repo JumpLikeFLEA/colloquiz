@@ -4176,6 +4176,23 @@ export const CARDS = [
       'alina-photo.png (1080x1920 original; crop a small square copy into public/images/).',
   },
   {
+    key: 'SHELL-031',
+    title: 'Landing wording from the owner\'s screenshots',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2877,
+    dependsOn: ['SHELL-027'],
+    goal:
+      'The landing hero reads exactly as the owner\'s mockups (docs/design/alina-cher/owner-landing-hero-*.png), ' +
+      'in EN and RU, replacing SHELL-027\'s placeholder copy.',
+    acceptance: [
+      'Headline, subtitle, bio, the social row\'s label, the comic panel, the sticker and the line under the comic read word for word as the screenshots, EN and RU; the marker is on "больше"/"more" and the oval on "сказать"/"say" (not on the tagline). The eyebrow and the "no account" line are removed. Instagram and YouTube links carry their icons.',
+      'The Russian copy on the landing addresses the learner as "ты" throughout; the catalogue, how-it-works and closing sections keep their wording otherwise. "About me" and "Student reviews" stay out (0156 Decision 14); the Day 1 / Day 7 card stays SHELL-030.',
+      '`npm run budget` before and after for /, at or under 180 KB. Usable at 360px, EN and RU; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
     key: 'SHELL-028',
     title: 'Course page and lesson chrome in the Alina Cher look',
     milestone: 'M4',

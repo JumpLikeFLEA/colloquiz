@@ -2287,3 +2287,21 @@ Appended to in the same commit as the change it records. Referenced from
     257.4. Not measured: a signed-in session.
     Do not put the gradient band back on these two routes, and do not use
     `--ink` as the text colour on the yellow card (`--highlight-foreground`).
+- Landing wording from the owner's mockups (2026-10-17, SHELL-031,
+  docs/decisions/0167), SUPERSEDING SHELL-027's hero copy (0165), not its layout.
+  The hero reads as `docs/design/alina-cher/owner-landing-hero-{ru,en}.png`:
+  "Ты знаешь больше, чем можешь сказать" / "You know more than you can say",
+  with the marker on "больше"/"more" and the hand-drawn oval on "сказать"/"say".
+  The tagline in the header lost its oval. The eyebrow and the "no account"
+  line are gone. The bio is "**Алина.** …" / "**Alina.** …"; the social row's
+  label is visible text in the accent face with an arrow; Instagram and YouTube
+  carry monochrome marks (`SocialIcons.tsx`, `currentColor`) in place of the
+  external-link arrow. The sticker is "10–15" in the display face over a small
+  unit, raised to `-top-12` (with `mt-4` on the panel below `lg`) so it clears
+  the second caption; a line in the accent face with lucide's `Brain` sits
+  under the panel. The landing's Russian says "ты" throughout. Existing classes
+  and tokens; no new colours. Measured: `scrollWidth/innerWidth` 360/360 and
+  1440/1440, EN and RU; no sticker overlap at 360–1440. `npm run budget`: `/`
+  178.2 / 177.9 KB of 180. Do not put "About me" or "Student reviews" back
+  without the partner's text (0156 Decision 14), and do not move the headline
+  strings into the client component: `HeroTitle` keeps them server-rendered.

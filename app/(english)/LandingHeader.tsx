@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
-import { HandOval } from "./AlinaMarks";
 import { landingCopy, TAGLINE } from "./landingCopy";
 import { LanguageToggle } from "./LanguageToggle";
 
@@ -13,8 +12,10 @@ import { LanguageToggle } from "./LanguageToggle";
  * 0080, extending the 2026-09-28 landing exception in docs/handoff.md,
  * "Audience and language"), here in its `paper` tone. "Alina Cher" is the
  * English surface's name (owner, 2026-10-17, docs/decisions/0161) and
- * "английский с умом" its tagline, Russian in both languages with the oval
- * round "с умом" (0156 Decision 11).
+ * "английский с умом" its tagline, Russian in both languages (0156 Decision
+ * 11). The tagline has no oval: the owner's mockups put it on the headline's
+ * "сказать" / "say" instead (SHELL-031, docs/decisions/0167, settling 0165
+ * Decision 3).
  *
  * The login link carries `next=/`: that is what marks /login as the English
  * entry point, so a signup there threads the funnel source (ANON-014,
@@ -54,7 +55,7 @@ export function LandingHeader({
         )}
       </div>
       <span className="font-accent text-lg leading-none text-brand-text sm:order-2 sm:text-xl">
-        {TAGLINE.lead} <HandOval>{TAGLINE.mark}</HandOval>
+        {TAGLINE}
       </span>
       <Link
         href="#catalogue"

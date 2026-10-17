@@ -1,3 +1,4 @@
+import { Brain } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
 
@@ -5,7 +6,10 @@ import { landingCopy } from "./landingCopy";
  * The landing hero's comic panel and its "10-15 minutes a day" sticker
  * (SHELL-027, docs/decisions/0165). Two cells, as in the owner's design: a big
  * dinosaur roaring ("English in my head") and a small, sweating one ("English I
- * speak", with its "uhh... um" bubble).
+ * speak", with its "uhh... um" bubble). Under the panel, the owner's line "it's
+ * normal: understanding and speaking are different skills", and the sticker's
+ * figure set large over its unit, both from the owner's mockups (SHELL-031,
+ * docs/decisions/0167).
  *
  * The drawings are the owner's `dino-big.svg` and `dino-small.svg`
  * (docs/design/alina-cher/), redrawn inline with the same paths. Their hex
@@ -74,7 +78,7 @@ export function ComicPanel({ lang }: { lang: SurfaceLang }) {
   const t = landingCopy[lang].comic;
 
   return (
-    <div className="relative">
+    <div className="relative mt-4 lg:mt-0">
       <div className="grid grid-cols-2 gap-4 sm:gap-6">
         <div className={CELL_CLASS}>
           <p className={CAPTION_CLASS}>{t.head}</p>
@@ -88,9 +92,14 @@ export function ComicPanel({ lang }: { lang: SurfaceLang }) {
           <DinoSmall />
         </div>
       </div>
-      <span className="pointer-events-none absolute -top-8 right-1 rotate-6 rounded-xl border-2 border-highlight-foreground bg-highlight px-3 py-1.5 text-center font-accent text-lg leading-tight text-highlight-foreground shadow-offset sm:-right-2 sm:text-xl">
-        {t.sticker}
+      <span className="pointer-events-none absolute -top-12 right-1 flex rotate-6 flex-col items-center rounded-xl border-2 border-highlight-foreground bg-highlight px-3 py-1 text-center leading-none text-highlight-foreground shadow-offset sm:-right-2">
+        <span className="font-display text-xl font-extrabold sm:text-2xl">{t.sticker.figure}</span>
+        <span className="text-xs font-semibold">{t.sticker.unit}</span>
       </span>
+      <p className="mt-4 flex items-start gap-2 font-accent text-lg leading-tight text-foreground sm:text-xl">
+        <Brain className="mt-0.5 size-5 flex-none text-brand-text" aria-hidden="true" />
+        {t.note}
+      </p>
     </div>
   );
 }
