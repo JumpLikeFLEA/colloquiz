@@ -3966,6 +3966,9 @@ export const CARDS = [
       'Screenshots at 360 and 1440, light and dark. Printed: each font\'s woff2 size for the latin + cyrillic subsets, and each violet\'s contrast against white and against the paper background.',
       'Options laid out; the owner picks. The page is deleted by SHELL-026.',
     ],
+    notes:
+      'The owner\'s own illustrations (docs/design/alina-cher/, 2026-10-17) use violet #5B3FD9 and ink ' +
+      '#1E1A3A; both are among the candidates.',
   },
   {
     key: 'VOICE-010',
@@ -4167,7 +4170,10 @@ export const CARDS = [
       'HeroDemo is removed; decoration stays server-rendered (0078). The catalogue, how-it-works (record, feedback, compare, with no AI promise before OPS-027) and the closing CTA restyled; the EN and RU copy is in landingCopy.ts, pending the owner\'s review.',
       '`npm run budget` before and after for /, at or under 180 KB. Usable at 360px; docs/ui-decisions.md entry.',
     ],
-    notes: 'The photo and the comic illustrations must arrive as files; a screenshot is not an asset.',
+    notes:
+      'The comic-panel dinosaurs arrived 2026-10-17 as SVG files: docs/design/alina-cher/dino-big.svg ' +
+      'and dino-small.svg (see the README there; their hex colours become tokens or currentColor if ' +
+      'inlined under app/). Alina\'s photo must still arrive as a file; a screenshot is not an asset.',
   },
   {
     key: 'SHELL-028',
