@@ -33,10 +33,10 @@ export function BeforeAfterLinks({
       {enrolments.map((e) => (
         <li
           key={e.runId}
-          className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5"
+          className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-card p-4 shadow-offset sm:flex-row sm:items-center sm:justify-between sm:p-5"
         >
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-white shadow-md shadow-brand/30">
+            <span className="flex size-10 flex-none items-center justify-center rounded-xl border-2 border-ink bg-highlight text-highlight-foreground">
               <Mic className="size-4" aria-hidden="true" />
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">

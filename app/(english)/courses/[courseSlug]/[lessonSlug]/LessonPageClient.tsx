@@ -65,7 +65,7 @@ export function LessonPageClient({
   voiceTasks?: VoiceTasksContext;
 }) {
   return (
-    <div className="pb-8">
+    <div className="grid-paper pb-8">
       {header}
       <LessonPlayer
         document={document}

@@ -48,7 +48,7 @@ export function CohortInfo({
     const { upcoming, past } = splitCalls(callsForAudience(calls, audience), now);
     return (
       <section className="flex flex-col gap-6" data-cohort="calls">
-        <SectionHeading eyebrow={c.callsEyebrow} title={c.callsTitle} />
+        <SectionHeading eyebrow={c.callsEyebrow} title={c.callsTitle} display />
         {upcoming.length === 0 && past.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             {c.callsEmpty}
@@ -60,10 +60,10 @@ export function CohortInfo({
                 {upcoming.map((call) => (
                   <li
                     key={call.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-card p-4 shadow-offset sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-white shadow-md shadow-brand/30">
+                      <span className="flex size-10 flex-none items-center justify-center rounded-xl border-2 border-ink bg-highlight text-highlight-foreground">
                         <Video className="size-4" aria-hidden="true" />
                       </span>
                       <div className="flex min-w-0 flex-col gap-0.5">
@@ -104,7 +104,7 @@ export function CohortInfo({
     const next = nextUpcomingRun(runs, now);
     return (
       <section className="flex flex-col gap-6" data-cohort="visitor">
-        <SectionHeading eyebrow={c.cohortEyebrow} title={c.cohortTitle} subtitle={c.cohortIntro} />
+        <SectionHeading eyebrow={c.cohortEyebrow} title={c.cohortTitle} subtitle={c.cohortIntro} display />
         <p className="text-sm text-foreground sm:text-base">
           {next ? (
             <>
@@ -122,7 +122,7 @@ export function CohortInfo({
               [c.tierBasic, c.tierBasicDesc],
               [c.tierExtended, c.tierExtendedDesc],
             ].map(([name, desc]) => (
-              <div key={name} className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+              <div key={name} className="flex flex-col gap-1 rounded-2xl border-2 border-ink bg-card p-4 shadow-offset sm:p-5">
                 <p className="text-sm font-semibold text-foreground sm:text-base">{name}</p>
                 <p className="text-xs text-muted-foreground sm:text-sm">{desc}</p>
               </div>

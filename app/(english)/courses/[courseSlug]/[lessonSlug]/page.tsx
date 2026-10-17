@@ -79,7 +79,7 @@ export default async function LessonPage({
       itemCount={lesson.itemCount}
       homework={homework}
       account={
-        signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={`/courses/${courseSlug}/${lessonSlug}`} />
+        signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={`/courses/${courseSlug}/${lessonSlug}`} tone="paper" />
       }
     />
   );
@@ -88,7 +88,7 @@ export default async function LessonPage({
     // docs/decisions/0079 D8; ANON-011's sign-in prompt (0104). The course
     // editor's "Visitor view" renders the same component (AUTH-009).
     return (
-      <main className="bg-background">
+      <main className="grid-paper">
         <LessonUnavailable
           band={band}
           courseSlug={courseSlug}

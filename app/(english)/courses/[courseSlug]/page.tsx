@@ -37,8 +37,9 @@ import { LessonListItem } from "./LessonListItem";
  * visitor, per that module's own header), superseding 0059's "called with an
  * empty map until ANON-002/003 land" note.
  *
- * docs/decisions/0079 — rebuilt in the landing's vocabulary: a gradient
- * hero band (`CourseHero`), then an optional "О курсе" section and the
+ * docs/decisions/0079 — rebuilt in the landing's vocabulary: a hero
+ * (`CourseHero`; a gradient band until SHELL-028, docs/decisions/0166, put the
+ * page on the Alina Cher grid paper), then an optional "О курсе" section and the
  * numbered lesson list, left-aligned to the same column edge as the hero
  * text. The hero leads with the short `subtitle` (the catalogue card's
  * summary), falling back to `description`; the full `description` gets its
@@ -107,7 +108,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     // height double-counted against EnglishFooter and forced a scrollbar on
     // a short course (same bug as the landing page, docs/ui-decisions.md,
     // 2026-09-28).
-    <main className="bg-background">
+    <main className="grid-paper">
       <CourseHero
         lang={lang}
         title={course.title}
@@ -116,7 +117,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         coverImageUrl={course.coverImageUrl}
         totals={totals}
         progress={progress}
-        account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} />}
+        account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} tone="paper" />}
         cta={
           firstOpen
             ? {
@@ -135,7 +136,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 py-12 sm:gap-16 sm:py-16`}>
         {about && (
           <section className="flex max-w-3xl flex-col gap-4">
-            <SectionHeading title={c.aboutTitle} />
+            <SectionHeading title={c.aboutTitle} display />
             <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">{about}</p>
           </section>
         )}
@@ -154,7 +155,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         {cohort && enrolled && <BeforeAfterLinks lang={lang} enrolments={cohort.enrolments} runs={cohort.runs} />}
 
         <section className="flex flex-col gap-6">
-          <SectionHeading eyebrow={c.lessonsEyebrow} title={c.lessonsTitle} />
+          <SectionHeading eyebrow={c.lessonsEyebrow} title={c.lessonsTitle} display />
           {course.lessons.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               {c.noLessons}

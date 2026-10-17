@@ -4,15 +4,16 @@ import { CalendarClock, Check, ChevronRight, Clock, ListChecks } from "lucide-re
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { LessonRowProgress, PublicCourseLesson } from "@/lib/coursePageProgress";
 import { pluralize } from "@/lib/pluralCategory";
-import { LIFT_CARD_CLASS } from "../../surfaceClasses";
+import { PAPER_CARD_CLASS } from "../../surfaceClasses";
 import { courseCopy } from "./courseCopy";
 
 /**
  * One row of the course page's lesson list (docs/decisions/0079 D1–D3): a
- * numbered gradient tile (the landing's "how it works" step tile, 0078),
+ * numbered yellow tile (the landing's "how it works" numeral tile, 0165),
  * the title, badges and description, and the lesson's size. The size sits
  * on the right at `sm` and up, under the description on a phone. The whole
- * row is one link, and lifts on hover like a catalogue card.
+ * row is one link, with the catalogue card's ink outline and offset shadow,
+ * lifting on hover (SHELL-028, docs/decisions/0166).
  *
  * PAY-001 (docs/decisions/0136): a lesson whose SQL `state` for this
  * visitor is `needs_sign_in` or `needs_entitlement` gets a muted pill
@@ -73,8 +74,8 @@ export function LessonListItem({
 
   return (
     <li>
-      <Link href={href} className={`${LIFT_CARD_CLASS} flex items-start gap-4 p-4 sm:items-center sm:p-5`}>
-        <span className="relative flex size-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-sm font-semibold text-white shadow-md shadow-brand/30">
+      <Link href={href} className={`${PAPER_CARD_CLASS} flex items-start gap-4 p-4 sm:items-center sm:p-5`}>
+        <span className="relative flex size-10 flex-none items-center justify-center rounded-xl border-2 border-ink bg-highlight font-display text-sm font-extrabold text-highlight-foreground">
           {position}
           {progress.complete && (
             <span

@@ -39,3 +39,28 @@ export const LIFT_CARD_CLASS =
  * `active`; the lift and press are dropped under prefers-reduced-motion. */
 export const OFFSET_CTA_CLASS =
   "group inline-flex min-h-12 items-center gap-2 rounded-xl border-2 border-ink bg-brand px-6 py-3 text-base font-semibold text-white shadow-offset outline-none transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--offset-shadow)] active:translate-y-0.5 active:shadow-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-paper motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0";
+
+/** A pill on the paper ground (SHELL-028, docs/decisions/0166): ink outline on
+ * the card colour, the course and lesson bands' counterpart to
+ * `GLASS_PILL_CLASS`. */
+export const PAPER_PILL_CLASS =
+  "inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-card px-3 py-1 text-xs font-semibold text-foreground";
+
+/** The same pill on the marker yellow (level, "lesson N of M"). The text is
+ * `--highlight-foreground`, fixed ink in both themes, never `--ink`. */
+export const PAPER_PILL_HIGHLIGHT_CLASS =
+  "inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-highlight px-3 py-1 text-xs font-semibold text-highlight-foreground";
+
+/** A tappable row or tile on the paper ground: ink outline and the hard offset
+ * shadow, lifting on hover. The catalogue card's treatment (SHELL-027, 0165)
+ * for the course page's lesson rows. */
+export const PAPER_CARD_CLASS =
+  "group rounded-2xl border-2 border-ink bg-card shadow-offset outline-none transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--offset-shadow)] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-paper motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+
+/** A static card on the paper ground: the same frame without the hover. */
+export const PAPER_PANEL_CLASS = "rounded-2xl border-2 border-ink bg-card shadow-offset";
+
+/** The secondary button on paper or on the marker yellow: ink outline, card
+ * fill. */
+export const OUTLINE_CTA_CLASS =
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-ink bg-card px-5 py-3 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-paper";

@@ -6,7 +6,7 @@ import type { LessonProgress } from "@/app/components/lesson-player/LessonPlayer
 
 /**
  * The lesson page's sticky progress strip (docs/decisions/0079 D5). It sits
- * directly under the gradient band and sticks to the top for the rest of
+ * directly under the band and sticks to the top for the rest of
  * the lesson. It holds the back arrow, a bar of answered exercises out of
  * the lesson's total, and "x/y". Once every exercise is answered, the
  * count becomes the lesson score.
@@ -33,7 +33,7 @@ export function LessonProgressStrip({ progress, backLink }: { progress: LessonPr
   const fill = Math.round((answered / total) * 100);
 
   return (
-    <div className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
+    <div className="sticky top-0 z-20 border-b-2 border-ink bg-paper/90 backdrop-blur">
       <div className={`${LESSON_READING_FRAME_CLASS} flex h-12 items-center gap-3`}>
         {backLink}
         <div
@@ -42,14 +42,14 @@ export function LessonProgressStrip({ progress, backLink }: { progress: LessonPr
           aria-valuemin={0}
           aria-valuemax={total}
           aria-valuenow={answered}
-          className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+          className="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-card"
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-brand to-brand-accent transition-[width] duration-500 motion-reduce:transition-none"
+            className="h-full bg-brand transition-[width] duration-500 motion-reduce:transition-none"
             style={{ width: `${fill}%` }}
           />
         </div>
-        <span className="min-w-10 text-right text-xs font-semibold tabular-nums text-muted-foreground">
+        <span className="min-w-10 text-right font-display text-xs font-extrabold tabular-nums text-foreground">
           {complete && percent !== null ? `${percent}%` : `${answered}/${total}`}
         </span>
       </div>

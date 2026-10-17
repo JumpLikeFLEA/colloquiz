@@ -2255,3 +2255,35 @@ Appended to in the same commit as the change it records. Referenced from
   `/`: 179.1 KB before, 178.1 KB after, of 180. Not measured: a signed-in `/`.
   Do not put the gradient band or the demo back on `/`, and do not drop the
   dinosaur outline to `--comic-frame` in dark (too faint to read as a line).
+- Course page and lesson chrome in the Alina Cher look (2026-10-17, SHELL-028,
+  docs/decisions/0166), SUPERSEDING the gradient bands of 0079 D1 and D5 on
+  `/courses/[courseSlug]` and the lesson page (the EN/RU toggle, saved choice,
+  lesson-chrome language, access states and one-tap path stand). Both pages are
+  grid paper (`.grid-paper`); the gradient stays on `/invite`, `/join`, `/runs`
+  and `/my` until PROG-007. `BandTopBar` gained `tone="paper"` (default
+  unchanged).
+  - Course hero: yellow level pill, ink-outlined "Whole course free" pill, the
+    title in `font-display`, the two progress numbers as ink-outlined tiles
+    (still two numbers), the violet offset button, a cover with the ink outline
+    and offset shadow; no cover shows `CourseCard`'s grid-paper level tile at
+    `lg`. Lesson rows take the catalogue card's ink outline and offset shadow
+    (`PAPER_CARD_CLASS`) and a yellow numeral tile; the cohort calls, tiers and
+    before/after cards the same frame. Section headings use `SectionHeading
+    display`.
+  - Lesson band: the course title in `font-accent`, the title in `font-display`,
+    a yellow "Lesson N of M" pill and ink-outlined pills, an ink rule under it.
+    The progress strip has an ink-outlined track with a solid `bg-brand` fill and
+    the count in the display face. The completion card is marker yellow
+    (`--highlight`, `--highlight-foreground`) with the score in the display face
+    and the violet offset "Next lesson" button; before completion it is the same
+    dashed card with an ink border. The paid, scheduled and sign-in cards get the
+    ink frame. The Studio "Visitor view" shows the same band, in Studio's indigo.
+  - Unchanged: exercise cards, the registration offer, the answer review, the
+    footer. No new tokens or hex literals. Measured at 360px:
+    `scrollWidth/innerWidth 360/360` on the course page (EN, RU), a cohort course
+    page (EN, RU), a free lesson, a drag/typed lesson, the paid state, the
+    sign-in state; 360/360 and 1440/1440 in Edge, light and dark, with a lesson
+    completed. `npm run budget`: course page 173.0 / 173.0 KB, free lesson 257.4 /
+    257.4. Not measured: a signed-in session.
+    Do not put the gradient band back on these two routes, and do not use
+    `--ink` as the text colour on the yellow card (`--highlight-foreground`).

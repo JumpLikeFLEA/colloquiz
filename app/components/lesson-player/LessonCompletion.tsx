@@ -8,6 +8,7 @@ import type { ReviewEntry } from "@/lib/lessonPlayer/reviewEntries";
 import type { SessionProgress } from "@/lib/lessonPlayer/session";
 import { pluralize } from "@/lib/pluralCategory";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import { OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS } from "@/app/(english)/surfaceClasses";
 import { READING_WIDTH_CLASS } from "./columnLayout";
 
 // ANON-012 (docs/decisions/0139): loaded when the offer first shows, after a
@@ -35,10 +36,11 @@ const pointsFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }
  * - Until every exercise has an answer: a neutral card, "N exercises
  *   left", plus the next-lesson link. It no longer says "Lesson complete"
  *   over an untouched lesson.
- * - Once every exercise is answered: a gradient card in the landing's
- *   closing-CTA look, with "Lesson complete", the score as a large number,
- *   and a white "Next lesson" CTA (or "Back to course" on the course's
- *   last lesson).
+ * - Once every exercise is answered: a marker-yellow card in the landing's
+ *   closing-CTA look (SHELL-028, docs/decisions/0166; a gradient card before
+ *   that), with "Lesson complete", the score as a large display-face number,
+ *   and the violet offset "Next lesson" CTA (or an outlined "Back to course"
+ *   on the course's last lesson).
  * - A lesson with no exercises gets the neutral card's link only.
  *
  * The registration offer (ANON-004) now waits for ALL exercises too,
@@ -89,47 +91,34 @@ export function LessonCompletion({
   return (
     <div className={`${READING_WIDTH_CLASS} flex flex-col gap-4`}>
       {complete && score.status === "scored" ? (
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-deep via-brand to-brand-accent px-6 py-10 text-center text-white sm:px-10">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,white_1.5px,transparent_1.5px)] [background-size:28px_28px] opacity-[0.08]"
-          />
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-white/10 blur-3xl" />
-          <div className="relative flex flex-col items-center gap-2">
-            <h2 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-medium ring-1 ring-white/20">
-              <Check className="size-4" aria-hidden="true" />
-              {c.title}
-            </h2>
-            <p className="pt-3 text-sm text-white/75">{c.scoreLabel}</p>
-            <p className="text-6xl font-semibold tracking-tight tabular-nums">{score.percent}%</p>
-            <p className="text-sm tabular-nums text-white/75">
-              {pointsFormat.format(score.earned)} {c.scoreOf} {pointsFormat.format(score.possible)}
-            </p>
-            {nextHref && nextLesson ? (
-              <Link
-                href={nextHref}
-                className="group mt-5 inline-flex min-h-12 max-w-full items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-deep shadow-lg shadow-brand-deep/30 outline-none transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                <span className="min-w-0 text-balance">
-                  {c.nextLesson}: {nextLesson.title}
-                </span>
-                <ArrowRight className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+        <section className="flex flex-col items-center gap-2 rounded-3xl border-2 border-ink bg-highlight px-6 py-10 text-center text-highlight-foreground shadow-offset sm:px-10">
+          <h2 className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-card px-3 py-1 text-sm font-semibold text-foreground">
+            <Check className="size-4" aria-hidden="true" />
+            {c.title}
+          </h2>
+          <p className="pt-3 text-sm font-medium text-highlight-foreground/75">{c.scoreLabel}</p>
+          <p className="font-display text-6xl font-extrabold tracking-tight tabular-nums">{score.percent}%</p>
+          <p className="text-sm tabular-nums text-highlight-foreground/75">
+            {pointsFormat.format(score.earned)} {c.scoreOf} {pointsFormat.format(score.possible)}
+          </p>
+          {nextHref && nextLesson ? (
+            <Link href={nextHref} className={`${OFFSET_CTA_CLASS} mt-5 max-w-full text-sm`}>
+              <span className="min-w-0 text-balance">
+                {c.nextLesson}: {nextLesson.title}
+              </span>
+              <ArrowRight className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+            </Link>
+          ) : (
+            courseSlug && (
+              <Link href={`/courses/${courseSlug}`} className={`${OUTLINE_CTA_CLASS} mt-5`}>
+                {alliengllCopy.player.backToCourse}
               </Link>
-            ) : (
-              courseSlug && (
-                <Link
-                  href={`/courses/${courseSlug}`}
-                  className="mt-5 inline-flex min-h-12 items-center rounded-xl px-5 py-3 text-sm font-medium text-white ring-1 ring-white/30 outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white"
-                >
-                  {alliengllCopy.player.backToCourse}
-                </Link>
-              )
-            )}
-          </div>
+            )
+          )}
         </section>
       ) : (
         showNeutral && (
-          <section className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card px-6 py-8 text-center">
+          <section className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-ink/40 bg-card px-6 py-8 text-center">
             {progress.total > 0 && (
               <>
                 <h2 className="text-lg font-semibold text-foreground">

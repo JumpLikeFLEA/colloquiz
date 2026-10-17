@@ -64,11 +64,11 @@ export function LessonUnavailable({
   state: LessonUnavailableAccess;
 }) {
   return (
-    <div className="bg-background" data-access={state.access}>
+    <div className="grid-paper" data-access={state.access}>
       {band}
       {state.access === "scheduled" ? (
         <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
-          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+          <section className="flex flex-col items-center gap-4 rounded-2xl border-2 border-ink bg-card px-6 py-10 text-center shadow-offset">
             <h2 className="text-lg font-semibold text-foreground">{scheduledCopy.title}</h2>
             <p className="max-w-sm text-base text-muted-foreground">
               {scheduledCopy.opensOn} <LocalDateTime iso={state.opensAt} locale="en-GB" />.
@@ -80,7 +80,7 @@ export function LessonUnavailable({
         </div>
       ) : state.access === "needs_entitlement" ? (
         <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
-          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+          <section className="flex flex-col items-center gap-4 rounded-2xl border-2 border-ink bg-card px-6 py-10 text-center shadow-offset">
             <p className="max-w-sm text-base font-medium text-foreground">{alliengllCopy.notAvailable.body}</p>
             {state.howToJoinUrl && (
               <a href={state.howToJoinUrl} target="_blank" rel="noopener noreferrer" className={SUBMIT_BUTTON_CLASS}>
@@ -103,7 +103,7 @@ export function LessonUnavailable({
               ))}
             </div>
           )}
-          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+          <section className="flex flex-col items-center gap-4 rounded-2xl border-2 border-ink bg-card px-6 py-10 text-center shadow-offset">
             <h2 className="text-lg font-semibold text-foreground">{signInCopy.title}</h2>
             <p className="max-w-sm text-sm text-muted-foreground sm:text-base">{signInCopy.body}</p>
             <Link href={`/login?${new URLSearchParams({ next: lessonPath }).toString()}`} className={SUBMIT_BUTTON_CLASS}>
