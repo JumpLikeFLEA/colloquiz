@@ -2082,3 +2082,16 @@ Appended to in the same commit as the change it records. Referenced from
   `/studio/homework` and `/studio/messages`. Not reached: a dialog left open
   across a lapse. Do not decide frozen-ness in the client: `studio_can_write()`
   decides, and the database refuses every write whatever the page shows.
+- Account menu names a Telegram user (2026-10-17, SHELL-024, docs/decisions/0157).
+  An account with no email shows its Telegram username in the English account
+  chip and card: the chip its first letter (upper-cased), the card "Signed in as
+  @username" in the same `truncate` line the email used (and the chip's
+  accessible name). With neither email nor username the person icon and "You are
+  signed in" stay. Email accounts are unchanged. The username is read from the
+  JWT's `user_metadata.preferred_username` (`lib/auth.ts`), so no network call is
+  added; `AccountMenu` is still a Server Component with zero client JS.
+  `npm run budget`, before and after (local stack, seeded): `/` 178.2 / 178.2 KB,
+  the course page 172.0 / 172.0, the free lesson 256.2 / 256.2. Existing classes
+  and tokens only. 360px not measured: the change is a string inside the
+  existing truncating span, and a real no-email session was not available locally.
+  Do not show a username for an account that has an email.

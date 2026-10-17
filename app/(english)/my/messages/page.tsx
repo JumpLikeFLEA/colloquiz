@@ -50,7 +50,7 @@ export default async function MyMessagesPage() {
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
           <BandTopBar
             back={{ href: "/my", label: m.backToMy }}
-            account={<AccountMenu email={signedIn.email} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={GLASS_PILL_CLASS}>{m.eyebrow}</span>

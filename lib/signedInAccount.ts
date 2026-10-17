@@ -19,7 +19,10 @@ import { getUnreadMessageCount } from "@/lib/messages/messagesServer";
  * second call in the same request free; it does not dedupe against those
  * two, which build their own clients.
  *
- * `email` is in the JWT, so it costs no profiles read. `isEditor` (SHELL-021,
+ * `email` is in the JWT, so it costs no profiles read. So is `username`
+ * (SHELL-024): for an account with no email, the Telegram username in the
+ * JWT's `user_metadata.preferred_username` (lib/auth.ts), so the menu can say
+ * who is signed in with no network call added. `isEditor` (SHELL-021,
  * docs/decisions/0109 Decision 4) drives the menu's "Studio" link: two
  * parallel reads (lib/studioEditor.ts), made only once a user is known, so
  * an anonymous visitor still pays nothing.
@@ -32,7 +35,7 @@ import { getUnreadMessageCount } from "@/lib/messages/messagesServer";
  * otherwise keep the pre-read count for the rest of the request.
  */
 export const getSignedInAccount = cache(
-  async (): Promise<{ email: string | null; isEditor: boolean; unreadMessages: number } | null> => {
+  async (): Promise<{ email: string | null; username: string | null; isEditor: boolean; unreadMessages: number } | null> => {
     const supabase = await createClient();
     const user = await authUserFrom(supabase);
     if (!user) return null;
@@ -40,6 +43,6 @@ export const getSignedInAccount = cache(
       isStudioEditor(supabase, user.id),
       getUnreadMessageCount(supabase),
     ]);
-    return { email: user.email, isEditor, unreadMessages };
+    return { email: user.email, username: user.username, isEditor, unreadMessages };
   },
 );

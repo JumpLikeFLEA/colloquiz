@@ -80,7 +80,7 @@ export default async function MyPage() {
             back={{ href: "/#catalogue", label: m.backToCatalogue }}
             // Sign-out from here returns to `/`: `/my` itself would only
             // bounce a signed-out visitor to the sign-in page.
-            account={signedIn && <AccountMenu email={signedIn.email} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={GLASS_PILL_CLASS}>{m.eyebrow}</span>

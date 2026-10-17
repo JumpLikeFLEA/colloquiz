@@ -18,6 +18,11 @@ import { accountCopy } from "./accountCopy";
  * - Sign-out is a plain form POST to /auth/sign-out (app/auth/sign-out/
  *   route.ts), which 303s back to `next`, the page this menu is on.
  *
+ * An account with no email (Telegram sign-in, docs/decisions/0098) shows its
+ * username instead (SHELL-024): the chip its first letter, the card "Signed
+ * in as @username". The username comes from the JWT (lib/auth.ts), a prop
+ * like `email`, so this stays a Server Component with zero client JS.
+ *
  * An editor (`studio`, from getSignedInAccount's `isEditor`) also gets a
  * "Studio" link to /studio above Sign out (SHELL-021, docs/decisions/0109
  * Decision 4); a learner sees nothing new. A plain `<a>`, not next/link:
@@ -43,12 +48,15 @@ import { accountCopy } from "./accountCopy";
  */
 export function AccountMenu({
   email,
+  username = null,
   lang,
   next,
   studio,
   unread = 0,
 }: {
   email: string | null;
+  /** Telegram username (no "@") for an account with no email (SHELL-024). */
+  username?: string | null;
   lang: SurfaceLang;
   next: string;
   studio: boolean;
@@ -56,8 +64,11 @@ export function AccountMenu({
   unread?: number;
 }) {
   const a = accountCopy[lang];
-  const initial = accountInitial(email);
-  const base = email ? `${a.signedInAs} ${email}` : a.signedIn;
+  // An email account shows its email; an account with none shows its Telegram
+  // username as "@name" (SHELL-024); with neither, the generic icon and copy.
+  const who = email ?? (username ? `@${username}` : null);
+  const initial = accountInitial(email ?? username);
+  const base = who ? `${a.signedInAs} ${who}` : a.signedIn;
   const status = unread > 0 ? `${base}. ${a.unreadLabel} ${unread}` : base;
 
   return (
@@ -82,10 +93,10 @@ export function AccountMenu({
         )}
       </summary>
       <div className="absolute right-0 top-full z-10 mt-2 flex w-64 max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-lg">
-        {email ? (
+        {who ? (
           <p className="flex min-w-0 flex-col gap-0.5">
             <span className="text-xs text-muted-foreground">{a.signedInAs}</span>
-            <span className="truncate text-sm font-medium">{email}</span>
+            <span className="truncate text-sm font-medium">{who}</span>
           </p>
         ) : (
           <p className="text-sm font-medium">{a.signedIn}</p>
