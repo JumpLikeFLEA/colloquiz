@@ -2198,3 +2198,29 @@ Appended to in the same commit as the change it records. Referenced from
   them. `npm run budget`: unchanged on every route. Do not hard-code the violet
   in a component: use the tokens, and do not use `--ink` as the colour of text on
   the marker.
+- Course access (2026-10-17, TCH-009, docs/decisions/0164, migration 087 applied to
+  the local stack only, not to the hosted project). Studio only; a student sees
+  nothing new. Composed from the group page's row frame, button classes and
+  AlertDialog confirm; no new colours:
+  - A linked student's page (`/studio/learners/[userId]`) gains "Course access"
+    between Groups and Homework: one `rounded-2xl border bg-card` row per
+    self-paced course the teacher edits, with the title (wraps), a
+    `bg-brand-subtle text-brand-text` "Access opened" pill and "Since <date>" once
+    granted, a muted "Draft" pill on an unpublished course, and a primary "Open
+    access" button, or an outlined "Close access" that opens an AlertDialog. A
+    student who already has the course through a purchase or an admin has no
+    button, and a muted line says so. With no self-paced course, a dashed box
+    explains that cohort courses use runs and invites.
+  - The course editor of a self-paced course gains "Granted access (N)" above
+    Homework: a row per linked student the teacher opened it for (their name is a
+    link to their page), "Since <date>", and "Close access" behind the same confirm.
+  - Both are in `WriteArea`: a frozen seat disables the buttons. A failed read hides
+    the section instead of the page.
+  Measured at 360px (local stack, seeded teacher, three linked students,
+  `scrollWidth/innerWidth`): 360/360 on a linked student's page with no grants,
+  after a grant (a 76-character title, a 70-character email), with the confirm
+  open (dialog x 21, width 318), for a student with a purchase, and with the seat
+  lapsed; 360/360 on the course editor with two grantees, with its confirm open,
+  after a revoke, and with the seat lapsed. Not reached: a toast.
+  Do not offer Close access on a row the teacher did not make, and do not decide
+  the state in the client: `teacher_grantable_courses()` returns it.

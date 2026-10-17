@@ -31,6 +31,8 @@ import { homeworkForStudent } from "@/lib/homework/homework";
 import { AssignHomeworkButton } from "../../homework/AssignHomework";
 import { loadAssignContext, loadHomeworkViews } from "../../homework/data";
 import { HomeworkSummary } from "../../homework/HomeworkSummary";
+import { getGrantableCourses } from "@/lib/courseGrantsServer";
+import { CourseAccess } from "./CourseAccess";
 import { LearnerGroups } from "./LearnerGroups";
 import { LinkedAnswers } from "./LinkedAnswers";
 import { LessonActivityCard } from "./LessonActivityCard";
@@ -72,15 +74,21 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
   // TCH-005: the same readers also cover the lessons and courses the teacher
   // assigned this student (080); linked_student_assigned_lessons titles the ones
   // the teacher does not edit.
-  const [attempts, scores, assigned, assignCtx, homework] = isLinked
+  // TCH-009: the courses the teacher can open for this student. null when the read
+  // fails (087 not applied, a transient error): the page renders without the section.
+  const [attempts, scores, assigned, assignCtx, homework, grantable] = isLinked
     ? await Promise.all([
         supabase.rpc("linked_student_attempts", { p_student: userId }),
         supabase.rpc("linked_student_lesson_scores", { p_student: userId }),
         supabase.rpc("linked_student_assigned_lessons", { p_student: userId }),
         loadAssignContext(),
         loadHomeworkViews(),
+        getGrantableCourses(userId).catch((e) => {
+          console.error("learner page: course access:", e);
+          return null;
+        }),
       ])
-    : [null, null, null, null, null];
+    : [null, null, null, null, null, null];
   if (attempts?.error) throw new Error(attempts.error.message);
   if (scores?.error) throw new Error(scores.error.message);
   if (assigned?.error) throw new Error(assigned.error.message);
@@ -197,6 +205,14 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
           studentId={userId}
           groups={teacherGroups.map((g) => ({ id: g.id, name: g.name }))}
           memberOf={memberOf}
+        />
+      )}
+
+      {grantable && (
+        <CourseAccess
+          studentId={userId}
+          studentLabel={linkedLabel ?? label}
+          courses={grantable}
         />
       )}
 

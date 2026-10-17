@@ -9,7 +9,10 @@ import { homeworkForCourse } from "@/lib/homework/homework";
 import { AssignHomeworkButton } from "../../homework/AssignHomework";
 import { loadAssignContext, loadHomeworkViews } from "../../homework/data";
 import { HomeworkSummary } from "../../homework/HomeworkSummary";
+import { getCourseGrantees } from "@/lib/courseGrantsServer";
+import { getLinkedStudents } from "@/lib/teacherLinksServer";
 import { CourseDetailView } from "./CourseDetailView";
+import { CourseGrantees } from "./CourseGrantees";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
 // (AUTH-007, docs/decisions/0041, reopening 0025 Decision 1). See
@@ -34,11 +37,12 @@ export default async function AdminCourseDetailPage({
     );
   }
 
-  const [detail, runs, deleteBlockers, homework] = await Promise.all([
+  const [detail, runs, deleteBlockers, homework, grantees] = await Promise.all([
     getAuthoredCourseDetail(id, isAdmin),
     getCourseRuns(id),
     getDeleteBlockers(id),
     getHomeworkSection(id),
+    getGranteesSection(id),
   ]);
   if (!detail) notFound();
   // Display only (AUTH-010): which notice and locks to show. The RPCs
@@ -49,6 +53,11 @@ export default async function AdminCourseDetailPage({
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} deleteBlockers={deleteBlockers} />
+      {grantees && detail.course.format === "self_paced" && (
+        <div className="mt-8">
+          <CourseGrantees courseId={id} grantees={grantees} />
+        </div>
+      )}
       {homework && (
         <div className="mt-8">
           <HomeworkSummary
@@ -94,6 +103,24 @@ async function getHomeworkSection(courseId: string) {
     return { ...ctx, views: homeworkForCourse(hw.views, courseId) };
   } catch (e) {
     console.error("course editor: homework section:", e);
+    return null;
+  }
+}
+
+// TCH-009: the students this teacher opened the course for, labelled from the
+// teacher's own linked students (course_grantees only returns linked ones).
+// null when a read fails (087 not applied), so the editor simply shows no section.
+async function getGranteesSection(courseId: string) {
+  try {
+    const [grantees, linked] = await Promise.all([getCourseGrantees(courseId), getLinkedStudents()]);
+    const labels = new Map(linked.map((s) => [s.userId, s.label]));
+    return grantees.map((g) => ({
+      studentId: g.studentId,
+      label: labels.get(g.studentId) || "Student",
+      grantedAt: g.grantedAt,
+    }));
+  } catch (e) {
+    console.error("course editor: granted access:", e);
     return null;
   }
 }
