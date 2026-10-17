@@ -1807,12 +1807,15 @@ Appended to in the same commit as the change it records. Referenced from
   the post-feedback lock are unchanged. Existing classes and tokens only; not
   measured at 360px. Do not persist takes without redoing 0141 Decision 11.
 - Studio shows a Telegram learner's @username (2026-10-16, AUTH-019,
-  docs/decisions/0145, migration 073, not yet applied). Where Studio showed a
-  learner's email (roster, learner page, review queue, inbox), an account with
-  no email shows "@username" from its Telegram identity. The label order is
-  unchanged (invite name, email, @username). No new classes or tokens; 360px
-  not yet measured because the migration is unapplied. Do not add a separate
-  username column to the UI.
+  docs/decisions/0145, migration 073, applied to hosted). Where Studio showed a
+  learner's email (roster, learner page, review queue), an account with no
+  email shows "@username" from its Telegram identity. The inbox shows no
+  learner label, so it is unchanged. The label order is unchanged (invite
+  name, email, @username). No new classes or tokens. Measured at 360px (local
+  stack, a Telegram learner with a 32-character username):
+  `scrollWidth/innerWidth 360/360` on `/studio/learners`, the learner page,
+  `/studio/reviews` and `/studio`. Do not add a separate username column to
+  the UI.
 - Lesson completion on the course page (2026-10-16, PROG-006, docs/decisions/
   0143 + 0147, migration 075 not yet applied). A lesson row's ✓ and "Best: N%"
   now mean COMPLETE (every exercise answered, or opened when it has none), not

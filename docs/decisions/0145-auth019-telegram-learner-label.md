@@ -33,10 +33,26 @@ for an arbitrary id. The RPCs' own `can_edit_course` filter is untouched.
 
 ## Verification state
 
-Re-emitted bodies were diffed against 062/063: only the email expression and
-the ORDER BY tail differ (printed in the card comment). The migration is NOT
-applied, so the full protocol (editor of A sees a Telegram learner of A and
-not one who only touched B; non-editor gets zero rows; 360px) is not run.
+073 is applied to hosted (probe 2026-10-17: `learner_contact_label` exists;
+`review_queue` and `learner_roster` call it; the live `learner_roster` also
+has 075's `lesson_completion` body). `supabase/verify/073_telegram_learner_label.sql`
+seeds a Telegram-only learner, an email learner, one with both, one with a
+Telegram identity and no username, one with neither, and a learner who only
+touched course B. It asserts, for all three RPCs: `@username` for the
+Telegram learner (positive control: the editor of B sees the B learner's
+username); the email wins when both exist; an empty label for the last two;
+no row of the other course's learner; zero rows for a non-editor beside a
+non-empty editor result; `authenticated` and `anon` cannot call the helper.
+Local: PASS. Hosted: the CLI does not print NOTICEs, so a copy of the script
+that raises at its PASS line surfaced "AUTH-019 PASS reached" (every earlier
+assertion held); user, identity, course and enrolment counts were identical
+before and after (20 / 22 / 0 / 4). Measured at 360px, see ui-decisions.
+
+**Re-applying 073 alone undoes 075.** 075 re-emits `learner_roster` from
+073's body, so applying 073 again on a database that has 075 restores the
+pre-075 `lessons_completed` (attempts, not completion). The verify script
+checks for it. Re-apply 075 after 073 (shown locally: 073 re-applied, check
+failed; 075 re-applied, PASS, and 075 again, PASS).
 
 ## Revisit if
 
