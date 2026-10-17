@@ -2305,3 +2305,19 @@ Appended to in the same commit as the change it records. Referenced from
   178.2 / 177.9 KB of 180. Do not put "About me" or "Student reviews" back
   without the partner's text (0156 Decision 14), and do not move the headline
   strings into the client component: `HeroTitle` keeps them server-rendered.
+- Landing comic is one square block of four quarters (2026-10-17, SHELL-032,
+  docs/decisions/0168), SUPERSEDING SHELL-027's two separate cells (0165
+  Decision 5). One `aspect-square` 2×2 grid framed in `--comic-frame`, inner
+  lines from the cells' own right/bottom borders, the violet offset shadow on
+  the whole block, tilted −1° (none under reduced motion). The left column holds
+  the drawings: the big dinosaur on `bg-brand-subtle`, then the small one with
+  its bubble at the cell's top right, on a dashed line. The right column holds
+  the captions, now bold sans in place of Caveat. The sticker is a yellow
+  circle over the top right corner, `-right-1` below `xl` (an 8px overhang
+  scrolled the page by 1px at 512–576 and 1024). Share cards and the English
+  meta description now read the landing's headline and subtitle
+  (`landingShareText`); "Английский без напряжения" is gone. The account menu
+  keeps "вы". Existing tokens; no new colours. Measured: no horizontal scroll at
+  any width 320–1600 (8px steps); 360/360 light and dark, EN and RU.
+  `npm run budget`: `/` 177.9 / 177.9 KB. Do not split the block back into
+  cards, and do not widen the sticker's overhang below `xl`.

@@ -10,6 +10,7 @@ import { EnglishFooter } from "./EnglishFooter";
 import { EnglishFooterGate } from "./EnglishFooterGate";
 import { EntryViewBeacon } from "./EntryViewBeacon";
 import { HtmlLangSync } from "./HtmlLang";
+import { landingShareText } from "./landingCopy";
 import "../globals.css";
 
 // Same font, same rationale as the Colloquiz root (docs/decisions/0021):
@@ -53,7 +54,8 @@ export const metadata: Metadata = {
     default: alliengllCopy.siteName,
     template: `%s · ${alliengllCopy.siteName}`,
   },
-  description: alliengllCopy.landing.heroSubtitle,
+  // The landing's subtitle (SHELL-032, docs/decisions/0168).
+  description: landingShareText().description,
   openGraph: { siteName: alliengllCopy.siteName, type: "website" },
   robots: { index: false, follow: false },
 };

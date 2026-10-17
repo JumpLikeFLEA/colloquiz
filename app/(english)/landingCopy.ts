@@ -4,7 +4,9 @@
  * since docs/decisions/0080, whose own strings live in
  * courses/[courseSlug]/courseCopy.ts). Deliberately separate from
  * lib/alliengll/copy.ts — do not merge them, and do not import this file
- * outside app/(english)/page.tsx and its landing components.
+ * outside app/(english)/page.tsx and its landing components, except for
+ * `landingShareText` in the server-only metadata and share cards (SHELL-032,
+ * docs/decisions/0168).
  *
  * Every claim below is one docs/handoff.md already makes about the product
  * (lesson length, levels, free first lessons, explanations, ~1 hour per
@@ -157,3 +159,16 @@ export const landingCopy: Record<SurfaceLang, LandingStrings> = {
     closingText: "No sign-up, no payment.",
   },
 };
+
+/**
+ * The landing's headline as plain text and its subtitle, for places that
+ * cannot draw the marker or the oval: the English surface's meta description
+ * and its share cards (SHELL-032, docs/decisions/0168, replacing copy.ts's old
+ * SHELL-010 headline). Russian, because a share card is cached per
+ * URL and the metadata stays Russian (docs/handoff.md, "Audience and
+ * language"). Spacing as `HeroTitle` renders it.
+ */
+export function landingShareText(lang: SurfaceLang = "ru"): { title: string; description: string } {
+  const { heroTitle: h, heroSubtitle } = landingCopy[lang];
+  return { title: `${h.lead} ${h.marker}${h.middle} ${h.oval}`, description: heroSubtitle };
+}

@@ -3,6 +3,7 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getInvitePreview } from "@/lib/runInvitesServer";
 import { OgImageCard } from "../../courses/ogImageCard";
+import { landingShareText } from "../../landingCopy";
 import { inviteCopy } from "./inviteCopy";
 
 // The invite link's share card (docs/decisions/0137): the course's cover,
@@ -25,8 +26,8 @@ export default async function Image({ params }: { params: Promise<{ token: strin
   if (!course || course.state !== "ok") {
     return new ImageResponse(
       <OgImageCard
-        title={alliengllCopy.landing.heroTitle}
-        description={alliengllCopy.landing.heroSubtitle}
+        title={landingShareText().title}
+        description={landingShareText().description}
         level={null}
         coverImageUrl={null}
       />,

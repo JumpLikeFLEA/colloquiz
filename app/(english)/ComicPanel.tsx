@@ -4,12 +4,15 @@ import { landingCopy } from "./landingCopy";
 
 /**
  * The landing hero's comic panel and its "10-15 minutes a day" sticker
- * (SHELL-027, docs/decisions/0165). Two cells, as in the owner's design: a big
- * dinosaur roaring ("English in my head") and a small, sweating one ("English I
- * speak", with its "uhh... um" bubble). Under the panel, the owner's line "it's
- * normal: understanding and speaking are different skills", and the sticker's
- * figure set large over its unit, both from the owner's mockups (SHELL-031,
- * docs/decisions/0167).
+ * (SHELL-027, docs/decisions/0165), laid out as the owner's mockups draw it
+ * (SHELL-032, docs/decisions/0168): one square framed block of four quarters,
+ * tilted by 1°, with the violet offset shadow. Left column, the drawings: the
+ * big dinosaur roaring on the light violet cell (`bg-brand-subtle`, close to
+ * the mockup's sampled cell colour in 0162), and the small, sweating one with
+ * its "uhh... um" bubble standing on a dashed line. Right column, their captions ("English in
+ * my head", "English I speak") in bold sans. The round sticker sits over the
+ * top right corner. Under the block, the owner's line "it's normal:
+ * understanding and speaking are different skills" (SHELL-031, 0167).
  *
  * The drawings are the owner's `dino-big.svg` and `dino-small.svg`
  * (docs/design/alina-cher/), redrawn inline with the same paths. Their hex
@@ -22,9 +25,8 @@ import { landingCopy } from "./landingCopy";
  * panel costs no client JS on `/` (0078).
  */
 
-const CELL_CLASS =
-  "relative flex flex-col gap-2 rounded-2xl border-2 border-comic-frame bg-comic-cell p-3 shadow-[4px_4px_0_0_var(--brand)] sm:p-4";
-const CAPTION_CLASS = "font-accent text-lg leading-tight text-foreground sm:text-xl";
+const CAPTION_CELL_CLASS = "flex items-center p-3 sm:p-5";
+const CAPTION_CLASS = "text-base font-bold leading-snug text-foreground sm:text-xl lg:text-2xl";
 
 function DinoBig() {
   return (
@@ -36,7 +38,7 @@ function DinoBig() {
       strokeWidth={3}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-auto h-auto w-full stroke-ink"
+      className="h-auto w-full stroke-ink"
     >
       <path
         d="M6 96 C 30 88, 50 70, 70 60 C 90 50, 105 46, 118 42 C 124 30, 134 22, 150 22 C 166 22, 182 26, 192 32 L 194 42 L 166 46 L 190 58 C 184 66, 168 70, 150 68 C 142 76, 136 84, 132 92 L 142 96 L 140 102 L 128 98 C 124 104, 120 108, 116 110 L 124 136 L 136 138 L 112 140 L 100 114 C 92 116, 84 116, 78 114 L 74 136 L 86 138 L 60 140 L 56 110 C 40 106, 22 102, 6 96 Z"
@@ -60,7 +62,7 @@ function DinoSmall() {
       strokeWidth={2.6}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-auto h-auto w-full stroke-ink"
+      className="h-auto w-1/2 stroke-ink"
     >
       <path
         d="M12 64 C 22 60, 28 56, 32 52 C 34 40, 44 34, 52 36 C 54 26, 60 18, 70 18 C 82 18, 88 26, 86 34 C 84 40, 76 42, 68 42 C 70 50, 70 58, 66 64 L 70 80 L 76 82 L 62 82 L 58 68 C 52 70, 46 70, 40 68 L 40 82 L 46 84 L 32 84 L 32 66 C 24 68, 18 68, 12 64 Z"
@@ -78,25 +80,34 @@ export function ComicPanel({ lang }: { lang: SurfaceLang }) {
   const t = landingCopy[lang].comic;
 
   return (
-    <div className="relative mt-4 lg:mt-0">
-      <div className="grid grid-cols-2 gap-4 sm:gap-6">
-        <div className={CELL_CLASS}>
-          <p className={CAPTION_CLASS}>{t.head}</p>
-          <DinoBig />
+    <div className="mt-6 lg:mt-0">
+      <div className="relative -rotate-1 motion-reduce:rotate-0">
+        {/* The quarters' inner lines are each cell's own right/bottom border,
+            so the block reads as one frame split in four. */}
+        <div className="grid aspect-square grid-cols-2 grid-rows-2 overflow-hidden rounded-md border-2 border-comic-frame bg-comic-cell shadow-[6px_6px_0_0_var(--brand)]">
+          <div className="flex items-end border-r-2 border-b-2 border-comic-frame bg-brand-subtle p-3 sm:p-5">
+            <DinoBig />
+          </div>
+          <div className={`${CAPTION_CELL_CLASS} border-b-2 border-comic-frame`}>
+            <p className={CAPTION_CLASS}>{t.head}</p>
+          </div>
+          <div className="relative flex flex-col items-center justify-end border-r-2 border-comic-frame px-3 pb-3 pt-3 sm:px-5 sm:pb-5">
+            <span className="mb-auto self-end rounded-full border-2 border-comic-frame bg-comic-cell px-2.5 py-0.5 font-accent text-base text-foreground sm:text-lg">
+              {t.um}
+            </span>
+            <DinoSmall />
+            <span aria-hidden="true" className="absolute inset-x-0 bottom-3 border-t-2 border-dashed border-comic-frame sm:bottom-5" />
+          </div>
+          <div className={CAPTION_CELL_CLASS}>
+            <p className={CAPTION_CLASS}>{t.speak}</p>
+          </div>
         </div>
-        <div className={CELL_CLASS}>
-          <p className={CAPTION_CLASS}>{t.speak}</p>
-          <span className="w-fit rounded-full border-2 border-comic-frame px-2.5 py-0.5 font-accent text-base text-foreground sm:text-lg">
-            {t.um}
-          </span>
-          <DinoSmall />
-        </div>
+        <span className="pointer-events-none absolute -right-1 -top-9 flex size-[5.5rem] rotate-6 flex-col items-center justify-center rounded-full border-2 border-highlight-foreground bg-highlight text-center leading-none text-highlight-foreground shadow-offset sm:-top-11 sm:size-28 xl:-right-5">
+          <span className="font-display text-xl font-extrabold sm:text-2xl">{t.sticker.figure}</span>
+          <span className="mt-0.5 text-[0.65rem] font-semibold sm:text-xs">{t.sticker.unit}</span>
+        </span>
       </div>
-      <span className="pointer-events-none absolute -top-12 right-1 flex rotate-6 flex-col items-center rounded-xl border-2 border-highlight-foreground bg-highlight px-3 py-1 text-center leading-none text-highlight-foreground shadow-offset sm:-right-2">
-        <span className="font-display text-xl font-extrabold sm:text-2xl">{t.sticker.figure}</span>
-        <span className="text-xs font-semibold">{t.sticker.unit}</span>
-      </span>
-      <p className="mt-4 flex items-start gap-2 font-accent text-lg leading-tight text-foreground sm:text-xl">
+      <p className="mt-5 flex items-start gap-2 font-accent text-lg leading-tight text-foreground sm:text-xl">
         <Brain className="mt-0.5 size-5 flex-none text-brand-text" aria-hidden="true" />
         {t.note}
       </p>

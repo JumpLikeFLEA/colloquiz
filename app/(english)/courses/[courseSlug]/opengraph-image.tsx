@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getPublicCourse } from "@/lib/coursePage";
 import { OgImageCard } from "../ogImageCard";
+import { landingShareText } from "../../landingCopy";
 
 // SHELL-009 — per-course share image (Telegram, VK, etc. all read og:image).
 // A route-segment file, not the app-root app/opengraph-image.tsx: Next
@@ -22,8 +23,9 @@ export default async function Image({
 
   // A course that doesn't resolve (bad/stale link) still gets a branded
   // card rather than a broken image — the page itself 404s separately.
-  const title = course.state === "ok" ? course.title : alliengllCopy.landing.heroTitle;
-  const description = course.state === "ok" ? course.description : alliengllCopy.landing.heroSubtitle;
+  const share = landingShareText();
+  const title = course.state === "ok" ? course.title : share.title;
+  const description = course.state === "ok" ? course.description : share.description;
   const coverImageUrl = course.state === "ok" ? course.coverImageUrl : null;
   const level = course.state === "ok" ? course.level : null;
 

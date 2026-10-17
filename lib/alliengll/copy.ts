@@ -35,13 +35,10 @@ export const alliengllCopy = {
   // the other is metadata.
   wordmark: "Alina Cher",
 
-  landing: {
-    heroTitle: "Английский без напряжения",
-    heroSubtitle:
-      "Короткие курсы для тех, кто хочет понимать и говорить по-английски — на телефоне, в удобном темпе.",
-    ctaPrimary: "Начать бесплатно",
-    catalogueLink: "Все курсы",
-  },
+  // No `landing` block (SHELL-032, docs/decisions/0168): the share cards and
+  // the meta description read the landing's own headline and subtitle from
+  // app/(english)/landingCopy.ts (`landingShareText`), so there is one place to
+  // change them.
 
   // catalogue.title / .empty moved to app/(english)/landingCopy.ts
   // (2026-09-28 landing exception — those strings are now bilingual and

@@ -3,6 +3,7 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getPublicLesson } from "@/lib/publicLesson";
 import { OgImageCard } from "../../ogImageCard";
+import { landingShareText } from "../../../landingCopy";
 
 // SHELL-009 — per-lesson share image. Reuses the course's cover/level (a
 // lesson has neither of its own) alongside the lesson's own title/
@@ -26,9 +27,9 @@ export default async function Image({
     getPublicLesson(courseSlug, lessonSlug),
   ]);
 
-  const title = lesson.state === "not_found" ? alliengllCopy.landing.heroTitle : lesson.title;
-  const description =
-    lesson.state === "not_found" ? alliengllCopy.landing.heroSubtitle : lesson.description;
+  const share = landingShareText();
+  const title = lesson.state === "not_found" ? share.title : lesson.title;
+  const description = lesson.state === "not_found" ? share.description : lesson.description;
   const coverImageUrl = course.state === "ok" ? course.coverImageUrl : null;
   const level = course.state === "ok" ? course.level : null;
 
