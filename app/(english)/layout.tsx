@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { Geist } from "next/font/google";
+import { Caveat, Geist, Unbounded } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
@@ -20,6 +20,27 @@ import "../globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+// Alina Cher's two display faces (SHELL-026, docs/decisions/0162, 0163), both
+// with the cyrillic subset. Unbounded 800 is the headline face and preloads
+// (it is above the fold on the landing). Caveat 600 is the handwritten accent,
+// ~97 KB for both subsets, so it is NOT preloaded: it loads when a page first
+// paints text in it. Weights are pinned so next/font requests one instance,
+// not the whole variable axis.
+const unbounded = Unbounded({
+  variable: "--font-unbounded",
+  subsets: ["latin", "cyrillic"],
+  weight: "800",
+  display: "swap",
+});
+
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin", "cyrillic"],
+  weight: "600",
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -66,7 +87,7 @@ export default async function EnglishRootLayout({
     // hydration, so server and client markup necessarily disagree here —
     // same reasoning as the Colloquiz root layout. It also covers `lang`,
     // which HtmlLang.tsx may set after load.
-    <html lang={lang} suppressHydrationWarning className={`${geistSans.variable} h-full antialiased`}>
+    <html lang={lang} suppressHydrationWarning className={`${geistSans.variable} ${unbounded.variable} ${caveat.variable} surface-alina h-full antialiased`}>
       {/* flex column + min-h-svh here (not on any page's own <main>) is the
           one sticky-footer anchor for the whole surface: the wrapper below
           grows (flex-1) to fill whatever's left of the viewport after

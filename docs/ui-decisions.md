@@ -2180,3 +2180,21 @@ Appended to in the same commit as the change it records. Referenced from
   classes or tokens. Do not rename `lib/alliengll/*` or the
   `alliengll.attempts.v1` storage key: the second would orphan saved anonymous
   attempts.
+- Alina Cher foundation (2026-10-17, SHELL-026, docs/decisions/0163, values from
+  0162). The English surface is violet. `surface-alina` on `<html>` in
+  `app/(english)/layout.tsx` overrides `--brand*` (`#5b3fd9` as fill, `#a595ea`
+  as dark text); on a wrapper it does the same, for the sign-in panel. Every
+  existing `bg-brand` / `text-brand-text` / `bg-brand-subtle` on an English
+  route therefore turns violet, with no change to a component. Colloquiz and
+  Studio stay indigo (measured: `--brand` `#4f46e5`). New tokens in `:root` and
+  `.dark`: `--highlight`, `--highlight-foreground`, `--ink`, `--paper`,
+  `--grid-line`, `--offset-shadow` (`shadow-offset`). Fonts: Unbounded 800
+  (`font-display`, preloaded) and Caveat 600 (`font-accent`, not preloaded),
+  with cyrillic. `.grid-paper`, `.marker`, `Marker` and `HandOval` are
+  server-rendered CSS/SVG. `--background` is not changed yet, so no English page
+  has the paper ground until a later card puts `.grid-paper` on it. Measured at
+  360px on a scratch page (deleted): `scrollWidth/innerWidth` 360/360, light and
+  dark; the real pages are not re-measured, since nothing but colour changed on
+  them. `npm run budget`: unchanged on every route. Do not hard-code the violet
+  in a component: use the tokens, and do not use `--ink` as the colour of text on
+  the marker.

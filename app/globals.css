@@ -125,6 +125,19 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* ── Alina Cher marks (SHELL-026, docs/decisions/0162) ────────────────────
+     Defined for every surface so the English redesign cards never add a
+     colour of their own; only the English surface uses them. Values are the
+     owner's picks, verbatim. --paper is the page ground the grid sits on;
+     --background is NOT overridden on the surface in this card. */
+  --highlight: #ffe55c;
+  /* Text ON the highlight, in both themes (ink #1e1a3a on #ffe55c is 13.14:1).
+     --ink flips in .dark, so it cannot be the colour of text on the marker. */
+  --highlight-foreground: #1e1a3a;
+  --ink: #1e1a3a;
+  --paper: #faf9fe;
+  --grid-line: #f0eff5;
+  --offset-shadow: #1e1a3a;
 }
 
 .dark {
@@ -250,6 +263,46 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  --highlight: #ffe55c;
+  --highlight-foreground: #1e1a3a;
+  --ink: #f2f0fa;
+  --paper: #17142a;
+  --grid-line: #232035;
+  --offset-shadow: #0a0817;
+}
+
+/* The English surface's violet (SHELL-026, docs/decisions/0162, 0156 Decision
+   12). A class, not a layout rule, so it works on <html> (app/(english)/
+   layout.tsx) and on any wrapper outside that layout (the English sign-in
+   panel). Colloquiz and Studio never carry it and stay indigo. It overrides
+   the --brand* family only; every other token is inherited.
+   Specificity: `.surface-alina.dark` (<html> carries both) and
+   `.dark .surface-alina` (a wrapper) each beat the light block, and this
+   block follows :root and .dark in source order. --brand-accent, the second
+   gradient stop, keeps its existing violet (#7c3aed / oklch .565 .22 293).
+   Light: white on --brand 6.65:1, --brand-text on --brand-subtle 5.90:1,
+   white on --brand-hover 7.95:1. Dark: --brand-text on --card 6.90:1, on
+   --background 7.62:1, on --brand-subtle 5.53:1; white on --brand 6.65:1 and
+   on --brand-hover 5.66:1 (figures: docs/decisions/0163). */
+.surface-alina {
+  --brand: #5b3fd9;
+  --brand-text: #5b3fd9;
+  --brand-subtle: #f2f0fc;
+  --brand-subtle-hover: #e6e2f9;
+  --brand-hover: #5037bf;
+  --brand-deep: #3b298d;
+  --brand-border: #e6e2f9;
+}
+
+.dark .surface-alina,
+.surface-alina.dark {
+  --brand: #5b3fd9;
+  --brand-text: #a595ea;
+  --brand-subtle: #2b2351;
+  --brand-subtle-hover: #2f255d;
+  --brand-hover: #684edc;
+  --brand-deep: #402c98;
+  --brand-border: #392b78;
 }
 
 @theme inline {
@@ -292,6 +345,13 @@
   --color-warning-subtle: var(--warning-subtle);
   --color-warning-border: var(--warning-border);
   --color-telegram: var(--telegram);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-grid-line: var(--grid-line);
+  --color-offset-shadow: var(--offset-shadow);
+  --shadow-offset: 4px 4px 0 0 var(--offset-shadow);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
@@ -320,6 +380,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* English surface only (app/(english)/layout.tsx loads them); elsewhere the
+     variables are unset and these fall back to the sans stack. */
+  --font-display: var(--font-unbounded), var(--font-geist-sans);
+  --font-accent: var(--font-caveat), var(--font-geist-sans);
 }
 
 @layer base {
@@ -451,4 +515,37 @@
   .reveal-on-scroll {
     animation: none;
   }
+}
+
+/* Alina Cher marks (SHELL-026, docs/decisions/0163). Plain CSS: no client JS.
+   Colours come from the tokens above. */
+
+/* Grid paper: 25px cells on --paper. */
+.grid-paper {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 25px 25px;
+}
+
+/* Highlighter: a band behind the lower part of the word (the mockup's shape).
+   Text on it is --highlight-foreground in both themes. In .dark the band is
+   full height, so no light ink ever sits on yellow (0162). */
+.marker {
+  color: var(--highlight-foreground);
+  background-image: linear-gradient(
+    transparent 55%,
+    var(--highlight) 55%,
+    var(--highlight) 92%,
+    transparent 92%
+  );
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.dark .marker {
+  background-image: linear-gradient(var(--highlight), var(--highlight));
+  padding-inline: 0.15em;
+  border-radius: 0.15em;
 }
