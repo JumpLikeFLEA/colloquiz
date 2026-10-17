@@ -2148,3 +2148,25 @@ Appended to in the same commit as the change it records. Referenced from
   the 25 Oct clock change. `npm run budget`: `/my` 171.5 KB before and after.
   Do not shift a homework due date into the viewer's zone, and do not add client JS to
   learn the zone.
+- Calendar feed panel (2026-10-17, COH-016, docs/decisions/0160, migration 086 written and
+  applied to the local stack only). A "Subscribe in your calendar" card under the calendar on
+  `/my` (EN/RU with the saved choice) and on `/studio/calendar` (English), composed from
+  existing classes and tokens, no new colours: the calendar cards' `rounded-2xl border bg-card`
+  frame, a `bg-brand-subtle` primary and an outlined secondary button (`min-h-11`), the
+  `destructive-subtle` error line.
+  - No link yet: one line about what it does and "Create link". With a link made earlier: "You
+    made a link on <date>. It can't be shown again; replace it to get a new one." with "Replace
+    link" and "Turn off". Replace asks in place ("The old link will stop working in every
+    calendar that uses it. Replace it?", "Yes, replace" / "Cancel"); Turn off does not ask, as
+    creating a link again undoes it.
+  - A new link is shown once in a read-only field (selects on focus) with Copy ("Copied" after),
+    and a note that anyone with it can read the dates. The address is stored hashed, so a later
+    visit shows the first state again, never the link.
+  - The panel is left out when the status read fails (086 not applied).
+  Measured at 360px (`scrollWidth/innerWidth`, local stack): 360/360 on `/my` with no link, with
+  the link shown (a 64-character token in the field), in the replace confirm, and after Turn
+  off; 360/360 on `/studio/calendar` with no link, the link shown and after Turn off; 1280/1280
+  on `/my` in the same states. Not reached: the confirm on `/studio/calendar`, the error line,
+  RU wording in a browser. `npm run budget`: `/my` 171.5 KB before, 174.0 KB after (limit 180).
+  Do not show a stored address again (only its hash exists), and do not make Replace a
+  one-click action: it breaks every calendar already subscribed.

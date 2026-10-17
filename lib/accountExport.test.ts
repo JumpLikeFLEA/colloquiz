@@ -24,6 +24,7 @@ const baseSources = {
   conversations: [],
   homework: [],
   authorSeat: null,
+  calendarFeed: null,
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -427,8 +428,8 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
     expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
   });
 
-  it("is format version 13", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(13);
+  it("is format version 14", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(14);
   });
 });
 
@@ -609,5 +610,20 @@ describe("buildExportPayload — author_seat (TCH-007)", () => {
       [],
     );
     expect(payload.author_seat).toMatchObject({ kind: "house", expires_at: null, notes: null });
+  });
+});
+
+describe("buildExportPayload — calendar_feed (COH-016)", () => {
+  it("says there is no feed when the reader has no token", () => {
+    expect(buildExportPayload(baseSources, []).calendar_feed).toEqual({ enabled: false, created_at: null });
+  });
+
+  it("says there is one, with its date, and carries nothing that could be the address", () => {
+    const payload = buildExportPayload(
+      { ...baseSources, calendarFeed: { has_token: true, created_at: "2026-10-17T10:00:00Z" } },
+      [],
+    );
+    expect(payload.calendar_feed).toEqual({ enabled: true, created_at: "2026-10-17T10:00:00Z" });
+    expect(JSON.stringify(payload)).not.toMatch(/[0-9a-f]{64}/);
   });
 });

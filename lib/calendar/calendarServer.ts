@@ -51,3 +51,18 @@ export async function getCalendarPageData(role: CalendarRole, rawMonth: string |
     tzKnown: raw !== undefined && (tz !== "UTC" || raw === "UTC"),
   };
 }
+
+export type CalendarFeedStatus = { hasToken: boolean; createdAt: string | null };
+
+/**
+ * Whether the signed-in user has a feed address, and when it was made. The
+ * address itself is never readable (086 stores a hash). Throws if 086 is not
+ * applied, so a page can leave the panel out rather than fail.
+ */
+export async function getCalendarFeedStatus(): Promise<CalendarFeedStatus> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("calendar_feed_status");
+  if (error) throw new Error(error.message);
+  const row = ((data ?? []) as { has_token: boolean; created_at: string }[])[0];
+  return row ? { hasToken: row.has_token, createdAt: row.created_at } : { hasToken: false, createdAt: null };
+}

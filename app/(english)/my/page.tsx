@@ -12,13 +12,14 @@ import type { MyTeacher } from "@/lib/teacherLinks";
 import { getMyTeachers } from "@/lib/teacherLinksServer";
 import { dueState, formatDueDate, homeworkHref, type MyHomework } from "@/lib/homework/homework";
 import { getMyHomework } from "@/lib/homework/homeworkServer";
-import { getCalendarPageData, type CalendarPageData } from "@/lib/calendar/calendarServer";
+import { getCalendarFeedStatus, getCalendarPageData, type CalendarFeedStatus, type CalendarPageData } from "@/lib/calendar/calendarServer";
 import { unreadTotal, type Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
 import { CalendarView } from "@/app/components/calendar/CalendarView";
+import { CalendarFeedPanel } from "@/app/components/calendar/CalendarFeedPanel";
 import { TimeZoneSync } from "@/app/components/calendar/TimeZoneSync";
 import { AccountMenu } from "../AccountMenu";
 import { BandTopBar } from "../BandTopBar";
@@ -62,12 +63,13 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  */
 export default async function MyPage({ searchParams }: { searchParams: Promise<{ month?: string | string[] }> }) {
   const { month: rawMonth } = await searchParams;
-  const [home, teachers, threads, homework, calendar] = await Promise.all([
+  const [home, teachers, threads, homework, calendar, feed] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
     getStudentThreads(),
     getStudentHomework(),
     getStudentCalendar(typeof rawMonth === "string" ? rawMonth : undefined),
+    getStudentFeedStatus(),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
@@ -139,6 +141,13 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             <SectionHeading title={m.calendarTitle} />
             <p className="-mt-3 text-sm text-muted-foreground">{m.calendarLead}</p>
             <CalendarView {...calendar} lang={lang} basePath="/my" />
+            {feed && (
+              <CalendarFeedPanel
+                hasToken={feed.hasToken}
+                createdLabel={feed.createdAt ? formatFeedDate(feed.createdAt, lang) : null}
+                lang={lang}
+              />
+            )}
           </section>
         )}
 
@@ -211,6 +220,26 @@ async function getStudentCalendar(rawMonth: string | undefined): Promise<Calenda
     console.error("/my: my_calendar failed", e);
     return null;
   }
+}
+
+// The feed panel is a courtesy too (086): without the migration the status read
+// fails and the panel is left out; the calendar above it does not depend on it.
+async function getStudentFeedStatus(): Promise<CalendarFeedStatus | null> {
+  try {
+    return await getCalendarFeedStatus();
+  } catch (e) {
+    console.error("/my: calendar_feed_status failed", e);
+    return null;
+  }
+}
+
+function formatFeedDate(iso: string, lang: SurfaceLang): string {
+  return new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(iso));
 }
 
 // The Messages row is a courtesy on the learner home: if the read fails (079

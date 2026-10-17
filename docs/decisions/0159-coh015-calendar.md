@@ -77,6 +77,16 @@ events and one reader; the other date kinds already have readers of their own
     not in `lib/alliengll/copy.ts`; `/my` follows the saved EN/RU choice (the `/my`
     rule), Studio is English. New RU copy is pending owner/partner review.
 
+## Legal (found, not changed)
+
+`colloquiz_tz` is a new first-party cookie holding an IANA zone name, read only to place
+dates on days, so it is functional, not tracking. `docs/release/legal/privacy-policy.md`
+§3.4 lists only `sb-*` and the theme preference, and does not list the existing
+`colloquiz_landing_lang` cookie either, so the table was already incomplete. I did not
+edit reviewed legal copy; a card should list the functional cookies (`colloquiz_tz`,
+`colloquiz_landing_lang`) in §3.4. Labelled as an assumption that no consent is needed for
+a strictly functional preference cookie: I did not take legal advice.
+
 ## Budget
 
 `npm run budget` on the local stack, same seed, before (HEAD, calendar absent)

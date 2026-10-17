@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
-import { getCalendarPageData } from "@/lib/calendar/calendarServer";
+import { getCalendarFeedStatus, getCalendarPageData, type CalendarFeedStatus } from "@/lib/calendar/calendarServer";
 import { CalendarView } from "@/app/components/calendar/CalendarView";
+import { CalendarFeedPanel } from "@/app/components/calendar/CalendarFeedPanel";
 import { TimeZoneSync } from "@/app/components/calendar/TimeZoneSync";
 
 // /studio/calendar — the dates of the courses the teacher edits and of their
@@ -17,7 +18,10 @@ export default async function StudioCalendarPage({ searchParams }: { searchParam
   if (!canEnterStudio(access)) notFound();
 
   const { month } = await searchParams;
-  const data = await getCalendarPageData("teacher", typeof month === "string" ? month : undefined);
+  const [data, feed] = await Promise.all([
+    getCalendarPageData("teacher", typeof month === "string" ? month : undefined),
+    getFeedStatus(),
+  ]);
 
   return (
     <div id="calendar" className="mx-auto max-w-5xl space-y-6">
@@ -31,6 +35,29 @@ export default async function StudioCalendarPage({ searchParams }: { searchParam
         </p>
       </div>
       <CalendarView {...data} lang="en" basePath="/studio/calendar" />
+      {feed && (
+        <CalendarFeedPanel
+          hasToken={feed.hasToken}
+          createdLabel={
+            feed.createdAt
+              ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
+                  new Date(feed.createdAt),
+                )
+              : null
+          }
+          lang="en"
+        />
+      )}
     </div>
   );
+}
+
+// The feed panel is left out, with the error logged, when 086 is not applied.
+async function getFeedStatus(): Promise<CalendarFeedStatus | null> {
+  try {
+    return await getCalendarFeedStatus();
+  } catch (e) {
+    console.error("/studio/calendar: calendar_feed_status failed", e);
+    return null;
+  }
 }

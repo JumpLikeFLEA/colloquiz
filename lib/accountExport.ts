@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 13;
+export const EXPORT_FORMAT_VERSION = 14;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -31,6 +31,7 @@ export const EXPORT_CONTENTS = [
   "Teacher groups — the names of the private groups a linked teacher has put you in",
   "Messages — your conversations with teachers: what each of you wrote, and when",
   "Homework — the lessons and courses a linked teacher assigned you, with any due date and note",
+  "Calendar feed — whether you have a private calendar link and when you made it (never the link itself)",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -170,6 +171,9 @@ export type HomeworkExportRow = {
   assigned_at: string;
 };
 
+/** The reader's own row of `calendar_feed_status` (086), or none. */
+export type CalendarFeedExportRow = { has_token: boolean; created_at: string };
+
 /** The reader's own row of `my_author_seat_export` (082), or none. */
 export type AuthorSeatExportRow = {
   kind: string;
@@ -206,6 +210,8 @@ export type ExportSources = {
   homework: HomeworkExportRow[];
   /** TCH-007 (082): the reader's own author seat, or null. */
   authorSeat: AuthorSeatExportRow | null;
+  /** COH-016 (086): the reader's calendar feed status, or null when there is no token. */
+  calendarFeed: CalendarFeedExportRow | null;
 };
 
 /**
@@ -393,6 +399,14 @@ export function buildExportPayload(
           granted_at: src.authorSeat.created_at,
         }
       : null,
+
+    // COH-016 (docs/decisions/0160; privacy-policy.md section 8): whether the
+    // reader has a calendar feed address and when it was made. NEVER the address:
+    // only its hash is stored (086), so there is nothing to export, and the
+    // status function does not return the hash either.
+    calendar_feed: src.calendarFeed
+      ? { enabled: true, created_at: src.calendarFeed.created_at }
+      : { enabled: false, created_at: null },
   };
 }
 
