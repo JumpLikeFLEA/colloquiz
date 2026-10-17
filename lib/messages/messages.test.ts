@@ -103,6 +103,15 @@ describe("toMessage", () => {
   });
 });
 
+describe("sendErrorResponse for a frozen teacher (083)", () => {
+  it("tells the frozen teacher about the seat and the student only that the teacher cannot start one", () => {
+    expect(sendErrorResponse("seat_lapsed").status).toBe(403);
+    expect(sendErrorResponse("seat_lapsed").message).toMatch(/seat/);
+    expect(sendErrorResponse("teacher_unavailable").status).toBe(409);
+    expect(sendErrorResponse("teacher_unavailable").message).not.toMatch(/seat/);
+  });
+});
+
 describe("sendErrorResponse for attachments", () => {
   it("maps the two attachment refusals to 400 and 403", () => {
     expect(sendErrorResponse("attachment_invalid").status).toBe(400);

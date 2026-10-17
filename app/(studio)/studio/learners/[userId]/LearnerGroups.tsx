@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { GROUP_EXPORT_NOTE } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // TCH-002 (docs/decisions/0149) — add this linked student to, or remove them
 // from, the teacher's groups. One checkbox per group; each toggle is one call
 // to the groups route (add/remove RPCs, 077). Composed from the group page's
 // classes; no new tokens.
 
-export function LearnerGroups({
+function LearnerGroupsInner({
   studentId,
   groups,
   memberOf,
@@ -74,5 +75,15 @@ export function LearnerGroups({
         </div>
       )}
     </section>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function LearnerGroups(props: React.ComponentProps<typeof LearnerGroupsInner>) {
+  return (
+    <WriteArea>
+      <LearnerGroupsInner {...props} />
+    </WriteArea>
   );
 }

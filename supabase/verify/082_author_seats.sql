@@ -365,7 +365,10 @@ BEGIN
   PERFORM pg_temp.check_eq('_is_teacher: NULL is not',
     COALESCE(public._is_teacher(NULL)::text, 'null'), 'false');
   PERFORM pg_temp.check_eq('a seated user with no course mints a student link (the widened path, positive control)',
-    (pg_temp.as_user(tl, 'SELECT (public.rotate_teacher_join_token())->>''ok''')), 'true');
+    (pg_temp.as_user(t, 'SELECT (public.rotate_teacher_join_token())->>''ok''')), 'true');
+  -- TCH-008 (083): this cell used tl, whose seat has lapsed. A lapsed seat is still a
+  -- teacher (the cell above) but 083 freezes the rotation; its refusal is in
+  -- supabase/verify/083_seat_freeze.sql.
   PERFORM pg_temp.check_eq('...a plain user still cannot (denial)',
     (pg_temp.as_user(p, 'SELECT (public.rotate_teacher_join_token())->>''error''')), 'forbidden');
 

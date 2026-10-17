@@ -7,6 +7,8 @@
 // lib/homework/homeworkServer.ts so a Client Component can import these
 // without pulling in the server Supabase client.
 
+import { SEAT_LAPSED_MESSAGE } from "../studioWriteLock";
+
 /** Note limit; 080 enforces the same bound in a CHECK. */
 export const HOMEWORK_NOTE_MAX = 500;
 
@@ -58,6 +60,8 @@ export function homeworkErrorMessage(code: unknown): string {
   switch (code) {
     case "forbidden":
       return "You can't assign homework.";
+    case "seat_lapsed":
+      return SEAT_LAPSED_MESSAGE;
     case "course_not_found":
       return "That course isn't available to assign.";
     case "lesson_not_found":

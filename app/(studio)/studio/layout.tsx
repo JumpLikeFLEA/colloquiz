@@ -3,8 +3,12 @@ import { SidebarProvider } from "@/app/components/ui/sidebar";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { waitingCount } from "@/lib/studio/inbox";
 import { unansweredThreads } from "@/lib/messages/messages";
+import { getStudioWriteState } from "@/lib/studioWriteState";
+import { writeBanner, writeLockFor } from "@/lib/studioWriteLock";
 import { getTeacherThreads, getWaitingRows } from "./inboxData";
+import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { StudioSidebar, StudioTopbar } from "./StudioSidebar";
+import { WriteLockProvider } from "./StudioWriteLock";
 
 // The Studio gate (SHELL-020, docs/decisions/0109 Decision 3). proxy.ts
 // sends a signed-out visitor to /login first; this is the second layer: a
@@ -33,6 +37,12 @@ export default async function StudioLayout({ children }: { children: React.React
   const threads = await getTeacherThreads();
   const unanswered = threads ? unansweredThreads(threads).length : null;
 
+  // TCH-008 (docs/decisions/0155): a lapsed seat reads but does not write. The
+  // database refuses every write itself; this only tells the page so, once,
+  // and hands the same answer to the controls that would otherwise fail.
+  const writeState = await getStudioWriteState();
+  const banner = writeBanner(writeState);
+
   return (
     <SidebarProvider>
       <StudioSidebar isAdmin={access.isAdmin} waitingCount={waiting} unansweredCount={unanswered} />
@@ -41,7 +51,10 @@ export default async function StudioLayout({ children }: { children: React.React
       <div className="flex min-w-0 min-h-svh flex-1 flex-col">
         <StudioTopbar />
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-6xl mx-auto px-5 py-8">{children}</div>
+          <div className="max-w-6xl mx-auto px-5 py-8">
+            {banner && <ReadOnlyBanner banner={banner} />}
+            <WriteLockProvider lock={writeLockFor(writeState)}>{children}</WriteLockProvider>
+          </div>
         </main>
       </div>
     </SidebarProvider>

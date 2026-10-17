@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HOMEWORK_NOTE_MAX, type AssignableCourse } from "@/lib/homework/homework";
 import { GROUP_EXPORT_NOTE } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // TCH-005 (docs/decisions/0152) — assign a lesson or a whole course to linked
 // students and/or groups, with an optional due date and note. Used from the
@@ -29,7 +30,7 @@ export type AssignGroup = { id: string; name: string };
 
 export type AssignPreset = { courseId?: string; studentId?: string; groupId?: string };
 
-export function AssignHomeworkButton({
+function AssignHomeworkButtonInner({
   courses,
   students,
   groups,
@@ -289,5 +290,15 @@ function AssignHomeworkDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function AssignHomeworkButton(props: React.ComponentProps<typeof AssignHomeworkButtonInner>) {
+  return (
+    <WriteArea>
+      <AssignHomeworkButtonInner {...props} />
+    </WriteArea>
   );
 }

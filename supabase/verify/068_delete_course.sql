@@ -66,6 +66,11 @@ BEGIN
   VALUES ('verify-' || p_tag, 'Verify ' || p_tag, 'A2', 'draft', 'cohort')
   RETURNING id INTO course_id;
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (course_id, p_editor, p_editor);
+  -- TCH-008: 083 freezes a writer with no active seat, so every seeded editor
+  -- gets the open-ended seat 082's backfill gave the real ones.
+  INSERT INTO author_seats (user_id, kind, public_name)
+  SELECT DISTINCT ce.user_id, 'teacher', 'Verify seat' FROM course_editors ce
+  ON CONFLICT (user_id) DO NOTHING;
   INSERT INTO lessons (course_id, ordinal, title, slug, access_level, week)
   VALUES (course_id, 1, 'L1', 'l1', 'entitled', 1)
   RETURNING id INTO lesson_id;

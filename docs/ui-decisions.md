@@ -2056,3 +2056,26 @@ Appended to in the same commit as the change it records. Referenced from
   list ("No seats yet.") and the Add form's other error toasts.
   Do not show the page to a non-admin, and do not decide "active" in the client:
   `author_seats_list()` returns `is_active`.
+- Frozen Studio (2026-10-17, TCH-008, docs/decisions/0155, migration 083 applied to the
+  local stack, not to hosted). While the signed-in teacher cannot write (an admin
+  always can; so can an active seat), every Studio page shows, above its content,
+  a `rounded-2xl border bg-warning-subtle` banner with a `Lock` icon: a
+  `text-warning` title ("Your author seat has ended: Studio is read-only"), then
+  one line with the expiry date ("It ended on 13 Oct 2026"), what is not lost
+  (published courses, students' access, reading and replying to messages,
+  feedback on recordings) and who to ask. A teacher with no seat reads "You don't
+  have an author seat". Eleven client components that write (course list and
+  editor, lesson editor and preview, runs, homework assign and actions, student
+  link panel, learner groups, groups list and group page) are wrapped in
+  `WriteArea`: frozen, a native `<fieldset disabled>` (links keep working,
+  disabled controls dim to 50% with `cursor-not-allowed`, the reason is the
+  tooltip); not frozen, nothing is rendered around them, so the pages are
+  unchanged. Filters, the review queue's feedback editors and the message
+  composer stay enabled: reading, feedback and replies are what a lapse leaves
+  open. Composed from existing classes and tokens; no new colours. Measured at
+  360px with the banner showing (local stack, `scrollWidth/innerWidth`): 360/360
+  on `/studio`, `/studio/courses`, the course editor, the runs page, the lesson
+  editor, `/studio/learners`, a linked learner's page, the groups list, a group,
+  `/studio/homework` and `/studio/messages`. Not reached: a dialog left open
+  across a lapse. Do not decide frozen-ness in the client: `studio_can_write()`
+  decides, and the database refuses every write whatever the page shows.

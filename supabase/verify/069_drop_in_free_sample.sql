@@ -34,6 +34,11 @@ BEGIN
   INSERT INTO courses (slug, title, level, status, format)
   VALUES ('verify-cnt015', 'Verify CNT-015', 'A2', 'draft', 'self_paced') RETURNING id INTO v_c;
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (v_c, v_e, v_e);
+  -- TCH-008: 083 freezes a writer with no active seat, so every seeded editor
+  -- gets the open-ended seat 082's backfill gave the real ones.
+  INSERT INTO author_seats (user_id, kind, public_name)
+  SELECT DISTINCT ce.user_id, 'teacher', 'Verify seat' FROM course_editors ce
+  ON CONFLICT (user_id) DO NOTHING;
 
   -- editor
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_e, 'role', 'authenticated')::text, true);

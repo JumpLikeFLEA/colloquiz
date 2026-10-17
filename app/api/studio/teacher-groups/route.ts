@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (error) return { failure: NextResponse.json({ error: "Something went wrong." }, { status: 500 }) };
     const r = (data ?? {}) as { ok?: boolean; error?: string } & Record<string, unknown>;
     if (!r.ok) {
-      const status = r.error === "not_found" ? 404 : r.error === "forbidden" ? 403 : 400;
+      const status = r.error === "not_found" ? 404 : r.error === "forbidden" || r.error === "seat_lapsed" ? 403 : 400;
       return { failure: NextResponse.json({ error: groupErrorMessage(r.error) }, { status }) };
     }
     return { result: r };

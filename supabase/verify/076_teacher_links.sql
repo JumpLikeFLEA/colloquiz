@@ -65,6 +65,11 @@ BEGIN
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
   VALUES ('v76-coh', 'Cohort', 'A2', 'published', 'cohort', 's', 'c') RETURNING id INTO v_course;
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (v_course, t, t), (v_course, t2, t2);
+  -- TCH-008: 083 freezes a writer with no active seat, so every seeded editor
+  -- gets the open-ended seat 082's backfill gave the real ones.
+  INSERT INTO author_seats (user_id, kind, public_name)
+  SELECT DISTINCT ce.user_id, 'teacher', 'Verify seat' FROM course_editors ce
+  ON CONFLICT (user_id) DO NOTHING;
   INSERT INTO lessons (course_id, ordinal, title, slug, access_level, week) VALUES (v_course, 1, 'W1', 'w1', 'entitled', 1);
   INSERT INTO course_runs (course_id, title, starts_at) VALUES (v_course, 'R', now() + interval '1 day') RETURNING id INTO v_run;
 
@@ -180,9 +185,15 @@ BEGIN
 
   -- 9. a teacher who stops being a teacher: the link stops resolving -------
   DELETE FROM course_editors WHERE user_id = t;
+  DELETE FROM author_seats WHERE user_id = t;  -- TCH-008: 082 made a seat count as "teacher" too
   PERFORM pg_temp.check_eq('non-teacher token is dead',
     pg_temp.as_anon(format($q$ SELECT public.teacher_join_preview(%L)->>'state' $q$, v_tok2)), 'not_found');
   INSERT INTO course_editors (course_id, user_id, granted_by) VALUES (v_course, t, t);
+  -- TCH-008: 083 freezes a writer with no active seat, so every seeded editor
+  -- gets the open-ended seat 082's backfill gave the real ones.
+  INSERT INTO author_seats (user_id, kind, public_name)
+  SELECT DISTINCT ce.user_id, 'teacher', 'Verify seat' FROM course_editors ce
+  ON CONFLICT (user_id) DO NOTHING;
 
   -- 10. run invite: links to the creator who edits the course ---------------
   v_inv_tok := pg_temp.as_user(t, format(

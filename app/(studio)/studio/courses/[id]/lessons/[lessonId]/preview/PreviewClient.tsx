@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, CloudUpload } from "lucide-react";
 import { LESSON_HEADER_COLUMN_CLASS, LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // AUTH-005 — preview through the REAL player (not a separate preview
 // renderer, not sessionStorage): this is the same LessonPlayer/
@@ -22,7 +23,7 @@ import { LESSON_HEADER_COLUMN_CLASS, LessonPlayer, practiceRenderer } from "@/ap
 // after this screen loaded makes the publish call come back `stale`
 // (migration 045's p_expected_version_id check), shown as a banner, not a
 // silent publish of the wrong content.
-export function PreviewClient({
+function PreviewClientInner({
   courseId,
   lessonId,
   versionId,
@@ -112,5 +113,15 @@ export function PreviewClient({
 
       <LessonPlayer document={document} lessonTitle={lessonTitle} attemptId={attemptId} practiceRenderer={practiceRenderer} />
     </div>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function PreviewClient(props: React.ComponentProps<typeof PreviewClientInner>) {
+  return (
+    <WriteArea>
+      <PreviewClientInner {...props} />
+    </WriteArea>
   );
 }

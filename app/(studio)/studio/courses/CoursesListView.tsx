@@ -23,6 +23,7 @@ import { CEFR_LEVELS, type CefrLevel } from "@/lib/courseLevels";
 import { pluralize } from "@/lib/format";
 import { slugifyLessonTitle } from "@/lib/lessonSlug";
 import type { AuthoredCourse } from "@/lib/courseAuthoring";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 const STATUS_STYLE: Record<AuthoredCourse["status"], string> = {
   draft: "bg-muted text-muted-foreground",
@@ -40,7 +41,7 @@ function slugFromTitle(title: string): string {
   return title.trim() === "" ? "" : slugifyLessonTitle(title);
 }
 
-export function CoursesListView({ courses }: { courses: AuthoredCourse[] }) {
+function CoursesListViewInner({ courses }: { courses: AuthoredCourse[] }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [slug, setSlug] = useState("");
@@ -222,5 +223,15 @@ export function CoursesListView({ courses }: { courses: AuthoredCourse[] }) {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function CoursesListView(props: React.ComponentProps<typeof CoursesListViewInner>) {
+  return (
+    <WriteArea>
+      <CoursesListViewInner {...props} />
+    </WriteArea>
   );
 }

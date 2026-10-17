@@ -1,5 +1,6 @@
 import { parseAttachment, type Attachment } from "../askTeacher/snapshot";
 import { FeedbackContentSchema, feedbackTextLength, type FeedbackContent } from "../feedback/content";
+import { SEAT_LAPSED_MESSAGE } from "../studioWriteLock";
 import { MESSAGE_MAX_CHARS } from "./limits";
 
 // TCH-004 — messages between a linked student and their teacher (migration
@@ -128,7 +129,9 @@ export type SendError =
   | "closed"
   | "rate_limited"
   | "attachment_invalid"
-  | "attachment_not_allowed";
+  | "attachment_not_allowed"
+  | "seat_lapsed"
+  | "teacher_unavailable";
 
 const SEND_ERRORS: Record<SendError, { status: number; message: string }> = {
   unauthenticated: { status: 401, message: "Not signed in." },
@@ -138,6 +141,10 @@ const SEND_ERRORS: Record<SendError, { status: number; message: string }> = {
   closed: { status: 409, message: "This conversation is closed: the link has ended." },
   attachment_invalid: { status: 400, message: "The exercise can't be attached. Reload the lesson and try again." },
   attachment_not_allowed: { status: 403, message: "You can't ask this teacher about this exercise." },
+  // 083: a new conversation needs a teacher whose Studio is not frozen. The
+  // student hears the second; the frozen teacher hears the first.
+  seat_lapsed: { status: 403, message: SEAT_LAPSED_MESSAGE },
+  teacher_unavailable: { status: 409, message: "This teacher can't start new conversations right now." },
   rate_limited: { status: 429, message: "You've sent a lot of messages in the last hour. Please try again a little later." },
 };
 

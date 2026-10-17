@@ -44,6 +44,11 @@ BEGIN
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url) VALUES ('v16-coh', 'C', 'A2', 'published', 'cohort', 's', 'c') RETURNING id INTO v_coh;
   INSERT INTO courses (slug, title, level, status, format) VALUES ('v16-dra', 'D', 'A2', 'draft', 'self_paced') RETURNING id INTO v_dra;
   INSERT INTO course_editors (course_id, user_id, granted_by) SELECT id, v_e, v_e FROM courses WHERE id IN (v_pub, v_coh, v_dra);
+  -- TCH-008: 083 freezes a writer with no active seat, so every seeded editor
+  -- gets the open-ended seat 082's backfill gave the real ones.
+  INSERT INTO author_seats (user_id, kind, public_name)
+  SELECT DISTINCT ce.user_id, 'teacher', 'Verify seat' FROM course_editors ce
+  ON CONFLICT (user_id) DO NOTHING;
 
   INSERT INTO lessons (course_id, ordinal, title, slug, access_level) VALUES (v_pub, 1, 'A', 'a', 'anyone') RETURNING id INTO a;
   INSERT INTO lessons (course_id, ordinal, title, slug, access_level) VALUES (v_pub, 2, 'B', 'b', 'anyone') RETURNING id INTO b;

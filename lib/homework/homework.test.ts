@@ -78,6 +78,7 @@ describe("homeworkErrorMessage", () => {
       "not_linked",
       "group_not_found",
       "not_found",
+      "seat_lapsed",
     ]) {
       expect(homeworkErrorMessage(code)).not.toBe("Something went wrong.");
     }

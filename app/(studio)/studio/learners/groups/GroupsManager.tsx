@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Plus, Users } from "lucide-react";
 import { GROUP_EXPORT_NOTE, GROUP_NAME_MAX, type TeacherGroup } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // TCH-002 (docs/decisions/0149) — the teacher's groups: a create field and
 // one row per group, linking to its page. Composed from the student-link
@@ -16,7 +17,7 @@ import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 const PRIMARY_BUTTON =
   "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
-export function GroupsManager({ groups }: { groups: TeacherGroup[] }) {
+function GroupsManagerInner({ groups }: { groups: TeacherGroup[] }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,5 +84,15 @@ export function GroupsManager({ groups }: { groups: TeacherGroup[] }) {
         </ul>
       )}
     </div>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function GroupsManager(props: React.ComponentProps<typeof GroupsManagerInner>) {
+  return (
+    <WriteArea>
+      <GroupsManagerInner {...props} />
+    </WriteArea>
   );
 }

@@ -63,6 +63,11 @@ BEGIN
   VALUES ('v78-b', 'B', 'A2', 'published', 'self_paced', 's', 'c') RETURNING id INTO v_b;
   INSERT INTO course_editors (course_id, user_id, granted_by)
   VALUES (v_a, t, t), (v_a, t2, t2), (v_a, t4, t4), (v_b, t3, t3);
+  -- TCH-008: 083 freezes a writer with no active seat, so every seeded editor
+  -- gets the open-ended seat 082's backfill gave the real ones.
+  INSERT INTO author_seats (user_id, kind, public_name)
+  SELECT DISTINCT ce.user_id, 'teacher', 'Verify seat' FROM course_editors ce
+  ON CONFLICT (user_id) DO NOTHING;
 
   INSERT INTO lessons (course_id, ordinal, title, slug, access_level) VALUES (v_a, 1, 'LA', 'la', 'anyone') RETURNING id INTO v_la;
   INSERT INTO lessons (course_id, ordinal, title, slug, access_level) VALUES (v_b, 1, 'LB', 'lb', 'anyone') RETURNING id INTO v_lb;

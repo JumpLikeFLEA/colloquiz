@@ -17,6 +17,7 @@ import {
 import { joinPath, type JoinLinkState, type LinkedStudent } from "@/lib/teacherLinks";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // TCH-001 (docs/decisions/0148) — the teacher's student link and the
 // students linked through it or through a run invite. Composed from the
@@ -33,7 +34,7 @@ const SOURCE_LABEL: Record<LinkedStudent["source"], string> = {
   run_invite: "Run invite",
 };
 
-export function StudentLinksPanel({ linkState, students }: { linkState: JoinLinkState; students: LinkedStudent[] }) {
+function StudentLinksPanelInner({ linkState, students }: { linkState: JoinLinkState; students: LinkedStudent[] }) {
   const router = useRouter();
   // The raw token exists only in this response; it is never stored (076),
   // so a reload hides it and the teacher rotates to see a new one.
@@ -198,5 +199,15 @@ export function StudentLinksPanel({ linkState, students }: { linkState: JoinLink
         </AlertDialogContent>
       </AlertDialog>
     </section>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function StudentLinksPanel(props: React.ComponentProps<typeof StudentLinksPanelInner>) {
+  return (
+    <WriteArea>
+      <StudentLinksPanelInner {...props} />
+    </WriteArea>
   );
 }

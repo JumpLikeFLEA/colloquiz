@@ -17,6 +17,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { HOMEWORK_NOTE_MAX } from "@/lib/homework/homework";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // TCH-005 (docs/decisions/0152) — edit the due date and note of one
 // assignment, or delete it. Only those two fields change (update_homework,
@@ -30,7 +31,7 @@ const SECONDARY_BUTTON =
 const PRIMARY_BUTTON =
   "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
-export function HomeworkActions({
+function HomeworkActionsInner({
   assignmentId,
   title,
   dueOn,
@@ -181,5 +182,15 @@ export function HomeworkActions({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function HomeworkActions(props: React.ComponentProps<typeof HomeworkActionsInner>) {
+  return (
+    <WriteArea>
+      <HomeworkActionsInner {...props} />
+    </WriteArea>
   );
 }

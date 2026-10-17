@@ -202,7 +202,10 @@ refactor.
     (AUTH-012, 0118) and "New course" for any editor (AUTH-015, 0126;
     `create_course`, 067, owner-applied 2026-10-11) are built, and so are
     author seats at `/studio/authors` (TCH-007, 0154; `create_course` now needs
-    an active seat or admin, migration 082, owner-applied 2026-10-16).
+    an active seat or admin, migration 082, owner-applied 2026-10-16). A lapsed
+    seat freezes every Studio write (TCH-008, docs/decisions/0155, migration 083:
+    `_studio_can_write` is the one predicate; a new write RPC must call it; written,
+    applied to the local stack only).
   - `app/api/` — route handlers: `account/export`, `account/delete`, `duels/`,
     `results/`.
   - `app/components/` — shared components. `ui/**` (vendored shadcn/Radix) and

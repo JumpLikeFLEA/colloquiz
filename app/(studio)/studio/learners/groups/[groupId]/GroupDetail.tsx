@@ -16,6 +16,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { GROUP_EXPORT_NOTE, GROUP_NAME_MAX } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // TCH-002 (docs/decisions/0149) — one group: rename, delete, its members
 // with Remove, and the linked students who are not in it yet with Add.
@@ -29,7 +30,7 @@ const PRIMARY_BUTTON =
 
 export type GroupPerson = { userId: string; label: string };
 
-export function GroupDetail({
+function GroupDetailInner({
   groupId,
   name,
   members,
@@ -189,5 +190,15 @@ export function GroupDetail({
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function GroupDetail(props: React.ComponentProps<typeof GroupDetailInner>) {
+  return (
+    <WriteArea>
+      <GroupDetailInner {...props} />
+    </WriteArea>
   );
 }

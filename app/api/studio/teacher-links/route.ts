@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { SEAT_LAPSED_MESSAGE } from "@/lib/studioWriteLock";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
     if (error) return NextResponse.json({ error: "Could not create the link." }, { status: 500 });
     const r = data as { ok?: boolean; token?: string; error?: string };
     if (!r.ok || typeof r.token !== "string") {
+      if (r.error === "seat_lapsed") return NextResponse.json({ error: SEAT_LAPSED_MESSAGE }, { status: 403 });
       return NextResponse.json({ error: "You can't create a student link." }, { status: r.error === "forbidden" ? 403 : 400 });
     }
     return NextResponse.json({ token: r.token }, { headers: { "Cache-Control": "no-store" } });

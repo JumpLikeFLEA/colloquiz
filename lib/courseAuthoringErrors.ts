@@ -1,3 +1,5 @@
+import { SEAT_LAPSED_MESSAGE } from "./studioWriteLock";
+
 /**
  * Maps the `error` field of a course-authoring RPC's `{ ok, error }` result
  * (migration 044) to an HTTP status and a copy string. One shared table
@@ -8,8 +10,10 @@
  */
 export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: string }> = {
   forbidden: { status: 403, message: "You don't have permission to edit this course." },
-  // create_course (082): the caller has an author seat, but it has expired or been frozen.
-  seat_lapsed: { status: 403, message: "Your author seat has ended, so you can't create new courses. Ask the admin to extend it." },
+  // 082 (create_course) and 083 (every other Studio write): the caller has an
+  // author seat that has expired or been frozen, or none at all. One message
+  // for all of them, shared with the banner and the disabled controls.
+  seat_lapsed: { status: 403, message: SEAT_LAPSED_MESSAGE },
   course_not_found: { status: 404, message: "That course no longer exists." },
   lesson_not_found: { status: 404, message: "That lesson no longer exists." },
   invalid_title: { status: 400, message: "Please enter a title." },

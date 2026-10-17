@@ -6,6 +6,8 @@
 // reads live in lib/teacherGroupsServer.ts so a Client Component can import
 // these without pulling in the server Supabase client.
 
+import { SEAT_LAPSED_MESSAGE } from "./studioWriteLock";
+
 /** Group name limits; 077 enforces the same bounds in a CHECK. */
 export const GROUP_NAME_MAX = 60;
 
@@ -64,6 +66,8 @@ export function groupErrorMessage(code: unknown): string {
       return "Add up to 500 students at a time.";
     case "forbidden":
       return "You can't create groups.";
+    case "seat_lapsed":
+      return SEAT_LAPSED_MESSAGE;
     case "not_found":
       return "That group or student is already gone.";
     default:

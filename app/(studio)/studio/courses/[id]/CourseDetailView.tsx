@@ -54,8 +54,9 @@ import { CourseFormatSection, type CourseRunSummary } from "./CourseFormatSectio
 import { DeleteCourseSection } from "./DeleteCourseSection";
 import { LessonWeekSelect } from "./LessonWeekSelect";
 import { postJson } from "./postJson";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
-export function CourseDetailView({
+function CourseDetailViewInner({
   detail,
   isAdmin,
   runs,
@@ -865,5 +866,15 @@ function EditorsSection({
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function CourseDetailView(props: React.ComponentProps<typeof CourseDetailViewInner>) {
+  return (
+    <WriteArea>
+      <CourseDetailViewInner {...props} />
+    </WriteArea>
   );
 }

@@ -55,6 +55,7 @@ describe("toTeacherGroup / groupErrorMessage", () => {
   it("names the known codes and falls back for an unknown one", () => {
     expect(groupErrorMessage("name_taken")).toMatch(/already have/);
     expect(groupErrorMessage("not_linked")).toMatch(/linked/);
+    expect(groupErrorMessage("seat_lapsed")).toMatch(/seat/);
     expect(groupErrorMessage("zzz")).toBe("Something went wrong.");
   });
 });

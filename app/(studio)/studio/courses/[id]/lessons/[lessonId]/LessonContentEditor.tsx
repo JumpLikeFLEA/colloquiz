@@ -21,6 +21,7 @@ import type { LessonContentDraft, LessonVersionSummary } from "@/lib/lessonConte
 import { BlockList } from "./BlockList";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
 import type { LessonImageKind, UploadLessonImage } from "./LessonImageUploadButton";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 const LESSON_IMAGE_MAX_WIDTH: Record<LessonImageKind, number> = {
   theory: LESSON_IMAGE_MAX_WIDTH_THEORY,
@@ -48,7 +49,7 @@ function initialBlocks(document: unknown[]): LessonBlock[] {
   return parsed.ok ? parsed.document : [];
 }
 
-export function LessonContentEditor({
+function LessonContentEditorInner({
   courseId,
   draft,
   initialVersions,
@@ -276,5 +277,15 @@ export function LessonContentEditor({
         restoringId={restoringId}
       />
     </div>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function LessonContentEditor(props: React.ComponentProps<typeof LessonContentEditorInner>) {
+  return (
+    <WriteArea>
+      <LessonContentEditorInner {...props} />
+    </WriteArea>
   );
 }

@@ -26,6 +26,7 @@ import { postJson } from "../postJson";
 import { CallDialog } from "./CallDialog";
 import { InviteDialog, TIER_LABELS } from "./InviteDialog";
 import { RunDialog } from "./RunDialog";
+import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 // AUTH-010 — the runs page. Composed from the course editor's own classes
 // (section cards, row lists, icon buttons, status pills, AlertDialog
@@ -76,7 +77,7 @@ const OTHER_TIER: Record<InviteTier, InviteTier> = { basic: "extended", extended
 const ICON_BUTTON =
   "cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50";
 
-export function RunsView({
+function RunsViewInner({
   courseId,
   courseTitle,
   format,
@@ -491,5 +492,15 @@ export function RunsView({
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+// TCH-008 (docs/decisions/0155): a frozen seat disables everything inside, with the
+// reason as the tooltip; unfrozen, this renders exactly the component above.
+export function RunsView(props: React.ComponentProps<typeof RunsViewInner>) {
+  return (
+    <WriteArea>
+      <RunsViewInner {...props} />
+    </WriteArea>
   );
 }
