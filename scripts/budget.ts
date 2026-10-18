@@ -94,7 +94,21 @@ function killProcessTree(proc: ChildProcess): void {
 // as every other route's (the 0115 "Budget" method, now scripted). For a
 // page that redirects a signed-out visitor, a signed-out measurement would
 // measure the redirect's target instead.
-type RouteBudget = { path: string; budgetKB: number; guardForbiddenSignatures: boolean; signInAs?: string };
+//
+// `phone` (OPS-028, docs/decisions/0176) measures the route in a phone context
+// (390x844, isMobile, hasTouch), whose pointer is coarse and has no hover, so
+// the desktop-only code behind a media query is not requested. `alsoForbid`
+// adds signatures to FORBIDDEN_SIGNATURES for that entry only: the byte budget
+// alone cannot catch code that must not reach a phone when its chunk is smaller
+// than the headroom.
+type RouteBudget = {
+  path: string;
+  budgetKB: number;
+  guardForbiddenSignatures: boolean;
+  signInAs?: string;
+  phone?: boolean;
+  alsoForbid?: string[];
+};
 
 /** scripts/seed-local-fixtures.ts's PASSWORD: local-stack fixtures only. */
 const FIXTURE_PASSWORD = "password123!";
@@ -111,7 +125,23 @@ const ROUTES: RouteBudget[] = [
   // had gone stale: the clean tree printed 185.0 KB (OVER) on 2026-10-07,
   // and the landing redesign brought it back to 179.8 KB without raising
   // budgetKB (docs/decisions/0078, Decision 5) — 0.2 KB of headroom left.
-  { path: "/", budgetKB: 180, guardForbiddenSignatures: true },
+  //
+  // OPS-028 (docs/decisions/0176): 180 -> 202. Owner, 2026-10-18: VIS-004 (the
+  // sticker digits and the start button's sparks, 0174) and VIS-005 (the living grid
+  // paper, 0175) were approved to take `/` past 180. Measured after both cards:
+  // 192.6 KB with the hosted env (191.6 KB on the local stack, whose shorter URL and
+  // key are baked into the bundle). budgetKB is the hosted figure plus ~4.5% headroom
+  // (the PLAY-012 precedent, docs/decisions/0057), rounded up to a whole KB. The
+  // desktop context is Playwright's default (1280x720, a fine hovering pointer),
+  // inside the grid's media query, so the figure includes the grid chunk.
+  { path: "/", budgetKB: 202, guardForbiddenSignatures: true },
+  // OPS-028: the same route in a phone context, with its own budget derived the same
+  // way: 185.6 KB hosted env (184.7 KB local), plus ~4.5%, rounded up. A phone gets
+  // the sticker digits and the sparks but never the grid (0175 Decision 6). The grid's
+  // chunk is about 6 KB gzip, less than this entry's headroom, so bytes alone would not
+  // catch it reaching a phone: `alsoForbid` names its signatures (0175 matched on both)
+  // and a chunk containing either is a FAIL.
+  { path: "/", budgetKB: 194, guardForbiddenSignatures: true, phone: true, alsoForbid: ["cascadeReach", "hexagon"] },
   // PLAY-006/PLAY-012 (docs/decisions/0056, 0057): a REAL authored lesson —
   // `future-imperfect`'s first lesson, `true-or-false` — not a synthetic
   // single-item fixture. Seeded from authored/courses/future-imperfect.json
@@ -346,11 +376,18 @@ async function measureRoute(
   path: string,
   guardForbiddenSignatures: boolean,
   cookies: BrowserCookie[] = [],
+  phone = false,
+  alsoForbid: string[] = [],
 ): Promise<RouteResult> {
   // A fresh, cache-disabled context per route: no storage and no cache
   // carried over from a previous route or a previous run. Cookies only for a
   // `signInAs` route, and only the session's.
-  const context = await browser.newContext();
+  // A phone context (OPS-028) is the viewport and touch capabilities of the
+  // owner's phone check (0175): coarse pointer, no hover, so the desktop-only
+  // media queries do not match.
+  const context = await browser.newContext(
+    phone ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {},
+  );
   if (cookies.length > 0) await context.addCookies(cookies);
   const page = await context.newPage();
 
@@ -409,7 +446,7 @@ async function measureRoute(
     const bodies = (await Promise.all(bodyFetches)).filter((b): b is { url: string; body: string } => b != null);
     const leaks: string[] = [];
     for (const { url, body } of bodies) {
-      for (const signature of FORBIDDEN_SIGNATURES) {
+      for (const signature of [...FORBIDDEN_SIGNATURES, ...alsoForbid]) {
         if (body.toLowerCase().includes(signature.toLowerCase())) {
           leaks.push(`${url} contains "${signature}"`);
         }
@@ -455,17 +492,26 @@ async function main() {
           continue;
         }
       }
-      const result = await measureRoute(browser, origin, route.path, route.guardForbiddenSignatures, cookies);
+      const result = await measureRoute(
+        browser,
+        origin,
+        route.path,
+        route.guardForbiddenSignatures,
+        cookies,
+        route.phone,
+        route.alsoForbid,
+      );
       if (!result.ok) {
         anyFailed = true;
-        console.log(`${route.path} | FAIL (${result.reason}) | ${route.budgetKB}`);
+        console.log(`${route.phone ? `${route.path} (phone)` : route.path} | FAIL (${result.reason}) | ${route.budgetKB}`);
         continue;
       }
       const kb = result.scriptKB;
       const overBudget = kb > route.budgetKB;
       if (overBudget) anyFailed = true;
+      const label = route.phone ? `${route.path} (phone)` : route.path;
       console.log(
-        `${route.path} | ${kb.toFixed(1)} KB | ${route.budgetKB} KB${overBudget ? "  ⚠ OVER BUDGET" : ""}`,
+        `${label} | ${kb.toFixed(1)} KB | ${route.budgetKB} KB${overBudget ? "  ⚠ OVER BUDGET" : ""}`,
       );
       if (result.leaks.length > 0) {
         anyFailed = true;
