@@ -67,6 +67,17 @@ docs/decisions/0155, migration 083, owner-applied 2026-10-17). A teacher opens a
 course for a linked student who paid them outside the app, through a `course_entitlements`
 grant (TCH-009, docs/decisions/0164, migration 087, applied to hosted 2026-10-17). The out-of-scope list above still holds; homework is a list of lessons with an optional due date, not a
 curriculum.
+**Data roles for teachers (owner, 2026-10-18, docs/decisions/0170):** the
+platform is the sole controller; a teacher is an authorised user inside the
+service. A teacher's own relationship with a student outside the app
+(lessons, payment, contact the student gives them) is the teacher's own
+responsibility. A teacher may use what they see to teach that student, in or
+out of the app, but not export or copy it, share it, market with it or keep
+using it after the link ends. Complaints go to privacy@colloquiz.app; a
+credible one freezes the seat and is assessed as a possible breach (Art.
+33-34). Revisit if a teacher or school creates student accounts or uploads
+student lists, asks for a DPA, or gets an export. The first external teacher
+accepts `docs/release/teacher-terms-draft.md` once the owner finalises it.
 
 ## The two surfaces
 
