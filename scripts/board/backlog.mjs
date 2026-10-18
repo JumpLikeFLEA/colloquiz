@@ -4269,6 +4269,71 @@ export const CARDS = [
     notes: 'Waits on the owner\'s clips; the owner moves it to Hold until they arrive.',
   },
   {
+    key: 'VIS-004',
+    title: 'Landing: the sticker digits roll, the start button sparks (React Bits Counter and ClickSpark)',
+    milestone: 'M4',
+    epic: 'VIS',
+    type: 'task',
+    rank: 2896,
+    dependsOn: [],
+    goal:
+      'Option 1 of the React Bits study, chosen by the owner on 2026-10-18 (draft: https://claude.ai/artifact/7eYyjZAc9WBL6M3wm3em94#v1): ' +
+      'the "10–15" sticker digits roll, and "Начать бесплатно" / "Start for free" throws violet sparks when pressed. ' +
+      'This is the first React Bits code in the repo, so the card also settles how it is vendored.',
+    acceptance: [
+      'Vendoring: Counter.tsx and ClickSpark.tsx come verbatim from github.com/DavidHDev/react-bits at commit 310fc737fadcaa149a4e06fb088fc95332dc8bfb (src/ts-tailwind/Components/Counter, src/ts-tailwind/Animations/ClickSpark). They go into one vendored folder with the upstream LICENSE (MIT + Commons Clause, © David Haz) beside them. The decision file records the folder, the commit, how ESLint and the hex-literal guard treat the folder (the ui/** and figma/** precedent), and that no colour default of a vendored file is ever used: every colour is passed in from a token.',
+      'Sticker: the figure is two Counters, 10 and 15, with the en dash between them, in the display face. fontSize is 18px below 640px and 22px from 640px; fontWeight 800; duration 1.1s and 1.3s; stagger 0.08; intro on. The server-rendered, pre-hydration markup already reads 10–15 (no 0, no empty box, no flash). The roll plays once, when the sticker is half in view. A screen reader reads "10–15" once, with the unit. Measured boxes show the digits inside the 88px / 112px circle at 360, 390, 768, 1024 and 1440, in EN and RU.',
+      'Sparks: both "Start for free" buttons (the hero and the closing card) are wrapped in ClickSpark. sparkColor is --brand-text, read at runtime (the violet in light, the light violet in dark); sparkCount 10, sparkRadius 34, sparkSize 12, duration 520ms. The wrapper changes nothing else: the same box, focus ring, offset shadow, hover lift, press and href, and navigation is not delayed. Recorded: how long the sparks stay visible before the lesson page replaces the landing, for a mouse press and for a tap. ClickSpark fires on pointerdown for a mouse and on click for touch.',
+      'prefers-reduced-motion: no roll, and the sparks in the components’ own reduced form. Both are checked in a browser with the setting on.',
+      '`npm run budget` before and after for / (expect about +7 KB gzip; / may exceed 180 until OPS-028, and every other route is unchanged). `npm run check && npm test` pass. Usable at 360px, in EN and RU, light and dark. A docs/ui-decisions.md entry, and the decision file notes that the sticker is no longer server-only (SHELL-027 / 0165 Decision 9).',
+    ],
+    notes:
+      'Counter’s intro spins every digit a full turn and lands on the same value, so the final digits can be server-rendered. ' +
+      'The draft ran the JS-CSS variant from the same commit; the TS-TW variant must look and move the same. The budget raise is OPS-028.',
+  },
+  {
+    key: 'VIS-005',
+    title: 'Landing: living grid paper on computers (React Bits ShapeGrid, patched)',
+    milestone: 'M4',
+    epic: 'VIS',
+    type: 'task',
+    rank: 2897,
+    dependsOn: ['VIS-004'],
+    goal:
+      'On a computer, the grid paper behind the whole landing drifts slowly, lights up under the cursor, and ripples about eight cells out from a click on empty paper, exactly as in the draft (owner, 2026-10-18). ' +
+      'Phones keep the still CSS grid and never download the code.',
+    acceptance: [
+      'ShapeGrid.tsx comes from the same pinned commit (src/ts-tailwind/Backgrounds/ShapeGrid), vendored as VIS-004 decided, with exactly two patches, listed in a header comment and in the decision file. `cascadeReach?: number` is the ripple radius in cells; when set, it replaces the full-screen reach. `ignoreSelector?: string`: a pointermove over a match counts as the pointer leaving (no glow), and a pointerdown over a match starts no ripple. A diff against upstream, pasted in the evidence, contains nothing else.',
+      'Settings, verbatim from the draft: shape square, cellSize 25 (the .grid-paper cell), lineWidth 1, direction diagonal, speed 0.18, fillOpacity 0.14, trail 0.5, glow 0.12, radius 1.4, fade 0, clickCascade on, cascadeReach 8, intro off, transparent background. lineColor is a new token, --grid-line-live (#e6e4f0 light, #2c2844 dark, in :root and .dark). hoverColor is --brand-text. Both are read from the CSS at mount and again when the colour scheme changes.',
+      'Placement: one fixed, viewport-sized layer behind the landing, never a document-height canvas, and it paints --paper itself. On a computer the landing wrapper is transparent, so the layer shows in the side gutters and down to the bottom; content scrolls over it, and the footer keeps its own ground. The layer has pointer-events: none. An elementFromPoint check shows every control is still clickable: Courses, the EN/RU toggle, Log in or the account chip, both CTAs, All courses, Instagram, YouTube and each course card.',
+      'Quiet zones: ignoreSelector covers a, button, input, select, textarea, label, summary, [role=button], [role=tab] and [data-paper-quiet]; data-paper-quiet is set on the comic block and the closing card. Hovering Courses or Log in lights nothing under them. Pressing either CTA or All courses sparks (VIS-004) but starts no ripple. A click on empty paper ripples about 8 cells and no further. A screenshot of each of the three.',
+      'Gate: the layer renders only when `(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)` matches. It is loaded with next/dynamic (ssr: false) only then, and added or removed live if the match changes. Proof that a phone never downloads it: a cold load of / at 390×844 with isMobile and hasTouch lists its script chunks and none contains ShapeGrid; the same load at 1440×900 does contain it.',
+      'Hand-over: the CSS grid stays until the canvas has drawn its first frame, then hands over with no frame that shows both grids or neither. How is described, with a before/after screenshot pair. In dark mode the canvas follows the .dark tokens.',
+      'Cost on the owner’s machine (Edge, real GPU), from a Performance trace of 10s idle and 10s of mouse movement at 1440×900: the main-thread share of the ShapeGrid frame callback, and that drawing pauses while the tab is hidden. `npm run budget` before and after for / (expect about +5 KB gzip on top of VIS-004). `npm run check && npm test` pass. A docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'In the draft the whole-screen layer was 2880×1800 device px, against 2848×1534 for a hero-only band (about 18% more). With speed > 0 it never pauses while the tab is visible. ' +
+      'If the trace is too heavy, speed 0 stops the drift and the grid then redraws only when the cursor moves; that is the owner’s call.',
+  },
+  {
+    key: 'OPS-028',
+    title: 'Raise the cold-load budget for / for the landing motion, and measure / on a phone',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2898,
+    dependsOn: ['VIS-004', 'VIS-005'],
+    goal:
+      'The owner approved raising the budget for / for VIS-004 and VIS-005 (2026-10-18). scripts/budget.ts says a budget is re-derived from a real run, never guessed, ' +
+      'so the new figure comes from the measurement after both cards. The phone path, where most visitors arrive, gets its own measured budget.',
+    acceptance: [
+      'After VIS-005, `npm run budget` prints the KB for /. budgetKB becomes that figure plus the 0057/0059 precedent headroom (about 4.5%), rounded up to a whole KB. The comment above the entry records 180 → the new figure, the measured KB, the reason (owner, 2026-10-18, VIS-004 and VIS-005) and this card.',
+      '/ is also measured in a phone context (390×844, isMobile, hasTouch) as a second entry with its own budgetKB, derived the same way. A later change that ships the grid to phones then fails the guard.',
+      'guardForbiddenSignatures stays on for both entries, and both pass.',
+      'The full `npm run budget` output, every route, before and after, is pasted. A decision file explains the raise.',
+    ],
+  },
+  {
     key: 'CNT-017',
     title: 'Future Imperfect content and production data fixes',
     epic: 'CNT',
