@@ -59,8 +59,7 @@ from the browser. COH-011..013 and TCH-012/013 send through the link this card b
 
 - No message about an event (COH-011..013). `lib/telegram/send.ts` is the sender they use.
 - `setWebhook` and the env vars on Vercel: the owner's, see the card's closing comment.
-- Live link and `/stop` on production: the
-  owner's positive control.
+- Live link and `/stop` on production: done by the owner on 2026-10-18 (see below).
 
 ## What would make us revisit it
 
@@ -68,3 +67,11 @@ from the browser. COH-011..013 and TCH-012/013 send through the link this card b
   the link step.
 - A second account legitimately sharing a chat (a parent and child): decision 2.
 - The partner wants a reminder per event: one switch covers all today (0140).
+
+## Production positive control (owner, 2026-10-18)
+
+`select ... from telegram_links` on hosted, before and after `/stop`: one row, chat
+278243328, `lang` en, `time_zone` Europe/Budapest, `linked_at` 15:38:21 UTC,
+`stopped_at` null; then `stopped_at` 15:39:28 UTC after `/stop`. The webhook secret
+check, the `/start <token>` link, the language and time zone capture and `/stop` all
+worked on production.
