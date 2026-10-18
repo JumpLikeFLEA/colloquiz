@@ -2410,3 +2410,30 @@ Appended to in the same commit as the change it records. Referenced from
   measured: a signed-in `/`, and an in-app browser. This supersedes 0165 Decision 9
   (a server-only sticker) for the sticker only. Do not put the digits back to plain
   text without redoing 0174, and do not give the wrapper `w-full`.
+- Landing: living grid paper on computers (2026-10-18, VIS-005, docs/decisions/0175).
+  On a computer (`(min-width: 1024px) and (hover: hover) and (pointer: fine) and
+  (prefers-reduced-motion: no-preference)`) the grid paper behind the whole landing
+  drifts slowly, lights the cell under the cursor and ripples about eight cells out
+  from a click on empty paper. It is the vendored React Bits `ShapeGrid` with two
+  patches (`cascadeReach`, `ignoreSelector`), in one `fixed inset-0 -z-10` viewport
+  layer that paints `--paper` itself and has `pointer-events: none`; the settings are
+  the owner's draft's. Controls (`a, button, input, select, textarea, label, summary,
+  [role=button], [role=tab]`) and the two `data-paper-quiet` blocks (the comic panel,
+  the closing card) light nothing under the cursor and start no ripple. A phone, a
+  narrow window, a touch screen and `prefers-reduced-motion: reduce` keep the still CSS
+  grid and never request the code (it is a `next/dynamic` chunk behind the media
+  query, followed live). The still grid stays until the canvas has drawn, then the two
+  swap in one frame (`data-paper-live` on `<html>` makes the wrapper transparent). New
+  token `--grid-line-live` in `:root` and `.dark` (the canvas lines, a little stronger
+  than `--grid-line`); the glow is `--brand-text`; both are read at mount and when the
+  scheme changes. `<main>` on the landing lost `bg-background` and every English
+  `<footer>` gained it (same colour as `body`, so nothing changes off the landing; on
+  the landing the footer keeps its own ground over the layer). Measured at 1440x900 in
+  Edge: ripple 8.2 cells, glow 0 lit pixels over a link, a button or the comic block,
+  0 frames showing both grids or neither at hand-over, 12 of 12 controls hit by
+  `elementFromPoint`; 360px `scrollWidth/innerWidth` 360/360 (nothing renders there).
+  `npm run budget` `/`: 184.5 KB before, 192.6 KB after, over its 180 KB budget until
+  OPS-028. Not measured: a signed-in `/`, a hidden tab (Playwright cannot produce one;
+  a minimised window ran about 1 frame per second). Do not make the layer
+  document-height, do not add a third patch to the vendored file, and do not put
+  `bg-background` back on the landing's `<main>`.

@@ -137,6 +137,10 @@
   --ink: #1e1a3a;
   --paper: #faf9fe;
   --grid-line: #f0eff5;
+  /* The living grid paper's canvas lines (VIS-005, docs/decisions/0175): a canvas
+     cannot read a CSS variable, so the component reads this at mount. Slightly
+     stronger than --grid-line, which the still CSS grid uses. */
+  --grid-line-live: #e6e4f0;
   --offset-shadow: #1e1a3a;
   /* The landing's comic panel (SHELL-027, docs/decisions/0162 "Comic panel",
      light values from the owner's SVGs in docs/design/alina-cher/). */
@@ -275,6 +279,7 @@
   --ink: #f2f0fa;
   --paper: #17142a;
   --grid-line: #232035;
+  --grid-line-live: #2c2844;
   --offset-shadow: #0a0817;
   --comic-cell: #211c3b;
   --comic-frame: #4a4370;
@@ -527,6 +532,14 @@
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 25px 25px;
+}
+
+/* VIS-005 (docs/decisions/0175): while the landing's living grid paper is on,
+   `PaperLayer` sets data-paper-live on <html> in the same animation frame in
+   which its canvas becomes visible, so the still grid and the canvas swap
+   atomically. The layer paints --paper itself; the wrapper must not cover it. */
+html[data-paper-live] .grid-paper[data-landing-paper] {
+  background: transparent;
 }
 
 /* Highlighter: a band behind the lower part of the word (the mockup's shape).

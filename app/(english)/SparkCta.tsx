@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import ClickSpark from "@/app/components/react-bits/ClickSpark";
+import { subscribeScheme } from "./schemeStore";
 
 /**
  * The landing's "Start for free" buttons throw violet sparks when pressed
@@ -27,19 +28,8 @@ function readSparkColor(): string {
   return getComputedStyle(document.documentElement).getPropertyValue("--brand-text").trim();
 }
 
-function subscribe(onChange: () => void): () => void {
-  const scheme = window.matchMedia("(prefers-color-scheme: dark)");
-  scheme.addEventListener("change", onChange);
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  return () => {
-    scheme.removeEventListener("change", onChange);
-    observer.disconnect();
-  };
-}
-
 export function SparkCta({ children }: { children: ReactNode }) {
-  const color = useSyncExternalStore(subscribe, readSparkColor, () => "");
+  const color = useSyncExternalStore(subscribeScheme, readSparkColor, () => "");
 
   return (
     <ClickSpark

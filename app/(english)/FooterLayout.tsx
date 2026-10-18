@@ -22,7 +22,7 @@ export function FooterLayout({
   copyright: string;
 }) {
   return (
-    <footer className="border-t border-border">
+    <footer className="border-t border-border bg-background">
       <div
         className={`${LESSON_HEADER_COLUMN_CLASS} flex flex-col gap-3 py-5 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:py-7`}
       >

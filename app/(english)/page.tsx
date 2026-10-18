@@ -79,7 +79,7 @@ export default async function EnglishLandingPage() {
     // hand the space down to LandingContent's own flex layout, which is
     // what pushes the footer (rendered inside main, unlike every other
     // route's EnglishFooter) to the bottom without forcing a scrollbar.
-    <main className="flex flex-1 flex-col bg-background">
+    <main className="flex flex-1 flex-col">
       <LandingContent
         courses={courses}
         heroHref={heroHref}

@@ -12,6 +12,7 @@ import { EnglishFooter } from "./EnglishFooter";
 import { CourseCard } from "./CourseCard";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
+import { LivePaper } from "./LivePaper";
 import { SectionHeading } from "./SectionHeading";
 import { SparkCta } from "./SparkCta";
 import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS } from "./surfaceClasses";
@@ -91,7 +92,8 @@ export function LandingContent({
           Action's re-render reaches the root layout (SHELL-018,
           docs/decisions/0091). */}
       <PageLang lang={lang} />
-      <div className="grid-paper flex flex-1 flex-col">
+      <LivePaper />
+      <div data-landing-paper className="grid-paper flex flex-1 flex-col">
         <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-10 pb-16 pt-4 sm:gap-12 sm:pt-5 lg:gap-16 lg:pb-24`}>
           <LandingHeader lang={lang} onSetLang={setLang} account={account?.[lang] ?? null} />
 
@@ -162,7 +164,7 @@ export function LandingContent({
             </ol>
           </section>
 
-          <section className="reveal-on-scroll flex flex-col items-center gap-4 rounded-3xl border-2 border-highlight-foreground bg-highlight px-6 py-12 text-center text-highlight-foreground shadow-offset sm:px-10 sm:py-16">
+          <section data-paper-quiet className="reveal-on-scroll flex flex-col items-center gap-4 rounded-3xl border-2 border-highlight-foreground bg-highlight px-6 py-12 text-center text-highlight-foreground shadow-offset sm:px-10 sm:py-16">
             <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">{t.closingTitle}</h2>
             <p className="text-sm sm:text-base">{t.closingText}</p>
             <div className="pt-2">{primaryCta}</div>

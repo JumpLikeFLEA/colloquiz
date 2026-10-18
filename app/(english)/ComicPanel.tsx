@@ -84,7 +84,7 @@ export function ComicPanel({ lang }: { lang: SurfaceLang }) {
   const t = landingCopy[lang].comic;
 
   return (
-    <div className="mt-6 lg:mt-0">
+    <div data-paper-quiet className="mt-6 lg:mt-0">
       <div className="relative -rotate-1 motion-reduce:rotate-0">
         {/* The quarters' inner lines are each cell's own right/bottom border,
             so the block reads as one frame split in four. */}
