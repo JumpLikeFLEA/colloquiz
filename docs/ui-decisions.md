@@ -2338,3 +2338,21 @@ Appended to in the same commit as the change it records. Referenced from
   the "Check your email" and forgot-password views, and a signed-in session.
   Do not move the class onto `EnglishAuthPanel` alone, and do not put it on a
   Colloquiz entry.
+- Listed courses (2026-10-18, TCH-010, docs/decisions/0171, migration 088 applied to
+  the local stack only, not to the hosted project). The public catalogue shows a published
+  course only when an admin has listed it; a teacher's course otherwise opens by its link.
+  No learner-facing page changes. Studio, admin only, composed from the seat cards' classes
+  and the existing `ui/switch`; no new colours:
+  - `/studio/authors` gains a "Catalogue" section under the seats: a `divide-y rounded-2xl
+    border bg-card` list, one row per course with the title (wraps), a Published
+    (`bg-brand-subtle text-brand-text`) or Draft (muted) pill, "By <public name>" and a muted
+    House pill, and a switch with one muted line ("Shown in the public catalogue…" / "Opens by
+    its link only…" / "A draft cannot be listed."). The switch is disabled on a draft.
+  - The course editor gains a "Catalogue" card with the same switch, last before Granted
+    access, for admins only.
+  Measured at 360px (local stack, an admin, a course with a 105-character title containing a
+  58-character unbroken word): `scrollWidth/innerWidth` 360/360 on `/studio/authors` and on the
+  course editor. `npm run budget` `/`: 177.0 KB before and after (limit 180). Not reached: a
+  toast, and the page with the seat lapsed (an admin is never frozen).
+  Do not render the switch for a non-admin, and do not decide whether a course may be listed in
+  the client: `set_course_listed` decides.

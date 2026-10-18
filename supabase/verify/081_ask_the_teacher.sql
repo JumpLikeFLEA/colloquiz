@@ -135,8 +135,9 @@ BEGIN
   -- theory, exercise 1, voice task, exercise 2: ex2 must be numbered 2.
   v_doc := jsonb_build_array(v_th1, v_ex1, v_tk1, v_ex2);
 
-  INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
-  VALUES ('v81-e', 'Course E', 'A2', 'published', 'self_paced', 's', 'c') RETURNING id INTO v_e;
+  -- 088 (TCH-010): E is a catalogue course th does not edit, so it is listed.
+  INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url, listed)
+  VALUES ('v81-e', 'Course E', 'A2', 'published', 'self_paced', 's', 'c', true) RETURNING id INTO v_e;
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
   VALUES ('v81-x', 'X', 'A2', 'published', 'self_paced', 's', 'c') RETURNING id INTO v_x;
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)

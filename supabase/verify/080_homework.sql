@@ -83,10 +83,11 @@ BEGIN
   -- P: published, edited by o (NOT by t). Two anyone-lessons.
   -- Q: published, edited by o, one ENTITLED lesson.
   -- D: DRAFT, edited by t. E: published, edited by t. E2: published, edited by t2.
-  INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
-  VALUES ('v80-p', 'P', 'A2', 'published', 'self_paced', 's', 'c') RETURNING id INTO v_p;
-  INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
-  VALUES ('v80-q', 'Q', 'A2', 'published', 'self_paced', 's', 'c') RETURNING id INTO v_q;
+  -- 088 (TCH-010): P and Q stand for catalogue courses, so they are listed.
+  INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url, listed)
+  VALUES ('v80-p', 'P', 'A2', 'published', 'self_paced', 's', 'c', true) RETURNING id INTO v_p;
+  INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url, listed)
+  VALUES ('v80-q', 'Q', 'A2', 'published', 'self_paced', 's', 'c', true) RETURNING id INTO v_q;
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)
   VALUES ('v80-d', 'D', 'A2', 'draft', 'self_paced', 's', 'c') RETURNING id INTO v_d;
   INSERT INTO courses (slug, title, level, status, format, subtitle, cover_image_url)

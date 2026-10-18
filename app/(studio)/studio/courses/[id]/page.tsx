@@ -13,6 +13,8 @@ import { getCourseGrantees } from "@/lib/courseGrantsServer";
 import { getLinkedStudents } from "@/lib/teacherLinksServer";
 import { CourseDetailView } from "./CourseDetailView";
 import { CourseGrantees } from "./CourseGrantees";
+import { ListedSwitch } from "./ListedSwitch";
+import { getCourseListing } from "@/lib/listedCoursesServer";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
 // (AUTH-007, docs/decisions/0041, reopening 0025 Decision 1). See
@@ -45,6 +47,7 @@ export default async function AdminCourseDetailPage({
     getGranteesSection(id),
   ]);
   if (!detail) notFound();
+  const listing = isAdmin ? await getListingSection(id) : null;
   // Display only (AUTH-010): which notice and locks to show. The RPCs
   // re-check the same condition themselves (docs/decisions/0106 Decision 2).
   const now = new Date();
@@ -53,6 +56,12 @@ export default async function AdminCourseDetailPage({
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} deleteBlockers={deleteBlockers} />
+      {listing && (
+        <section className="mt-8 space-y-2 rounded-2xl border border-border bg-card p-4">
+          <h2 className="text-lg font-semibold text-foreground">Catalogue</h2>
+          <ListedSwitch courseId={id} title={listing.title} published={listing.published} listed={listing.listed} />
+        </section>
+      )}
       {grantees && detail.course.format === "self_paced" && (
         <div className="mt-8">
           <CourseGrantees courseId={id} grantees={grantees} />
@@ -121,6 +130,17 @@ async function getGranteesSection(courseId: string) {
     }));
   } catch (e) {
     console.error("course editor: granted access:", e);
+    return null;
+  }
+}
+
+// TCH-010: the admin-only Listed switch (088). null for a non-admin or when the
+// read fails, so the editor renders without the section.
+async function getListingSection(courseId: string) {
+  try {
+    return (await getCourseListing()).find((c) => c.courseId === courseId) ?? null;
+  } catch (e) {
+    console.error("course editor: catalogue listing:", e);
     return null;
   }
 }

@@ -23,6 +23,11 @@ import { summariseLessons, type CatalogueLessonRow } from "@/lib/catalogueSummar
  * (028) still applies underneath — this filter is belt-and-braces, not a
  * second source of truth for what's public.
  *
+ * Listed courses only (TCH-010, 088, docs/decisions/0171): a teacher's published
+ * course opens by its URL (getPublicCourse reads by slug and does not filter on
+ * `listed`) but is not in the catalogue until an admin lists it. The landing
+ * hero's CTA course is the first of this list.
+ *
  * Ordered by created_at: courses has no ordinal column (only lessons do),
  * and at one-course-today (docs/handoff.md, "Launch bar") the order is
  * moot — created_at is the least-surprising default for when a second and
@@ -43,6 +48,7 @@ export const getPublishedCourses = cache(async (): Promise<CatalogueCourse[]> =>
     .from("courses")
     .select("slug, title, subtitle, cover_image_url, level, lessons(estimated_minutes, published_version_id, archived_at)")
     .eq("status", "published")
+    .eq("listed", true)
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
 
