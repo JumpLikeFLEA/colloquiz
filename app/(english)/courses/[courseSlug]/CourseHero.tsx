@@ -46,6 +46,7 @@ export function CourseHero({
   title,
   level,
   lead,
+  authorName,
   coverImageUrl,
   totals,
   progress,
@@ -56,6 +57,8 @@ export function CourseHero({
   title: string;
   level: CefrLevel;
   lead: string | null;
+  /** TCH-011: a non-house teacher's public name; null (house, no author) shows nothing. */
+  authorName: string | null;
   coverImageUrl: string | null;
   totals: CourseTotals;
   progress: CourseProgress;
@@ -90,6 +93,11 @@ export function CourseHero({
             >
               {title}
             </h1>
+            {authorName && (
+              <p className={`${HERO_ENTER_CLASS} delay-100 max-w-xl break-words text-sm font-medium text-foreground`}>
+                {c.byAuthor} {authorName}
+              </p>
+            )}
             {lead && (
               <p className={`${HERO_ENTER_CLASS} delay-150 max-w-xl whitespace-pre-line text-base text-muted-foreground sm:text-lg`}>
                 {lead}

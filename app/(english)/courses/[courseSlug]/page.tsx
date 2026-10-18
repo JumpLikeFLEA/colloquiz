@@ -114,6 +114,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         title={course.title}
         level={course.level}
         lead={lead}
+        authorName={course.authorName}
         coverImageUrl={course.coverImageUrl}
         totals={totals}
         progress={progress}

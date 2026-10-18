@@ -52,6 +52,8 @@ export type PublicCourse =
       /** COH-004: `cohort` courses group lessons by week (058). */
       format: "self_paced" | "cohort";
       howToJoinUrl: string | null;
+      /** TCH-011: a non-house teacher's public name, from course_author_name (089); null shows nothing. */
+      authorName: string | null;
       lessons: PublicCourseLesson[];
     };
 
@@ -71,7 +73,11 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
 
   // The states RPC runs beside the lessons read, not after it, so the page
   // pays no extra serial round trip for it.
-  const [{ data: lessons, error: lessonsErr }, { data: states, error: statesErr }] = await Promise.all([
+  const [
+    { data: lessons, error: lessonsErr },
+    { data: states, error: statesErr },
+    { data: authorName, error: authorErr },
+  ] = await Promise.all([
     supabase
       .from("lessons")
       .select("id, slug, title, description, published_item_count, estimated_minutes, ordinal, week, published_version_id, archived_at")
@@ -82,9 +88,12 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
       // on the lesson page matches the Nth card on this page.
       .order("slug", { ascending: true }),
     supabase.rpc("course_lesson_states", { p_course_id: course.id }),
+    supabase.rpc("course_author_name", { p_course: course.id }),
   ]);
   if (lessonsErr) throw new Error(lessonsErr.message);
   if (statesErr) throw new Error(statesErr.message);
+  // An absent 089 must not take the course page down: no name, no line.
+  if (authorErr) console.error("course_author_name:", authorErr.message);
 
   return {
     state: "ok",
@@ -96,6 +105,7 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
     level: course.level as CefrLevel,
     format: course.format === "cohort" ? "cohort" : "self_paced",
     howToJoinUrl: course.how_to_join_url,
+    authorName: authorErr || typeof authorName !== "string" || authorName === "" ? null : authorName,
     lessons: attachLessonStates(publishedLessonsOnly(lessons ?? []), (states ?? []) as LessonStateRow[]).map((l) => ({
       slug: l.slug,
       title: l.title,

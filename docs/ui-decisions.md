@@ -2356,3 +2356,15 @@ Appended to in the same commit as the change it records. Referenced from
   toast, and the page with the seat lapsed (an admin is never frozen).
   Do not render the switch for a non-admin, and do not decide whether a course may be listed in
   the client: `set_course_listed` decides.
+- "By <name>" on a teacher's course page (2026-10-18, TCH-011, docs/decisions/0172,
+  migration 089 applied to the local stack only, not to the hosted project). The course
+  hero gains one line between the title and the lead: "By <public name>" in English,
+  "Автор: <public name>" in Russian (the saved choice), `text-sm font-medium text-foreground`
+  with `break-words`, in the hero's entry stagger. It shows only for a non-house teacher's
+  published course: a house course, a course with no author and a draft show nothing. The
+  catalogue card, the share card and the lesson band are unchanged. Existing classes and
+  tokens; no new colours. Measured at 360px (local stack, a 67-character unbroken seat
+  name, EN and RU): `scrollWidth/innerWidth` 360/360. `npm run budget` course page:
+  172.1 KB before and after (limit 182). Not measured: a signed-in session.
+  Do not read the name from a table in the page: `author_seats` has no grants, and
+  `course_author_name` is the one read.

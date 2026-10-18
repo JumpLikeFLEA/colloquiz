@@ -21,6 +21,8 @@ type CourseStrings = {
   startFirstFree: string;
   startCourse: string;
   allFree: string;
+  /** TCH-011: the label before a teacher's public name in the hero. */
+  byAuthor: string;
   progressAttempted: string;
   progressAverage: string;
   progressOf: string;
@@ -77,6 +79,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     startFirstFree: "Начать первый бесплатный урок",
     startCourse: "Начать курс",
     allFree: "Весь курс бесплатно",
+    byAuthor: "Автор:",
     progressAttempted: "пройдено уроков",
     progressAverage: "средний результат",
     progressOf: "из",
@@ -122,6 +125,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     startFirstFree: "Start the first free lesson",
     startCourse: "Start the course",
     allFree: "Whole course free",
+    byAuthor: "By",
     progressAttempted: "lessons completed",
     progressAverage: "average score",
     progressOf: "of",
