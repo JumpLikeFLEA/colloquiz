@@ -2368,8 +2368,8 @@ Appended to in the same commit as the change it records. Referenced from
   172.1 KB before and after (limit 182). Not measured: a signed-in session.
   Do not read the name from a table in the page: `author_seats` has no grants, and
   `course_author_name` is the one read.
-- Telegram reminders panel (2026-10-18, COH-010, docs/decisions/0173, migration 090 applied
-  to the local stack only, not to the hosted project). A card, "Reminders in Telegram" /
+- Telegram reminders panel (2026-10-18, COH-010, docs/decisions/0173, migration 090 applied to the local stack and, through the
+  hosted-apply gate, to hosted). A card, "Reminders in Telegram" /
   "Напоминания в Telegram" (the saved EN/RU choice, no toggle), shown to an enrolee only:
   on `/my` as its own section between Teachers and Feedback, on a cohort course page below
   the "Your before and after" row. Composed from the calendar feed panel's frame

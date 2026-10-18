@@ -1,7 +1,8 @@
 # 0173 — COH-010: a learner links the Telegram bot
 
-Status: built, migration 090 written and applied to the local stack only (not to
-hosted: the card says "Written, not applied"). Builds docs/decisions/0140
+Status: built. Migration 090 was written and applied to the local stack; the owner
+then asked for it to go to hosted (2026-10-18) and it was applied through the
+hosted-apply gate, verify script PASS on hosted, no seeded row left. Builds docs/decisions/0140
 (reach, events, scheduling, language), which the owner decided; this file records
 only what was chosen while writing the card.
 
@@ -58,7 +59,7 @@ from the browser. COH-011..013 and TCH-012/013 send through the link this card b
 
 - No message about an event (COH-011..013). `lib/telegram/send.ts` is the sender they use.
 - `setWebhook` and the env vars on Vercel: the owner's, see the card's closing comment.
-- Hosted migration: not applied (the card). Live link and `/stop` on production: the
+- Live link and `/stop` on production: the
   owner's positive control.
 
 ## What would make us revisit it
