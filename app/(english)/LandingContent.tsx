@@ -13,6 +13,7 @@ import { CourseCard } from "./CourseCard";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
 import { SectionHeading } from "./SectionHeading";
+import { SparkCta } from "./SparkCta";
 import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS } from "./surfaceClasses";
 
 /**
@@ -73,13 +74,15 @@ export function LandingContent({
   const t = landingCopy[lang];
 
   const primaryCta = (
-    <Link href={heroHref} className={OFFSET_CTA_CLASS}>
-      {t.ctaPrimary}
-      <ArrowRight
-        className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-        aria-hidden="true"
-      />
-    </Link>
+    <SparkCta>
+      <Link href={heroHref} className={OFFSET_CTA_CLASS}>
+        {t.ctaPrimary}
+        <ArrowRight
+          className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
+      </Link>
+    </SparkCta>
   );
 
   return (

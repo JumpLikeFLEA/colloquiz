@@ -508,6 +508,11 @@ Example: "Planning brief since 2026-09-12"
   (vendored runtime helpers) are unlinted on purpose — upstream code,
   re-vendored on each add. `ImageWithFallback`'s manual `<img>` handling is the
   point of the component, not a `no-img-element` violation to fix.
+- `app/components/react-bits/**` (React Bits components, copied verbatim from a
+  pinned upstream commit, VIS-004, docs/decisions/0174) is unlinted and exempt
+  from the hex-literal guard on the same terms. Never edit those files in place;
+  re-vendor from a new commit and record it. Colours are always passed in from a
+  token, never taken from a component's default.
 - Deliberately-unused bindings use the `_name` convention, honoured via
   `argsIgnorePattern` / `varsIgnorePattern` in the config.
 - Two `react-hooks/refs` suppressions exist (`QuizSession.tsx`,

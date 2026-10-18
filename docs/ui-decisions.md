@@ -2387,3 +2387,26 @@ Appended to in the same commit as the change it records. Referenced from
   panel in an Instagram or Telegram in-app browser.
   Do not show the panel to someone who is not enrolled, and do not make "Turn off" a
   confirm: it undoes itself with one press.
+- Landing sticker digits roll, start button sparks (2026-10-18, VIS-004,
+  docs/decisions/0174). The sticker's "10–15" is two React Bits `Counter`s with the
+  dash between them (`StickerFigure.tsx`), in the display face at 18px below 640px and
+  22px from 640px, weight 800. Once, when the sticker is half in view, each digit spins
+  a turn and lands on the same value; under `prefers-reduced-motion` nothing moves. The
+  server HTML already reads 10–15, and a screen reader reads "10–15" once, then the
+  unit. Both "Start for free" buttons (hero and closing card) throw ten violet sparks
+  from the press (`SparkCta.tsx`, React Bits `ClickSpark`): colour is the resolved
+  `--brand-text` (`#5b3fd9` in light, `#a595ea` in dark), 520 ms, radius 34, size 12; a
+  mouse press sparks on pointerdown and a tap on click. The wrapper leaves the button's
+  box, focus ring, offset shadow, lift and href as they were (bounding boxes identical
+  before and after at 360, 390, 768, 1024 and 1440, EN and RU). The sparks live on the
+  landing's DOM, so the lesson page replacing it (432 to 478 ms after the press in 11 of
+  12 runs on a local production build) cuts them short. The vendored files are
+  `app/components/react-bits/**`, unlinted and out of the hex guard like `ui/**` and
+  `figma/**`; never edit them in place. No new tokens or hex literals. Measured at
+  360px: `scrollWidth/innerWidth` 360/360, EN and RU (`npm run viewport360`), and
+  390/390, 768/768, 1024/1024, 1440/1440 in a browser. Sticker digits inside the 88px /
+  112px circle at all five widths. `npm run budget` `/`: 177.9 KB before, 184.5 KB
+  after, over its 180 KB budget until OPS-028; every other route unchanged. Not
+  measured: a signed-in `/`, and an in-app browser. This supersedes 0165 Decision 9
+  (a server-only sticker) for the sticker only. Do not put the digits back to plain
+  text without redoing 0174, and do not give the wrapper `w-full`.

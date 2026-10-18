@@ -5,8 +5,9 @@
 //
 // Two tiers:
 // - EXEMPT: app/globals.css (the token definitions themselves), the vendored
-//   app/components/ui/** and app/components/figma/** trees (already unlinted
-//   for the same reason), and lib/site.ts + app/global-error.tsx (the
+//   app/components/ui/**, app/components/figma/** and
+//   app/components/react-bits/** trees (already unlinted for the same
+//   reason; react-bits is verbatim upstream, VIS-004), and lib/site.ts + app/global-error.tsx (the
 //   explicit allow-list in SHELL-003's acceptance — both are Satori/inline
 //   contexts with no CSS custom-property access).
 // - RATCHETED: every other file, checked against the per-file count frozen
@@ -33,6 +34,8 @@ const EXEMPT_PREFIXES = [
   join("app", "components", "ui") + "/",
   join("app", "components", "figma") + "\\",
   join("app", "components", "figma") + "/",
+  join("app", "components", "react-bits") + "\\",
+  join("app", "components", "react-bits") + "/",
   join("lib", "site.ts"),
   join("app", "global-error.tsx"),
 ];

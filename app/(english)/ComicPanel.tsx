@@ -1,6 +1,7 @@
 import { Brain } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { landingCopy } from "./landingCopy";
+import { StickerFigure } from "./StickerFigure";
 
 /**
  * The landing hero's comic panel and its "10-15 minutes a day" sticker
@@ -21,8 +22,11 @@ import { landingCopy } from "./landingCopy";
  * on the dark cell, where the owner's dark-ink outline would vanish.
  *
  * A Server Component with no hooks: page.tsx renders it once per language and
- * the client `LandingContent` picks one, the `account` pattern (0086), so the
- * panel costs no client JS on `/` (0078).
+ * the client `LandingContent` picks one, the `account` pattern (0086). The
+ * panel itself costs no client JS on `/` (0078), with one exception: the
+ * sticker's figure is two vendored react-bits `Counter`s (`StickerFigure`,
+ * VIS-004, docs/decisions/0174), so the sticker is no longer server-only
+ * (this supersedes 0165 Decision 9 for the sticker).
  */
 
 const CAPTION_CELL_CLASS = "flex items-center p-3 sm:p-5";
@@ -103,7 +107,9 @@ export function ComicPanel({ lang }: { lang: SurfaceLang }) {
           </div>
         </div>
         <span className="pointer-events-none absolute -right-1 -top-9 flex size-[5.5rem] rotate-6 flex-col items-center justify-center rounded-full border-2 border-highlight-foreground bg-highlight text-center leading-none text-highlight-foreground shadow-offset sm:-top-11 sm:size-28 xl:-right-5">
-          <span className="font-display text-xl font-extrabold sm:text-2xl">{t.sticker.figure}</span>
+          <span className="font-display font-extrabold">
+            <StickerFigure figure={t.sticker.figure} />
+          </span>
           <span className="mt-0.5 text-[0.65rem] font-semibold sm:text-xs">{t.sticker.unit}</span>
         </span>
       </div>

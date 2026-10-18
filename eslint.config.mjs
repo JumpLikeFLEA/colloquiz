@@ -55,6 +55,10 @@ const eslintConfig = defineConfig([
     // Vendored from the Figma export. ImageWithFallback's whole job is manual
     // <img> error handling, so no-img-element does not apply to it.
     'app/components/figma/**',
+    // Vendored from react-bits at a pinned commit, verbatim (VIS-004,
+    // docs/decisions/0174). Upstream code: it assigns refs during render, which
+    // react-hooks/refs rejects. tsc still checks it.
+    'app/components/react-bits/**',
     'exemplar-archive/**',
     'authored/**',
     'ds-bundle/**',
