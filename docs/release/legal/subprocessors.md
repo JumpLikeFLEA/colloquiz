@@ -1,6 +1,6 @@
 # Subprocessors
 
-**Colloquiz — https://colloquiz.app** · Version 1.2 · Last updated 2026-10-14
+**Colloquiz — https://colloquiz.app** · Version 1.3 · Last updated 2026-10-18
 
 These are the third parties that process personal data on our behalf. The
 [Privacy Policy](./privacy-policy.md) links here. Keep this file current — adding a
@@ -20,7 +20,7 @@ verified rather than trusted.
 | **Resend** | Outbound email — **account mail only** (sign-up confirmation, password reset) | Email address, and the message content | EU/US | EU–US DPF / SCCs | Configured as custom SMTP **inside Supabase Auth**; the app holds no API key and sends no mail of its own — see `lib/feedbackNotify.ts` |
 | **Google** (Google Ireland Ltd.) | OAuth sign-in — **only if the user chooses it** | Email address, account identifier, name and picture as returned by the provider | EU/US | EU–US DPF / SCCs | `app/(auth)/AuthScreen.tsx`, `app/auth/callback/route.ts` |
 | **Discord** (Discord Inc.) | OAuth sign-in — **only if the user chooses it** | Same as above | US | SCCs | `app/(auth)/AuthScreen.tsx`, `app/auth/callback/route.ts` |
-| **Telegram** (Telegram Messenger Inc.; EEA representative: European Data Protection Office, Brussels) | Sign-in — **only if the user chooses it** | An identifier Telegram issues for this Service (not the Telegram account number), name and username, as Telegram returns them (printed in `docs/decisions/0098`) | Outside the EEA | Not applicable: we send Telegram no personal data. You sign in on Telegram's own page, and Telegram sends us the fields listed | `app/(colloquiz)/(auth)/AuthScreen.tsx`, `app/components/lesson-player/RegistrationOffer.tsx`, `app/auth/callback/route.ts` |
+| **Telegram** (Telegram Messenger Inc.; EEA representative: European Data Protection Office, Brussels) | Sign-in, and reminder messages — **only if the user chooses them** | An identifier Telegram issues for this Service (not the Telegram account number), name and username, as Telegram returns them (printed in `docs/decisions/0098`). For reminders: the Telegram chat id of a user who pressed Start in the bot, and the text of the reminder messages sent to it (course and lesson titles, a link) | Outside the EEA | Sign-in: not applicable, we send Telegram no personal data; you sign in on Telegram's own page and Telegram sends us the fields listed. Reminders: we send the chat id and message text to Telegram's Bot API, only for users who turned reminders on; the transfer basis is for the owner to confirm before launch | `app/(colloquiz)/(auth)/AuthScreen.tsx`, `app/components/lesson-player/RegistrationOffer.tsx`, `app/auth/callback/route.ts`, `app/api/telegram/webhook/route.ts`, `lib/telegram/send.ts` |
 | **Discord** (webhook) | Operator notification when new in-app feedback arrives | The feedback text, which may contain whatever the user typed | US | SCCs | `lib/feedbackNotify.ts`, `FEEDBACK_DISCORD_WEBHOOK_URL` — optional; feedback is stored either way |
 
 ## Added as part of the 1.0 release
@@ -49,3 +49,6 @@ real accounts before launch (docs/decisions/0095, Decision 1). 1.2 (2026-10-14)
 Telegram sign-in is live: its legal entity, its transfer basis, and the fields it
 actually returns, which include no profile picture (docs/decisions/0098). Removing a
 field that was never received is not material (0095).
+1.3 (2026-10-18) Telegram gains a messaging role: reminder messages to users who linked the bot
+(COH-010, docs/decisions/0173). This is a new data category, so after launch it needs the
+in-app notice of Terms §10 (docs/decisions/0095 Option A).

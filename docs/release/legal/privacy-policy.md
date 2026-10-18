@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.5 · Last updated 2026-10-16
+Version 1.6 · Last updated 2026-10-18
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -79,6 +79,7 @@ that produces legal or similarly significant effects.
 | Homework a linked teacher assigns you — the lesson or course, the optional due date and a note | To show you what your teacher asked for. A due date never locks a lesson |
 | Private groups — a name a teacher gives to a set of their linked students, and whether you are in it | The teacher's own organisation of their students. You are not shown the group's name in the app |
 | Calendar feed token — if you turn on "Subscribe in your calendar": a private web address for your dates | So your calendar app can show them. We store only a hashed form of the token |
+| Telegram reminders — if you turn them on: the number of the Telegram chat where you pressed Start in our bot (your chat id), the language of the site and the time zone of your browser when you did, and when you turned reminders on and off | So the bot can message you about a course you joined. A one-hour link you press is stored only as a hashed token |
 | English lesson opens — which lessons you opened while signed in, and when | To show you your progress, and to show the author of the course how learners move through it |
 | Cohort enrolments — if you join a cohort course: the run, your tier, when you joined and, if it happened, when your access was ended (for example after a refund) | To give you access to the course and to open its lessons week by week |
 | The author's written feedback on a voice task, and a final comment — if you join a cohort course | So you can read it under your recording |
@@ -169,6 +170,7 @@ name or feedback.
 | Storing the answers you give while signed in, so they can be shown back to you and a lesson can resume | **Contract** (Art. 6(1)(b)) — saving your answers and scores as part of your progress is part of the Service, as Terms section 4 describes. Where a reader holds that this goes beyond what the contract needs, **legitimate interests** (Art. 6(1)(f)) — giving you your answers back. You can object (section 8) |
 | A teacher you have linked to seeing your answers and scores, writing to you, grouping you and assigning you homework | **Contract** (Art. 6(1)(b)) — the teacher relationship you asked for by linking, after the app has told you what the teacher will see. We considered consent and did not choose it: a link made by claiming a run invite is a step to join a course you have chosen, so consent to it would not be freely given. You can leave a link at any time whatever the basis (section 5) |
 | The calendar feed, if you turn it on | **Contract** (Art. 6(1)(b)) — a feature of the Service that you switch on yourself; turning it off, or replacing the address, stops it |
+| Messaging you in Telegram about a course you joined, if you turn reminders on | **Contract** (Art. 6(1)(b)) — a feature of the Service that you switch on yourself by pressing Start in our bot; you turn it off with the button in the app, with /stop in the bot, or by blocking the bot |
 | A course author seeing, in a free course, your email or Telegram username, how you found the course, and your activity in it, including lesson opens | **Legitimate interests** (Art. 6(1)(f)) — helping the author run and improve the course and reach its learners. You can object (section 8) |
 | An author's contact label for you before you have claimed an invite | **Legitimate interests** — sending the invite you were offered |
 | Recording which course and arrival channel you signed up from | **Legitimate interests** — learning which courses and channels bring learners, so we know which courses to make; one record per account, never updated, and not recorded under Global Privacy Control or Do Not Track |
@@ -193,6 +195,11 @@ Some information is visible to other users by design:
 - Questions and quizzes you author inside a group are visible to that group.
 
 Your email address is not shown to other learners.
+
+**Telegram reminders.** If you turn them on, the bot sends you messages through Telegram,
+so Telegram receives the text of each message (course and lesson titles and a link) and
+your chat id, and can see that you use the bot. Telegram is listed in the
+[subprocessors](./subprocessors.md). We do not send Telegram anything else about you.
 
 **Teachers you link to.** A "teacher" is a course author you choose to link to, by opening their student link or by claiming an invite they created. Before you confirm, the app tells you what they will see. If you link:
 
@@ -264,6 +271,7 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | Messages, with any exercise or answer attached | Until you close your account; then **deleted outright** |
 | Private groups and homework naming you | Until the link ends or you close your account, whichever comes first; then removed from the teacher's groups and homework |
 | Calendar feed token | Until you replace it or close your account |
+| Telegram reminders (chat id, language, time zone, dates) | Until you close your account; then **deleted outright**. Turning reminders off, /stop or blocking the bot stops the messages and marks the link as stopped; the row stays until you close your account, or until you turn reminders on again. A link you did not use is deleted when you turn reminders off or make a new one |
 | Cross-device claim stash (pre-signup lesson scores held server-side) | Deleted when the confirmation link is first used; if never used, unusable after 7 days and deleted at the next sign-up after that |
 | IP address logged when creating a cross-device claim stash | 1 hour |
 
@@ -274,7 +282,7 @@ Under the GDPR / UK GDPR you have the right to:
 - **Access** your data, and to receive a **portable copy**. You can do this yourself,
   immediately: **Settings › Data and privacy › Export my data** produces a complete JSON
   file of your profile, results, achievements, group memberships, duel history,
-  English lesson practice attempts with the answers you gave, the course and channel you signed up from, your teacher links, your conversations with teachers, the names of any private groups a teacher has put you in, the homework assigned to you, whether you have a calendar feed (never its token), the
+  English lesson practice attempts with the answers you gave, the course and channel you signed up from, your teacher links, your conversations with teachers, the names of any private groups a teacher has put you in, the homework assigned to you, whether you have a calendar feed (never its token), your Telegram reminders link (chat id, language, time zone and dates), the
   lessons you opened, your cohort enrolments, your Telegram identity, and the author's
   written feedback and final comment. The export includes a copy of your voice
   recordings, and an invite contact label is included once you have claimed it.
@@ -299,7 +307,7 @@ When you delete your account we, immediately and irreversibly:
 - remove your notifications, notification preferences and any in-progress quiz;
 - remove you from all leaderboards;
 - erase your English lesson practice attempts and the answers stored with them outright — see the contrast below;
-- end your teacher links, delete your conversations with teachers in full (both sides, with anything attached), take you out of their groups and homework, and delete your calendar feed token;
+- end your teacher links, delete your conversations with teachers in full (both sides, with anything attached), take you out of their groups and homework, and delete your calendar feed token and your Telegram reminders link;
 - erase the record of which course and channel you signed up from;
 - erase your voice recordings, the author's written feedback and final comment, your
   cohort enrolments, your lesson opens, the invite contact label kept with your
