@@ -2368,3 +2368,22 @@ Appended to in the same commit as the change it records. Referenced from
   172.1 KB before and after (limit 182). Not measured: a signed-in session.
   Do not read the name from a table in the page: `author_seats` has no grants, and
   `course_author_name` is the one read.
+- Telegram reminders panel (2026-10-18, COH-010, docs/decisions/0173, migration 090 applied
+  to the local stack only, not to the hosted project). A card, "Reminders in Telegram" /
+  "Напоминания в Telegram" (the saved EN/RU choice, no toggle), shown to an enrolee only:
+  on `/my` as its own section between Teachers and Feedback, on a cohort course page below
+  the "Your before and after" row. Composed from the calendar feed panel's frame
+  (`rounded-2xl border bg-card`), its `bg-brand-subtle` primary and outlined secondary
+  buttons (`min-h-11`) and the `destructive-subtle` error line; no new colours. States: off
+  (a lead and "Get reminders in Telegram"), pending (one hint line, an "Open Telegram" link
+  to `t.me/Alliengll_bot?start=<token>` in a new tab and a "Check" button that refreshes
+  the page), on (a lead and "Turn off", no confirm: pressing the button again links again),
+  and off again ("Reminders are off."). The link is made by a `fetch` to
+  `/api/telegram/link`, which stores only its hash. A failed status read leaves the card
+  out. Measured at 360px (local stack, `scrollWidth/innerWidth`): 360/360 on `/my` and
+  `/courses/coh005-fixture` in the off, pending, on and turned-off states, and on `/my` in
+  RU; 0 panels for a signed-in non-enrolled user and for a visitor. `npm run budget`: `/my`
+  174.0 / 174.4 KB, course page 172.1 / 172.9 KB. Not reached: the error line, and the
+  panel in an Instagram or Telegram in-app browser.
+  Do not show the panel to someone who is not enrolled, and do not make "Turn off" a
+  confirm: it undoes itself with one press.

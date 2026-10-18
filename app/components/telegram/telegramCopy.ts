@@ -1,0 +1,48 @@
+// COH-010 (docs/decisions/0173) — the reminder panel's strings. Imported by SERVER
+// pages only, which pass the one language's object to the client panel as a prop,
+// so the other language and this module never reach the browser. Wording pending
+// partner review.
+
+export type TelegramLang = "ru" | "en";
+
+export type TelegramPanelCopy = {
+  title: string;
+  leadOff: string;
+  leadOn: string;
+  get: string;
+  open: string;
+  pendingHint: string;
+  check: string;
+  turnOff: string;
+  isOff: string;
+  error: string;
+};
+
+export const telegramPanelCopy: Record<TelegramLang, TelegramPanelCopy> = {
+  ru: {
+    title: "Напоминания в Telegram",
+    leadOff:
+      "Бот напишет, когда откроется новая неделя курса, придёт отзыв на вашу запись или итоговый комментарий, а на расширенном тарифе — когда скоро созвон. Он запомнит язык сайта и ваш часовой пояс.",
+    leadOn: "Напоминания включены: бот пишет вам в Telegram. Отключить можно здесь или командой /stop в боте.",
+    get: "Получать напоминания в Telegram",
+    open: "Открыть Telegram",
+    pendingHint: "Нажмите Start в боте. Ссылка действует час. Потом вернитесь сюда и нажмите «Проверить».",
+    check: "Проверить",
+    turnOff: "Отключить",
+    isOff: "Напоминания отключены.",
+    error: "Не получилось. Попробуйте ещё раз.",
+  },
+  en: {
+    title: "Reminders in Telegram",
+    leadOff:
+      "The bot will message you when a new week of the course opens, when feedback on a recording or a final comment arrives, and, on the extended tier, before a call. It saves the site's language and your time zone.",
+    leadOn: "Reminders are on: the bot messages you in Telegram. Turn them off here, or with /stop in the bot.",
+    get: "Get reminders in Telegram",
+    open: "Open Telegram",
+    pendingHint: "Press Start in the bot. The link works for one hour. Then come back here and press “Check”.",
+    check: "Check",
+    turnOff: "Turn off",
+    isOff: "Reminders are off.",
+    error: "Something went wrong. Try again.",
+  },
+};

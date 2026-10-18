@@ -25,6 +25,7 @@ const baseSources = {
   homework: [],
   authorSeat: null,
   calendarFeed: null,
+  telegramLink: null,
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -428,8 +429,8 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
     expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
   });
 
-  it("is format version 14", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(14);
+  it("is format version 15", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(15);
   });
 });
 
@@ -625,5 +626,28 @@ describe("buildExportPayload — calendar_feed (COH-016)", () => {
     );
     expect(payload.calendar_feed).toEqual({ enabled: true, created_at: "2026-10-17T10:00:00Z" });
     expect(JSON.stringify(payload)).not.toMatch(/[0-9a-f]{64}/);
+  });
+});
+
+describe("buildExportPayload — telegram_reminders (COH-010)", () => {
+  it("is null when the reader never linked the bot", () => {
+    expect(buildExportPayload(baseSources, []).telegram_reminders).toBeNull();
+  });
+
+  it("carries the chat, language, zone and dates, and the chat id as a string", () => {
+    const payload = buildExportPayload(
+      {
+        ...baseSources,
+        telegramLink: { chat_id: 15027785433, lang: "ru", time_zone: "Europe/Belgrade", linked_at: "2026-10-18T10:00:00Z", stopped_at: null },
+      },
+      [],
+    );
+    expect(payload.telegram_reminders).toEqual({
+      chat_id: "15027785433",
+      language: "ru",
+      time_zone: "Europe/Belgrade",
+      linked_at: "2026-10-18T10:00:00Z",
+      stopped_at: null,
+    });
   });
 });

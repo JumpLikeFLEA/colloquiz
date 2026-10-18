@@ -21,6 +21,9 @@ import { FeedbackContentView } from "@/app/components/lesson-player/blocks/Feedb
 import { CalendarView } from "@/app/components/calendar/CalendarView";
 import { CalendarFeedPanel } from "@/app/components/calendar/CalendarFeedPanel";
 import { TimeZoneSync } from "@/app/components/calendar/TimeZoneSync";
+import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
+import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
+import { getMyTelegramLinked } from "@/lib/telegram/status";
 import { AccountMenu } from "../AccountMenu";
 import { BandTopBar } from "../BandTopBar";
 import { GradientBackdrop } from "../HeroDecor";
@@ -63,13 +66,14 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  */
 export default async function MyPage({ searchParams }: { searchParams: Promise<{ month?: string | string[] }> }) {
   const { month: rawMonth } = await searchParams;
-  const [home, teachers, threads, homework, calendar, feed] = await Promise.all([
+  const [home, teachers, threads, homework, calendar, feed, telegramLinked] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
     getStudentThreads(),
     getStudentHomework(),
     getStudentCalendar(typeof rawMonth === "string" ? rawMonth : undefined),
     getStudentFeedStatus(),
+    getMyTelegramLinked(),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
@@ -184,6 +188,13 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* COH-010: reminders are for an enrolee; a failed read leaves the panel out. */}
+        {hasEnrolment && telegramLinked !== null && (
+          <section data-my="reminders">
+            <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} />
           </section>
         )}
 

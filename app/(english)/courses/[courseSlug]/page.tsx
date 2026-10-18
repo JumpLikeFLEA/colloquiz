@@ -18,6 +18,9 @@ import { courseProgress, lessonRowProgress, courseTotals, firstOpenLesson } from
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { SectionHeading } from "../../SectionHeading";
+import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
+import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
+import { getMyTelegramLinked } from "@/lib/telegram/status";
 import { BeforeAfterLinks } from "./BeforeAfterLinks";
 import { CohortInfo } from "./CohortInfo";
 import { CohortLessonList } from "./CohortLessonList";
@@ -89,6 +92,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   ]);
   const audience = cohort ? cohortAudience(cohort.enrolments, course.lessons) : null;
   const enrolled = audience?.kind === "extended" || audience?.kind === "basic";
+  // COH-010: reminders are offered to an enrolee; null (a failed read) leaves the panel out.
+  const telegramLinked = enrolled ? await getMyTelegramLinked() : null;
   const progress = courseProgress(course.lessons, attempts);
   const totals = courseTotals(course.lessons);
   // CNT-014: the CTA, its label, the pill and the per-row badges all render
@@ -154,6 +159,10 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         )}
 
         {cohort && enrolled && <BeforeAfterLinks lang={lang} enrolments={cohort.enrolments} runs={cohort.runs} />}
+
+        {cohort && enrolled && telegramLinked !== null && (
+          <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} />
+        )}
 
         <section className="flex flex-col gap-6">
           <SectionHeading eyebrow={c.lessonsEyebrow} title={c.lessonsTitle} display />

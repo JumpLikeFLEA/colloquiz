@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 14;
+export const EXPORT_FORMAT_VERSION = 15;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -32,6 +32,7 @@ export const EXPORT_CONTENTS = [
   "Messages — your conversations with teachers: what each of you wrote, and when",
   "Homework — the lessons and courses a linked teacher assigned you, with any due date and note",
   "Calendar feed — whether you have a private calendar link and when you made it (never the link itself)",
+  "Telegram reminders — the Telegram chat the bot messages, the language and time zone saved when you linked it, and when you linked and stopped it",
 ] as const;
 
 type AchievementRow = { achievement_id: string; unlocked_at: string };
@@ -174,6 +175,15 @@ export type HomeworkExportRow = {
 /** The reader's own row of `calendar_feed_status` (086), or none. */
 export type CalendarFeedExportRow = { has_token: boolean; created_at: string };
 
+/** The reader's own row of `my_telegram_link` (090), or none. */
+export type TelegramLinkExportRow = {
+  chat_id: number | string;
+  lang: string;
+  time_zone: string | null;
+  linked_at: string;
+  stopped_at: string | null;
+};
+
 /** The reader's own row of `my_author_seat_export` (082), or none. */
 export type AuthorSeatExportRow = {
   kind: string;
@@ -212,6 +222,7 @@ export type ExportSources = {
   authorSeat: AuthorSeatExportRow | null;
   /** COH-016 (086): the reader's calendar feed status, or null when there is no token. */
   calendarFeed: CalendarFeedExportRow | null;
+  telegramLink: TelegramLinkExportRow | null;
 };
 
 /**
@@ -407,6 +418,19 @@ export function buildExportPayload(
     calendar_feed: src.calendarFeed
       ? { enabled: true, created_at: src.calendarFeed.created_at }
       : { enabled: false, created_at: null },
+
+    // COH-010 (docs/decisions/0173; privacy-policy.md section 8): the chat the bot
+    // messages, with the language and time zone saved at link time. The link token
+    // is not here: only its hash is stored, and it is single-use.
+    telegram_reminders: src.telegramLink
+      ? {
+          chat_id: String(src.telegramLink.chat_id),
+          language: src.telegramLink.lang,
+          time_zone: src.telegramLink.time_zone,
+          linked_at: src.telegramLink.linked_at,
+          stopped_at: src.telegramLink.stopped_at,
+        }
+      : null,
   };
 }
 

@@ -189,6 +189,14 @@ const ROUTES: RouteBudget[] = [
   // precedent, docs/decisions/0057). Re-derive both from a real
   // `npm run budget` run before raising it.
   { path: "/my/messages", budgetKB: 184, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
+  // COH-010 (docs/decisions/0173): a cohort course page as an ENROLLED learner,
+  // the one state that carries the Telegram reminders panel (the visitor figure
+  // is the /courses/future-imperfect entry above). Signed in as the learner-home
+  // fixture, enrolled in the seed's cohort run. Needs scripts/seed-local-fixtures.ts
+  // on the target. Measured 172.9 KB on the local stack (172.1 KB before the panel);
+  // budgetKB is that plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
+  // Re-derive both from a real `npm run budget` run before raising it.
+  { path: "/courses/coh005-fixture", budgetKB: 181, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
 ];
 
 // ── CLI ──────────────────────────────────────────────────────────────────
