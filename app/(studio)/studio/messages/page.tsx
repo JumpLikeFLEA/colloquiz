@@ -5,13 +5,18 @@ import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { ageLabel } from "@/lib/studio/inbox";
 import { getThreads } from "@/lib/messages/messagesServer";
 import { threadPath, type Thread } from "@/lib/messages/messages";
+import { getMyTelegramLinked } from "@/lib/telegram/status";
+import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
+import { studioTelegramCopy } from "@/app/components/telegram/telegramCopy";
 
 // /studio/messages — the teacher's conversations, newest first, then the
 // linked students they have not written to yet (TCH-004, docs/decisions/0151).
 // Every row comes from message_threads('teacher') (079): who is a party, whether
 // the link is live and what "unanswered" means are decided there. The nav badge
 // and the inbox read the same call. getCourseAccess() is the page gate (the
-// layout's too), not the data boundary.
+// layout's too), not the data boundary. TCH-012 (0177): the "Messages in
+// Telegram" card reuses COH-010's panel and link; a failed status read leaves
+// it out rather than show a state it could not read.
 
 export const metadata = { title: "Messages" };
 
@@ -62,7 +67,7 @@ export default async function StudioMessages() {
   const access = await getCourseAccess();
   if (!canEnterStudio(access)) notFound();
 
-  const threads = await getThreads("teacher");
+  const [threads, telegramLinked] = await Promise.all([getThreads("teacher"), getMyTelegramLinked()]);
   // The request's clock, read once so every age agrees.
   const now = new Date();
   const started = threads.filter((t) => t.conversationId);
@@ -77,6 +82,8 @@ export default async function StudioMessages() {
           linked stays in the list, closed: readable, with no new messages.
         </p>
       </div>
+
+      {telegramLinked !== null && <TelegramRemindersPanel linked={telegramLinked} lang="en" copy={studioTelegramCopy} />}
 
       {threads.length === 0 ? (
         <div className={EMPTY_BOX}>

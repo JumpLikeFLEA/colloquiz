@@ -1,7 +1,7 @@
 // COH-010 (docs/decisions/0173) — the bot's wording and the pure parsing around
 // it. No I/O: the webhook handler and the sender import this, and vitest drives
 // it. Event wording (week open, feedback, final comment, calls) joins here with
-// COH-011..013.
+// COH-011..013; the message ping's wording is lib/telegram/pings.ts (TCH-012).
 
 export type TelegramLang = "ru" | "en";
 
@@ -63,19 +63,19 @@ export function readUpdate(update: unknown): IncomingMessage | null {
 const COPY = {
   ru: {
     linked:
-      "Готово. Буду писать, когда откроется новая неделя курса, придёт отзыв на запись или итоговый комментарий, а на расширенном тарифе — когда скоро созвон. Отключить: /stop.",
+      "Готово. Буду писать, когда откроется новая неделя курса, придёт отзыв на запись или итоговый комментарий, а на расширенном тарифе — когда скоро созвон. Также напишу, если вам ответит преподаватель или ученик. Отключить: /stop.",
     stopped: "Напоминания отключены. Чтобы включить снова, нажмите «Получать напоминания в Telegram» на сайте.",
     invalid:
       "Эта ссылка не подходит: она устарела или уже использована. Нажмите «Получать напоминания в Telegram» на сайте ещё раз.",
-    help: "Я присылаю напоминания о курсе: новая неделя, отзыв на запись, итоговый комментарий, созвон. Включить: кнопка «Получать напоминания в Telegram» на сайте. Отключить: /stop.",
+    help: "Я присылаю напоминания о курсе: новая неделя, отзыв на запись, итоговый комментарий, созвон, а также сообщение от преподавателя или ученика. Включить: кнопка «Получать напоминания в Telegram» на сайте. Отключить: /stop.",
   },
   en: {
     linked:
-      "Done. I'll message you when a new week of the course opens, when feedback on a recording or a final comment arrives, and, on the extended tier, before a call. To turn this off: /stop.",
+      "Done. I'll message you when a new week of the course opens, when feedback on a recording or a final comment arrives, and, on the extended tier, before a call. I'll also message you when a teacher or student writes to you. To turn this off: /stop.",
     stopped: "Reminders are off. To turn them on again, press “Get reminders in Telegram” on the site.",
     invalid:
       "That link doesn't work: it has expired or was already used. Press “Get reminders in Telegram” on the site again.",
-    help: "I send reminders about your course: a new week, feedback on a recording, a final comment, a call. To turn them on, press “Get reminders in Telegram” on the site. To turn them off: /stop.",
+    help: "I send reminders about your course: a new week, feedback on a recording, a final comment, a call, a message from a teacher or student. To turn them on, press “Get reminders in Telegram” on the site. To turn them off: /stop.",
   },
 } as const;
 

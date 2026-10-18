@@ -46,3 +46,19 @@ export const telegramPanelCopy: Record<TelegramLang, TelegramPanelCopy> = {
     error: "Something went wrong. Try again.",
   },
 };
+
+// TCH-012 (docs/decisions/0177) — the same panel in Studio, for a teacher: English,
+// like the rest of Studio's chrome. The link is the one a learner makes (090).
+export const studioTelegramCopy: TelegramPanelCopy = {
+  title: "Messages in Telegram",
+  leadOff:
+    "The bot will message you when a student writes to you in the app, with a link to the conversation. It sends at most one message an hour per student while theirs stays unread. It saves your time zone.",
+  leadOn: "Messages are on: the bot pings you in Telegram when a student writes. Turn them off here, or with /stop in the bot.",
+  get: "Get messages in Telegram",
+  open: "Open Telegram",
+  pendingHint: "Press Start in the bot. The link works for one hour. Then come back here and press “Check”.",
+  check: "Check",
+  turnOff: "Turn off",
+  isOff: "Messages in Telegram are off.",
+  error: "Something went wrong. Try again.",
+};

@@ -9,6 +9,7 @@ import {
   startLink,
   stoppedMessage,
 } from "./messages";
+import { pingLink, pingNewMessage, pingText, readClaim, type PingDeps } from "./pings";
 import { postSendMessage, sendToUser, type SenderDeps } from "./send";
 import { handleUpdate, isValidWebhookSecret, type WebhookDeps } from "./webhook";
 
@@ -200,5 +201,77 @@ describe("sendToUser", () => {
     });
     expect(await sendToUser("u", "hi", failingStop)).toBe("failed");
     expect(await sendToUser("u", "hi", deps({ botToken: undefined }))).toBe("failed");
+  });
+});
+
+describe("message pings (TCH-012)", () => {
+  const T = "11111111-1111-4111-8111-111111111111";
+  const S = "22222222-2222-4222-8222-222222222222";
+  const ORIGIN = "https://example.test";
+  const claimJson = (over: Record<string, unknown> = {}) => ({
+    claimed: true,
+    recipient_id: S,
+    to_role: "student",
+    lang: "ru",
+    teacher_id: T,
+    student_id: S,
+    ...over,
+  });
+
+  it("links to the conversation on the recipient's own surface, keyed by their peer", () => {
+    expect(pingLink({ toRole: "student", teacherId: T, studentId: S }, ORIGIN)).toBe(`${ORIGIN}/my/messages/${T}`);
+    expect(pingLink({ toRole: "teacher", teacherId: T, studentId: S }, ORIGIN)).toBe(`${ORIGIN}/studio/messages/${S}`);
+  });
+
+  it("words the text per side and language, with the link and nothing else", () => {
+    const c = (toRole: "teacher" | "student", lang: "ru" | "en") => readClaim(claimJson({ to_role: toRole, lang }))!;
+    expect(pingText(c("student", "en"), ORIGIN)).toBe(`Your teacher sent you a message: ${ORIGIN}/my/messages/${T}`);
+    expect(pingText(c("student", "ru"), ORIGIN)).toBe(`Вам написал преподаватель: ${ORIGIN}/my/messages/${T}`);
+    expect(pingText(c("teacher", "en"), ORIGIN)).toBe(`A student sent you a message: ${ORIGIN}/studio/messages/${S}`);
+    expect(pingText(c("teacher", "ru"), ORIGIN)).toBe(`Вам написал ученик: ${ORIGIN}/studio/messages/${S}`);
+  });
+
+  it("reads only a claimed ping with every field", () => {
+    expect(readClaim(claimJson())).toEqual({ recipientId: S, toRole: "student", lang: "ru", teacherId: T, studentId: S });
+    expect(readClaim(claimJson({ lang: "xx" }))?.lang).toBe("en");
+    expect(readClaim({ claimed: false, reason: "throttled" })).toBeNull();
+    expect(readClaim(claimJson({ to_role: "admin" }))).toBeNull();
+    expect(readClaim(claimJson({ recipient_id: 5 }))).toBeNull();
+    expect(readClaim(null)).toBeNull();
+    expect(readClaim("x")).toBeNull();
+  });
+
+  function deps(over: Partial<PingDeps> = {}) {
+    return {
+      claim: vi.fn(async () => claimJson() as unknown),
+      send: vi.fn(async () => "sent" as const),
+      origin: ORIGIN,
+      ...over,
+    } as PingDeps & { claim: ReturnType<typeof vi.fn>; send: ReturnType<typeof vi.fn> };
+  }
+
+  it("claims, then sends the worded text to the recipient", async () => {
+    const d = deps();
+    expect(await pingNewMessage("m1", d)).toBe("sent");
+    expect(d.claim).toHaveBeenCalledWith("m1");
+    expect(d.send).toHaveBeenCalledWith(S, `Вам написал преподаватель: ${ORIGIN}/my/messages/${T}`);
+  });
+
+  it("sends nothing when no ping is due (not linked, throttled, unknown)", async () => {
+    for (const reason of ["not_linked", "throttled", "no_message"]) {
+      const d = deps({ claim: vi.fn(async () => ({ claimed: false, reason }) as unknown) });
+      expect(await pingNewMessage("m1", d)).toBe("skipped");
+      expect(d.send).not.toHaveBeenCalled();
+    }
+  });
+
+  it("never throws: a failed claim or send is reported, not raised", async () => {
+    const boom = (m: string) => vi.fn(async () => {
+      throw new Error(m);
+    });
+    expect(await pingNewMessage("m1", deps({ claim: boom("db") }))).toBe("error");
+    expect(await pingNewMessage("m1", deps({ send: vi.fn(async () => "failed" as const) }))).toBe("send_failed");
+    expect(await pingNewMessage("m1", deps({ send: vi.fn(async () => "blocked" as const) }))).toBe("send_failed");
+    expect(await pingNewMessage("m1", deps({ send: boom("net") }))).toBe("error");
   });
 });

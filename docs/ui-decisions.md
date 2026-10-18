@@ -2437,3 +2437,15 @@ Appended to in the same commit as the change it records. Referenced from
   a minimised window ran about 1 frame per second). Do not make the layer
   document-height, do not add a third patch to the vendored file, and do not put
   `bg-background` back on the landing's `<main>`.
+- Studio: "Messages in Telegram" (2026-10-18, TCH-012, docs/decisions/0177, migration 091
+  applied to the local stack and, through the hosted-apply gate, to hosted). `/studio/messages`
+  gains COH-010's reminder card (`TelegramRemindersPanel`: the calendar feed panel's
+  `rounded-2xl border bg-card` frame, `bg-brand-subtle` primary and outlined secondary buttons
+  at `min-h-11`, the `destructive-subtle` error line) between the page intro and the
+  conversation list, with English copy (`studioTelegramCopy`): "Messages in Telegram" / "Get
+  messages in Telegram" / "Turn off". The card is left out when the status read fails.
+  The learner side is unchanged (a student's pings use the `/my` reminders card, offered to
+  enrolees only). No new classes or tokens. Measured at 360px (local stack, a seeded teacher):
+  `scrollWidth/innerWidth` 360/360 on `/studio/messages` with the card in its off state. Not
+  reached: the pending, on and error states (the same component COH-010 measured on `/my`),
+  and a teacher with conversations. Do not give Studio a second link mechanism.

@@ -1,7 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PEER_ID_PATTERN, parseMessageBody, sendErrorResponse } from "@/lib/messages/messages";
+import { pingForMessage } from "@/lib/telegram/pings";
 
 /**
  * TCH-004 (docs/decisions/0151) — POST a message, as JSON:
@@ -22,6 +23,10 @@ import { PEER_ID_PATTERN, parseMessageBody, sendErrorResponse } from "@/lib/mess
  * This route only relays and maps the refusals to statuses. The body is
  * checked here too, against the same shape, so an obviously bad request
  * doesn't cost a round trip; the database is still the authority.
+ *
+ * TCH-012 (docs/decisions/0177): once the post has succeeded, after() asks SQL
+ * whether this message earns a Telegram ping to the other side and sends it. It
+ * runs after the response, never throws, and cannot change the answer above.
  */
 /** Above the database's own 40,000-character cap on a stored snapshot, to leave
  * room for the display fields it rewrites; a request past this is not one. */
@@ -78,10 +83,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Could not send the message." }, { status: 500 });
   }
 
-  const result = data as { ok?: boolean; error?: string } | null;
+  const result = data as { ok?: boolean; error?: string; message_id?: string } | null;
   if (!result?.ok) {
     const { status, message } = sendErrorResponse(result?.error ?? "");
     return NextResponse.json({ error: message }, { status });
+  }
+  const messageId = result.message_id;
+  if (typeof messageId === "string") {
+    after(async () => {
+      const outcome = await pingForMessage(messageId);
+      if (outcome === "send_failed" || outcome === "error") console.error("telegram message ping", outcome);
+    });
   }
   return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }
