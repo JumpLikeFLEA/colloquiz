@@ -55,6 +55,10 @@ export type PublicCourse =
       /** TCH-011: a non-house teacher's public name, from course_author_name (089); null shows nothing. */
       authorName: string | null;
       lessons: PublicCourseLesson[];
+      /** PROG-003: each listed lesson's current published version id, by slug.
+       * Only the anonymous "Continue" needs it (the local attempt store is keyed
+       * by version); empty entries are omitted. */
+      versionIds: Record<string, string>;
     };
 
 // cache(): SHELL-009's generateMetadata and the page component both call
@@ -106,6 +110,9 @@ export const getPublicCourse = cache(async (courseSlug: string): Promise<PublicC
     format: course.format === "cohort" ? "cohort" : "self_paced",
     howToJoinUrl: course.how_to_join_url,
     authorName: authorErr || typeof authorName !== "string" || authorName === "" ? null : authorName,
+    versionIds: Object.fromEntries(
+      publishedLessonsOnly(lessons ?? []).flatMap((l) => (l.published_version_id ? [[l.slug, l.published_version_id]] : [])),
+    ),
     lessons: attachLessonStates(publishedLessonsOnly(lessons ?? []), (states ?? []) as LessonStateRow[]).map((l) => ({
       slug: l.slug,
       title: l.title,

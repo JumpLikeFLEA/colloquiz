@@ -22,12 +22,14 @@ export function CohortLessonList({
   lessons,
   attempts,
   showFreeBadge,
+  anonymous = false,
 }: {
   lang: SurfaceLang;
   courseSlug: string;
   lessons: readonly PublicCourseLesson[];
   attempts: AttemptsByLessonSlug;
   showFreeBadge: (lesson: PublicCourseLesson) => boolean;
+  anonymous?: boolean;
 }) {
   const c = courseCopy[lang];
   const locale = lang === "ru" ? "ru-RU" : "en-GB";
@@ -58,6 +60,7 @@ export function CohortLessonList({
                 showFreeBadge={showFreeBadge(lesson)}
                 progress={lessonRowProgress(lesson.slug, attempts)}
                 headingTag="h4"
+                anonymous={anonymous}
                 opensAt={
                   lesson.state === "scheduled" && lesson.opensAt && !group.opensAt ? (
                     <LocalDateTime iso={lesson.opensAt} locale={locale} />

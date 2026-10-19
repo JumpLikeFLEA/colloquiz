@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PLAYGROUND_EXAMPLES } from "@/lib/items/__fixtures__/playgroundExamples";
+import { OPENS_STORAGE_KEY } from "@/lib/lessonPlayer/anonOpens";
 import { ATTEMPT_STORAGE_KEY } from "@/lib/lessonPlayer/attemptStore";
 import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 
@@ -36,6 +37,7 @@ afterEach(() => {
   cleanup();
   rpc.mockClear();
   window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
+  window.localStorage.removeItem(OPENS_STORAGE_KEY);
 });
 
 function callsTo(name: string) {
@@ -210,7 +212,39 @@ describe("LessonPlayer — PROG-001 lesson opens", () => {
     expect(callsTo("record_lesson_open")).toHaveLength(1);
   });
 
-  it("records nothing for a signed-out learner", async () => {
+  it("notes a signed-out learner's open locally, with no request (PROG-003)", async () => {
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v1"
+        isSignedIn={false}
+      />,
+    );
+
+    expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
+    expect(JSON.parse(window.localStorage.getItem(OPENS_STORAGE_KEY) ?? "null")).toEqual({ version: 1, opens: ["v1"] });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("keeps a signed-in learner's open out of the local store (PROG-003)", async () => {
+    render(
+      <LessonPlayer
+        document={documentFor(exampleRaw("selection — MCQ single"))}
+        attemptId="attempt-1"
+        practiceRenderer={practiceRenderer}
+        lessonVersionId="v1"
+        isSignedIn
+      />,
+    );
+
+    expect(await screen.findByText("Which sentence is correct?")).toBeDefined();
+    await vi.waitFor(() => expect(callsTo("record_lesson_open")).toHaveLength(1));
+    expect(window.localStorage.getItem(OPENS_STORAGE_KEY)).toBeNull();
+  });
+
+  it("records nothing on the server for a signed-out learner", async () => {
     render(
       <LessonPlayer
         document={documentFor(exampleRaw("selection — MCQ single"))}

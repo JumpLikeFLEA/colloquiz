@@ -406,46 +406,69 @@ function CourseRow({ lang, card }: { lang: SurfaceLang; card: HomeCourseCard }) 
   const m = myCopy[lang];
   const { course, progress } = card;
   const latest = card.enrolments[0];
+  // PROG-003 (docs/decisions/0179): the card is a stretched link (the title's
+  // ::after covers it) so the Continue action can be a second, real link above
+  // it; two <a> cannot nest.
   return (
-    <Link href={`/courses/${course.slug}`} className={`${LIFT_CARD_CLASS} flex h-full gap-3 p-4 sm:p-5`}>
-      <div className="relative size-16 flex-none overflow-hidden rounded-xl bg-muted">
-        {course.coverImageUrl ? (
-          <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="64px" />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
-            <span className="text-base font-semibold tracking-tight text-white/90">{course.level}</span>
-          </div>
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className={SMALL_PILL_CLASS}>{course.level}</span>
-          {latest && (
-            <span className={MUTED_PILL_CLASS}>
-              {latest.tier === "extended" ? m.tierExtended : m.tierBasic}
-              {latest.runTitle && <> · {latest.runTitle}</>}
-            </span>
-          )}
-        </div>
-        <h3 className="text-sm font-semibold text-foreground sm:text-base">{course.title}</h3>
-        {/* Two numbers, never blended (docs/handoff.md). The average is over
-            attempted lessons only, so it is absent until one is attempted. */}
-        <dl className="mt-auto flex flex-wrap gap-x-5 gap-y-1 pt-1">
-          <div className="flex flex-col-reverse">
-            <dt className="text-xs text-muted-foreground">{m.attempted}</dt>
-            <dd className="text-base font-semibold text-foreground">
-              {progress.attempted} {m.of} {progress.total}
-            </dd>
-          </div>
-          {progress.averagePercent !== null && (
-            <div className="flex flex-col-reverse">
-              <dt className="text-xs text-muted-foreground">{m.average}</dt>
-              <dd className="text-base font-semibold text-foreground">{progress.averagePercent}%</dd>
+    <div
+      className={`${LIFT_CARD_CLASS} relative flex h-full flex-col gap-3 p-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand sm:p-5`}
+    >
+      <div className="flex gap-3">
+        <div className="relative size-16 flex-none overflow-hidden rounded-xl bg-muted">
+          {course.coverImageUrl ? (
+            <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="64px" />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
+              <span className="text-base font-semibold tracking-tight text-white/90">{course.level}</span>
             </div>
           )}
-        </dl>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className={SMALL_PILL_CLASS}>{course.level}</span>
+            {latest && (
+              <span className={MUTED_PILL_CLASS}>
+                {latest.tier === "extended" ? m.tierExtended : m.tierBasic}
+                {latest.runTitle && <> · {latest.runTitle}</>}
+              </span>
+            )}
+          </div>
+          <h3 className="text-sm font-semibold text-foreground sm:text-base">
+            <Link href={`/courses/${course.slug}`} className="outline-none after:absolute after:inset-0 after:content-['']">
+              {course.title}
+            </Link>
+          </h3>
+          {/* Two numbers, never blended (docs/handoff.md). The average is over
+              attempted lessons only, so it is absent until one is attempted. */}
+          <dl className="mt-auto flex flex-wrap gap-x-5 gap-y-1 pt-1">
+            <div className="flex flex-col-reverse">
+              <dt className="text-xs text-muted-foreground">{m.attempted}</dt>
+              <dd className="text-base font-semibold text-foreground">
+                {progress.attempted} {m.of} {progress.total}
+              </dd>
+            </div>
+            {progress.averagePercent !== null && (
+              <div className="flex flex-col-reverse">
+                <dt className="text-xs text-muted-foreground">{m.average}</dt>
+                <dd className="text-base font-semibold text-foreground">{progress.averagePercent}%</dd>
+              </div>
+            )}
+          </dl>
+        </div>
       </div>
-    </Link>
+      {card.continueLesson && (
+        <Link
+          href={`/courses/${course.slug}/${card.continueLesson.slug}`}
+          className={`${LINK_BUTTON_CLASS} relative z-10 max-w-full self-start`}
+        >
+          <span className="truncate">
+            {m.continuePrefix}
+            {card.continueLesson.title}
+          </span>
+          <ArrowRight className="size-3.5 flex-none" aria-hidden="true" />
+        </Link>
+      )}
+    </div>
   );
 }
 

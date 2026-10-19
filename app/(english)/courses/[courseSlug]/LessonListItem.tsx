@@ -5,6 +5,7 @@ import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { LessonRowProgress, PublicCourseLesson } from "@/lib/coursePageProgress";
 import { pluralize } from "@/lib/pluralCategory";
 import { PAPER_CARD_CLASS } from "../../surfaceClasses";
+import { AnonymousTick } from "./AnonymousProgress";
 import { courseCopy } from "./courseCopy";
 
 /**
@@ -44,6 +45,7 @@ export function LessonListItem({
   progress,
   opensAt = null,
   headingTag: Heading = "h3",
+  anonymous = false,
 }: {
   lang: SurfaceLang;
   href: string;
@@ -53,6 +55,9 @@ export function LessonListItem({
   progress: LessonRowProgress;
   opensAt?: ReactNode;
   headingTag?: "h3" | "h4";
+  /** PROG-003: an anonymous visitor, whose ✓ comes from the browser's own
+   * stores (AnonymousProgress.tsx) instead of the server's summary. */
+  anonymous?: boolean;
 }) {
   const c = courseCopy[lang];
   const meta = (
@@ -77,6 +82,7 @@ export function LessonListItem({
       <Link href={href} className={`${PAPER_CARD_CLASS} flex items-start gap-4 p-4 sm:items-center sm:p-5`}>
         <span className="relative flex size-10 flex-none items-center justify-center rounded-xl border-2 border-ink bg-highlight font-display text-sm font-extrabold text-highlight-foreground">
           {position}
+          {!progress.complete && anonymous && <AnonymousTick slug={lesson.slug} />}
           {progress.complete && (
             <span
               aria-hidden="true"

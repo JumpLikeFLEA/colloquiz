@@ -2463,3 +2463,31 @@ Appended to in the same commit as the change it records. Referenced from
   student): `scrollWidth/innerWidth` 360/360 and 1280/1280 with the card showing, after the
   click and after the student writes again. Not reached: the error line. Do not make the
   badge an unread count instead (0178 Option B), and do not show the student anything.
+- "Continue" on the course page and /my (2026-10-19, PROG-003, docs/decisions/0179).
+  Once a learner has completed or partly answered a lesson of a course, the course
+  hero's button reads "Continue: <lesson title>" ("Продолжить: <title>" in RU) in
+  place of "Start the course" / "Start the first free lesson", and opens the first
+  open lesson that is not complete (a partly answered lesson counts as not
+  complete), or, when every open lesson is complete, the last one opened. A cohort
+  learner's scheduled lessons, and sign-in or paid ones, are never the target. The
+  button keeps its classes and gains `max-w-full` with the label on one truncated
+  line, so a long title cannot change its height. `/my`'s course card gets the same
+  action as a `LINK_BUTTON_CLASS` link under the card body; the card itself became a
+  `div` with a stretched title link (`after:absolute after:inset-0`), because two
+  links cannot nest, and its focus ring now follows `has-[:focus-visible]`. An
+  anonymous visitor gets the same button and a ✓ on completed rows from their
+  browser's stores after hydration: the ✓ is absolutely positioned on the number
+  tile and the button changes text only, so nothing moves. The anonymous visitor
+  deliberately gets no score pill, in-progress pill or hero progress tiles, since
+  each would insert content into the flow. New localStorage key
+  `alliengll.opens.v1` (versions opened, for theory-only lessons). Existing classes
+  and tokens; no new colours. Measured at 360px (`npm run viewport360` and a
+  browser script, local stack): `scrollWidth/innerWidth` 360/360 on the course page
+  anonymous (fresh, lesson 1 done, partly done, all done, RU, unreadable stores),
+  signed in in five progress states, and on `/my` in the same states; 1280/1280
+  anonymous. CTA box height 52 px and list top unchanged between a fresh and a
+  seeded anonymous load; layout-shift 0 in eight of nine runs and 0.00015 in the
+  ninth (RU, not traced). `npm run budget`: course page 172.8 to 175.3 KB of 182,
+  `/my` 174.4 to 174.4 of 180. Not measured: a phone or an in-app browser. Do not
+  put a score or progress pill on an anonymous row without reserving its space, and
+  do not nest the Continue link inside the card's link.

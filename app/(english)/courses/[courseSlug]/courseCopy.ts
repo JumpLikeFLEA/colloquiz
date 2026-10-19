@@ -20,6 +20,8 @@ type CourseStrings = {
   backToCatalogue: string;
   startFirstFree: string;
   startCourse: string;
+  /** PROG-003: followed by the lesson title (0179). */
+  continuePrefix: string;
   allFree: string;
   /** TCH-011: the label before a teacher's public name in the hero. */
   byAuthor: string;
@@ -78,6 +80,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     backToCatalogue: "Все курсы",
     startFirstFree: "Начать первый бесплатный урок",
     startCourse: "Начать курс",
+    continuePrefix: "Продолжить: ",
     allFree: "Весь курс бесплатно",
     byAuthor: "Автор:",
     progressAttempted: "пройдено уроков",
@@ -124,6 +127,7 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     backToCatalogue: "All courses",
     startFirstFree: "Start the first free lesson",
     startCourse: "Start the course",
+    continuePrefix: "Continue: ",
     allFree: "Whole course free",
     byAuthor: "By",
     progressAttempted: "lessons completed",

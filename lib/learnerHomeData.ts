@@ -1,6 +1,8 @@
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicCourse } from "@/lib/coursePage";
+import { getLastOpenedLessonSlug } from "@/lib/courseAttempts";
+import { needsLastOpened, pickContinueLesson } from "@/lib/continueLesson";
 import { attemptsFromSummaryRows, courseProgress, type AttemptsByLessonSlug, type CourseProgress } from "@/lib/coursePageProgress";
 import {
   feedbackItems,
@@ -43,6 +45,8 @@ export type HomeCourseCard = {
   enrolments: HomeEnrolment[];
   granted: boolean;
   progress: CourseProgress;
+  /** PROG-003: where "Continue" opens; null until the learner is engaged with the course. */
+  continueLesson: { slug: string; title: string } | null;
 };
 
 export type LearnerHome = {
@@ -136,11 +140,17 @@ export async function getLearnerHome(now: Date): Promise<LearnerHome | null> {
       listed.map(async (l): Promise<HomeCourseCard | null> => {
         const course = await getPublicCourse(l.course.slug);
         if (course.state === "not_found") return null;
+        const attempts = attemptsByCourse.get(l.course.id) ?? {};
+        const lastOpened = needsLastOpened(course.lessons, attempts)
+          ? await getLastOpenedLessonSlug(supabase, l.course.id)
+          : null;
+        const pick = pickContinueLesson(course.lessons, attempts, lastOpened);
         return {
+          continueLesson: pick ? { slug: pick.slug, title: pick.title } : null,
           course: l.course,
           enrolments: l.enrolments,
           granted: l.granted,
-          progress: courseProgress(course.lessons, attemptsByCourse.get(l.course.id) ?? {}),
+          progress: courseProgress(course.lessons, attempts),
         };
       }),
     ),

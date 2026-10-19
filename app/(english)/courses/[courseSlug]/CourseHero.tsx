@@ -51,6 +51,7 @@ export function CourseHero({
   totals,
   progress,
   cta,
+  ctaSlot,
   account,
 }: {
   lang: SurfaceLang;
@@ -63,6 +64,8 @@ export function CourseHero({
   totals: CourseTotals;
   progress: CourseProgress;
   cta: { href: string; label: string } | null;
+  /** PROG-003: replaces the CTA link for an anonymous visitor (client, local stores). */
+  ctaSlot?: ReactNode;
   account: ReactNode;
 }) {
   const c = courseCopy[lang];
@@ -139,11 +142,13 @@ export function CourseHero({
               </dl>
             )}
             <div className={`${HERO_ENTER_CLASS} delay-300 pt-1`}>
-              {cta ? (
-                <Link href={cta.href} className={OFFSET_CTA_CLASS}>
-                  {cta.label}
+              {ctaSlot ? (
+                ctaSlot
+              ) : cta ? (
+                <Link href={cta.href} className={`${OFFSET_CTA_CLASS} max-w-full`}>
+                  <span className="truncate">{cta.label}</span>
                   <ArrowRight
-                    className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                    className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
                     aria-hidden="true"
                   />
                 </Link>

@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { cohortAudience } from "@/lib/cohortCoursePage";
 import { getCohortView } from "@/lib/cohortView";
-import { getCourseAttemptSummary } from "@/lib/courseAttempts";
+import { getCourseAttemptSummary, getLastOpenedLessonSlug } from "@/lib/courseAttempts";
+import { needsLastOpened, pickContinueLesson } from "@/lib/continueLesson";
+import { createClient } from "@/lib/supabase/server";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import { courseProgress, lessonRowProgress, courseTotals, firstOpenLesson } from "@/lib/coursePageProgress";
@@ -21,6 +23,7 @@ import { SectionHeading } from "../../SectionHeading";
 import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
 import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
 import { getMyTelegramLinked } from "@/lib/telegram/status";
+import { AnonymousCta, AnonymousProgressProvider } from "./AnonymousProgress";
 import { BeforeAfterLinks } from "./BeforeAfterLinks";
 import { CohortInfo } from "./CohortInfo";
 import { CohortLessonList } from "./CohortLessonList";
@@ -104,10 +107,26 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   // SHELL-019 (docs/decisions/0086): the account chip, in the saved language.
   const signedIn = await getSignedInAccount();
 
+  // PROG-003 (docs/decisions/0179): "Continue". A signed-in learner's target is
+  // decided here from the server's summary; an anonymous visitor's is decided
+  // in the browser from the local stores (AnonymousProgress.tsx), which only
+  // covers lessons SQL already opened to them.
+  const lastOpened =
+    signedIn && needsLastOpened(course.lessons, attempts) ? await getLastOpenedLessonSlug(await createClient(), course.id) : null;
+  const continueLesson = signedIn ? pickContinueLesson(course.lessons, attempts, lastOpened) : null;
+  const anonLessons = signedIn
+    ? []
+    : course.lessons.flatMap((l) =>
+        l.state === "open" && course.versionIds[l.slug]
+          ? [{ slug: l.slug, title: l.title, versionId: course.versionIds[l.slug], itemCount: l.itemCount }]
+          : [],
+      );
+  const anonymous = anonLessons.length > 0;
+
   const lead = course.subtitle ?? course.description;
   const about = course.description && course.description !== lead ? course.description : null;
 
-  return (
+  const main = (
     // No min-h-svh: the root layout's wrapper div already sizes itself to
     // the viewport-minus-footer space, so main forcing its own full-viewport
     // height double-counted against EnglishFooter and forced a scrollbar on
@@ -125,7 +144,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         progress={progress}
         account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} tone="paper" />}
         cta={
-          firstOpen
+          continueLesson
+            ? { href: `/courses/${courseSlug}/${continueLesson.slug}`, label: `${c.continuePrefix}${continueLesson.title}` }
+            : firstOpen
             ? {
                 href: `/courses/${courseSlug}/${firstOpen.slug}`,
                 // An enrolled learner's later weeks are `scheduled`, not
@@ -136,6 +157,16 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
             : audience?.kind === "visitor" && course.howToJoinUrl
               ? { href: course.howToJoinUrl, label: c.howToJoin }
               : null
+        }
+        ctaSlot={
+          anonymous && firstOpen ? (
+            <AnonymousCta
+              courseSlug={courseSlug}
+              href={`/courses/${courseSlug}/${firstOpen.slug}`}
+              label={totals.allOpen || enrolled ? c.startCourse : c.startFirstFree}
+              continuePrefix={c.continuePrefix}
+            />
+          ) : undefined
         }
       />
 
@@ -177,6 +208,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
               lessons={course.lessons}
               attempts={attempts}
               showFreeBadge={(lesson) => lesson.accessLevel === "anyone" && !totals.allFree}
+              anonymous={anonymous}
             />
           ) : (
             <ol className="flex flex-col gap-3">
@@ -189,6 +221,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                   lesson={lesson}
                   showFreeBadge={lesson.accessLevel === "anyone" && !totals.allFree}
                   progress={lessonRowProgress(lesson.slug, attempts)}
+                  anonymous={anonymous}
                 />
               ))}
             </ol>
@@ -197,4 +230,6 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       </div>
     </main>
   );
+
+  return anonymous ? <AnonymousProgressProvider lessons={anonLessons}>{main}</AnonymousProgressProvider> : main;
 }

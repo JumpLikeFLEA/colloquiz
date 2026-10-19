@@ -7,6 +7,7 @@ import type { LessonBlock, LessonDocument, LessonPracticeBlock } from "@/lib/les
 import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { recordAnonOpen } from "@/lib/lessonPlayer/anonOpens";
 import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
 import {
   scoreSession,
@@ -254,11 +255,15 @@ export function LessonPlayer({
   //
   // PROG-001 — the same moment records a signed-in learner's lesson open
   // (docs/decisions/0101). On mount, not in the page's server render, so a
-  // prefetched-but-unopened lesson records nothing. Anonymous: nothing, and
-  // no extra chunk downloaded.
+  // prefetched-but-unopened lesson records nothing. Anonymous: no request and
+  // no extra chunk, only a local note (PROG-003, docs/decisions/0179) so a
+  // theory-only lesson can count as read on the course page.
   useEffect(() => {
     fireFunnelEvent("lesson_start", lessonPath);
-    if (isSignedIn && lessonVersionId) void recordSignedInOpen(lessonVersionId);
+    if (lessonVersionId) {
+      if (isSignedIn) void recordSignedInOpen(lessonVersionId);
+      else recordAnonOpen(lessonVersionId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptId]);
 

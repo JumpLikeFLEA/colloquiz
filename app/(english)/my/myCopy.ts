@@ -19,6 +19,8 @@ type MyStrings = {
   coursesTitle: string;
   coursesEmpty: string;
   browseCourses: string;
+  /** PROG-003: followed by the lesson title (0179). */
+  continuePrefix: string;
   attempted: string;
   of: string;
   average: string;
@@ -71,6 +73,7 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     coursesTitle: "Курсы",
     coursesEmpty: "Вы ещё не начали ни одного курса.",
     browseCourses: "Выбрать курс",
+    continuePrefix: "Продолжить: ",
     attempted: "пройдено уроков",
     of: "из",
     average: "средний результат",
@@ -118,6 +121,7 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     coursesTitle: "Courses",
     coursesEmpty: "You haven't started a course yet.",
     browseCourses: "Browse courses",
+    continuePrefix: "Continue: ",
     attempted: "lessons completed",
     of: "of",
     average: "average score",
