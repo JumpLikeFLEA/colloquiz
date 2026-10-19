@@ -1,7 +1,7 @@
 # 0181 — Settings on the Alina Cher surface
 
-Status: in progress (ad-hoc, owner request 2026-10-19). Step 1 (the shared theme) and step 2
-(the page) are built; the account-menu link and the sign-in notice follow. No migration.
+Status: in progress (ad-hoc, owner request 2026-10-19). Steps 1 to 3 (the shared theme, the
+page, the account-menu link) are built; the sign-in notice follows. No migration.
 
 ## Context
 
@@ -173,3 +173,22 @@ Not measured: a real Telegram, Google or Discord link round trip (no provider is
 on the local stack), a phone or an in-app browser beyond the user-agent switch, and a
 deletion blocked by an owned Colloquiz group (the 409 rendering), and an unlink after the
 lazy-import change.
+
+Step 3, the account card. The seeded learner at 360×800, card opened on each page (the
+lesson page's chrome is English whatever the saved choice, 0080 Decision 5):
+
+```
+en /: card open 360/360 card x=88 right=344 items=["My courses","Settings","Sign out"]
+en /courses/future-imperfect: card open 360/360 card x=88 right=344 items=["My courses","Settings","Sign out"]
+en /courses/future-imperfect/true-or-false: card open 360/360 card x=88 right=344 items=["My courses","Settings","Sign out"]
+en /my: card open 360/360 card x=88 right=344 items=["My courses","Settings","Sign out"]
+ru /: card open 360/360 card x=88 right=344 items=["Мои курсы","Настройки","Выйти"]
+ru /courses/future-imperfect: card open 360/360 card x=88 right=344 items=["Мои курсы","Настройки","Выйти"]
+ru /courses/future-imperfect/true-or-false: card open 360/360 card x=88 right=344 items=["My courses","Settings","Sign out"]
+ru /my: card open 360/360 card x=88 right=344 items=["Мои курсы","Настройки","Выйти"]
+A /my account card open: 360/360 settingsLinks= 1 cardLinks= ["My courses","Settings","Sign out"]
+A clicked Settings -> /my/settings
+```
+
+Not measured: the card for an editor (with Studio) or with unread messages, which are one
+and two rows taller.

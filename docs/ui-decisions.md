@@ -2530,3 +2530,11 @@ Appended to in the same commit as the change it records. Referenced from
   other route unchanged. Existing classes and tokens; no new colours. Do not import
   `@/lib/supabase/client` statically here: it put `@supabase/ssr` in the first load
   (262.3 KB, flagged by the budget guard).
+- Account card gains "Settings" (2026-10-19, ad-hoc, docs/decisions/0181 Decision 7). Every
+  signed-in user's English account card has a "Settings" / "Настройки" link to `/my/settings`
+  just above Sign out, with lucide's `Settings` icon and its neighbours' button classes, as a
+  plain `<a>` (still zero client JS). The card is one 44px row taller. It does not link to
+  `/app/settings`: the footer stays the only path to Colloquiz (0062). Measured at 360px with
+  the card open on `/`, a course page, a lesson page and `/my`, EN and RU:
+  `scrollWidth/innerWidth` 360/360, card 88 to 344 px. `npm run budget` unchanged on every
+  route. Not measured: an editor's or an unread-messages card (taller still).

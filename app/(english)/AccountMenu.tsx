@@ -1,4 +1,4 @@
-import { BookOpen, LogOut, MessageSquare, PenTool, UserRound } from "lucide-react";
+import { BookOpen, LogOut, MessageSquare, PenTool, Settings, UserRound } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { accountInitial } from "@/lib/accountInitial";
 import { accountCopy } from "./accountCopy";
@@ -31,6 +31,10 @@ import { accountCopy } from "./accountCopy";
  * Every signed-in user also gets "My courses", a link to the learner home
  * at /my (PROG-002, docs/decisions/0120), first in the card. Also a plain
  * `<a>`: no client JS, and nothing here needs a soft navigation.
+ *
+ * Every signed-in user also gets "Settings", a link to /my/settings just above
+ * Sign out (docs/decisions/0181): the theme, sign-in methods, export and
+ * account deletion, without leaving this surface.
  *
  * While a teacher's reply is unread (TCH-004, docs/decisions/0151) the chip
  * carries a dot and the card a "Messages (N)" link to /my/messages. Both are
@@ -140,6 +144,16 @@ export function AccountMenu({
             {a.studio}
           </a>
         )}
+        {/* Every signed-in user (docs/decisions/0181 Decision 7): the
+            English settings page, not /app/settings, so the footer stays the
+            only path to Colloquiz (0062). */}
+        <a
+          href="/my/settings"
+          className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <Settings className="size-4" aria-hidden="true" />
+          {a.settings}
+        </a>
         <form method="post" action="/auth/sign-out">
           <input type="hidden" name="next" value={next} />
           <button

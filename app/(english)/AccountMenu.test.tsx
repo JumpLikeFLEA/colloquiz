@@ -26,3 +26,29 @@ describe("AccountMenu (SHELL-024)", () => {
     expect(html).not.toContain("Signed in as");
   });
 });
+
+describe("AccountMenu Settings link (docs/decisions/0181)", () => {
+  const menu = (lang: "en" | "ru", studio: boolean) =>
+    renderToStaticMarkup(<AccountMenu email="gleb@example.com" lang={lang} next="/" studio={studio} />);
+
+  it("links every signed-in user to /my/settings, never to /app/settings", () => {
+    const html = menu("en", false);
+    expect(html).toContain('href="/my/settings"');
+    expect(html).toContain("Settings");
+    expect(html).not.toContain('href="/app');
+  });
+
+  it("puts it after Studio and before Sign out", () => {
+    const html = menu("en", true);
+    const studio = html.indexOf('href="/studio"');
+    const settings = html.indexOf('href="/my/settings"');
+    const signOut = html.indexOf('action="/auth/sign-out"');
+    expect(studio).toBeGreaterThan(-1);
+    expect(settings).toBeGreaterThan(studio);
+    expect(signOut).toBeGreaterThan(settings);
+  });
+
+  it("reads Настройки in Russian", () => {
+    expect(menu("ru", false)).toContain("Настройки");
+  });
+});

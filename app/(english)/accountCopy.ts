@@ -29,6 +29,8 @@ type AccountStrings = {
   messages: string;
   /** The chip's accessible name when there are unread replies: "Unread messages: 2". */
   unreadLabel: string;
+  /** The link to /my/settings (docs/decisions/0181). */
+  settings: string;
 };
 
 export const accountCopy: Record<SurfaceLang, AccountStrings> = {
@@ -40,6 +42,7 @@ export const accountCopy: Record<SurfaceLang, AccountStrings> = {
     studio: "Studio",
     messages: "Сообщения",
     unreadLabel: "Непрочитанные сообщения:",
+    settings: "Настройки",
   },
   en: {
     signedInAs: "Signed in as",
@@ -49,5 +52,6 @@ export const accountCopy: Record<SurfaceLang, AccountStrings> = {
     studio: "Studio",
     messages: "Messages",
     unreadLabel: "Unread messages:",
+    settings: "Settings",
   },
 };
