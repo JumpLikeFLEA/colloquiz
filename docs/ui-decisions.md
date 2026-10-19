@@ -2504,3 +2504,29 @@ Appended to in the same commit as the change it records. Referenced from
   stack (0181 "Measured"): `.dark` was already set when the first `<main>` was
   parsed in every case, signed out and signed in, on `/` and a course page. Do not
   give the English surface a storage key of its own without redoing 0181 Decision 3.
+- Learner settings at `/my/settings` (2026-10-19, ad-hoc, docs/decisions/0181). A new
+  English-surface page in `/my/messages`' frame: the gradient band (`BandTopBar` with
+  "← My courses" and the account chip, a "Your account" glass pill, the "Settings" `h1`),
+  then three sections under `SectionHeading`, each with a muted lead line:
+  - "Appearance": a `rounded-2xl border bg-card` card with the Colloquiz Appearance
+    control's segmented Light / Dark / System radio rail (`bg-brand-subtle text-brand-text`
+    active segment, `min-h-11`), a live "Following your device…" line, and "Saved to your
+    account, so it follows you to your other devices and to Colloquiz.";
+  - "Sign-in methods": the Colloquiz list's rows (Email & password, Google, Discord,
+    Telegram) in a divided card, Connect in `bg-brand-subtle`, Disconnect outlined. The
+    row wraps its button below the text when it doesn't fit. Disconnect confirms in an
+    AlertDialog. In an Instagram or Telegram in-app browser a row that isn't connected
+    shows "—" and a muted note under the list says to open the page in a regular
+    browser. Outcomes are inline: a status line, or a `destructive-subtle` box;
+  - "Data and privacy", last, set apart by a `border-t-2` rule as on the Colloquiz page:
+    the export card and the `destructive-subtle` danger zone, whose dialog lists what
+    deletion does (privacy policy §9) and asks for DELETE. Then a muted line with the
+    Terms and Privacy links.
+  EN/RU with the saved choice, no toggle (the `/my` rule). No Account or Notifications
+  section. Measured at 360px: `scrollWidth/innerWidth` 360/360 in EN, RU, with an
+  in-app-browser user agent, with the unlink confirm open, after an unlink, with the
+  delete dialog open (dialog 23 to 338 px), and on the English sign-in page after
+  deletion (0181 "Measured"). `npm run budget`: `/my/settings` 199.4 KB of 208; every
+  other route unchanged. Existing classes and tokens; no new colours. Do not import
+  `@/lib/supabase/client` statically here: it put `@supabase/ssr` in the first load
+  (262.3 KB, flagged by the budget guard).

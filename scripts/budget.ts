@@ -219,6 +219,16 @@ const ROUTES: RouteBudget[] = [
   // precedent, docs/decisions/0057). Re-derive both from a real
   // `npm run budget` run before raising it.
   { path: "/my/messages", budgetKB: 184, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
+  // docs/decisions/0181: the learner's settings, signed in as the same
+  // learner-home fixture. Ships the theme control, the sign-in list and the
+  // export/delete dialogs. The browser Supabase client (link, unlink, the
+  // theme write) is imported on the first action, not with the page, so
+  // @supabase/ssr is not in the first load; imported statically it was, and
+  // the page measured 262.3 KB. Measured 199.4 KB on the local
+  // stack; budgetKB is that plus ~4.5% headroom (the PLAY-012 precedent,
+  // docs/decisions/0057). Re-derive both from a real `npm run budget` run
+  // before raising it.
+  { path: "/my/settings", budgetKB: 208, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
   // COH-010 (docs/decisions/0173): a cohort course page as an ENROLLED learner,
   // the one state that carries the Telegram reminders panel (the visitor figure
   // is the /courses/future-imperfect entry above). Signed in as the learner-home

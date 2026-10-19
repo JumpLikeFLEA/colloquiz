@@ -132,7 +132,12 @@ The learner home
 under that surface's budget, reusing Studio's components but not its
 shell: the learner's courses with the two progress numbers, the next call
 for an extended enrolee, and the feedback they received. It is linked
-from the account menu and needs a sign-in.
+from the account menu and needs a sign-in. Beside it, `/my/settings`
+(owner, 2026-10-19, docs/decisions/0181) carries the theme, sign-in methods,
+data export and account deletion for an English learner, so the privacy
+policy's "Settings › Data and privacy" exists on this surface too. Name,
+city and picture stay on Colloquiz's `/app/settings`. The theme is one
+choice shared with Colloquiz and Studio.
 
 ## Course and lesson shape
 

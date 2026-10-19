@@ -1,7 +1,7 @@
 # 0181 — Settings on the Alina Cher surface
 
-Status: in progress (ad-hoc, owner request 2026-10-19). Step 1 (the shared theme) is built;
-the page, the account-menu link and the sign-in notice follow. No migration.
+Status: in progress (ad-hoc, owner request 2026-10-19). Step 1 (the shared theme) and step 2
+(the page) are built; the account-menu link and the sign-in notice follow. No migration.
 
 ## Context
 
@@ -104,3 +104,72 @@ course page. The two "pref dark" lines set `prog002-learner`'s `theme_preference
 local stack, and it was put back to NULL afterwards. The "pref NULL" lines are the control.
 `lib/theme.test.ts` runs the script against a fake window, including storage that throws
 and a hostile value.
+
+Step 2, `/my/settings`. Same setup, at 360×800, the seeded learner unless noted. The
+Connect counts are exact-name matches:
+
+```
+A en 360 default: 360/360 h1= Settings sections= 3 connectButtons= 3
+A after Dark: html.dark= true ls= dark db= dark line= Your device is currently light.
+A reload: html.dark= true checked= dark
+A /app (Colloquiz): path= /app html.dark= true
+A after System: html.dark= false ls= system db= system
+B ru 360: 360/360 h1= Настройки dataTitle= Данные и конфиденциальность
+C instagram UA 360: 360/360 connectButtons= 0 note= 1
+L connect google: 360/360 alert= "That didn't work: Manual linking is disabled" chunksFetchedOnClick= 3
+```
+
+`npm run viewport360` printed `/my/settings | 200 | scrollWidth/innerWidth 360/360` for EN
+(`--expect="Data and privacy"`) and RU (`--expect="Данные и конфиденциальность"`).
+
+Unlink and delete used throwaway local accounts (Admin API), deleted afterwards. The
+unlink account got a second, `google` identity inserted into the local `auth.identities`.
+With the local config's `enable_manual_linking = false`, GoTrue refused the unlink, and the
+page showed it inline:
+
+```
+D unlink confirm open: 360/360 dialog x/w= 21 318 title= Disconnect Google?
+D outcome: status= "" alert= "That didn't work: Manual linking is disabled"
+```
+
+With `enable_manual_linking = true` set temporarily (stack restarted, then reverted and
+restarted again):
+
+```
+D two identities 360: 360/360 googleDisconnectEnabled= true emailDisconnectEnabled= true
+D unlink confirm open: 360/360 dialog x/w= 21 318 title= Disconnect Google?
+D outcome: status= "Google disconnected." alert= null
+D after unlink: 360/360 googleRow= Google Not connected Connect emailDisconnectEnabled= false
+E delete dialog open: 360/360 dialog x/w/h= 23 315 641 deleteEnabledBeforeTyping= false
+E after delete: url= /login?next=/&notice=account_deleted notice= "Your account has been closed and your personal details erased. Thanks for using Colloquiz." alinaPanel= true 360: 360/360
+E ban: 2126-09-25T16:18:01.6328Z profile: {"display_name":"Deleted user","deleted_at":"2026-10-19T16:18:01.54408+00:00"}
+```
+
+"emailDisconnectEnabled= false" after the unlink is the last-method rule taking over. The
+notice still names Colloquiz there; step 4 changes it. The learner's `theme_preference` was
+put back to NULL after the runs.
+
+**Budget.** `npm run budget` on the local stack, base commit `1f9ce6a` and this work, every
+existing route identical:
+
+```
+/ | 191.6 KB | 202 KB
+/ (phone) | 184.7 KB | 194 KB
+/courses/future-imperfect/true-or-false | 256.3 KB | 260 KB
+/courses/future-imperfect | 175.3 KB | 182 KB
+/my | 174.4 KB | 180 KB
+/my/messages | 175.9 KB | 184 KB
+```
+
+(Same figures before and after; the other five routes too.) `/my/settings` first measured
+262.3 KB with a FORBIDDEN-PACKAGE line for `@supabase/ssr`: the sections imported the browser
+Supabase client statically. They now import it at the first action, the LessonPlayer /
+VoiceRecorder / RegistrationOffer precedent, and the page measures `199.4 KB` with no
+forbidden signature; its budget is 208 KB (+~4.5%, the PLAY-012 precedent). The "L" line above
+shows the client chunks arriving on the click. The A and L runs are after that change; the
+D and E runs were before it (the same calls, imported statically).
+
+Not measured: a real Telegram, Google or Discord link round trip (no provider is configured
+on the local stack), a phone or an in-app browser beyond the user-agent switch, and a
+deletion blocked by an owned Colloquiz group (the 409 rendering), and an unlink after the
+lazy-import change.

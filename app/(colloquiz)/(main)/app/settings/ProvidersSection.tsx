@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ErrorDialog } from "@/app/components/ErrorDialog";
 import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/ProviderIcons";
 import type { OAuthProvider } from "@/lib/authRedirect";
+import { identityLabel, isOnlySignInMethod } from "@/lib/signInMethods";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,12 +35,10 @@ const PROVIDERS = [
 type ProviderId = (typeof PROVIDERS)[number]["id"];
 
 /** The account behind a connected row: its email, or for Telegram, which
- * sends none, its @username (0098). */
+ * sends none, its @username (0098; lib/signInMethods.ts). */
 function connectedDetail(identity: UserIdentity): string {
-  const data = identity.identity_data;
-  if (data?.email) return ` · ${String(data.email)}`;
-  if (data?.preferred_username) return ` · @${String(data.preferred_username)}`;
-  return "";
+  const label = identityLabel(identity.identity_data);
+  return label ? ` · ${label}` : "";
 }
 
 /**
@@ -64,10 +63,9 @@ export function ProvidersSection({
   const [confirmUnlink, setConfirmUnlink] = useState<{ identity: UserIdentity; label: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Counts every identity, not just the four this app renders: an account
-  // linked to a provider we no longer show still has a way in, and unlinking a
-  // visible one would not lock anybody out.
-  const isLastMethod = identities.length <= 1;
+  // Counts every identity, not just the four this app renders
+  // (lib/signInMethods.ts).
+  const isLastMethod = isOnlySignInMethod(identities.length);
 
   async function handleConnect(provider: ProviderId) {
     setBusy(provider);
