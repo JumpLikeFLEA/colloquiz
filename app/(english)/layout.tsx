@@ -6,6 +6,8 @@ import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { pageLangForPath, parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { PATHNAME_HEADER } from "@/lib/requestPath";
+import { englishThemeScript } from "@/lib/theme";
+import { getThemePreference } from "@/lib/themePreferenceServer";
 import { EnglishFooter } from "./EnglishFooter";
 import { EnglishFooterGate } from "./EnglishFooterGate";
 import { EntryViewBeacon } from "./EntryViewBeacon";
@@ -60,13 +62,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// No ThemeProvider on this surface (docs/decisions/0046): there is no toggle,
-// only a system-preference read. This inline script runs before first paint —
-// the same "first thing after <head>, before any other body content" position
-// next-themes itself uses — so `.dark` (globals.css's dark-token selector) is
-// on <html> before a pixel is drawn, with no flash. Kept dependency-free and
-// tiny on purpose: this is the whole cost of dark mode on this surface.
-const darkModeScript = `(function(){try{if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark')}}catch(e){}})()`;
+// No ThemeProvider on this surface (docs/decisions/0046). The theme is the
+// learner's choice from /my/settings, shared with Colloquiz and Studio
+// through next-themes' own localStorage key and profiles.theme_preference
+// (docs/decisions/0181), else the device's preference. englishThemeScript
+// (lib/theme.ts) runs before first paint — the same "first thing after
+// <head>, before any other body content" position next-themes itself uses —
+// so `.dark` (globals.css's dark-token selector) is on <html> before a pixel
+// is drawn, with no flash. Kept dependency-free and tiny on purpose: this is
+// the whole cost of dark mode on this surface.
 
 export default async function EnglishRootLayout({
   children,
@@ -83,6 +87,9 @@ export default async function EnglishRootLayout({
   // 0091). The path comes from proxy.ts; HtmlLangSync keeps it current
   // across client-side navigation, which this layout doesn't re-render for.
   const lang = pageLangForPath((await headers()).get(PATHNAME_HEADER) ?? "", savedLang);
+  // A signed-in learner's saved theme, adopted before first paint (0181).
+  // Null, and no network call, for an anonymous visitor.
+  const themeScript = englishThemeScript(await getThemePreference());
 
   return (
     // suppressHydrationWarning: the inline script below sets `class` before
@@ -100,7 +107,7 @@ export default async function EnglishRootLayout({
           the earlier landing-page bug (docs/ui-decisions.md, 2026-09-28) —
           don't add it back on any page under this layout. */}
       <body className="flex min-h-svh flex-col">
-        <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <EntryViewBeacon />
         <div className="flex flex-1 flex-col">{children}</div>
         <HtmlLangSync savedLang={savedLang} />

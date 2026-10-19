@@ -2491,3 +2491,16 @@ Appended to in the same commit as the change it records. Referenced from
   `/my` 174.4 to 174.4 of 180. Not measured: a phone or an in-app browser. Do not
   put a score or progress pill on an anonymous row without reserving its space, and
   do not nest the Continue link inside the card's link.
+- English surface follows the shared theme choice (2026-10-19, ad-hoc,
+  docs/decisions/0181 Decisions 3-4), REVISING the SHELL-007 entry's "adds `.dark`
+  from `prefers-color-scheme` with no toggle". The English root layout's inline
+  script (`englishThemeScript`, `lib/theme.ts`) now reads next-themes' localStorage
+  `theme`, the key Colloquiz and Studio already use, and falls back to the device
+  only for "system" or no choice. For a signed-in learner, the layout also embeds
+  `profiles.theme_preference` (`getThemePreference`), which the script adopts and
+  stores before first paint when it differs from the device's value. So a learner
+  who picked Dark in Colloquiz, or on another device, sees Alina Cher dark too.
+  Still no next-themes and no theme JS on any English route. Measured on the local
+  stack (0181 "Measured"): `.dark` was already set when the first `<main>` was
+  parsed in every case, signed out and signed in, on `/` and a course page. Do not
+  give the English surface a storage key of its own without redoing 0181 Decision 3.
