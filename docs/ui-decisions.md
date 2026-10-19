@@ -2538,3 +2538,9 @@ Appended to in the same commit as the change it records. Referenced from
   the card open on `/`, a course page, a lesson page and `/my`, EN and RU:
   `scrollWidth/innerWidth` 360/360, card 88 to 344 px. `npm run budget` unchanged on every
   route. Not measured: an editor's or an unread-messages card (taller still).
+- English sign-in notice after deletion (2026-10-19, ad-hoc, docs/decisions/0181 Decision 6).
+  `/login?next=/&notice=account_deleted`, where `/my/settings` sends a deleted account, shows
+  the English panel (0135) with "Your account has been closed and your personal details
+  erased.", without the Colloquiz entry's "Thanks for using Colloquiz." A bare `/login`
+  keeps the old wording. The box is the existing emerald notice; no layout change. Wording
+  chosen in `lib/loginNotice.ts`. Do not put the Colloquiz name back on the English entry.

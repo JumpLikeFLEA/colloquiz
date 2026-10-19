@@ -1,7 +1,8 @@
 # 0181 — Settings on the Alina Cher surface
 
-Status: in progress (ad-hoc, owner request 2026-10-19). Steps 1 to 3 (the shared theme, the
-page, the account-menu link) are built; the sign-in notice follows. No migration.
+Status: built (ad-hoc, owner request 2026-10-19): the shared theme, the page, the
+account-menu link and the English sign-in notice. No migration. Copy pending owner/partner
+review.
 
 ## Context
 
@@ -192,3 +193,25 @@ A clicked Settings -> /my/settings
 
 Not measured: the card for an editor (with Studio) or with unread messages, which are one
 and two rows taller.
+
+Step 4, the notice. `lib/loginNotice.ts` picks the wording; `lib/loginNotice.test.ts` covers
+both entries. Against the dev server (`curl /login?<query>`):
+
+```
+notice=account_deleted -> thanksColloquiz=1 closedLine=Your account has been closed and your personal details erased. Thanks for using Colloquiz. alinaPanel=0
+next=/&notice=account_deleted -> thanksColloquiz=0 closedLine=Your account has been closed and your personal details erased. alinaPanel=1
+notice=toString -> thanksColloquiz=0 closedLine= alinaPanel=0
+next=/&notice=toString -> thanksColloquiz=0 closedLine= alinaPanel=1
+```
+
+and the deletion run (with this step in place):
+
+```
+E after delete: url= /login?next=/&notice=account_deleted notice= "Your account has been closed and your personal details erased." alinaPanel= true 360: 360/360
+E ban: 2126-09-25T16:23:02.095805Z profile: {"display_name":"Deleted user","deleted_at":"2026-10-19T16:23:02.016118+00:00"}
+```
+
+The notice lookup now reads own keys only. Before this, `?notice=toString` found
+`Object.prototype.toString` (`NOTICE_MESSAGES[notice] ?? null`), which the new test caught
+in its first run. `ERROR_MESSAGES` on the same page has the same lookup and is left as it
+was (out of scope).

@@ -1,3 +1,4 @@
+import { loginNotice } from "@/lib/loginNotice";
 import { AuthScreen } from "../AuthScreen";
 
 // Exported so ResetPasswordScreen (SHELL-015) can show the identical copy
@@ -12,11 +13,6 @@ const ERROR_MESSAGES: Record<string, string> = {
   recovery_expired: RECOVERY_EXPIRED_MESSAGE,
 };
 
-const NOTICE_MESSAGES: Record<string, string> = {
-  confirmed_sign_in: "Your email has been confirmed. Please sign in with your password.",
-  account_deleted: "Your account has been closed and your personal details erased. Thanks for using Colloquiz.",
-};
-
 export default async function LoginPage({
   searchParams,
 }: {
@@ -24,7 +20,8 @@ export default async function LoginPage({
 }) {
   const { error, notice, next } = await searchParams;
   const initialError = error ? ERROR_MESSAGES[error] ?? null : null;
-  const initialNotice = notice ? NOTICE_MESSAGES[notice] ?? null : null;
+  // The English entry gets its own wording (docs/decisions/0181 Decision 6).
+  const initialNotice = loginNotice(notice, next);
 
   return (
     <AuthScreen
