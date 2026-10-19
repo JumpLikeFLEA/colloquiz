@@ -1,8 +1,7 @@
 # 0178 — "No reply needed" on a Studio thread
 
-Status: built (ad-hoc, owner request 2026-10-19). Migration 092 written and applied to the
-local stack twice; its verify script prints `0178 PASS`. Hosted: see the commit / the
-hosted-apply gate evidence for 092.
+Status: built (ad-hoc, owner request 2026-10-19). Migration 092 written, applied to the
+local stack twice, then through the hosted-apply gate to hosted (see "Hosted").
 
 ## Context
 
@@ -70,6 +69,24 @@ The first 360 reading has no badge while SQL says unanswered; later 360 readings
 investigated: the mobile nav is offcanvas, and the badge was read before it was
 confirmed rendered. The 1280 rows show the badge going 1 → none → 1. Not reached: the
 button's inline error line.
+
+## Hosted
+
+Gate run 2026-10-19, in order. Local: 092 applied twice (the second run skips the existing
+column); `verify/092` prints `0178 PASS`; `verify/079`, `081`, `083` and `091` re-run and print
+PASS; `npm run check` and `npm test` (1534 tests) exit 0. Print rule right before applying:
+latest migration `092_message_no_reply_needed.sql`, latest `delete_my_account` body
+`090_telegram_reminders.sql`. Read-only probe first: latest recorded 091, 91 recorded;
+`teacher_conversations`, `teacher_messages`, `message_threads(text)` present;
+`teacher_dismissed_message_id` absent, `dismiss_conversation(uuid)` absent, `message_threads`
+body without the new column. Applied with `db query --linked -f`, then `migration repair
+--status applied 092`. Probe after: latest recorded 092, 92 recorded; the column and the
+function exist, `message_threads` carries the new body, anon cannot execute
+`dismiss_conversation`. Verify script on hosted: a copy whose last line raises instead of
+notices (the 0164 precedent; `db query` returns no NOTICEs) prints `ERROR: P0001: 0178 PASS`;
+the unmodified script exits clean with no output. Afterwards a read-only count: 0
+`@verify.test` users, 0 `v92-a` courses, 0 `_verify092_clock` functions, 0 conversations with
+a dismissed id.
 
 ## Revisit if
 
