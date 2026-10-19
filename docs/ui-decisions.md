@@ -2449,3 +2449,17 @@ Appended to in the same commit as the change it records. Referenced from
   `scrollWidth/innerWidth` 360/360 on `/studio/messages` with the card in its off state. Not
   reached: the pending, on and error states (the same component COH-010 measured on `/my`),
   and a teacher with conversations. Do not give Studio a second link mechanism.
+- Studio thread: "No reply needed" (2026-10-19, ad-hoc, docs/decisions/0178, migration 092).
+  On `/studio/messages/[studentId]`, while the thread is unanswered (the student wrote last,
+  link live), a `rounded-2xl border bg-card p-4` card sits between the thread and the
+  composer: one muted line ("Nothing to add? Take this conversation off your unanswered list.
+  If the student writes again, it comes back.") and an outlined `min-h-11` button with a
+  `Check` icon, the calendar feed panel's secondary button classes. It posts to
+  `/api/messages/dismiss` and refreshes, so the Messages badge, the inbox's "Unanswered
+  questions" and the list's "Unanswered" pill drop the thread together; the student's next
+  message brings it back. A refusal shows the composer's `destructive-subtle` line. Not in
+  `WriteArea`: a lapsed seat can still dismiss, as it can still reply (0155 Decision 5).
+  Existing classes and tokens; no new colours. Measured (local stack, seeded teacher and
+  student): `scrollWidth/innerWidth` 360/360 and 1280/1280 with the card showing, after the
+  click and after the student writes again. Not reached: the error line. Do not make the
+  badge an unread count instead (0178 Option B), and do not show the student anything.

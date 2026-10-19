@@ -9,6 +9,7 @@ import { PEER_ID_PATTERN } from "@/lib/messages/messages";
 import { MessageComposer, type ComposerLabels } from "@/app/components/messages/MessageComposer";
 import { MessageThread } from "@/app/components/messages/MessageThread";
 import { attachmentLabelsEn } from "@/lib/alliengll/askTeacherCopy";
+import { NoReplyNeededButton } from "./NoReplyNeededButton";
 
 // /studio/messages/[studentId] — one conversation, as the TEACHER, keyed by
 // the student's profile id (TCH-004, docs/decisions/0151 Decision 3). Keying by
@@ -19,6 +20,8 @@ import { attachmentLabelsEn } from "@/lib/alliengll/askTeacherCopy";
 // open come from message_threads('teacher') and conversation_messages (079).
 //
 // The messages are read first so "New" can be shown, then marked read.
+// Reading does not answer a thread; "No reply needed" (docs/decisions/0178,
+// migration 092) does, shown only while message_threads says unanswered.
 
 export const metadata = { title: "Messages" };
 
@@ -84,6 +87,8 @@ export default async function StudioMessageThread({ params }: { params: Promise<
           }}
         />
       )}
+
+      {thread.unanswered && <NoReplyNeededButton studentId={studentId} />}
 
       {thread.isOpen ? (
         <MessageComposer teacherId={user.id} studentId={studentId} labels={COMPOSER} />
