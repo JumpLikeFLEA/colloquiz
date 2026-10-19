@@ -9,6 +9,13 @@ import {
   startLink,
   stoppedMessage,
 } from "./messages";
+import {
+  feedbackLink,
+  feedbackText,
+  pingFeedbackPublished,
+  readFeedbackClaim,
+  type FeedbackPingDeps,
+} from "./feedbackPings";
 import { pingLink, pingNewMessage, pingText, readClaim, type PingDeps } from "./pings";
 import { postSendMessage, sendToUser, type SenderDeps } from "./send";
 import { handleUpdate, isValidWebhookSecret, type WebhookDeps } from "./webhook";
@@ -273,5 +280,118 @@ describe("message pings (TCH-012)", () => {
     expect(await pingNewMessage("m1", deps({ send: vi.fn(async () => "failed" as const) }))).toBe("send_failed");
     expect(await pingNewMessage("m1", deps({ send: vi.fn(async () => "blocked" as const) }))).toBe("send_failed");
     expect(await pingNewMessage("m1", deps({ send: boom("net") }))).toBe("error");
+  });
+});
+
+// COH-011 (docs/decisions/0180) — the feedback / final comment message.
+describe("feedback pings", () => {
+  const ORIGIN = "https://colloquiz.app";
+  const voice = {
+    claimed: true,
+    kind: "voice",
+    recipient_id: "u1",
+    lang: "ru",
+    course_slug: "future-imperfect",
+    course_title: "Future Imperfect",
+    lesson_slug: "lesson-1",
+    lesson_title: "Planning",
+    run_id: null,
+  };
+  const final = {
+    claimed: true,
+    kind: "final",
+    recipient_id: "u1",
+    lang: "en",
+    course_slug: null,
+    course_title: "Future Imperfect",
+    lesson_slug: null,
+    lesson_title: null,
+    run_id: "11111111-1111-1111-1111-111111111111",
+  };
+
+  it("reads a voice and a final claim, in the saved language", () => {
+    expect(readFeedbackClaim(voice)).toEqual({
+      kind: "voice",
+      recipientId: "u1",
+      lang: "ru",
+      courseSlug: "future-imperfect",
+      lessonSlug: "lesson-1",
+      lessonTitle: "Planning",
+    });
+    expect(readFeedbackClaim(final)).toEqual({
+      kind: "final",
+      recipientId: "u1",
+      lang: "en",
+      courseTitle: "Future Imperfect",
+      runId: "11111111-1111-1111-1111-111111111111",
+    });
+  });
+
+  it("reads anything that is not a complete claim as null", () => {
+    expect(readFeedbackClaim(null)).toBeNull();
+    expect(readFeedbackClaim({ claimed: false, reason: "already_handled" })).toBeNull();
+    expect(readFeedbackClaim({ ...voice, lesson_slug: null })).toBeNull();
+    expect(readFeedbackClaim({ ...voice, recipient_id: 5 })).toBeNull();
+    expect(readFeedbackClaim({ ...final, run_id: "" })).toBeNull();
+    expect(readFeedbackClaim({ ...final, kind: "other" })).toBeNull();
+  });
+
+  it("words 0140's texts in both languages with the right link", () => {
+    const v = readFeedbackClaim(voice)!;
+    expect(feedbackText(v, ORIGIN)).toBe(
+      "Есть отзыв на вашу запись в уроке «Planning»: https://colloquiz.app/courses/future-imperfect/lesson-1",
+    );
+    expect(feedbackText({ ...v, lang: "en" }, ORIGIN)).toBe(
+      "Your recording in “Planning” has feedback: https://colloquiz.app/courses/future-imperfect/lesson-1",
+    );
+    const f = readFeedbackClaim(final)!;
+    expect(feedbackText(f, ORIGIN)).toBe(
+      "Your final comment for “Future Imperfect” is ready: https://colloquiz.app/runs/11111111-1111-1111-1111-111111111111",
+    );
+    expect(feedbackText({ ...f, lang: "ru" }, ORIGIN)).toBe(
+      "Готов итоговый комментарий по курсу «Future Imperfect»: https://colloquiz.app/runs/11111111-1111-1111-1111-111111111111",
+    );
+  });
+
+  it("encodes a slug in the link", () => {
+    const v = readFeedbackClaim({ ...voice, lesson_slug: "a b/c" })!;
+    expect(feedbackLink(v, ORIGIN)).toBe("https://colloquiz.app/courses/future-imperfect/a%20b%2Fc");
+  });
+
+  const deps = (over: Partial<FeedbackPingDeps> = {}): FeedbackPingDeps => ({
+    claim: vi.fn(async () => voice),
+    send: vi.fn(async () => "sent" as const),
+    origin: ORIGIN,
+    ...over,
+  });
+
+  it("claims, then sends the worded text to the recipient", async () => {
+    const d = deps();
+    expect(await pingFeedbackPublished("voice", "sub-1", d)).toBe("sent");
+    expect(d.claim).toHaveBeenCalledWith("voice", "sub-1");
+    expect(d.send).toHaveBeenCalledWith("u1", expect.stringContaining("/courses/future-imperfect/lesson-1"));
+  });
+
+  it("sends nothing when SQL did not claim (draft, already handled, not linked)", async () => {
+    for (const reason of ["not_published", "already_handled", "not_linked", "no_target"]) {
+      const d = deps({ claim: vi.fn(async () => ({ claimed: false, reason })) });
+      expect(await pingFeedbackPublished("final", "e-1", d)).toBe("skipped");
+      expect(d.send).not.toHaveBeenCalled();
+    }
+  });
+
+  it("reports a failed or blocked send without throwing", async () => {
+    for (const outcome of ["failed", "blocked", "not_linked"] as const) {
+      expect(await pingFeedbackPublished("voice", "s", deps({ send: vi.fn(async () => outcome) }))).toBe("send_failed");
+    }
+  });
+
+  it("never throws, whichever effect throws", async () => {
+    expect(
+      await pingFeedbackPublished("voice", "s", deps({ claim: vi.fn(async () => { throw new Error("db"); }) })),
+    ).toBe("error");
+    expect(
+      await pingFeedbackPublished("voice", "s", deps({ send: vi.fn(async () => { throw new Error("net"); }) })),
+    ).toBe("error");
   });
 });

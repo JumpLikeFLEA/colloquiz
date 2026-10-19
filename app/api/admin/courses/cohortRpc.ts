@@ -41,14 +41,26 @@ export async function callCohortRpc(
   return { result: data as RpcResult };
 }
 
-/** One RPC, one response: its fields on success, the mapped refusal otherwise. */
-export async function cohortRpcResponse(fn: string, args: Record<string, unknown>): Promise<NextResponse> {
+/** One RPC, one response: its fields on success, the mapped refusal otherwise.
+ * `afterOk` runs only on success (COH-011 hands it an `after()` call); a throw
+ * from it is logged and never changes the answer. */
+export async function cohortRpcResponse(
+  fn: string,
+  args: Record<string, unknown>,
+  afterOk?: () => void,
+): Promise<NextResponse> {
   const called = await callCohortRpc(fn, args);
   if ("response" in called) return called.response;
   const { ok, error, ...rest } = called.result;
   if (!ok) {
     const { status, body } = courseAuthoringErrorResponse(error);
     return NextResponse.json(body, { status });
+  }
+  try {
+    afterOk?.();
+  } catch (err) {
+    // The RPC already committed: a failing side effect must not turn it into an error.
+    console.error(err);
   }
   return NextResponse.json({ ok: true, ...rest });
 }

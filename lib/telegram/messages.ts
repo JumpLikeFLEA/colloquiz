@@ -1,7 +1,8 @@
 // COH-010 (docs/decisions/0173) — the bot's wording and the pure parsing around
 // it. No I/O: the webhook handler and the sender import this, and vitest drives
-// it. Event wording (week open, feedback, final comment, calls) joins here with
-// COH-011..013; the message ping's wording is lib/telegram/pings.ts (TCH-012).
+// it. Event wording: the feedback / final comment text is lib/telegram/
+// feedbackPings.ts (COH-011) and the message ping's is lib/telegram/pings.ts
+// (TCH-012); week-open and call wording (COH-012, COH-013) is still to come.
 
 export type TelegramLang = "ru" | "en";
 
