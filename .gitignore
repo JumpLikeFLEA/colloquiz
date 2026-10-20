@@ -63,3 +63,5 @@ instruction_external_LLM.txt
 
 # Claude Code personal overrides (.claude/settings.json is committed; this is not)
 /.claude/settings.local.json
+
+/public
