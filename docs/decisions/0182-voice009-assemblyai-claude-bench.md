@@ -1,8 +1,8 @@
 # 0182 — VOICE-009: AssemblyAI and Claude measured on owner takes
 
 Status: measured 2026-10-21 (VOICE-009, #229). Spend approved by the owner before
-the runs (cap $3); spent $0.58. The Vercel preview measurement is pending (see
-"Vercel"). Every figure below is copied from the printed output of
+the runs (cap $3); spent $0.58. The Vercel limit was measured on a preview
+deployment. Every figure below is copied from the printed output of
 `scripts/voice-bench-stt.ts` and `scripts/voice-bench-claude.ts`; the runs' JSON
 lines are reproduced by re-running those scripts on the same files.
 
@@ -154,6 +154,7 @@ is right.
 | Course with 5 voice tasks × 3 analysed sends (the per-task cap) | ≈ $0.30 per learner, worst case | × 15 |
 | Same course, one send per task | ≈ $0.10 per learner | × 5 |
 | Worst case end to end (600 s): upload + STT + analysis | 0.34 + 10.6 + 18.9 ≈ 30 s | tables above |
+| `after()` work on a preview, no `maxDuration` | alive at 280 s, gone by 331 s (documented default 300 s) | Vercel section |
 | Disfluencies survive | yes, 3.5 Pro; Universal-2 removes false starts | AssemblyAI section |
 | Filler count reproducibility | ±40% on identical audio | AssemblyAI section |
 | Quotes verbatim | 335 / 335 | Claude section |
@@ -189,11 +190,13 @@ Made unattended under the card; each is a recommendation for VOICE-010..016.
    of its errors were transcription mistakes, and filler capture fell inside long
    files. A longer take still uploads and is still the learner's; the analysis
    covers its first 180 s and says so. Revisit with a real long take.
-6. **No webhook, pending the preview measurement.** The worst case is about 30 s
-   of `after()` work. Vercel gives `after()`/`waitUntil` "the same timeout as the
-   function itself" (Vercel `@vercel/functions` reference, read 2026-10-21), and
-   that limit is 300 s on Hobby and 800 s on Pro (Vercel "Configuring Maximum
-   Duration", read 2026-10-21). 0156's lease and status route cover a stall.
+6. **No webhook.** The worst case is about 30 s of `after()` work, and on the
+   preview `after()` work was still running at 280 s and gone by 331 s (see
+   "Vercel"). The upload route needs no `maxDuration` export. 0156's lease and
+   status route cover a stall or a queue delay at AssemblyAI, which this bench
+   never saw (every job finished in under 11 s). Because runtime logs dropped
+   every line written after the response, the pipeline records each step in its
+   database row and never relies on logs.
 7. **Never show a filler count as a number** in the before/after comparison.
    It moved ±40% on identical audio. Show quotes ("uh uh uh") or a coarse word
    (more, fewer, about the same) only when the difference is large.
@@ -219,11 +222,33 @@ Made unattended under the card; each is a recommendation for VOICE-010..016.
 
 ## Vercel
 
-Pending. A probe route (`app/api/bench/after-probe`, uncommitted, 404 outside a
-preview) logs a tick every 10 s from inside `after()`. It is to be deployed to one
-preview with no `maxDuration` export, called with `s=60` and `s=400`, and its
-last logged tick read from the runtime log. Expected from the docs: 60 completes;
-400 stops near the plan's limit.
+Documented: work passed to `waitUntil`, which Next's `after()` uses on Vercel
+(`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md`,
+"Platform Support"), has "the same timeout as the function itself" (Vercel
+`@vercel/functions` reference). The function limit is 300 s by default on every
+plan, and at most 300 s on Hobby or 800 s on Pro (Vercel "Configuring Maximum
+Duration"). Both pages were read 2026-10-21.
+
+Measured on two preview deployments of the working tree (region dub1, no
+`maxDuration` export), with a temporary route that is not committed and has
+been deleted. The route ticked every 10 s inside `after()` and kept its progress
+in the instance's memory. A `?status=` request read it back, with the instance's
+id, so a reply from a fresh instance shows.
+
+- **Runtime logs drop lines written after the response.** Through
+  `vercel logs` and the runtime-logs API alike, only each callback's first line
+  appeared (`start`), for 1 s, 30 s, 60 s and 400 s probes alike, while the
+  in-memory readings below show the ticks did run. So logs cannot show how long `after()` work
+  ran, and VOICE-010 should record progress in the database, not in logs.
+- **60 s run:** read every 13 s, it ticked 10, 20, 40, 50, 60 and finished, on
+  one instance.
+- **400 s run, unread until late** (so the readings could not keep it awake):
+  at 280 s it was alive at its 280 s tick on the same instance. At 331 s and
+  421 s the request reached a new instance, and the run was gone. The cut-off
+  falls between 280 and 331 s, which fits the documented 300 s default.
+
+Against the slowest take: the worst case measured here is 10.6 s of
+transcription plus 18.9 s of analysis. That is a tenth of the 300 s default.
 
 ## Revisit when
 
@@ -233,3 +258,5 @@ last logged tick read from the runtime log. Expected from the docs: 60 completes
 - The owner supplies an answer key: then WER, filler recall and error precision
   and recall replace the session's reading.
 - Free-funnel volume makes ≈ $0.02 a take matter (0156 "Revisit when").
+
+Scorecard page (private until shared): https://claude.ai/artifact/V3MzJMMsj1DJ4z3yg9ncy1
