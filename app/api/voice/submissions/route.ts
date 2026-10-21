@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseVoiceCap } from "@/lib/voice/analysisCaps";
 import { removeVoiceObjects } from "@/lib/voice/storage";
 
 /**
@@ -19,6 +20,10 @@ import { removeVoiceObjects } from "@/lib/voice/storage";
  * from SQL's answer, never from the request body. If that removal fails, the
  * name is still queued in voice_object_deletions and the daily purge
  * (app/api/cron/voice-purge) removes it.
+ *
+ * A send over a cap (0156 Decision 6; the ledger trigger in 096) is answered 429 with
+ * { error: "voice_cap", kind, retryAt }, and replaced nothing. The recorder reads any
+ * non-2xx without a known code as "try again"; the wording for a cap is VOICE-014's.
  *
  * A refused send leaves its upload in the bucket; the purge removes any
  * object no submission references after 24 hours. The route never deletes
@@ -77,6 +82,15 @@ export async function POST(request: NextRequest) {
     // A malformed UUID is a cast error before the function body runs.
     if (error.code === "22P02") {
       return NextResponse.json({ ok: false, error: "invalid_request" }, { status: 400 });
+    }
+    // A cap from the send ledger's trigger (096, VOICE-011): nothing was replaced, the
+    // refused upload is left for the purge, as with any refused send.
+    const cap = parseVoiceCap(error);
+    if (cap) {
+      return NextResponse.json(
+        { ok: false, error: "voice_cap", kind: cap.kind, retryAt: cap.retryAt },
+        { status: 429, headers: { "Cache-Control": "no-store" } },
+      );
     }
     console.error("submit_voice_recording:", error);
     return NextResponse.json({ ok: false, error: "internal" }, { status: 500 });
