@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.6 · Last updated 2026-10-18
+Version 1.7 · Last updated 2026-10-21
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -17,6 +17,15 @@ Version 1.6 · Last updated 2026-10-18
 > /privacy (everything outside these maintainer blockquotes) raises the minor version
 > and sets "Last updated" to the commit date, in the same commit. Section 13 promises
 > this to users. See docs/decisions/0083-privacy-policy-versioning.md.
+>
+> **1.7 is a draft until the owner publishes it (OPS-026, docs/decisions/0184).** It
+> describes the voice pipeline of docs/decisions/0156 as it will run. Before publishing,
+> confirm each fact below is true of the code and the accounts; correct the text, not the
+> fact, if it is not: (1) "opted out" at AssemblyAI is set in its Data Controls; (2) we call
+> its EU endpoint and never `/v2/upload`; (3) the transcript is deleted at AssemblyAI right
+> after we have it; (4) Anthropic receives the transcript, list and instruction only;
+> (5) the "AI feedback" label is on every analysis; (6) the per-task and daily limits exist;
+> (7) hosted `VOICE_ANALYSIS_MODE` is `off` until this is published.
 
 ---
 
@@ -43,7 +52,8 @@ associated API. It does not cover any third-party site you reach by leaving the 
 
 We collect only what the Service needs to function. There is no advertising, no
 profiling for advertising, no sale of personal data, and no automated decision-making
-that produces legal or similarly significant effects.
+that produces legal or similarly significant effects. The automatic feedback on a voice
+recording (section 12) is not such a decision; section 12 says why.
 
 ### 3.1 Data you give us
 
@@ -57,7 +67,7 @@ that produces legal or similarly significant effects.
 | Your age confirmation | Sign-up | We only offer the Service to people aged 13 and over |
 | Feedback and question reports | When you submit them | To fix problems and moderate the question bank |
 | Telegram identity — if you sign in with Telegram: an identifier Telegram issues for this Service (not your Telegram account number), your name and your username, as Telegram returns them | Sign-in with Telegram | Account identity and sign-in. Instead of an email address, a Telegram account has a username, which is what a course author sees |
-| Voice recordings — if you send one for a voice task in a cohort course: the audio | You, in the voice task | So the course author can listen and answer in writing, and so you can compare your first and last recording |
+| Voice recordings — if you are signed in and send one for a voice task, in any course: the audio | You, in the voice task | So you get automatic feedback on it (section 12), so the course author can listen and, in a cohort course, answer in writing, and so you can compare your first and last recording |
 | Messages — if you write to a teacher you have linked to: what you write and, if you choose, a frozen copy of an exercise and your answer to it | You, in the messages page or the "Ask the teacher" link on an exercise | So you can ask your teacher a question about the content or a task. Only you and that teacher see it |
 | Invite contact label — an author's note of a name and a contact (email or @telegram) for someone they invite to a course | The course author, not you | To send you the invite. Only the course author sees it |
 
@@ -83,6 +93,7 @@ that produces legal or similarly significant effects.
 | English lesson opens — which lessons you opened while signed in, and when | To show you your progress, and to show the author of the course how learners move through it |
 | Cohort enrolments — if you join a cohort course: the run, your tier, when you joined and, if it happened, when your access was ended (for example after a refund) | To give you access to the course and to open its lessons week by week |
 | The author's written feedback on a voice task, and a final comment — if you join a cohort course | So you can read it under your recording |
+| Voice transcripts and AI feedback — for a voice recording you send: a text transcript of what you said (including filler words and false starts), the automatic feedback made from it, which instruction version and AI model made it, and a count of how many recordings of each task you have sent | To show you the feedback, to compare your first and last recording, and to keep the limits on how many recordings get feedback |
 
 **Your numeric skill rating is never shown to anyone, including you.** It is stored with
 database permissions that make it unreadable outside the duel calculation itself; only a
@@ -166,6 +177,8 @@ name or feedback.
 | Aggregate, non-identifying analytics to keep the Service working | **Legitimate interests** — we use privacy-preserving, cookieless tools, which we consider a minimal intrusion |
 | Signing you in with Telegram, if you choose it | **Contract** (Art. 6(1)(b)) — the sign-in method you asked for |
 | Running a cohort course you joined: your enrolments (run and tier), opening its lessons week by week, recording which lessons you opened, and your voice recordings with the author's written feedback and final comment | **Contract** (Art. 6(1)(b)) — providing the course you joined |
+| Sending your voice recording to a speech-to-text provider and an AI provider, and showing you the feedback, when you press Send on a voice task | **Contract** (Art. 6(1)(b)) — voice feedback is a feature of the Service that you start yourself by pressing Send; nothing is sent to either provider before that |
+| A course author hearing the recordings you send, and reading their transcripts and the AI feedback, in any course you take while signed in | **Contract** (Art. 6(1)(b)) in a cohort course you joined. In a free course or a course you were given access to, **legitimate interests** (Art. 6(1)(f)) — letting the author see whether the feedback is wrong, hide it, and improve the course; you can object (section 8) |
 | A course author seeing, in a cohort course you joined, your email or Telegram username, your invite's contact label, how you found the course, and your activity in it | **Contract** (Art. 6(1)(b)) — running the course you joined |
 | Storing the answers you give while signed in, so they can be shown back to you and a lesson can resume | **Contract** (Art. 6(1)(b)) — saving your answers and scores as part of your progress is part of the Service, as Terms section 4 describes. Where a reader holds that this goes beyond what the contract needs, **legitimate interests** (Art. 6(1)(f)) — giving you your answers back. You can object (section 8) |
 | A teacher you have linked to seeing your answers and scores, writing to you, grouping you and assigning you homework | **Contract** (Art. 6(1)(b)) — the teacher relationship you asked for by linking, after the app has told you what the teacher will see. We considered consent and did not choose it: a link made by claiming a run invite is a step to join a course you have chosen, so consent to it would not be freely given. You can leave a link at any time whatever the basis (section 5) |
@@ -223,9 +236,28 @@ attempted it, and, unless you have linked to that author as a teacher (below), n
 this rests on contract; for a free course it rests on legitimate interests, and you can
 object (section 8).
 
-**Voice recordings** are heard by you and the course author. We access them only to run
-the Service. They are never used for promotion. Practice recordings in free or anonymous
-lessons stay on your device and are never uploaded.
+**Voice recordings** are heard by you and the course author. This holds for every
+course: a cohort course, a free course and a paid course you were given access to. The
+author also reads the transcript and the AI feedback made from your recording, and can hide
+feedback that is wrong. If you have linked to that author as a teacher (above), the same
+applies. We access recordings only to run the Service. They are never used for promotion.
+When you press Send, two providers listed in the [subprocessors](./subprocessors.md) handle
+your recording, and no one else does:
+
+- **AssemblyAI** turns the audio into a transcript. We give it a short-lived private address
+  from which it reads the audio. We send it no name or email; the address contains random
+  identifiers.
+- **Anthropic** receives the transcript, the author's list of expressions for the task and
+  our instruction, and returns the feedback. It does not receive the audio or your account
+  details.
+
+Both providers receive what you say, so please do not say anything in a recording that you
+would not want written down, such as health details or other people's personal data.
+
+Neither provider is allowed to use what we send it for anything but providing the service to
+us, and we have turned off the use of it for training where the provider offers that switch
+(section 12). If you are not signed in, a recording stays on your device and is never
+uploaded: no provider receives it.
 
 **Invite contact labels** are seen only by the course author. **Cohort enrolments** and
 **lesson opens** are visible to you and to the course author. The author's **written
@@ -246,7 +278,12 @@ European Commission has not issued an adequacy decision. Some subprocessors are 
 established outside the EEA. Where personal data is transferred to us or to them, the
 transfer relies on the European Commission's **Standard Contractual Clauses** and, where
 applicable, the **EU–US Data Privacy Framework**. Details are in the
-[subprocessor list](./subprocessors.md).
+[subprocessor list](./subprocessors.md). In particular, **AssemblyAI** transcribes
+recordings through its European endpoint, which it says processes audio and transcripts in
+the EU and stores them in the EU, but it stores its account and usage data in the United
+States; and **Anthropic**, which handles transcripts, does not state where it processes them,
+so we treat that as a transfer outside the EEA under the Standard Contractual Clauses in its
+data processing addendum.
 
 ## 7. How long we keep it
 
@@ -261,7 +298,9 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 | English lesson practice attempts | Until you close your account; then **deleted outright**, not anonymised — see section 9 |
 | Signup source (the course and arrival channel you signed up from) | Until you close your account; then **deleted outright** |
 | Telegram identity | Until you close your account; then erased with your profile details |
-| Voice recordings | A recording you replace is deleted when you replace it. All recordings are deleted 6 months after the end of the run, or when you delete your account, whichever comes first |
+| Voice recordings | A recording you replace is deleted when you replace it. In a cohort course, all recordings are deleted 6 months after the end of the run. In any other course, a recording is deleted 6 months after you sent it. In both cases a recording is also deleted when you delete your account, whichever comes first |
+| Voice transcripts and AI feedback | Deleted together with the recording they were made from, at the same time and for the same reasons. The feedback on a later recording can quote short passages of your first recording; those quotes are part of that later feedback and are deleted with it |
+| What AssemblyAI and Anthropic keep | AssemblyAI: we ask it to delete each transcript as soon as we have received it, and its documentation says it begins deleting audio 24 hours after a request and finishes within 48 hours; it keeps some metadata for logging and billing. Anthropic: its published policy is to delete inputs and outputs within 30 days of receipt, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy. |
 | The author's written feedback and final comment | Until you close your account; then **deleted outright** |
 | Invite contact labels | Once you claim the invite, kept with your enrolment and deleted when you delete your account. A label never claimed is deleted 30 days after the invite expires or is revoked |
 | Cohort enrolments | Until you close your account; then **deleted outright** |
@@ -285,7 +324,7 @@ Under the GDPR / UK GDPR you have the right to:
   English lesson practice attempts with the answers you gave, the course and channel you signed up from, your teacher links, your conversations with teachers, the names of any private groups a teacher has put you in, the homework assigned to you, whether you have a calendar feed (never its token), your Telegram reminders link (chat id, language, time zone and dates), the
   lessons you opened, your cohort enrolments, your Telegram identity, and the author's
   written feedback and final comment. The export includes a copy of your voice
-  recordings, and an invite contact label is included once you have claimed it.
+  recordings with their transcripts and AI feedback, and an invite contact label is included once you have claimed it.
 - **Rectify** inaccurate data — Settings › Account.
 - **Erase** your data ("right to be forgotten") — **Settings › Data and privacy › Delete
   my account**. See section 9 for exactly what this does.
@@ -309,7 +348,7 @@ When you delete your account we, immediately and irreversibly:
 - erase your English lesson practice attempts and the answers stored with them outright — see the contrast below;
 - end your teacher links, delete your conversations with teachers in full (both sides, with anything attached), take you out of their groups and homework, and delete your calendar feed token and your Telegram reminders link;
 - erase the record of which course and channel you signed up from;
-- erase your voice recordings, the author's written feedback and final comment, your
+- erase your voice recordings with their transcripts and AI feedback, the author's written feedback and final comment, your
   cohort enrolments, your lesson opens, the invite contact label kept with your
   enrolment, and your Telegram identity;
 - close your sign-in — you can no longer access the account, and neither can anyone else.
@@ -348,18 +387,53 @@ has created an account, email privacy@colloquiz.app and we will delete it.
 
 If you are under 18, a parent or guardian should be aware of your use of the Service.
 
-## 12. Automated content generation
+## 12. AI systems
 
-Some questions in the library are drafted with the help of an AI system and then reviewed.
-**No personal data of yours is sent to that system** — it receives only a subject and
-topic, and returns candidate questions. Your answers, results and profile are never used
-for this, and are not used to train any model.
+We use AI systems in two places. Neither makes a decision about you.
+
+**Quiz questions.** Some questions in the library are drafted with the help of an AI system
+and then reviewed. **No personal data of yours is sent to that system** — it receives only
+a subject and topic, and returns candidate questions. Your answers, results and profile are
+never used for this.
+
+**Feedback on a voice recording.** When you are signed in and press Send on a voice task,
+two AI systems work on your recording:
+
+1. A speech-to-text service (**AssemblyAI**) writes down what you said, keeping the filler
+   words and false starts, because the feedback is about them.
+2. A language model (**Anthropic's Claude**) reads that transcript and returns feedback:
+   which of the expressions the author listed you used, one main error, what worked, a
+   goal for next time, and, for a final recording, how it compares with your first.
+
+Every piece of this feedback is labelled **"AI feedback"**, and it can be wrong; the
+transcript it is made from can contain mistakes too. It is not a grade, it is not
+part of your lesson score, and it does not decide whether you complete a lesson or a course.
+A cohort course keeps the author's own written feedback alongside it. The course author can
+read it and hide feedback that is wrong; you then see that it was withdrawn and can send
+again. We limit how many recordings of one task get feedback and how many a learner gets in
+a day.
+
+**Why this is not an "automated decision" under Art. 22 GDPR.** Art. 22 covers a decision
+based solely on automated processing that has legal or similarly significant effects on
+you. This feedback decides nothing: it grants or refuses no access, no certificate, no
+price and no mark, and nothing in the Service changes for you whatever it says. It is
+advice for your own study, which you can ignore or replace by recording again.
+
+**Training.** We do not use your recordings, transcripts or feedback to train any model, and
+we have not allowed our providers to. Anthropic's Commercial Terms say it may not train
+models on customer content from its services. AssemblyAI's documentation says it does not use
+files for training if you use its European servers or have opted out; we use that endpoint
+and have opted out, and the opt-out applies only to what is sent after it is set.
+
+**Anonymous visitors** are not affected: without an account a recording stays on your
+device.
 
 ## 13. Changes to this policy
 
 We will post any change here with a new version number and date. For a change that
 materially affects your rights, we will tell you in the app or by email before it takes
-effect.
+effect. Version 1.7 added voice recordings in every course and the AI feedback in
+section 12.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.2 · Last updated 2026-10-16
+Version 1.3 · Last updated 2026-10-21
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/terms/page.tsx`
 > renders it; edit here first. Fill every `[BRACKETED]` placeholder before publication.
@@ -80,6 +80,16 @@ or charged back, your access ends.
 **Cohort courses.** If you join a cohort course, its lessons open week by week from the
 cohort's start date, and the course author may review the voice recordings you send and
 reply in writing. What we collect for this, and for how long, is in the Privacy Policy.
+
+**Voice tasks and AI feedback.** If you are signed in, you can record an answer to a voice
+task in any course and send it. When you send it, it is transcribed and analysed
+automatically, and you get feedback labelled "AI feedback" at once. That feedback comes from
+an AI system. It can be wrong, it is not a grade or an assessment, it does not count toward
+your lesson score or completing a course, and you should not rely on it for any decision
+beyond your own study. The course author can hear your recording and read the transcript
+and the feedback, and can hide feedback that is wrong. We may limit how many recordings
+receive feedback. What we collect for this, who processes it and for how long is in the
+Privacy Policy. Please send only recordings of your own voice.
 
 **Educational content is not advice.** Questions and explanations are provided for study
 and self-testing. They may contain errors. Do not rely on them for medical, legal,

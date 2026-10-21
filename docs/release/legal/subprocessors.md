@@ -1,6 +1,6 @@
 # Subprocessors
 
-**Colloquiz — https://colloquiz.app** · Version 1.3 · Last updated 2026-10-18
+**Colloquiz — https://colloquiz.app** · Version 1.4 · Last updated 2026-10-21
 
 These are the third parties that process personal data on our behalf. The
 [Privacy Policy](./privacy-policy.md) links here. Keep this file current — adding a
@@ -21,6 +21,8 @@ verified rather than trusted.
 | **Google** (Google Ireland Ltd.) | OAuth sign-in — **only if the user chooses it** | Email address, account identifier, name and picture as returned by the provider | EU/US | EU–US DPF / SCCs | `app/(auth)/AuthScreen.tsx`, `app/auth/callback/route.ts` |
 | **Discord** (Discord Inc.) | OAuth sign-in — **only if the user chooses it** | Same as above | US | SCCs | `app/(auth)/AuthScreen.tsx`, `app/auth/callback/route.ts` |
 | **Telegram** (Telegram Messenger Inc.; EEA representative: European Data Protection Office, Brussels) | Sign-in, and reminder messages — **only if the user chooses them** | An identifier Telegram issues for this Service (not the Telegram account number), name and username, as Telegram returns them (printed in `docs/decisions/0098`). For reminders: the Telegram chat id of a user who pressed Start in the bot, and the text of the reminder messages sent to it (course and lesson titles, a link) | Outside the EEA | Sign-in: not applicable, we send Telegram no personal data; you sign in on Telegram's own page and Telegram sends us the fields listed. Reminders: we send the chat id and message text to Telegram's Bot API, only for users who turned reminders on; the transfer basis is for the owner to confirm before launch | `app/(colloquiz)/(auth)/AuthScreen.tsx`, `app/components/lesson-player/RegistrationOffer.tsx`, `app/auth/callback/route.ts`, `app/api/telegram/webhook/route.ts`, `lib/telegram/send.ts` |
+| **AssemblyAI** (AssemblyAI Inc., New York, US) | Speech-to-text for voice tasks — **only for a take a signed-in learner sends** | The audio of the take, read from a short-lived private address we give it, and the transcript it returns with word timings. No name or email is sent; the address contains random identifiers. AssemblyAI stores account and usage data, and may process file names through its own subprocessors, in the US | Audio and transcripts: the EU endpoint `api.eu.assemblyai.com`, which its documentation says processes and stores them in the EU (AWS Dublin, `eu-west-1`). Account and usage data: US | AssemblyAI's DPA (effective 2026-01-22) forms part of its Terms of Service and needs no separate signature; it applies the EU SCCs (deemed entered into) or the Data Privacy Framework where the recipient is certified, and the UK SCCs | `lib/voice/*` (the transcription step), `ASSEMBLYAI_API_KEY`. Training: its documentation says files are not used for training if you use its European servers or have opted out; we do both. Retention: we delete each transcript after receiving it; its documentation says audio deletion begins at 24 hours and ends within 48 |
+| **Anthropic** | Writes the AI feedback on a voice take from its transcript — **only for a take a signed-in learner sends** | The transcript, the course author's list of expressions for the task, and our instruction. No audio, name, email or account identifier | Not stated in its DPA; treated as outside the EEA | Anthropic's DPA is incorporated into its Commercial Terms (module two EU SCCs, UK and Swiss addenda; it does not mention the Data Privacy Framework). The Commercial Terms are accepted on first use of the API | `lib/voice/*` (the analysis step), `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL_VOICE`. Training: the Commercial Terms say "Anthropic may not train models on Customer Content from Services." Retention: inputs and outputs are deleted within 30 days, or kept up to 2 years if flagged as a usage-policy violation (Anthropic privacy centre, article dated 2026-07-01) |
 | **Discord** (webhook) | Operator notification when new in-app feedback arrives | The feedback text, which may contain whatever the user typed | US | SCCs | `lib/feedbackNotify.ts`, `FEEDBACK_DISCORD_WEBHOOK_URL` — optional; feedback is stored either way |
 
 ## Added as part of the 1.0 release
@@ -33,7 +35,7 @@ verified rather than trusted.
 
 | Provider | Why it is listed | Why it is not a subprocessor |
 | --- | --- | --- |
-| **Anthropic** | Drafts candidate quiz questions | Receives a subject and topic only. **No user data of any kind is sent**, and no user data is used for training. See `lib/generator/llm.ts` — the payload is authored content, never a profile, result or answer |
+| **Anthropic**, for quiz-question drafting only | Drafts candidate quiz questions | Receives a subject and topic only. **No user data of any kind is sent**, and no user data is used for training. See `lib/generator/llm.ts` — the payload is authored content, never a profile, result or answer. The same company is a subprocessor for voice feedback (above) |
 
 ---
 
@@ -52,3 +54,9 @@ field that was never received is not material (0095).
 1.3 (2026-10-18) Telegram gains a messaging role: reminder messages to users who linked the bot
 (COH-010, docs/decisions/0173). This is a new data category, so after launch it needs the
 in-app notice of Terms §10 (docs/decisions/0095 Option A).
+1.4 (2026-10-21) AssemblyAI added and Anthropic moved into the processor list, for voice
+feedback on every course (docs/decisions/0156, 0184). A new data category and a new
+recipient, so after launch it needs the in-app notice of Terms §10 (docs/decisions/0095
+Option A). The providers' terms were read on 2026-10-21 from their public pages; that each
+account has accepted the DPA, and that AssemblyAI's training opt-out is set, are the owner's
+to confirm before go-live (OPS-027).
