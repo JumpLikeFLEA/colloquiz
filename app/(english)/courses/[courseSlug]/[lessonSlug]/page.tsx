@@ -123,7 +123,7 @@ export default async function LessonPage({
   const hasVoiceTask = lesson.document.some(
     (block) => typeof block === "object" && block !== null && (block as { kind?: unknown }).kind === "task",
   );
-  const voiceTasks = hasVoiceTask ? await getVoiceTasksContext(lesson.lessonId, lesson.courseId) : undefined;
+  const voiceTasks = hasVoiceTask ? await getVoiceTasksContext(lesson.lessonId, lesson.courseId, lesson.state === "ok") : undefined;
 
   const ask = askPromise ? await askPromise : null;
 

@@ -8,13 +8,16 @@ import { FeedbackContentSchema, type FeedbackContent } from "../feedback/content
  *
  * - `practice`: record and listen on this device only, nothing uploaded
  *   (privacy-policy.md: "Practice recordings in free or anonymous lessons
- *   stay on your device and are never uploaded"). Every visitor who is not
- *   an enrolled learner of the course.
- * - `send`: the learner has a live enrolment in this course, so the
- *   recorder offers Send. This is a HINT for which controls to draw, never
- *   the decision: submit_voice_recording (060) decides, and a refusal
- *   drops the recorder back to practice (lib/voice/recorder.ts,
- *   submitOutcome). Being wrong here costs a refused send, never access.
+ *   stay on your device and are never uploaded"). Every anonymous visitor,
+ *   and, while VOICE_ANALYSIS_MODE is `off`, every signed-in learner who is
+ *   not enrolled in the course (`voiceSendSlot`).
+ * - `send`: the recorder offers Send: the learner has a live enrolment in
+ *   this course, or (VOICE-010, docs/decisions/0183) is signed in on an
+ *   open lesson and the analysis mode is not `off`. This is a HINT for which
+ *   controls to draw, never the decision: submit_voice_recording (094)
+ *   decides, and a refusal drops the recorder back to practice
+ *   (lib/voice/recorder.ts, submitOutcome). Being wrong here costs a refused
+ *   send, never access.
  */
 export type VoiceTaskSubmission = {
   id: string;
@@ -49,6 +52,39 @@ export type VoiceTasksContext = VoiceTasksMode & {
   renderAsk?: (blockId: string) => ReactNode;
 };
 
+/**
+ * 0156 Decision 6's global switch, read from VOICE_ANALYSIS_MODE. Anything but
+ * `on` or `paused` is `off`, so a missing or misspelt value fails closed:
+ * production stays off until OPS-026's legal revision is published.
+ */
+export type VoiceAnalysisMode = "off" | "paused" | "on";
+
+export function parseVoiceAnalysisMode(raw: string | null | undefined): VoiceAnalysisMode {
+  const v = raw?.trim().toLowerCase();
+  return v === "on" || v === "paused" ? v : "off";
+}
+
+/**
+ * Which slot the recorder should offer Send for, or null for practice only.
+ * A mirror of 094's submit_voice_recording, as a hint (see the type above):
+ *   - anonymous: practice (0156 Decision 2);
+ *   - enrolled in the course: the enrolment's slot, whatever the mode (this is
+ *     today's cohort behaviour, and the mode only governs the new path);
+ *   - otherwise a signed-in learner on an open lesson: a self-paced slot, unless
+ *     the mode is `off`. Under `paused` takes still upload (0156 Decision 6).
+ */
+export function voiceSendSlot(input: {
+  signedIn: boolean;
+  lessonOpen: boolean;
+  enrolmentId: string | null;
+  analysisMode: VoiceAnalysisMode;
+}): "enrolment" | "self_paced" | null {
+  if (!input.signedIn) return null;
+  if (input.enrolmentId) return "enrolment";
+  if (input.lessonOpen && input.analysisMode !== "off") return "self_paced";
+  return null;
+}
+
 export type EnrolmentRow = { id: string; enrolledAt: string; runStartsAt: string };
 
 /**
@@ -73,7 +109,8 @@ export function currentEnrolmentId(rows: readonly EnrolmentRow[]): string | null
 
 export type SubmissionRow = {
   id: string;
-  enrolmentId: string;
+  /** null = a self-paced take, made outside any enrolment (094). */
+  enrolmentId: string | null;
   blockId: string;
   objectName: string | null;
   /** Published feedback body, unparsed, or null. */
@@ -81,15 +118,16 @@ export type SubmissionRow = {
 };
 
 /**
- * The current enrolment's takes, by block. A take from an earlier run is
- * NOT shown: the next send files under the current run's slot, so showing
+ * The current slot's takes, by block: an enrolment's, or, for `null`, the
+ * learner's self-paced ones (rows are already the caller's own). A take from
+ * an earlier run is NOT shown: the next send files under the current run's slot, so showing
  * the old take (perhaps locked by its feedback) would block a send the RPC
  * accepts. A feedback body that doesn't parse is shown as no feedback and
  * reported, never rendered raw.
  */
 export function submissionsForEnrolment(
   rows: readonly SubmissionRow[],
-  enrolmentId: string,
+  enrolmentId: string | null,
   onInvalidFeedback: (submissionId: string) => void = () => {},
 ): Map<string, Omit<VoiceTaskSubmission, "playbackUrl"> & { objectName: string | null }> {
   const out = new Map<string, Omit<VoiceTaskSubmission, "playbackUrl"> & { objectName: string | null }>();

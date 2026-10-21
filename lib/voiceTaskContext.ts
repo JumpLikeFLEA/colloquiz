@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
 import {
   currentEnrolmentId,
+  parseVoiceAnalysisMode,
   submissionsForEnrolment,
+  voiceSendSlot,
   type EnrolmentRow,
   type SubmissionRow,
   type VoiceTasksContext,
@@ -18,13 +20,19 @@ import {
  *   - voice_submissions "owner or editor read", filtered to the caller;
  *   - voice_feedback "owner reads published": a draft never comes back;
  *   - the playback URL is signed under the bucket's SELECT policy.
- * An anonymous visitor, or a signed-in one with no enrolment in this
- * course, gets `practice` without the submission reads.
+ * An anonymous visitor gets `practice` without the submission reads. A
+ * signed-in learner with no enrolment in the course gets `send` too, filed in
+ * the self-paced slot (VOICE-010, docs/decisions/0183), unless
+ * VOICE_ANALYSIS_MODE is `off` (unset counts as off).
  *
  * A failed read degrades to `practice` rather than failing the lesson: the
  * lesson's content doesn't depend on the recorder.
  */
-export async function getVoiceTasksContext(lessonId: string, courseId: string): Promise<VoiceTasksContext> {
+export async function getVoiceTasksContext(
+  lessonId: string,
+  courseId: string,
+  lessonOpen: boolean,
+): Promise<VoiceTasksContext> {
   try {
     const supabase = await createClient();
     const user = await authUserFrom(supabase);
@@ -42,7 +50,13 @@ export async function getVoiceTasksContext(lessonId: string, courseId: string): 
         (e): EnrolmentRow => ({ id: e.id, enrolledAt: e.enrolled_at, runStartsAt: e.course_runs.starts_at }),
       ),
     );
-    if (!enrolmentId) return { mode: "practice" };
+    const slot = voiceSendSlot({
+      signedIn: true,
+      lessonOpen,
+      enrolmentId,
+      analysisMode: parseVoiceAnalysisMode(process.env.VOICE_ANALYSIS_MODE),
+    });
+    if (!slot) return { mode: "practice" };
 
     const { data: rows, error: subErr } = await supabase
       .from("voice_submissions")
@@ -54,7 +68,7 @@ export async function getVoiceTasksContext(lessonId: string, courseId: string): 
     const current = submissionsForEnrolment(
       ((rows ?? []) as unknown as {
         id: string;
-        enrolment_id: string;
+        enrolment_id: string | null;
         block_id: string;
         object_name: string | null;
         voice_feedback: { body: unknown; published_at: string | null } | null;
@@ -67,7 +81,7 @@ export async function getVoiceTasksContext(lessonId: string, courseId: string): 
           feedbackBody: r.voice_feedback?.published_at ? r.voice_feedback.body : null,
         }),
       ),
-      enrolmentId,
+      slot === "enrolment" ? enrolmentId : null,
       (id) => console.error(`voice_feedback for submission ${id} does not parse as FeedbackContent`),
     );
 
