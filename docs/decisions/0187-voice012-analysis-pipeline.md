@@ -1,7 +1,7 @@
 # 0187 — VOICE-012: transcribe, analyse and store a take
 
 Status: written 2026-10-21 (VOICE-012, #235). Migration 097 is applied to the local stack
-only; it is not applied to hosted (see "Hosted"). `VOICE_ANALYSIS_MODE` stays `off` in
+and, at the owner's instruction, to hosted on 2026-10-21 (see "Hosted"). `VOICE_ANALYSIS_MODE` stays `off` in
 production until OPS-026 is published and OPS-027 turns it on, so nothing here runs there yet.
 
 ## Context
@@ -152,10 +152,31 @@ Takes are the owner's A2 and A2-B1 recordings transcoded to webm/opus mono 48 kb
 
 ## Hosted
 
-097 is written and verified locally only. It is not applied to hosted: the card did not ask for
-it, and nothing calls the new functions while the mode is `off`. With `off`, the route's pause
-call would find no function on hosted and log an error inside `after()`; the take is accepted
-either way. Apply it through the hosted-apply gate before the mode is turned on.
+Applied 2026-10-21 through the hosted-apply gate, at the owner's instruction after the card
+was committed (the card said "written, not applied").
+
+- Print rule right before applying: latest migration 097 (the previous one 096), latest
+  `delete_my_account` body 096 (re-emitted there from 090); 097 does not define it.
+- Probe before (read-only, `db query --linked`): history `094,095,096` with 097 pending; the 2
+  tables and 4 functions it requires present; `stt_job_id` and the four new functions absent;
+  0 takes, 0 analyses, 0 ledger rows.
+- Not destructive: `ADD COLUMN IF NOT EXISTS` and `CREATE OR REPLACE`. Applied by
+  `db query --linked -f`, exit 0, then `migration repair --status applied 097`
+  (`migration list --linked`: local and remote matched through 097).
+- Probe after: `stt_job_id` present; `voice_analysis_advance`, `_claim`, `_pause`, `_sweep`
+  present; service_role can execute `voice_analysis_claim`, authenticated and anon cannot;
+  authenticated cannot SELECT `stt_job_id`.
+- `supabase/verify/097` on hosted: the CLI does not print NOTICE, so the plain run exits 0
+  with no output (every assertion RAISEs on failure). To print the PASS line, a scratch copy
+  with only the final `RAISE NOTICE` turned into `RAISE EXCEPTION` was run:
+  `VOICE-012 PASS: 097 full protocol (59 asserted cells)`.
+- Afterwards, read-only: 0 seeded users and courses, and 0 rows in `voice_submissions`,
+  `voice_analyses`, `voice_analysis_sends`, `voice_object_deletions`, and 0 objects in the
+  voice bucket.
+
+`VOICE_ANALYSIS_MODE` in production was not inspected (unset means `off` in code). With 097
+applied the routes can run the pipeline on hosted; it still does nothing until the mode is `on`,
+`ASSEMBLYAI_API_KEY` and `CRON_SECRET` are set on Vercel, and OPS-026 is published.
 
 ## Revisit when
 
