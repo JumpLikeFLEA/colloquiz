@@ -1,6 +1,7 @@
 import { inlinePlainText } from "../../lessons/plainText";
 import { parseLessonDocument } from "../../lessons/parseLessonDocument";
 import type { VoiceCompareSlot, VoiceTaskBlock } from "../../lessons/taskBlocks";
+import type { FirstAnalysisContext } from "./schema";
 
 /**
  * Reads what the analysis needs from a lesson document (VOICE-012). The document is
@@ -53,4 +54,29 @@ export function findBeforeBlock(
     if (block) return { lessonId: l.lessonId, blockId: block.id };
   }
   return null;
+}
+
+/**
+ * The goal and main error of a stored first analysis (voice_analyses.result), for the
+ * final comparison that follows it. The row is read back from JSONB, so nothing about
+ * its shape is assumed: a missing or mistyped piece is "not there", and an analysis with
+ * neither a goal nor a main error gives null (the final then runs without a goal to judge).
+ */
+export function firstAnalysisContext(result: unknown): FirstAnalysisContext | null {
+  if (typeof result !== "object" || result === null) return null;
+  const r = result as Record<string, unknown>;
+  const text = (v: unknown) => (typeof v === "string" && v.trim().length > 0 ? v.trim() : null);
+
+  const goal = text(r.goal);
+  let mainError: FirstAnalysisContext["mainError"] = null;
+  if (typeof r.mainError === "number" && Array.isArray(r.errors)) {
+    const e = r.errors[r.mainError];
+    if (typeof e === "object" && e !== null) {
+      const { quote, correction, explanation } = e as Record<string, unknown>;
+      if (text(quote) && text(correction) && text(explanation)) {
+        mainError = { quote: text(quote)!, correction: text(correction)!, explanation: text(explanation)! };
+      }
+    }
+  }
+  return goal || mainError ? { goal, mainError } : null;
 }

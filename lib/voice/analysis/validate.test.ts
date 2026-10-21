@@ -26,6 +26,11 @@ const raw = (over: Partial<RawFirstAnalysis> = {}): RawFirstAnalysis => ({
   ...over,
 });
 
+const finalExtras = {
+  goal_reached: { status: "partly" as const, note: "You used it once." },
+  next_step: "Keep going.",
+};
+
 describe("findQuoteSpan", () => {
   it("finds an exact substring and reports its offsets", () => {
     expect(findQuoteSpan(T, "my mind")).toEqual({ start: 10, end: 17 });
@@ -75,6 +80,7 @@ describe("validateAnalysis: verbatim only", () => {
           ],
           main_error: 0,
         }),
+        ...finalExtras,
         then_now: [
           { then: "before words", now: "I used to", note: "Better." },
           { then: "I was here", now: "I used to", note: "then is not in the first transcript" },
@@ -107,7 +113,7 @@ describe("validateAnalysis: verbatim only", () => {
 
   it("keeps no comparison when there is no baseline, whatever the model returned", () => {
     const out = validateAnalysis(
-      { ...raw(), then_now: [{ then: "x", now: "I used to", note: "n" }] } satisfies RawFinalAnalysis,
+      { ...raw(), ...finalExtras, then_now: [{ then: "x", now: "I used to", note: "n" }] } satisfies RawFinalAnalysis,
       ctx({ kind: "final", firstTranscript: null }),
     );
     expect(out.thenNow).toEqual([]);
@@ -254,6 +260,42 @@ describe("validateAnalysis: goal and coverage", () => {
   it("drops the goal when the task has no goal card", () => {
     expect(validateAnalysis(raw(), ctx({ includeGoal: false })).goal).toBeNull();
     expect(validateAnalysis(raw(), ctx({ includeGoal: true })).goal).toBe("Try one new expression.");
+  });
+
+  it("a first analysis has no goal reached and no next step", () => {
+    const out = validateAnalysis(raw(), ctx({ includeGoal: true }));
+    expect(out.goalReached).toBeNull();
+    expect(out.nextStep).toBeNull();
+  });
+
+  describe("a final comparison", () => {
+    const final = (over: Partial<RawFinalAnalysis> = {}): RawFinalAnalysis => {
+      const { goal: _goal, ...rest } = raw();
+      return { ...rest, then_now: [], ...finalExtras, ...over };
+    };
+    const fctx = (over: Partial<ValidateContext> = {}) =>
+      ctx({ kind: "final", firstTranscript: "before words", includeGoal: false, firstGoal: "Use I used to twice.", ...over });
+
+    it("answers the first goal, names a next step and carries no goal card of its own", () => {
+      const out = validateAnalysis(final(), fctx());
+      expect(out.goal).toBeNull();
+      expect(out.goalReached).toEqual({ status: "partly", note: "You used it once." });
+      expect(out.nextStep).toBe("Keep going.");
+    });
+
+    it("keeps no verdict on a goal it was never given, whatever the model answered", () => {
+      expect(validateAnalysis(final(), fctx({ firstGoal: null })).goalReached).toBeNull();
+      expect(validateAnalysis(final({ goal_reached: null }), fctx()).goalReached).toBeNull();
+    });
+
+    it("drops a verdict with an empty note and an empty next step", () => {
+      const out = validateAnalysis(
+        final({ goal_reached: { status: "reached", note: "  " }, next_step: " " }),
+        fctx(),
+      );
+      expect(out.goalReached).toBeNull();
+      expect(out.nextStep).toBeNull();
+    });
   });
 
   it("records what was analysed", () => {

@@ -14,7 +14,7 @@ import {
   type PipelineDeps,
   type PipelineStore,
 } from "./pipeline";
-import type { RawAnalysis } from "./schema";
+import type { FirstAnalysisContext, RawAnalysis, RawFirstAnalysis } from "./schema";
 
 const ID = "11111111-1111-1111-1111-111111111111";
 const TRANSCRIPT = "I used to uh play football. I made up my mind.";
@@ -146,7 +146,7 @@ describe("runVoiceAnalysis: the whole run", () => {
     const f = t.finished[0];
     expect(f.transcript).toBe(TRANSCRIPT);
     expect(f.instruction).toBe("first");
-    expect(f.promptVersion).toBe("first-v0");
+    expect(f.promptVersion).toBe("first-v1");
     expect(f.model).toBe("claude-sonnet-5-5");
     expect(f.baselineSubmissionId).toBeNull();
     expect(f.result.highlights.map((h) => h.quote)).toEqual(["uh", "I used to"]);
@@ -178,24 +178,54 @@ describe("runVoiceAnalysis: the whole run", () => {
     expect(t.finished[0].transcript).toBe("I said  /transcript  go");
   });
 
-  it("an after task with a baseline gets the final instruction, both transcripts and its goal", async () => {
+  const AFTER_JOB = (firstAnalysis: FirstAnalysisContext | null): LoadedJob => ({
+    ok: true,
+    job: {
+      ...JOB,
+      task: { ...JOB.task, role: "after" },
+      baseline: { submissionId: "22222222-2222-2222-2222-222222222222", transcript: "before words", firstAnalysis },
+    },
+  });
+  const FINAL_RAW: RawAnalysis = (() => {
+    const { goal: _goal, ...rest } = RAW as RawFirstAnalysis;
+    return {
+      ...rest,
+      then_now: [],
+      goal_reached: { status: "partly", note: "You used it once." },
+      next_step: "Keep going.",
+    };
+  })();
+  const finalAnswer = async (): Promise<ClaudeAnalysis> => ({
+    raw: FINAL_RAW,
+    model: "claude-sonnet-5-5",
+    usage: { inputTokens: 1, outputTokens: 1, cacheWriteTokens: 0, cacheReadTokens: 0, effort: "high", stopReason: "end_turn", fallbackRan: false },
+  });
+
+  it("an after task with a baseline gets the final instruction, both transcripts and the first goal", async () => {
     const t = build({
-      job: {
-        ok: true,
-        job: {
-          ...JOB,
-          task: { ...JOB.task, role: "after" },
-          baseline: { submissionId: "22222222-2222-2222-2222-222222222222", transcript: "before words" },
-        },
-      },
+      job: AFTER_JOB({ goal: "Use I used to twice.", mainError: null }),
+      claude: finalAnswer,
     });
     await runVoiceAnalysis(ID, t.deps);
     expect(t.claudeCalls[0].kind).toBe("final");
     expect(t.claudeCalls[0].system).toBe("INSTRUCTION final");
     expect(t.claudeCalls[0].user).toContain("<first_transcript>before words</first_transcript>");
+    expect(t.claudeCalls[0].user).toContain("<first_goal>Use I used to twice.</first_goal>");
+    expect(t.finished[0].result.goal).toBeNull();
+    expect(t.finished[0].result.goalReached).toEqual({ status: "partly", note: "You used it once." });
+    expect(t.finished[0].result.nextStep).toBe("Keep going.");
     expect(t.finished[0].instruction).toBe("final");
-    expect(t.finished[0].promptVersion).toBe("final-v0");
+    expect(t.finished[0].promptVersion).toBe("final-v1");
     expect(t.finished[0].baselineSubmissionId).toBe("22222222-2222-2222-2222-222222222222");
+  });
+
+  it("a final whose before take has no stored goal judges no goal", async () => {
+    const t = build({ job: AFTER_JOB(null), claude: finalAnswer });
+    await runVoiceAnalysis(ID, t.deps);
+    expect(t.claudeCalls[0].kind).toBe("final");
+    expect(t.claudeCalls[0].user).not.toContain("<first_goal>");
+    expect(t.finished[0].result.goalReached).toBeNull();
+    expect(t.finished[0].result.nextStep).toBe("Keep going.");
   });
 
   it("a task with no role gets first without the goal card", async () => {

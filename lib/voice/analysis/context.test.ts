@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findBeforeBlock, voiceTaskInfo } from "./context";
+import { findBeforeBlock, firstAnalysisContext, voiceTaskInfo } from "./context";
 
 const voice = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
@@ -50,5 +50,43 @@ describe("findBeforeBlock", () => {
   it("returns null when no lesson has one", () => {
     expect(findBeforeBlock([{ lessonId: "l1", document: [voice("a", { compare: "after" })] }])).toBeNull();
     expect(findBeforeBlock([])).toBeNull();
+  });
+});
+
+describe("firstAnalysisContext", () => {
+  const stored = {
+    goal: "Use I used to twice.",
+    errors: [
+      { quote: "I go", correction: "I went", explanation: "Past tense.", category: "grammar" },
+      { quote: "he go", correction: "he goes", explanation: "-s.", category: "grammar" },
+    ],
+    mainError: 1,
+  };
+
+  it("reads the goal and the main error out of a stored result", () => {
+    expect(firstAnalysisContext(stored)).toEqual({
+      goal: "Use I used to twice.",
+      mainError: { quote: "he go", correction: "he goes", explanation: "-s." },
+    });
+  });
+
+  it("a result with a goal and no main error keeps the goal", () => {
+    expect(firstAnalysisContext({ ...stored, mainError: null })).toEqual({ goal: stored.goal, mainError: null });
+  });
+
+  it("is null when the result has neither, or is not a result at all", () => {
+    expect(firstAnalysisContext({ goal: null, errors: [], mainError: null })).toBeNull();
+    expect(firstAnalysisContext({ goal: "  " })).toBeNull();
+    for (const junk of [null, undefined, "x", 3, [], { errors: "no", mainError: 0 }]) {
+      expect(firstAnalysisContext(junk)).toBeNull();
+    }
+  });
+
+  it("an index that points at nothing, or an error with a missing piece, is no main error", () => {
+    expect(firstAnalysisContext({ ...stored, mainError: 9, goal: null })).toBeNull();
+    expect(firstAnalysisContext({ goal: "g", mainError: 0, errors: [{ quote: "a", correction: "", explanation: "x" }] })).toEqual({
+      goal: "g",
+      mainError: null,
+    });
   });
 });

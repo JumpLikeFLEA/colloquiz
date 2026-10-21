@@ -10,12 +10,10 @@ import { z } from "zod";
  *   voice_analyses.result: only quotes found verbatim, each with its offsets, and every
  *   count computed by us (the model has no field for a count).
  *
- * The fields mirror prompts/voice-analysis/{first,final}-v0.md; change one, change both
- * and bump VOICE_ANALYSIS_PROMPT_VERSION.
+ * The fields mirror prompts/voice-analysis/{first,final}-<version>.md (instructions.ts says
+ * which version is live); change a field and the instruction together, and ship the pair as a
+ * new version file.
  */
-
-/** Stored in voice_analyses.prompt_version as `<instruction>-<this>`. VOICE-013 ships v1. */
-export const VOICE_ANALYSIS_PROMPT_VERSION = "v0";
 
 export const VOICE_ANALYSIS_INSTRUCTIONS = ["first", "final"] as const;
 export type VoiceAnalysisInstruction = (typeof VOICE_ANALYSIS_INSTRUCTIONS)[number];
@@ -42,18 +40,32 @@ const base = {
   ),
   main_error: z.number().int().nullable(),
   how_it_sounds: z.string(),
-  goal: z.string(),
 };
 
-export const FirstAnalysisSchema = z.object(base);
+export const GOAL_REACHED_STATUSES = ["reached", "partly", "not_yet"] as const;
+
+export const FirstAnalysisSchema = z.object({ ...base, goal: z.string() });
+/**
+ * The final comparison has no `goal`: the goal was set by the first take (VOICE-013). It
+ * answers that goal instead (`goal_reached`, null when no first goal was given to it) and
+ * names one thing to keep doing (`next_step`).
+ */
 export const FinalAnalysisSchema = z.object({
   ...base,
   then_now: z.array(z.object({ then: z.string(), now: z.string(), note: z.string() })),
+  goal_reached: z.object({ status: z.enum(GOAL_REACHED_STATUSES), note: z.string() }).nullable(),
+  next_step: z.string(),
 });
 
 export type RawFirstAnalysis = z.infer<typeof FirstAnalysisSchema>;
 export type RawFinalAnalysis = z.infer<typeof FinalAnalysisSchema>;
 export type RawAnalysis = RawFirstAnalysis | RawFinalAnalysis;
+
+/** What a final comparison is told about the first analysis it follows (VOICE-013). */
+export type FirstAnalysisContext = {
+  goal: string | null;
+  mainError: { quote: string; correction: string; explanation: string } | null;
+};
 
 /** Character offsets into the transcript the analysis was made on (UTF-16 units, end exclusive). */
 export type Span = { start: number; end: number };
@@ -63,8 +75,12 @@ export type StoredAnalysis = {
   kind: VoiceAnalysisInstruction;
   summary: string;
   howItSounds: string;
-  /** Only a `before` task or a final comparison carries a goal (0156 Decision 10). */
+  /** Only a `before` task carries a goal card (0156 Decision 10); every other analysis has null. */
   goal: string | null;
+  /** Final only: how the goal the first analysis set went. Null with no first goal to judge. */
+  goalReached: { status: (typeof GOAL_REACHED_STATUSES)[number]; note: string } | null;
+  /** Final only: one thing to keep doing. Null for a first analysis. */
+  nextStep: string | null;
   expressionsUsed: { expression: string; quote: string; exact: boolean; span: Span }[];
   highlights: { quote: string; kind: (typeof HIGHLIGHT_KINDS)[number]; note: string; span: Span }[];
   errors: {

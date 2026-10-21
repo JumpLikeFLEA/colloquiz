@@ -8,11 +8,12 @@ import { signVoicePlaybackUrl } from "../storage";
 import { VOICE_BUCKET } from "../recording";
 import { createSttClient, type SttClient } from "./assemblyai";
 import { createClaudeAnalyser } from "./claude";
-import { findBeforeBlock, voiceTaskInfo } from "./context";
+import { findBeforeBlock, firstAnalysisContext, voiceTaskInfo } from "./context";
 import { parseVoiceAnalysisMode } from "./mode";
 import {
   runVoiceAnalysis,
   type ClaimResult,
+  type JobContext,
   type LoadedJob,
   type PipelineDeps,
   type PipelineOutcome,
@@ -20,7 +21,8 @@ import {
   type StagedAudio,
 } from "./pipeline";
 import { instructionBody } from "./request";
-import { VOICE_ANALYSIS_PROMPT_VERSION, type VoiceAnalysisInstruction } from "./schema";
+import { instructionFileName } from "./instructions";
+import type { VoiceAnalysisInstruction } from "./schema";
 import { isLoopbackUrl, stagedObjectName } from "./staging";
 
 /**
@@ -39,7 +41,7 @@ const instructionCache = new Map<VoiceAnalysisInstruction, string>();
 export async function readInstruction(kind: VoiceAnalysisInstruction): Promise<string> {
   const cached = instructionCache.get(kind);
   if (cached) return cached;
-  const text = instructionBody(await readFile(join(INSTRUCTION_DIR, `${kind}-${VOICE_ANALYSIS_PROMPT_VERSION}.md`), "utf8"));
+  const text = instructionBody(await readFile(join(INSTRUCTION_DIR, instructionFileName(kind)), "utf8"));
   instructionCache.set(kind, text);
   return text;
 }
@@ -130,7 +132,7 @@ export function createPipelineStore(admin: SupabaseClient): PipelineStore {
       const lookup = voiceTaskInfo(version?.document, sub.block_id);
       if (!lookup.ok) return { ok: false, code: lookup.reason };
 
-      let baseline: { submissionId: string; transcript: string } | null = null;
+      let baseline: JobContext["baseline"] = null;
       if (lookup.task.role === "after") baseline = await loadBaseline(admin, sub);
 
       return { ok: true, job: { objectName: sub.object_name, task: lookup.task, baseline } };
@@ -147,7 +149,7 @@ export function createPipelineStore(admin: SupabaseClient): PipelineStore {
 async function loadBaseline(
   admin: SupabaseClient,
   sub: { user_id: string; course_id: string; enrolment_id: string | null },
-): Promise<{ submissionId: string; transcript: string } | null> {
+): Promise<JobContext["baseline"]> {
   const { data: lessons, error } = await admin
     .from("lessons")
     .select("id, published_version_id")
@@ -179,11 +181,17 @@ async function loadBaseline(
 
   const { data: analysis, error: aErr } = await admin
     .from("voice_analyses")
-    .select("transcript")
+    .select("transcript, result")
     .eq("submission_id", take.id)
     .maybeSingle();
   if (aErr) rpcFailed("voice_analyses read", aErr);
-  return analysis?.transcript ? { submissionId: take.id as string, transcript: analysis.transcript as string } : null;
+  return analysis?.transcript
+    ? {
+        submissionId: take.id as string,
+        transcript: analysis.transcript as string,
+        firstAnalysis: firstAnalysisContext(analysis.result),
+      }
+    : null;
 }
 
 /** See staging.ts for why the take's own URL is never given to the provider. */

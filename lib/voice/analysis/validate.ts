@@ -32,8 +32,10 @@ export type ValidateContext = {
   firstTranscript: string | null;
   /** The task's listenFor list: an expression the model reports must be one of these. */
   expressionsListed: readonly string[];
-  /** A `before` task or a final comparison; any other task has no goal card. */
+  /** A `before` task only; any other task has no goal card. */
   includeGoal: boolean;
+  /** The goal the first analysis set, for a final: `goal_reached` is kept only when there is one. */
+  firstGoal?: string | null;
   /** Seconds of the take that were analysed (null when unknown), and whether it was longer. */
   analysedSeconds: number | null;
   truncated: boolean;
@@ -145,7 +147,16 @@ export function validateAnalysis(raw: RawAnalysis, ctx: ValidateContext): Stored
     dropped.thenNow += raw.then_now.length;
   }
 
-  const goal = ctx.includeGoal ? clamp(raw.goal) : "";
+  const goal = ctx.includeGoal && "goal" in raw ? clamp(raw.goal) : "";
+  let goalReached: StoredAnalysis["goalReached"] = null;
+  let nextStep: string | null = null;
+  if ("next_step" in raw && ctx.kind === "final") {
+    const note = raw.goal_reached ? clamp(raw.goal_reached.note) : "";
+    // Judging a goal nobody gave the model is made up, whatever it answered.
+    if (raw.goal_reached && note && ctx.firstGoal) goalReached = { status: raw.goal_reached.status, note };
+    const step = clamp(raw.next_step);
+    nextStep = step.length > 0 ? step : null;
+  }
 
   return {
     v: 1,
@@ -153,6 +164,8 @@ export function validateAnalysis(raw: RawAnalysis, ctx: ValidateContext): Stored
     summary: clamp(raw.summary),
     howItSounds: clamp(raw.how_it_sounds),
     goal: goal.length > 0 ? goal : null,
+    goalReached,
+    nextStep,
     expressionsUsed,
     highlights,
     errors,

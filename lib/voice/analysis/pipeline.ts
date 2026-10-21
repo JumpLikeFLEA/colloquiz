@@ -10,6 +10,7 @@ import {
 } from "./schema";
 import type { SttClient } from "./assemblyai";
 import { validateAnalysis } from "./validate";
+import type { FirstAnalysisContext } from "./schema";
 
 /**
  * One take, from "sent" to "stored" (VOICE-012, docs/decisions/0156 Decisions 1, 4, 5, 0187).
@@ -39,8 +40,12 @@ export type JobContext = {
   /** NULL once the retention purge removed the audio (060). */
   objectName: string | null;
   task: VoiceTaskInfo;
-  /** The learner's `before` take, for an `after` task: its transcript and the take's id. */
-  baseline: { submissionId: string; transcript: string } | null;
+  /**
+   * The learner's `before` take, for an `after` task: its transcript, the take's id and what
+   * its stored analysis set (goal, main error). `firstAnalysis` is null when that take has no
+   * analysis, or one with neither (a take analysed before VOICE-013 still has a goal).
+   */
+  baseline: { submissionId: string; transcript: string; firstAnalysis: FirstAnalysisContext | null } | null;
 };
 
 export type LoadedJob = { ok: true; job: JobContext } | { ok: false; code: string };
@@ -195,6 +200,7 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
         expressions: job.task.listenFor,
         transcript,
         firstTranscript,
+        firstAnalysis: choice.kind === "final" ? (job.baseline?.firstAnalysis ?? null) : null,
       }),
     });
 
@@ -205,6 +211,7 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
       firstTranscript,
       expressionsListed: job.task.listenFor,
       includeGoal: choice.includeGoal,
+      firstGoal: choice.kind === "final" ? (job.baseline?.firstAnalysis?.goal ?? null) : null,
       analysedSeconds: audioSeconds === null ? null : Math.min(Math.round(audioSeconds), VOICE_ANALYSIS_MAX_SECONDS),
       truncated,
     });
