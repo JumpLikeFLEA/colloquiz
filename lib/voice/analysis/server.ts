@@ -36,7 +36,7 @@ const INSTRUCTION_DIR = join(process.cwd(), "prompts", "voice-analysis");
 const instructionCache = new Map<VoiceAnalysisInstruction, string>();
 
 /** Read from the repo's prompts/ folder, which next.config's outputFileTracingIncludes ships with the routes. */
-async function readInstruction(kind: VoiceAnalysisInstruction): Promise<string> {
+export async function readInstruction(kind: VoiceAnalysisInstruction): Promise<string> {
   const cached = instructionCache.get(kind);
   if (cached) return cached;
   const text = instructionBody(await readFile(join(INSTRUCTION_DIR, `${kind}-${VOICE_ANALYSIS_PROMPT_VERSION}.md`), "utf8"));
