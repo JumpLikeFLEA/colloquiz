@@ -1,7 +1,7 @@
 # 0185 — VOICE-011: the analysis table, the send ledger and the caps
 
 Status: written 2026-10-21 (VOICE-011, #233). Migration 096 is applied to the local stack
-only. It is NOT applied to hosted (the card says "Written, not applied"; see "Hosted").
+and, at the owner's instruction, to hosted on 2026-10-21 (see "Hosted").
 
 ## Context
 
@@ -96,12 +96,33 @@ the pipeline on top of what this card stores.
 
 ## Hosted
 
-Not applied. 096 changes `submit_voice_recording`, `delete_my_account` and adds two tables,
-none destructive, so the hosted-apply gate could pass, but the card says "Written, not
-applied". When it is applied: the gate's probes first (the re-emitted bodies are 094's
-`submit_voice_recording` and 090's `delete_my_account`), then
-`supabase/verify/096_voice_analyses.sql`, with the earlier scripts re-run (list in the
-card's evidence comment).
+Applied 2026-10-21 through the hosted-apply gate, at the owner's instruction after the card
+was committed (the card said "Written, not applied"; the owner then asked for the apply and
+the verify script).
+
+- Print rule right before applying: latest migration 095, latest `delete_my_account` body
+  090, working tree clean.
+- Probe before (read-only, `db query --linked`): history matched through 095 with 096
+  pending; the 6 required functions and 6 required tables present; `enrolment_id` nullable;
+  `voice_analyses`, `voice_analysis_sends` and the 6 new functions absent; `submit_voice_recording`
+  and `delete_my_account` without `voice_analysis`; `delete_my_account` is 090's (it names
+  `calendar_feed_tokens` and `telegram_links`); 0 `voice_submissions`.
+- Not destructive: `CREATE ... IF NOT EXISTS`, `CREATE OR REPLACE`, and `DROP POLICY / TRIGGER
+  IF EXISTS` of the migration's own new objects. Applied by `db query --linked -f`, exit 0,
+  then `migration repair --status applied 096` (`migration list --linked`: 095 and 096 both
+  matched).
+- Probe after: 2 tables, 6 functions, the trigger, RLS on both tables; `submit_voice_recording`
+  and `delete_my_account` now name `voice_analysis_sends`; authenticated cannot SELECT the
+  ledger or execute `voice_analysis_finish`, service_role can.
+- `supabase/verify/096` on hosted: the CLI does not print NOTICE, so the plain run exits 0 with
+  no output (every assertion RAISEs on failure). To print the PASS line, a scratch copy with
+  only the final `RAISE NOTICE` turned into `RAISE EXCEPTION` was run:
+  `VOICE-011 PASS: 096 full protocol (100 asserted cells)`.
+- Afterwards, read-only: 0 seeded users, courses and seats, and 0 rows in `voice_analysis_sends`,
+  `voice_analyses`, `voice_submissions`, the voice bucket and `voice_object_deletions`.
+
+`VOICE_ANALYSIS_MODE` in production was not inspected (unset means `off` in code, 0183
+Decision 10). With 096 applied nothing in the app writes an analysis yet (VOICE-012).
 
 ## Revisit when
 
