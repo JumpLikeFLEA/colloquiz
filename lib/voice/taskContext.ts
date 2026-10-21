@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FeedbackContentSchema, type FeedbackContent } from "../feedback/content";
+import { parseVoiceAnalysisMode, type VoiceAnalysisMode } from "./analysis/mode";
 
 /**
  * What a lesson page tells its voice blocks (VOICE-005, docs/decisions/0111).
@@ -52,17 +53,9 @@ export type VoiceTasksContext = VoiceTasksMode & {
   renderAsk?: (blockId: string) => ReactNode;
 };
 
-/**
- * 0156 Decision 6's global switch, read from VOICE_ANALYSIS_MODE. Anything but
- * `on` or `paused` is `off`, so a missing or misspelt value fails closed:
- * production stays off until OPS-026's legal revision is published.
- */
-export type VoiceAnalysisMode = "off" | "paused" | "on";
-
-export function parseVoiceAnalysisMode(raw: string | null | undefined): VoiceAnalysisMode {
-  const v = raw?.trim().toLowerCase();
-  return v === "on" || v === "paused" ? v : "off";
-}
+// The switch itself lives in analysis/mode.ts (VOICE-012); re-exported for the lesson page.
+export { parseVoiceAnalysisMode };
+export type { VoiceAnalysisMode };
 
 /**
  * Which slot the recorder should offer Send for, or null for practice only.
