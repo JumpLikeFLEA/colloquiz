@@ -116,10 +116,11 @@ RETURNS TEXT LANGUAGE sql AS $$
   SELECT 'claimed:' || (c->>'claimed') || ':' || (c->>'status') FROM (SELECT pg_temp.claim(p_sub, p_seconds) AS c) x;
 $$;
 
-CREATE FUNCTION pg_temp.advance(p_sub UUID, p_status TEXT, p_job TEXT DEFAULT NULL, p_transcript TEXT DEFAULT NULL)
+CREATE FUNCTION pg_temp.advance(p_sub UUID, p_status TEXT, p_job TEXT DEFAULT NULL, p_transcript TEXT DEFAULT NULL,
+                                p_audio NUMERIC DEFAULT NULL)
 RETURNS TEXT LANGUAGE sql AS $$
-  SELECT pg_temp.as_service(format($q$ SELECT public.voice_analysis_advance(%L, %L, %L, %L)::text $q$,
-                                   p_sub, p_status, p_job, p_transcript));
+  SELECT pg_temp.as_service(format($q$ SELECT public.voice_analysis_advance(%L, %L, %L, %L, %L)::text $q$,
+                                   p_sub, p_status, p_job, p_transcript, p_audio));
 $$;
 
 CREATE FUNCTION pg_temp.pause(p_sub UUID)
@@ -174,17 +175,17 @@ BEGIN
   -- ── 0. Static facts --------------------------------------------------------
   PERFORM pg_temp.check_eq('claim / advance / pause / sweep: service_role yes [positive control]',
     has_function_privilege('service_role', 'public.voice_analysis_claim(uuid,integer)', 'EXECUTE')::text || '/' ||
-    has_function_privilege('service_role', 'public.voice_analysis_advance(uuid,text,text,text,integer)', 'EXECUTE')::text || '/' ||
+    has_function_privilege('service_role', 'public.voice_analysis_advance(uuid,text,text,text,numeric,integer)', 'EXECUTE')::text || '/' ||
     has_function_privilege('service_role', 'public.voice_analysis_pause(uuid)', 'EXECUTE')::text || '/' ||
     has_function_privilege('service_role', 'public.voice_analysis_sweep(interval)', 'EXECUTE')::text, 'true/true/true/true');
   PERFORM pg_temp.check_eq('claim / advance / pause / sweep: authenticated no',
     has_function_privilege('authenticated', 'public.voice_analysis_claim(uuid,integer)', 'EXECUTE')::text || '/' ||
-    has_function_privilege('authenticated', 'public.voice_analysis_advance(uuid,text,text,text,integer)', 'EXECUTE')::text || '/' ||
+    has_function_privilege('authenticated', 'public.voice_analysis_advance(uuid,text,text,text,numeric,integer)', 'EXECUTE')::text || '/' ||
     has_function_privilege('authenticated', 'public.voice_analysis_pause(uuid)', 'EXECUTE')::text || '/' ||
     has_function_privilege('authenticated', 'public.voice_analysis_sweep(interval)', 'EXECUTE')::text, 'false/false/false/false');
   PERFORM pg_temp.check_eq('claim / advance / pause / sweep: anon no',
     has_function_privilege('anon', 'public.voice_analysis_claim(uuid,integer)', 'EXECUTE')::text || '/' ||
-    has_function_privilege('anon', 'public.voice_analysis_advance(uuid,text,text,text,integer)', 'EXECUTE')::text || '/' ||
+    has_function_privilege('anon', 'public.voice_analysis_advance(uuid,text,text,text,numeric,integer)', 'EXECUTE')::text || '/' ||
     has_function_privilege('anon', 'public.voice_analysis_pause(uuid)', 'EXECUTE')::text || '/' ||
     has_function_privilege('anon', 'public.voice_analysis_sweep(interval)', 'EXECUTE')::text, 'false/false/false/false');
   PERFORM pg_temp.check_eq('stt_job_id: not readable by authenticated; transcript is [positive control]',
@@ -222,7 +223,9 @@ BEGIN
   SELECT lease_until INTO v_lease FROM voice_analyses WHERE submission_id = sa;
   PERFORM pg_temp.check_eq('advance renews the lease (150 s)', (v_lease > now() + interval '140 seconds')::text, 'true');
   PERFORM pg_temp.check_eq('transcribing -> analysing with the transcript; the job id is kept',
-    pg_temp.advance(sa, 'analysing', NULL, 'the transcript text goes here'), 'true');
+    pg_temp.advance(sa, 'analysing', NULL, 'the transcript text goes here', 212.5), 'true');
+  PERFORM pg_temp.check_eq('the take''s length is kept in usage',
+    (SELECT usage->>'audioSeconds' FROM voice_analyses WHERE submission_id = sa), '212.5');
   PERFORM pg_temp.check_eq('the row reads analysing, job kept, transcript stored',
     pg_temp.row_of(sa), 'analysing/job-1/the transcript text /-');
   PERFORM pg_temp.check_eq('going backwards (analysing -> transcribing) matches nothing',
@@ -232,8 +235,9 @@ BEGIN
     pg_temp.advance(sa, 'done'), 'ERR:P0001');
   UPDATE voice_analyses SET lease_until = now() - interval '1 second' WHERE submission_id = sa;
   PERFORM pg_temp.check_eq('a claim on an analysing row hands back the job and the transcript',
-    (SELECT (c->>'status') || '/' || (c->>'stt_job_id') || '/' || left(c->>'transcript', 14) FROM (SELECT pg_temp.claim(sa) AS c) y),
-    'analysing/job-1/the transcript');
+    (SELECT (c->>'status') || '/' || (c->>'stt_job_id') || '/' || left(c->>'transcript', 14) || '/' || (c->>'audio_seconds')
+       FROM (SELECT pg_temp.claim(sa) AS c) y),
+    'analysing/job-1/the transcript/212.5');
   PERFORM pg_temp.check_eq('finish (096) takes the advanced row to done [positive control]', pg_temp.finish(sa), 'true');
   PERFORM pg_temp.check_eq('a finished row cannot be advanced', pg_temp.advance(sa, 'analysing', 'job-3'), 'false');
   PERFORM pg_temp.check_eq('a finished row is not claimable: claimed false, status done', pg_temp.claim_s(sa), 'claimed:false:done');

@@ -27,8 +27,10 @@
 -- the send's own after() and the re-claim by the status route.
 --
 -- ── 3. voice_analysis_advance(...)                       service_role ───
--- Moves a row forward only (pending -> transcribing -> analysing), records the job id and
--- the transcript, and renews the lease. A late or repeated call matches nothing.
+-- Moves a row forward only (pending -> transcribing -> analysing), records the job id, the
+-- transcript and the take's length in seconds (in `usage`, which finish later replaces
+-- with the full figure), and renews the lease. A late or repeated call matches nothing.
+-- The seconds are kept so a re-claimed row can still say whether the 180 s cap cut it.
 --
 -- ── 4. voice_analysis_pause(submission)                  service_role ───
 -- 0185 Decision 10: under VOICE_ANALYSIS_MODE paused (or off) the send is given back. The
@@ -63,6 +65,7 @@ DECLARE
   v_status     TEXT;
   v_job        TEXT;
   v_transcript TEXT;
+  v_audio      NUMERIC;
   v_seconds    INTEGER := LEAST(GREATEST(COALESCE(p_lease_seconds, 150), 10), 600);
 BEGIN
   UPDATE voice_analyses
@@ -70,10 +73,12 @@ BEGIN
    WHERE submission_id = p_submission_id
      AND status IN ('pending', 'transcribing', 'analysing')
      AND (lease_until IS NULL OR lease_until <= now())
-  RETURNING status, stt_job_id, transcript INTO v_status, v_job, v_transcript;
+  RETURNING status, stt_job_id, transcript, (usage->>'audioSeconds')::NUMERIC
+       INTO v_status, v_job, v_transcript, v_audio;
 
   IF FOUND THEN
-    RETURN jsonb_build_object('claimed', true, 'status', v_status, 'stt_job_id', v_job, 'transcript', v_transcript);
+    RETURN jsonb_build_object('claimed', true, 'status', v_status, 'stt_job_id', v_job,
+                              'transcript', v_transcript, 'audio_seconds', v_audio);
   END IF;
 
   SELECT status INTO v_status FROM voice_analyses WHERE submission_id = p_submission_id;
@@ -91,6 +96,7 @@ CREATE OR REPLACE FUNCTION voice_analysis_advance(
   p_status        TEXT,
   p_stt_job_id    TEXT    DEFAULT NULL,
   p_transcript    TEXT    DEFAULT NULL,
+  p_audio_seconds NUMERIC DEFAULT NULL,
   p_lease_seconds INTEGER DEFAULT 150
 )
 RETURNS BOOLEAN
@@ -110,6 +116,8 @@ BEGIN
      SET status      = p_status,
          stt_job_id  = COALESCE(p_stt_job_id, stt_job_id),
          transcript  = COALESCE(p_transcript, transcript),
+         usage       = CASE WHEN p_audio_seconds IS NULL THEN usage
+                            ELSE COALESCE(usage, '{}'::jsonb) || jsonb_build_object('audioSeconds', p_audio_seconds) END,
          lease_until = now() + make_interval(secs => v_seconds),
          updated_at  = now()
    WHERE submission_id = p_submission_id
@@ -119,8 +127,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION voice_analysis_advance(UUID, TEXT, TEXT, TEXT, INTEGER) FROM public, anon, authenticated;
-GRANT EXECUTE ON FUNCTION voice_analysis_advance(UUID, TEXT, TEXT, TEXT, INTEGER) TO service_role;
+REVOKE ALL ON FUNCTION voice_analysis_advance(UUID, TEXT, TEXT, TEXT, NUMERIC, INTEGER) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION voice_analysis_advance(UUID, TEXT, TEXT, TEXT, NUMERIC, INTEGER) TO service_role;
 
 
 -- ── 4. pause ────────────────────────────────────────────────────────────

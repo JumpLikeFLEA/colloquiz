@@ -74,6 +74,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // VOICE-012 (docs/decisions/0187): the analysis instructions are read from disk at request
+  // time (lib/voice/analysis/server.ts), so the routes that run the pipeline ship the folder.
+  outputFileTracingIncludes: {
+    "/api/voice/**": ["./prompts/voice-analysis/**/*"],
+  },
   // Drop the `X-Powered-By: Next.js` banner — no reason to advertise the stack.
   poweredByHeader: false,
   // Required because app/(english)/ and app/(colloquiz)/ are now two root

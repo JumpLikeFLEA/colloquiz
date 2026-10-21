@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["dub1"],
-  "crons": [{ "path": "/api/cron/voice-purge", "schedule": "41 3 * * *" }]
+  "crons": [
+    { "path": "/api/cron/voice-purge", "schedule": "41 3 * * *" },
+    { "path": "/api/cron/voice-analysis-sweep", "schedule": "47 3 * * *" }
+  ]
 }
