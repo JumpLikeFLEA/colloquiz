@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { canEditCourse } from "@/lib/courseAccess";
-import { getLessonContentDraft, listLessonVersions } from "@/lib/lessonContentAuthoring";
+import { getCourseBeforeListenFor, getLessonContentDraft, listLessonVersions } from "@/lib/lessonContentAuthoring";
 import { LessonContentEditor } from "./LessonContentEditor";
 
 // Gated on can_edit_course(courseId) — admin or this course's delegated
@@ -31,7 +31,17 @@ export default async function LessonContentPage({
   const draft = await getLessonContentDraft(lessonId);
   if (!draft || draft.courseId !== courseId) notFound();
 
-  const versions = await listLessonVersions(lessonId);
+  const [versions, courseBeforeListenFor] = await Promise.all([
+    listLessonVersions(lessonId),
+    getCourseBeforeListenFor(lessonId),
+  ]);
 
-  return <LessonContentEditor courseId={courseId} draft={draft} initialVersions={versions} />;
+  return (
+    <LessonContentEditor
+      courseId={courseId}
+      draft={draft}
+      initialVersions={versions}
+      courseBeforeListenFor={courseBeforeListenFor}
+    />
+  );
 }

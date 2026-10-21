@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, History } from "lucide-react";
-import { parseLessonDocument, serializeLessonDocument, type LessonBlock } from "@/lib/lessons";
+import { beforeListenFor, parseLessonDocument, serializeLessonDocument, type LessonBlock } from "@/lib/lessons";
 import { mapParseErrorsToFieldErrors, type LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
 import {
   LESSON_IMAGE_BUCKET,
@@ -19,6 +19,7 @@ import { lessonPublishStatus } from "@/lib/lessonPublishStatus";
 import { createClient } from "@/lib/supabase/client";
 import type { LessonContentDraft, LessonVersionSummary } from "@/lib/lessonContentAuthoring";
 import { BlockList } from "./BlockList";
+import { BeforeListenForProvider } from "./VoiceTaskForm";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
 import type { LessonImageKind, UploadLessonImage } from "./LessonImageUploadButton";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
@@ -53,10 +54,14 @@ function LessonContentEditorInner({
   courseId,
   draft,
   initialVersions,
+  courseBeforeListenFor,
 }: {
   courseId: string;
   draft: LessonContentDraft;
   initialVersions: LessonVersionSummary[];
+  /** The course's published "before" task's expressions (AUTH-020), for a
+   * new "after" task to start from when this lesson has no "before" of its own. */
+  courseBeforeListenFor?: string[];
 }) {
   const [blocks, setBlocks] = useState<LessonBlock[]>(() => initialBlocks(draft.document));
   const [baseVersionId, setBaseVersionId] = useState<string | null>(draft.baseVersionId);
@@ -266,7 +271,9 @@ function LessonContentEditorInner({
         </div>
       )}
 
-      <BlockList blocks={blocks} onChange={updateBlocks} fieldErrors={fieldErrors} onUploadImage={uploadLessonImage} />
+      <BeforeListenForProvider value={beforeListenFor([blocks]) ?? courseBeforeListenFor}>
+        <BlockList blocks={blocks} onChange={updateBlocks} fieldErrors={fieldErrors} onUploadImage={uploadLessonImage} />
+      </BeforeListenForProvider>
 
       <VersionHistoryPanel
         open={historyOpen}

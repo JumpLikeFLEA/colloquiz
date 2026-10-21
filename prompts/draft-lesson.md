@@ -264,7 +264,8 @@ answers in writing (docs/handoff.md, "Item types").
 ```
 voice: { id, kind:"task", type:"voice", prompt: InlineContent,
          maxSeconds: integer 15–600 (default 180),
-         compare?: "before"|"after" }
+         compare?: "before"|"after",
+         listenFor?: string[] }
 ```
 
 - Emit a `voice` task ONLY where the PDF asks the learner to speak or
@@ -277,6 +278,10 @@ voice: { id, kind:"task", type:"voice", prompt: InlineContent,
   a course has at most ONE "before" and ONE "after" across ALL its lessons
   (publishing refuses a second). When unsure, leave it out and add a QA
   note naming the block.
+- `listenFor` = the lesson's own target expressions the learner is meant to
+  use, taken from the PDF's phrase lists or "useful language" boxes, at most
+  12, each 1-60 characters, no repeats. Leave it out when the PDF names none;
+  never invent expressions.
 - A speaking task that only asks the learner to say something to themselves,
   with nothing to send, is a `self_check` with `response: "none"`, not a
   `voice` task.

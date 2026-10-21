@@ -2544,3 +2544,21 @@ Appended to in the same commit as the change it records. Referenced from
   erased.", without the Colloquiz entry's "Thanks for using Colloquiz." A bare `/login`
   keeps the old wording. The box is the existing emerald notice; no layout change. Wording
   chosen in `lib/loginNotice.ts`. Do not put the Colloquiz name back on the English entry.
+- Voice task: "Expressions to listen for" (2026-10-21, AUTH-020, docs/decisions/0186). The
+  Studio lesson editor's voice-task form gains an optional textarea below the Before / after
+  Select: one expression per line, at most 12 lines of 60 characters, with a muted hint and an
+  `N / 12` counter (`text-xs tabular-nums`, `text-destructive-text` over 12). The schema's
+  messages show under the field (`text-xs text-destructive-text`), for the whole list and for a
+  line. Setting a task to After while its list is empty fills it from the Before task's list,
+  once; a list the author wrote is never overwritten. Studio only: no learner page shows the
+  field yet (VOICE-014). Existing classes and tokens (`inputClass`, `labelClass`); no new
+  colours. Measured at 360px (local stack, seeded editor, `scrollWidth/innerWidth`): 360/360 with
+  the task added and the list empty, with three lines including a 70-character unbroken word,
+  with 13 lines (counter red), and after Save with the over-12 error and with a duplicate (the
+  field 37 to 323 px inside a 21 to 339 px card, counter right edge 323). The copy was checked in a browser at 1280px: with the
+  course's published Before task listing two expressions in another lesson, switching the After
+  task from None to After filled the field with both lines. The lesson editor
+  page already has elements wider than 360px at load (the Preview / History / Save row and block
+  rows reach 456px inside Studio's scroll container; measured before this change), which is not
+  from this field and is not fixed here. Do not store an empty array, and do not copy the
+  Before list over an After list the author has written.

@@ -33,6 +33,25 @@ export const VOICE_MAX_SECONDS = 600;
  * (0097 "Max duration"; chosen in docs/decisions/0100). */
 export const VOICE_DEFAULT_SECONDS = 180;
 
+/** "Expressions to listen for" (AUTH-020, docs/decisions/0156 Decision 8): the
+ * lesson's chunks the voice analysis looks for in the transcript. Bounds keep
+ * the instruction short and a line a phrase, not a paragraph. */
+export const VOICE_LISTEN_FOR_MAX_ITEMS = 12;
+export const VOICE_LISTEN_FOR_MAX_LENGTH = 60;
+
+const ListenForSchema = z
+  .array(
+    z
+      .string()
+      .trim()
+      .min(1, "An expression cannot be empty.")
+      .max(VOICE_LISTEN_FOR_MAX_LENGTH, `An expression is at most ${VOICE_LISTEN_FOR_MAX_LENGTH} characters.`),
+  )
+  .max(VOICE_LISTEN_FOR_MAX_ITEMS, `List at most ${VOICE_LISTEN_FOR_MAX_ITEMS} expressions.`)
+  .refine((items) => new Set(items).size === items.length, {
+    message: "Each expression can be listed once.",
+  });
+
 export const VoiceTaskBlockSchema = z.strictObject({
   id: z.string().min(1),
   kind: z.literal("task"),
@@ -42,6 +61,7 @@ export const VoiceTaskBlockSchema = z.strictObject({
   prompt: InlineContentSchema,
   maxSeconds: z.number().int().min(VOICE_MIN_SECONDS).max(VOICE_MAX_SECONDS),
   compare: z.enum(VOICE_COMPARE_SLOTS).optional(),
+  listenFor: ListenForSchema.optional(),
 });
 
 export const TaskBlockSchema = z.discriminatedUnion("type", [VoiceTaskBlockSchema]);

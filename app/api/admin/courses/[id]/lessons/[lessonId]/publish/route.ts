@@ -3,12 +3,12 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { courseAuthoringErrorResponse } from "@/lib/courseAuthoringErrors";
+import { otherPublishedLessons } from "@/lib/lessonContentAuthoring";
 import {
   countPracticeBlocks,
   parseLessonDocument,
   voiceCompareConflictMessage,
   voiceCompareConflicts,
-  type OtherPublishedLesson,
 } from "@/lib/lessons";
 
 const PublishSchema = z.object({
@@ -98,49 +98,4 @@ export async function POST(
     console.error(e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
-
-// The publishing lesson's course is read from the lesson row, never from the
-// URL, so a mismatched `[id]` segment cannot point the check at another
-// course. Archived lessons are included: unarchiving one must not bring back
-// a second "before". Read under the caller's session; the editor read
-// policy on lesson_versions (041) covers every version of a course they edit.
-async function otherPublishedLessons(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  lessonId: string,
-): Promise<OtherPublishedLesson[]> {
-  const { data: lesson, error: lessonErr } = await supabase
-    .from("lessons")
-    .select("course_id")
-    .eq("id", lessonId)
-    .maybeSingle();
-  if (lessonErr) throw new Error(lessonErr.message);
-  if (!lesson) return [];
-
-  const { data: lessons, error: lessonsErr } = await supabase
-    .from("lessons")
-    .select("id, title, published_version_id")
-    .eq("course_id", lesson.course_id)
-    .neq("id", lessonId)
-    .not("published_version_id", "is", null);
-  if (lessonsErr) throw new Error(lessonsErr.message);
-  if (!lessons || lessons.length === 0) return [];
-
-  const versionIds = lessons.map((l) => l.published_version_id as string);
-  const { data: versions, error: versionsErr } = await supabase
-    .from("lesson_versions")
-    .select("id, document")
-    .in("id", versionIds);
-  if (versionsErr) throw new Error(versionsErr.message);
-  const documentByVersion = new Map((versions ?? []).map((v) => [v.id as string, v.document as unknown]));
-
-  // Fail closed: a published version this session cannot read would
-  // otherwise count as "no voice task" and let a second "before" through.
-  return lessons.map((l) => {
-    const document = documentByVersion.get(l.published_version_id as string);
-    if (document === undefined) {
-      throw new Error(`publish: could not read published version of lesson ${l.id} for the voice-task check`);
-    }
-    return { lessonId: l.id as string, title: l.title as string, document };
-  });
 }

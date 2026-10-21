@@ -21,5 +21,6 @@ export function inlinePlainText(content: InlineContent): string {
  */
 export function voiceTaskPlainText(block: VoiceTaskBlock): string {
   const slot = block.compare ? ` (${block.compare})` : "";
-  return `Voice task${slot} — up to ${formatVoiceDuration(block.maxSeconds)}\n${inlinePlainText(block.prompt)}`;
+  const listenFor = block.listenFor?.length ? `\nListen for: ${block.listenFor.join("; ")}` : "";
+  return `Voice task${slot} — up to ${formatVoiceDuration(block.maxSeconds)}\n${inlinePlainText(block.prompt)}${listenFor}`;
 }

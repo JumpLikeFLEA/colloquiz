@@ -86,6 +86,50 @@ describe("parseLessonDocument — voice task blocks (VOICE-003)", () => {
   });
 });
 
+describe("voice task listenFor (AUTH-020)", () => {
+  const parse = (listenFor: unknown) => parseLessonDocument([voiceBlock("v1", { listenFor })]);
+
+  it("accepts a list and trims each expression", () => {
+    const result = parse(["  I used to  ", "by the time"]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.document[0]).toMatchObject({ listenFor: ["I used to", "by the time"] });
+  });
+
+  it("accepts 12 items of 60 characters, the limits themselves", () => {
+    const items = Array.from({ length: 12 }, (_, i) => String(i).padStart(2, "0") + "x".repeat(58));
+    expect(items[0]).toHaveLength(60);
+    expect(parse(items).ok).toBe(true);
+  });
+
+  it("keeps a block without the field valid and does not add one", () => {
+    const result = parseLessonDocument([voiceBlock("v1")]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.document[0]).not.toHaveProperty("listenFor");
+  });
+
+  it.each([
+    ["13 items", Array.from({ length: 13 }, (_, i) => "item " + i), "v1: listenFor"],
+    ["a 61-character item", ["x".repeat(61)], "v1: listenFor[0]"],
+    ["an empty item", [""], "v1: listenFor[0]"],
+    ["a blank item (empty after trimming)", ["   "], "v1: listenFor[0]"],
+    ["a duplicate", ["by the time", "by the time"], "v1: listenFor"],
+    ["a duplicate that differs only in surrounding spaces", ["by the time", " by the time "], "v1: listenFor"],
+    ["a non-array", "by the time", "v1: listenFor"],
+    ["a non-string item", [3], "v1: listenFor[0]"],
+  ])("rejects %s and names the field", (_label, listenFor, field) => {
+    const result = parse(listenFor);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.map((e) => e.field)).toContain(field);
+  });
+
+  it("round-trips through serializeLessonDocument unchanged", () => {
+    const first = parseLessonDocument([voiceBlock("v1", { compare: "after", listenFor: ["I used to"] })]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(parseLessonDocument(serializeLessonDocument(first.document))).toEqual(first);
+  });
+});
+
 describe("a voice task leaves count, score and completion alone", () => {
   const withVoice = parseLessonDocument([proseBlock("p1"), voiceBlock("v1"), selectionBlock("q1"), voiceBlock("v2")]);
   const withoutVoice = parseLessonDocument([proseBlock("p1"), selectionBlock("q1")]);

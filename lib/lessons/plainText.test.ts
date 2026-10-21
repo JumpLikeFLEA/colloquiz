@@ -20,6 +20,32 @@ describe("voiceTaskPlainText", () => {
       voiceTaskPlainText({ id: "v2", kind: "task", type: "voice", prompt: [{ text: "Say hello." }], maxSeconds: 90 }),
     ).toBe("Voice task — up to 1 min 30 s\nSay hello.");
   });
+
+  it("lists the expressions to listen for on their own line (AUTH-020)", () => {
+    expect(
+      voiceTaskPlainText({
+        id: "v3",
+        kind: "task",
+        type: "voice",
+        prompt: [{ text: "Say hello." }],
+        maxSeconds: 90,
+        listenFor: ["I used to", "by the time"],
+      }),
+    ).toBe("Voice task — up to 1 min 30 s\nSay hello.\nListen for: I used to; by the time");
+  });
+
+  it("adds no line for an empty list", () => {
+    expect(
+      voiceTaskPlainText({
+        id: "v4",
+        kind: "task",
+        type: "voice",
+        prompt: [{ text: "Say hello." }],
+        maxSeconds: 90,
+        listenFor: [],
+      }),
+    ).toBe("Voice task — up to 1 min 30 s\nSay hello.");
+  });
 });
 
 describe("inlinePlainText", () => {

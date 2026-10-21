@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { parseLessonDocument, type LessonDocument } from "./parseLessonDocument";
-import { voiceCompareConflictMessage, voiceCompareConflicts, type OtherPublishedLesson } from "./voiceCompare";
+import {
+  beforeListenFor,
+  voiceCompareConflictMessage,
+  voiceCompareConflicts,
+  type OtherPublishedLesson,
+} from "./voiceCompare";
 
 function voice(id: string, compare?: "before" | "after") {
   return {
@@ -75,5 +80,27 @@ describe("voiceCompareConflicts — across two lessons", () => {
     const conflicts = voiceCompareConflicts(LESSON_2, doc(voice("v2", "before")), others);
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0]).toMatchObject({ otherLessonId: LESSON_1 });
+  });
+});
+
+describe("beforeListenFor (AUTH-020)", () => {
+  const withList = (id: string, compare: "before" | "after", listenFor: unknown) => ({ ...voice(id, compare), listenFor });
+
+  it("reads the list of the first 'before' task, across documents", () => {
+    const lesson1 = [prose("p1"), withList("b", "before", ["I used to", "by the time"])];
+    const lesson2 = [withList("a", "after", ["something else"])];
+    expect(beforeListenFor([lesson2, lesson1])).toEqual(["I used to", "by the time"]);
+  });
+
+  it("is undefined when the 'before' task lists nothing, there is none, or only an 'after' has a list", () => {
+    expect(beforeListenFor([[voice("b", "before")]])).toBeUndefined();
+    expect(beforeListenFor([[withList("b", "before", [])]])).toBeUndefined();
+    expect(beforeListenFor([[prose("p1")], [withList("a", "after", ["x"])]])).toBeUndefined();
+    expect(beforeListenFor([])).toBeUndefined();
+  });
+
+  it("does not throw on a document or a list written under another shape", () => {
+    expect(beforeListenFor([null, "text", { not: "an array" }, [null, 3, withList("b", "before", "nope")]])).toBeUndefined();
+    expect(beforeListenFor([[withList("b", "before", ["ok", 3, "  "])]])).toEqual(["ok"]);
   });
 });

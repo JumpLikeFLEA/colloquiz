@@ -79,3 +79,21 @@ export function voiceCompareConflictMessage(conflict: VoiceCompareConflict): str
   }
   return `The published lesson "${conflict.otherTitle}" already has the course's "${conflict.slot}" voice task; a course can have only one.`;
 }
+
+/** AUTH-020: the "Expressions to listen for" on the first `before` voice task
+ * found in the given lesson documents, or undefined when there is none or it
+ * lists nothing. Documents are read RAW, like `compareSlotOf` above: a
+ * published version written under an older schema must not make this throw. */
+export function beforeListenFor(documents: readonly unknown[]): string[] | undefined {
+  for (const document of documents) {
+    if (!Array.isArray(document)) continue;
+    for (const raw of document) {
+      if (compareSlotOf(raw) !== "before") continue;
+      const listenFor = (raw as Record<string, unknown>).listenFor;
+      if (!Array.isArray(listenFor)) continue;
+      const items = listenFor.filter((x): x is string => typeof x === "string" && x.trim() !== "");
+      if (items.length > 0) return items;
+    }
+  }
+  return undefined;
+}
