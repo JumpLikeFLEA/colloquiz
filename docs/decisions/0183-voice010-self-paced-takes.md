@@ -1,7 +1,7 @@
 # 0183 — VOICE-010: signed-in learners send voice takes on self-paced courses
 
 Status: written 2026-10-21 (VOICE-010, #232). Migration 094 is applied to the local
-stack only. It is NOT applied to hosted, by the card's own note (see "Hosted").
+stack and, at the owner's instruction, to hosted on 2026-10-21 (see "Hosted").
 
 ## Context
 
@@ -81,9 +81,18 @@ so a free-course learner could not upload at all.
 
 ## Hosted
 
-Not applied, and the gate's item 1 is met but the card's note forbids it: "Not applied to
-hosted before OPS-026 is published". The hosted-apply gate was not started (no probe, no
-write).
+Applied 2026-10-21 through the hosted-apply gate, after the owner said OPS-026 was
+committed and pushed and asked for 094 and 095 to be applied (the card's note said not
+before OPS-026 is published; the live /terms read Version 1.3 and /privacy Version 1.7
+when checked). Hosted probe before: history matched through 093, the nine required
+functions present, `can_send_self_paced_voice` and the index absent, `enrolment_id`
+NOT NULL, 0 voice_submissions. After: `enrolment_id` nullable, the function and index
+present, the same 0 rows, `submit_voice_recording` and `voice_purge_due` bodies changed.
+`supabase/verify/094` on hosted: `VOICE-010 PASS: 094 full protocol, asserted cells = 83`;
+afterwards 0 seeded courses, users, submissions, objects or deletion-queue rows.
+
+`VOICE_ANALYSIS_MODE` in production was NOT inspected: with 094 applied a hand-made
+client can upload whatever it says (Decision 10). In code, unset means `off`.
 
 ## Revisit when
 

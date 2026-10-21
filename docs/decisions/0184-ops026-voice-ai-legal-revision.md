@@ -2,7 +2,8 @@
 
 Status: drafted 2026-10-21 (OPS-026, #230). Privacy 1.7, Terms 1.3 and
 Subprocessors 1.4 are written in `docs/release/legal/`; migration
-`095_terms_1_3.sql` is written and not applied. **Nothing is published until the
+`095_terms_1_3.sql` was applied to hosted on 2026-10-21 (owner's instruction; the live
+/terms read 1.3 first; `supabase/verify/095` PASS on hosted). **Nothing is published until the
 owner says so.** The owner has not reviewed this text, and it is not legal
 advice.
 
