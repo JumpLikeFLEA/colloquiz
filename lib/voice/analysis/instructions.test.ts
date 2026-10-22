@@ -86,3 +86,30 @@ describe("the instruction text treats learner speech as data", () => {
     }
   });
 });
+
+describe("the instruction text matches what the pipeline does with it (0188 Decision 8)", () => {
+  it.each(VOICE_ANALYSIS_INSTRUCTIONS)("%s says the model has only the words", (kind) => {
+    // request.ts buildUserMessage sends text only.
+    expect(instructionBody(text(kind))).toContain("You cannot hear");
+  });
+
+  it.each(VOICE_ANALYSIS_INSTRUCTIONS)("%s tells the model to copy `expression` from the list", (kind) => {
+    // validate.ts drops an expressions_used item whose expression is not a listed line.
+    expect(instructionBody(text(kind))).toContain("`expression` is the line from <expressions> copied exactly");
+  });
+
+  it("the Never-list is the same text in both instructions", () => {
+    const block = (kind: VoiceAnalysisInstruction) => {
+      const body = instructionBody(text(kind));
+      const from = body.indexOf("Never list:");
+      const to = body.indexOf("5. `main_error`");
+      expect(from).toBeGreaterThan(-1);
+      expect(to).toBeGreaterThan(from);
+      return body.slice(from, to);
+    };
+    const first = block("first");
+    const final = block("final");
+    expect(first.length).toBeGreaterThan(300);
+    expect(final).toBe(first);
+  });
+});
