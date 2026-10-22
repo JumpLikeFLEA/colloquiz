@@ -1,11 +1,10 @@
 # 0184 — OPS-026: legal revision for AI voice feedback and recordings on every course
 
-Status: drafted 2026-10-21 (OPS-026, #230). Privacy 1.7, Terms 1.3 and
-Subprocessors 1.4 are written in `docs/release/legal/`; migration
-`095_terms_1_3.sql` was applied to hosted on 2026-10-21 (owner's instruction; the live
-/terms read 1.3 first; `supabase/verify/095` PASS on hosted). **Nothing is published until the
-owner says so.** The owner has not reviewed this text, and it is not legal
-advice.
+Status: drafted 2026-10-21 (OPS-026, #230). Live since the deploy of 2026-10-21
+(0183 "Hosted": /terms 1.3 and /privacy 1.7). Migration 095 was applied to hosted that day.
+4fae5bf (0195) later changed the rendered 1.7 text. Corrected on 2026-10-23 as Privacy 1.8 and
+Subprocessors 1.5; Terms stay 1.3. OPS-026 is merged into OPS-027, and the switch the owner
+still controls is VOICE_ANALYSIS_MODE. This is not legal advice.
 
 ## Context
 
@@ -139,15 +138,44 @@ Made unattended; each is the owner's to overturn.
    project without the variable is off. Printing the list is left to the owner or to
    OPS-027.
 
+## Review of 2026-10-23
+
+Corrections (1.8 / 1.5):
+
+- (a) A final also sends Anthropic the first transcript and the first analysis's goal and
+  main error (`lib/voice/analysis/request.ts`). Checklist item 4 was wrong for a final.
+- (b) AssemblyAI's 24 to 48 h figure applies to uploaded audio, and production never uploads.
+  Audio read from a URL follows its transcript, and an undeleted transcript is deleted
+  automatically from 30 days (data-retention page, read 2026-10-23).
+- (c) The EU endpoint uses AWS regions in the EU (the docs name Frankfurt, Stockholm and
+  Ireland), not Dublin alone. Staff outside the EU may access data for incidents and support.
+- (d) Training: AssemblyAI excludes files sent to its EU servers whether or not the opt-out
+  is set, so the text rests on the endpoint and claims no opt-out.
+- (e) "Neither provider is allowed to use what we send it for anything but providing the
+  service" overstated the position, because Anthropic keeps flagged requests for up to
+  2 years. It is replaced.
+- (f) §12 now states the 180 s cap, §3.5 says recordings are not biometric data, and the
+  public change log in subprocessors 1.4 no longer carries an internal note.
+
+Resolved since the draft:
+
+- the learner UUID in the URL (0187 Decision 5: opaque copy, and the payload scan is false
+  for the learner id);
+- the "AI feedback" label (VOICE-014, PROG-007);
+- the 180 s cap and the output checks (0187 Decisions 3 and 9; this file's Decision 7);
+- 095 applied.
+
+Notice (Decision 2): privacy §13 allows notice "in the app or by email". Email reaches every
+account except Telegram-only ones. The banner card is needed only if production has real
+accounts that include Telegram-only ones. That count is an owner fact for OPS-027.
+
+AssemblyAI's written answer on where audio read from a URL is stored is still worth asking
+for. It is no longer a gate: the documentation says audio is stored in the selected region,
+and the us-west-2 CDN of 0182 belongs to `/v2/upload`.
+
 ## To publish
 
-1. Read the three files and the checklist in `privacy-policy.md`; edit freely.
-2. Confirm the six items under "Not established" that you can; for any you cannot,
-   say so and I will soften the text.
-3. Apply `095_terms_1_3.sql` through the hosted-apply gate when publishing, not
-   before.
-4. Decide on the notice card (Decision 2).
-5. Then OPS-027's go-live checks apply.
+Superseded: see OPS-027 (review of 2026-10-23).
 
 ## Revisit when
 
@@ -158,3 +186,9 @@ Made unattended; each is the owner's to overturn.
 - OPS-025 onboards external teachers, who then hear free-course recordings
   (0156 "Revisit when"): §5 already says "the course author", and `teacher-terms-draft.md`
   must agree.
+- Before 2 December 2027, when Annex III of the EU AI Act applies (Digital Omnibus): decide
+  whether the feedback is an Annex III point 3(b) system ("evaluate learning outcomes ...
+  steer the learning process") and whether an Art. 6(3) exception covers it.
+- Anthropic's guidance for organisations whose products serve minors (the Service is 13+):
+  the "AI feedback" label covers its required disclosure. Its other measures (a
+  child-safety system prompt, moderation) are recommendations the owner has not decided on.

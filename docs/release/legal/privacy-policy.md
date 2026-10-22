@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.7 · Last updated 2026-10-22
+Version 1.8 · Last updated 2026-10-23
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -18,14 +18,21 @@ Version 1.7 · Last updated 2026-10-22
 > and sets "Last updated" to the commit date, in the same commit. Section 13 promises
 > this to users. See docs/decisions/0083-privacy-policy-versioning.md.
 >
-> **1.7 is a draft until the owner publishes it (OPS-026, docs/decisions/0184).** It
-> describes the voice pipeline of docs/decisions/0156 as it will run. Before publishing,
-> confirm each fact below is true of the code and the accounts; correct the text, not the
-> fact, if it is not: (1) "opted out" at AssemblyAI is set in its Data Controls; (2) we call
-> its EU endpoint and never `/v2/upload`; (3) the transcript is deleted at AssemblyAI right
-> after we have it; (4) Anthropic receives the transcript, list and instruction only;
-> (5) the "AI feedback" label is on every analysis; (6) the per-task and daily limits exist;
-> (7) hosted `VOICE_ANALYSIS_MODE` is `off` until this is published.
+> **1.7 has been live since the deploy of 2026-10-21 (docs/decisions/0183 "Hosted"); 1.8
+> corrects it (docs/decisions/0184, review of 2026-10-23).** Confirmed from the code on
+> 2026-10-23:
+> - the EU endpoint is used, and `/v2/upload` only on a local stack;
+> - the provider reads an opaque copy, never a path that names the learner;
+> - the transcript is deleted at AssemblyAI once it is stored;
+> - what Anthropic receives (`lib/voice/analysis/request.ts`);
+> - the "AI feedback" label on every state;
+> - the per-task and daily caps (096);
+> - the 180 s cap.
+>
+> Still the owner's to do before `VOICE_ANALYSIS_MODE` is `on` in production (OPS-027): put the
+> AssemblyAI and Anthropic accounts whose keys production uses under the providers' standard
+> terms, and keep hosted `VOICE_ANALYSIS_MODE` `off` until then. Do not write that we
+> "opted out" of AssemblyAI's model-improvement programme until the owner has set it.
 
 ---
 
@@ -161,7 +168,7 @@ one hour.
 ### 3.5 What we do not collect
 
 We do not collect special-category data (health, race, religion, political opinions,
-biometrics, sexual orientation), payment details, or precise location. We collect no
+biometrics, sexual orientation), payment details, or precise location. We do not use voice recordings to recognise or identify you, so they are not biometric data. We collect no
 payment details: paid courses are paid to the author through a third-party platform, and
 we never see your card or account details there. Please do not put such information into free-text fields such as your display
 name or feedback.
@@ -247,17 +254,19 @@ your recording, and no one else does:
 - **AssemblyAI** turns the audio into a transcript. We give it a short-lived private address
   from which it reads the audio. We send it no name or email; the address contains random
   identifiers.
-- **Anthropic** receives the transcript, the author's list of expressions for the task and
-  our instruction, and returns the feedback. It does not receive the audio or your account
-  details.
+- **Anthropic** receives the transcript, the task and the list of expressions the author
+  wrote for it, and our instruction, and returns the feedback. For a final recording it also
+  receives the transcript of your first recording and the goal and main error from that
+  recording's feedback, so it can compare the two. It does not receive the audio or your
+  account details.
 
 Both providers receive what you say, so please do not say anything in a recording that you
 would not want written down, such as health details or other people's personal data.
 
-Neither provider is allowed to use what we send it for anything but providing the service to
-us, and we have turned off the use of it for training where the provider offers that switch
-(section 12). If you are not signed in, a recording stays on your device and is never
-uploaded: no provider receives it.
+Both providers act as our processors under their data processing terms. Neither uses what
+we send it to train models (section 12), and section 7 says how long each keeps it. If you
+are not signed in, a recording stays on your device and is never uploaded: no provider
+receives it.
 
 **Invite contact labels** are seen only by the course author. **Cohort enrolments** and
 **lesson opens** are visible to you and to the course author. The author's **written
@@ -278,12 +287,13 @@ European Commission has not issued an adequacy decision. Some subprocessors are 
 established outside the EEA. Where personal data is transferred to us or to them, the
 transfer relies on the European Commission's **Standard Contractual Clauses** and, where
 applicable, the **EU–US Data Privacy Framework**. Details are in the
-[subprocessor list](./subprocessors.md). In particular, **AssemblyAI** transcribes
-recordings through its European endpoint, which it says processes audio and transcripts in
-the EU and stores them in the EU, but it stores its account and usage data in the United
-States; and **Anthropic**, which handles transcripts, does not state where it processes them,
-so we treat that as a transfer outside the EEA under the Standard Contractual Clauses in its
-data processing addendum.
+[subprocessor list](./subprocessors.md). In particular, **AssemblyAI** transcribes recordings through its European endpoint. It says
+that endpoint processes and stores audio and transcripts in the EU. It stores its account
+and usage data in the United States, and its staff outside the EU may access a recording or
+transcript when handling an incident or a support request, under the transfer terms of its
+data processing addendum. **Anthropic**, which handles transcripts, does not state where it
+processes them, so we treat that as a transfer outside the EEA under the Standard
+Contractual Clauses in its data processing addendum.
 
 ## 7. How long we keep it
 
@@ -301,7 +311,7 @@ data processing addendum.
 | Voice recordings | A recording you replace is deleted when you replace it. In a cohort course, all recordings are deleted 6 months after the end of the run. In any other course, a recording is deleted 6 months after you sent it. In both cases a recording is also deleted when you delete your account, whichever comes first |
 | Voice transcripts and AI feedback | Deleted together with the recording they were made from, at the same time and for the same reasons. The feedback on a later recording can quote short passages of your first recording; those quotes are part of that later feedback and are deleted with it |
 | The count of recordings you sent for each task (kept to apply the limits on AI feedback) | Deleted 6 months after you sent the recording, or when you delete your account, whichever comes first. If the feedback made from that recording is still kept (a cohort course keeps recordings until 6 months after the run ends), the count is deleted once the feedback is |
-| What AssemblyAI and Anthropic keep | AssemblyAI: we ask it to delete each transcript as soon as we have received it, and its documentation says it begins deleting audio 24 hours after a request and finishes within 48 hours; it keeps some metadata for logging and billing. Anthropic: its published policy is to delete inputs and outputs within 30 days of receipt, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy. |
+| What AssemblyAI and Anthropic keep | AssemblyAI: as soon as we have a transcript we ask AssemblyAI to delete it, and its documentation says the audio it read is deleted with the transcript. If that request fails, its documentation says it starts deleting a transcript automatically 30 days after it was made. It keeps some metadata for logging and billing. Anthropic: its published policy is to delete inputs and outputs within 30 days of receipt, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy. |
 | The author's written feedback and final comment | Until you close your account; then **deleted outright** |
 | Invite contact labels | Once you claim the invite, kept with your enrolment and deleted when you delete your account. A label never claimed is deleted 30 days after the invite expires or is revoked |
 | Cohort enrolments | Until you close your account; then **deleted outright** |
@@ -401,7 +411,8 @@ never used for this.
 two AI systems work on your recording:
 
 1. A speech-to-text service (**AssemblyAI**) writes down what you said, keeping the filler
-   words and false starts, because the feedback is about them.
+   words and false starts, because the feedback is about them. We ask it to transcribe only the first 3 minutes of a recording, so the feedback covers
+   those 3 minutes.
 2. A language model (**Anthropic's Claude**) reads that transcript and returns feedback:
    which of the expressions the author listed you used, one main error, what worked, a
    goal for next time, and, for a final recording, how it compares with your first.
@@ -420,11 +431,10 @@ you. This feedback decides nothing: it grants or refuses no access, no certifica
 price and no mark, and nothing in the Service changes for you whatever it says. It is
 advice for your own study, which you can ignore or replace by recording again.
 
-**Training.** We do not use your recordings, transcripts or feedback to train any model, and
-we have not allowed our providers to. Anthropic's Commercial Terms say it may not train
-models on customer content from its services. AssemblyAI's documentation says it does not use
-files for training if you use its European servers or have opted out; we use that endpoint
-and have opted out, and the opt-out applies only to what is sent after it is set.
+**Training.** We do not use your recordings, transcripts or feedback to train any model,
+and neither provider uses them for training. Anthropic's Commercial Terms say it may not
+train models on customer content from its services. AssemblyAI's documentation says it does
+not use files sent to its European servers for training, and we send every recording there.
 
 **Anonymous visitors** are not affected: without an account a recording stays on your
 device.
@@ -434,7 +444,8 @@ device.
 We will post any change here with a new version number and date. For a change that
 materially affects your rights, we will tell you in the app or by email before it takes
 effect. Version 1.7 added voice recordings in every course and the AI feedback in
-section 12.
+section 12. Version 1.8 corrected what Anthropic receives for a final recording, and what AssemblyAI
+keeps, where it keeps it, and why it does not train on recordings.
 
 ---
 
