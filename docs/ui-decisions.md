@@ -2681,3 +2681,11 @@ Appended to in the same commit as the change it records. Referenced from
   174.8 KB (limit 180, 182), `/courses/coh005-fixture` 175.4 to 175.4 (limit 181). Not measured: Studio's
   calendar with items, a phone, an in-app browser. Do not restyle these components in place: Studio shares
   them, so the paper look stays behind the prop.
+- Footer language under /my, zone sync, OAuth buttons after Back (2026-10-22, ad hoc,
+  docs/decisions/0194). `/my/settings` and `/my/messages[/<teacher>]` now follow the saved EN/RU choice in
+  `<html lang>` and the footer, like `/my` (they had fallen to Russian while their bodies were English).
+  `TimeZoneSync` is a client component again (effect plus `router.refresh()`), REVISING the 2026-10-17 calendar
+  entry's "do not add client JS to learn the zone" and 0159 Decision 7: an inline script rendered on a client
+  navigation never runs and makes React warn. `AuthScreen` clears its in-flight state on a persisted `pageshow`,
+  so the sign-in buttons are usable after Back from a provider. No visual change. `npm run budget`: `/my` 174.8
+  to 175.0 KB, `/login` 286.8 to 286.9. Do not render a `<script>` from a component reachable by a link.

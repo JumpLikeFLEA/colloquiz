@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, GraduationCap, Calculator, Atom, Globe,
@@ -228,6 +228,20 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   // Clickwrap consent for the email/password sign-up path (13+ + Terms/Privacy).
   const [agreed, setAgreed] = useState(false);
+
+  // Back from the provider's page can restore this screen from the browser's
+  // back/forward cache with the in-flight state it had when it was left, so every
+  // sign-in button stays disabled until a reload. A restored page fires `pageshow`
+  // with `persisted`; clear the state then.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      setLoading(false);
+      setOauthLoading(null);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   const handleToggle = () => {
     const next = mode === "login" ? "register" : "login";

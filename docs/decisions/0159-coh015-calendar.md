@@ -101,3 +101,5 @@ no client chunk is added.
 - A traveller reports their dates moved: the zone is the browser's current one.
 - The learner calendar needs the teacher's group name (it must not, 0149).
 - A reload on first visit is judged too jarring: then move to (a) and pay the JS.
+
+> Revised by docs/decisions/0194 (2026-10-22): Decision 7's inline script became a client component, because a script rendered on a client navigation never runs.
