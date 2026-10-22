@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { ACHIEVEMENTS } from "@/lib/achievements";
-import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type TelegramLinkExportRow, type VoiceSubmissionRow } from "@/lib/accountExport";
+import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type TelegramLinkExportRow, type VoiceAnalysisExportRow, type VoiceSubmissionRow } from "@/lib/accountExport";
 import { VOICE_BUCKET } from "@/lib/voice/recording";
 
 /**
@@ -65,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -150,11 +150,13 @@ export async function GET() {
         supabase.rpc("calendar_feed_status"),
         // COH-010: the caller's own Telegram reminders link, if any (090).
         supabase.rpc("my_telegram_link"),
+        // VOICE-016: the caller's own transcripts and AI analyses, withdrawn ones too (098).
+        supabase.rpc("my_voice_analyses_export"),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -203,6 +205,7 @@ export async function GET() {
         authorSeat: ((authorSeatRes.data ?? []) as AuthorSeatExportRow[])[0] ?? null,
         calendarFeed: ((calendarFeedRes.data ?? []) as CalendarFeedExportRow[])[0] ?? null,
         telegramLink: ((telegramLinkRes.data ?? []) as TelegramLinkExportRow[])[0] ?? null,
+        voiceAnalyses: (voiceAnalysesRes.data ?? []) as VoiceAnalysisExportRow[],
       },
       ACHIEVEMENTS,
     );

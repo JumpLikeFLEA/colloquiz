@@ -26,6 +26,7 @@ const baseSources = {
   authorSeat: null,
   calendarFeed: null,
   telegramLink: null,
+  voiceAnalyses: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -430,7 +431,7 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
   });
 
   it("is format version 15", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(15);
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(16);
   });
 });
 
@@ -649,5 +650,57 @@ describe("buildExportPayload — telegram_reminders (COH-010)", () => {
       linked_at: "2026-10-18T10:00:00Z",
       stopped_at: null,
     });
+  });
+});
+
+describe("buildExportPayload — voice_analyses (VOICE-016)", () => {
+  const row = {
+    submission_id: "sub-1",
+    status: "done",
+    instruction: "final",
+    transcript: "um I think so",
+    result: { mainError: { quote: "I think so" } },
+    prompt_version: "v1",
+    model: "claude-test",
+    baseline_submission_id: "sub-0",
+    hidden_at: null,
+    created_at: "2026-10-22T10:00:00.000Z",
+    finished_at: "2026-10-22T10:01:00.000Z",
+  };
+
+  it("is an empty list for a reader with none", () => {
+    expect(buildExportPayload(baseSources, []).voice_analyses).toEqual([]);
+  });
+
+  it("carries the transcript and analysis, keyed by submission", () => {
+    const [out] = buildExportPayload({ ...baseSources, voiceAnalyses: [row] }, []).voice_analyses;
+    expect(out).toEqual({
+      submission_id: "sub-1",
+      status: "done",
+      kind: "final",
+      transcript: "um I think so",
+      analysis: { mainError: { quote: "I think so" } },
+      prompt_version: "v1",
+      model: "claude-test",
+      compared_with_submission_id: "sub-0",
+      withdrawn_at: null,
+      created_at: "2026-10-22T10:00:00.000Z",
+      finished_at: "2026-10-22T10:01:00.000Z",
+    });
+  });
+
+  it("keeps a withdrawn analysis, marked withdrawn", () => {
+    const [out] = buildExportPayload(
+      { ...baseSources, voiceAnalyses: [{ ...row, hidden_at: "2026-10-23T09:00:00.000Z" }] },
+      [],
+    ).voice_analyses;
+    expect(out.withdrawn_at).toBe("2026-10-23T09:00:00.000Z");
+    expect(out.transcript).toBe("um I think so");
+  });
+
+  it("never exports usage, the failure string or who hid it", () => {
+    const leaky = { ...row, usage: { tokens: 1 }, failure: "boom", hidden_by: "teacher-1", send_id: "s" };
+    const json = JSON.stringify(buildExportPayload({ ...baseSources, voiceAnalyses: [leaky] }, []).voice_analyses);
+    expect(json).not.toMatch(/usage|boom|teacher-1|send_id|hidden_by/);
   });
 });

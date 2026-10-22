@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 15;
+export const EXPORT_FORMAT_VERSION = 16;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -26,6 +26,7 @@ export const EXPORT_CONTENTS = [
   "Cohort enrolments — the course runs you joined, your tier, and when (or if) your access ended",
   "Invites you claimed — the name and contact the course author wrote on your invite",
   "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
+  "Voice transcripts and AI feedback — the text of what you said in each recording and the automatic feedback made from it, including any feedback an author withdrew",
   "Final comments — the author's published closing comment for each course run you joined",
   "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
   "Teacher groups — the names of the private groups a linked teacher has put you in",
@@ -175,6 +176,23 @@ export type HomeworkExportRow = {
 /** The reader's own row of `calendar_feed_status` (086), or none. */
 export type CalendarFeedExportRow = { has_token: boolean; created_at: string };
 
+/** One row of `my_voice_analyses_export` (098): the reader's own, withdrawn ones included. */
+export type VoiceAnalysisExportRow = {
+  submission_id: string;
+  status: string;
+  instruction: string | null;
+  transcript: string | null;
+  result: unknown;
+  prompt_version: string | null;
+  model: string | null;
+  /** The take a final analysis was compared with; null when that take is gone. */
+  baseline_submission_id: string | null;
+  /** Set when an author withdrew the analysis; the learner no longer sees it in the app. */
+  hidden_at: string | null;
+  created_at: string;
+  finished_at: string | null;
+};
+
 /** The reader's own row of `my_telegram_link` (090), or none. */
 export type TelegramLinkExportRow = {
   chat_id: number | string;
@@ -223,6 +241,8 @@ export type ExportSources = {
   /** COH-016 (086): the reader's calendar feed status, or null when there is no token. */
   calendarFeed: CalendarFeedExportRow | null;
   telegramLink: TelegramLinkExportRow | null;
+  /** VOICE-016 (098): the reader's transcripts and analyses, hidden ones too. */
+  voiceAnalyses: VoiceAnalysisExportRow[];
 };
 
 /**
@@ -348,6 +368,26 @@ export function buildExportPayload(
     // feedback once published. A take removed by the 6-month purge keeps its
     // row with removed_at set and no audio.
     voice_submissions: src.voiceSubmissions.map((row) => exportVoiceSubmission(row, src.voiceAudio)),
+
+    // VOICE-016 (docs/decisions/0195; 0156 Decision 7; privacy-policy.md section 8): the
+    // transcript and AI analysis of each take, keyed by submission_id as in
+    // voice_submissions. Read through my_voice_analyses_export (098): the owner's RLS
+    // hides a withdrawn analysis from the app, but it is still the reader's data, so
+    // it is here with hidden_at set. Not exported: our token usage, the internal
+    // failure string, and who hid it. A purged take's analysis is gone with its audio.
+    voice_analyses: src.voiceAnalyses.map((row) => ({
+      submission_id: row.submission_id,
+      status: row.status,
+      kind: row.instruction,
+      transcript: row.transcript,
+      analysis: row.result ?? null,
+      prompt_version: row.prompt_version,
+      model: row.model,
+      compared_with_submission_id: row.baseline_submission_id,
+      withdrawn_at: row.hidden_at,
+      created_at: row.created_at,
+      finished_at: row.finished_at,
+    })),
 
     // COH-008 (docs/decisions/0112): the author's final comment per run
     // enrolment, published only. RLS returns a learner only published rows,

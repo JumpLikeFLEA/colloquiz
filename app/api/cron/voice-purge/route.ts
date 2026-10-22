@@ -13,7 +13,10 @@ import { removeVoiceObjects } from "@/lib/voice/storage";
  *   removal in its own route failed;
  * - uploads no submission references after 24 hours.
  * Each is removed through the Storage API, never by deleting
- * storage.objects rows, and only then marked in SQL.
+ * storage.objects rows, and only then marked in SQL. Marking a retention-purged
+ * take also deletes its transcript and AI analysis (098, 0156 Decision 7).
+ * Last, voice_purge_ledger() deletes the analysis send ledger's rows older than
+ * 6 months (VOICE-016, docs/decisions/0195).
  *
  * Vercel Cron sends `Authorization: Bearer $CRON_SECRET` when that env var
  * is set on the project. Without it this route refuses everything, so an
@@ -45,8 +48,19 @@ export async function GET(request: NextRequest) {
     console.error(`voice purge: ${failed.length} object(s) not removed; retried next run`);
   }
 
+  // Independent of the objects: a failed removal above must not keep the ledger's
+  // rows past their 6 months.
+  const { data: ledgerDeleted, error: ledgerError } = await admin.rpc("voice_purge_ledger");
+  if (ledgerError) console.error("voice_purge_ledger:", ledgerError);
+
   return NextResponse.json(
-    { due: due.length, byReason, removed: removed.length, failed: failed.length },
-    { status: failed.length > 0 ? 500 : 200, headers: { "Cache-Control": "no-store" } },
+    {
+      due: due.length,
+      byReason,
+      removed: removed.length,
+      failed: failed.length,
+      ledgerDeleted: ledgerError ? null : ledgerDeleted,
+    },
+    { status: failed.length > 0 || ledgerError ? 500 : 200, headers: { "Cache-Control": "no-store" } },
   );
 }
