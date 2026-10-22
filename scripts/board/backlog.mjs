@@ -3948,6 +3948,7 @@ export const CARDS = [
       'Material change per docs/decisions/0095: version bump, the in-app notice, and an "AI feedback" label on every analysis (EU AI Act Art. 50). Why GDPR Art. 22 does not apply is stated.',
       'The owner reviews and publishes. Until then VOICE_ANALYSIS_MODE stays off in production (printed from the Vercel env list).',
     ],
+    notes: 'Merged into OPS-027 on 2026-10-23. Drafts written (0184), live since 2026-10-21, corrected as privacy 1.8 and subprocessors 1.5.',
   },
   {
     key: 'VIS-003',
@@ -4141,18 +4142,20 @@ export const CARDS = [
   },
   {
     key: 'OPS-027',
-    title: 'AI voice feedback goes live',
+    title: 'AI voice feedback goes live (legal text and switch-on)',
     milestone: 'M4',
     epic: 'OPS',
     type: 'task',
     rank: 2870,
-    dependsOn: ['OPS-026', 'VOICE-013', 'VOICE-014', 'VOICE-015', 'VOICE-016'],
+    dependsOn: ['VOICE-013', 'VOICE-014', 'VOICE-015', 'VOICE-016'],
     goal: 'Turn the feature on in production once the legal revision is published (0156 Decision 16).',
     acceptance: [
-      'Migrations 084 and 085 applied through the hosted-apply gate, one at a time, with its evidence.',
-      'Production env set (keys, VOICE_ANALYSIS_MODEL, VOICE_ANALYSIS_MODE); spend limits set at AssemblyAI and Anthropic; the DPAs on file (OPS-026).',
-      'On production: a self-paced take and a cohort take each reach done; paused is checked and then set back to on (printed).',
+      'Privacy 1.8 and Subprocessors 1.5 (0184, review of 2026-10-23) are deployed to production. Terms stay 1.3 (095 applied 2026-10-21).',
+      'Owner, before the mode is on: the AssemblyAI and Anthropic accounts whose keys production uses are under the providers\' standard terms, with the date recorded in 0184; spend limits are set at both; the number of real production accounts is printed, and if there are any, each one is told of privacy 1.8 before the switch (by email, or in the app for Telegram-only accounts, which have no email).',
+      'The owner sets the production env and prints it from the Vercel env list: ASSEMBLYAI_API_KEY, ANTHROPIC_API_KEY, VOICE_ANALYSIS_MODEL and CRON_SECRET, with VOICE_ANALYSIS_MODE printed as off (or unset) before the switch. An env change takes effect only on a new deployment.',
+      'On production, printed: under paused, a take uploads and no provider is called. Then, under on, a self-paced take and a cohort take each reach done, the AssemblyAI record of each reads "Deleted by user.", and the URL AssemblyAI fetched names no learner (the first hosted run of 0187\'s staging path).',
     ],
+    notes: 'Absorbs OPS-026 (0184). Lines 2 to 4 are the owner\'s: production env, provider dashboards and deploys are not a session\'s.',
   },
   {
     key: 'SHELL-027',

@@ -61,16 +61,18 @@ should open the links before relying on them.
 - **That either account has accepted the DPA.** AssemblyAI's DPA is part of its
   Terms of Service and Anthropic's is incorporated into its Commercial Terms, both
   by use. What is on file is whatever the owner's accounts record. The
-  acceptance, with date, is the owner's to confirm; subprocessors.md says so.
-- **That AssemblyAI's opt-out is set.** It is a dashboard toggle for an Owner or
-  Admin. Until set, the text "have opted out" is untrue.
+  acceptance, with date, is the owner's to confirm; subprocessors.md says so. Owner, OPS-027 line 2.
+- **That AssemblyAI's opt-out is set.** No longer a dependency of the text: privacy 1.8
+  rests on the EU endpoint, which AssemblyAI's documentation excludes from training.
+  Setting it is optional extra cover; the text says "opted out" only once the owner has
+  set it.
 - **Where AssemblyAI stores audio that it fetches from a URL we give it.** The
   EU-endpoint page speaks of "audio and transcript data" stored in the endpoint
   region, and the 0182 bench found that `/v2/upload` returns a CDN address that
   resolves to S3 us-west-2. 0182 Decision 2 avoids the upload route for that
   reason. Whether a fetched URL is stored in the EU is not stated. Ask AssemblyAI
   in writing before go-live (0182 Decision 2 already asks); the answer may change
-  privacy §6.
+  privacy §6. Not a gate since the review of 2026-10-23 (see that section).
 - **Where Anthropic processes a request.** Neither the DPA nor the pages read
   say. The text treats it as outside the EEA.
 - **The Anthropic sub-processor list.** `trust.anthropic.com/subprocessors` returned
