@@ -86,8 +86,10 @@ export function uploadPercent(loaded: number, total: number): number {
  *   locked:   feedback was published meanwhile — reload to show it;
  *   sent:     the same take was already accepted (a retried send whose first
  *             answer was lost) — treat as sent;
+ *   capped:   the AI feedback limit for this task or day (096, VOICE-014): nothing was
+ *             sent, and retrying at once would be refused again;
  *   retry:    anything else, the learner may try again. */
-export type SubmitOutcome = "sent" | "practice" | "locked" | "retry";
+export type SubmitOutcome = "sent" | "practice" | "locked" | "capped" | "retry";
 
 export function submitOutcome(status: number, error: string | null | undefined): SubmitOutcome {
   if (status >= 200 && status < 300) return "sent";
@@ -101,6 +103,8 @@ export function submitOutcome(status: number, error: string | null | undefined):
       return "practice";
     case "locked":
       return "locked";
+    case "voice_cap":
+      return "capped";
     default:
       return "retry";
   }

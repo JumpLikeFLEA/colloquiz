@@ -35,6 +35,8 @@ type VoiceTasksMode =
   | { mode: "practice" }
   | {
       mode: "send";
+      /** Whose slot a send files under (VOICE-014 words the sent line and the cap states by it). */
+      slot?: "enrolment" | "self_paced";
       lessonId: string;
       courseId: string;
       userId: string;
@@ -43,6 +45,12 @@ type VoiceTasksMode =
     };
 
 export type VoiceTasksContext = VoiceTasksMode & {
+  /**
+   * VOICE-014 (docs/decisions/0189): the AI analysis is switched on (VOICE_ANALYSIS_MODE is not
+   * `off`). Absent means off. When off, a voice task draws exactly what it drew before the
+   * feature: no feedback panel, no "Try to use" list, and no extra code downloaded.
+   */
+  analysis?: boolean;
   /**
    * TCH-006 (docs/decisions/0153): the "Ask the teacher" link for a voice
    * task's card. Never part of what the server sends (a function does not

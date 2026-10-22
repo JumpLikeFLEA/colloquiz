@@ -1,3 +1,4 @@
+import type { VoiceCap } from "./analysisCaps";
 import { submitOutcome, type SubmitOutcome } from "./recorder";
 import { VOICE_BUCKET } from "./recording";
 
@@ -79,8 +80,11 @@ export type SendDeps = {
     lessonId: string;
     blockId: string;
     objectName: string;
-  }) => Promise<{ status: number; error: string | null }>;
+  }) => Promise<SubmitResponse>;
 };
+
+/** The submit route's answer as the recorder reads it; `cap` is set for a refusal by a cap. */
+export type SubmitResponse = { status: number; error: string | null; cap?: VoiceCap | null };
 
 export type SendOutcome = SubmitOutcome | "upload_failed";
 
@@ -135,18 +139,22 @@ export async function postVoiceSubmission(body: {
   lessonId: string;
   blockId: string;
   objectName: string;
-}): Promise<{ status: number; error: string | null }> {
+}): Promise<SubmitResponse> {
   const res = await fetch("/api/voice/submissions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   let error: string | null = null;
+  let cap: VoiceCap | null = null;
   try {
-    const json = (await res.json()) as { error?: unknown };
+    const json = (await res.json()) as { error?: unknown; kind?: unknown; retryAt?: unknown };
     error = typeof json.error === "string" ? json.error : null;
+    if (error === "voice_cap" && (json.kind === "task_cap" || json.kind === "daily_cap")) {
+      cap = { kind: json.kind, retryAt: typeof json.retryAt === "string" ? json.retryAt : null };
+    }
   } catch {
     // A non-JSON answer is a server failure; status carries it.
   }
-  return { status: res.status, error };
+  return { status: res.status, error, cap };
 }

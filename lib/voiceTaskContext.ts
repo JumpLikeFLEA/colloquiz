@@ -33,10 +33,13 @@ export async function getVoiceTasksContext(
   courseId: string,
   lessonOpen: boolean,
 ): Promise<VoiceTasksContext> {
+  const analysisMode = parseVoiceAnalysisMode(process.env.VOICE_ANALYSIS_MODE);
+  // VOICE-014: the view and the "Try to use" list exist only while the analysis is switched on.
+  const analysis = analysisMode !== "off";
   try {
     const supabase = await createClient();
     const user = await authUserFrom(supabase);
-    if (!user) return { mode: "practice" };
+    if (!user) return { mode: "practice", analysis };
 
     const { data: enrolments, error: enrolErr } = await supabase
       .from("run_enrolments")
@@ -54,9 +57,9 @@ export async function getVoiceTasksContext(
       signedIn: true,
       lessonOpen,
       enrolmentId,
-      analysisMode: parseVoiceAnalysisMode(process.env.VOICE_ANALYSIS_MODE),
+      analysisMode,
     });
-    if (!slot) return { mode: "practice" };
+    if (!slot) return { mode: "practice", analysis };
 
     const { data: rows, error: subErr } = await supabase
       .from("voice_submissions")
@@ -93,9 +96,9 @@ export async function getVoiceTasksContext(
       }),
     );
 
-    return { mode: "send", lessonId, courseId, userId: user.id, submissions };
+    return { mode: "send", analysis, slot, lessonId, courseId, userId: user.id, submissions };
   } catch (err) {
     console.error("failed to read the voice task context", err);
-    return { mode: "practice" };
+    return { mode: "practice", analysis };
   }
 }

@@ -20,6 +20,10 @@ import { VoiceRecorder } from "./VoiceRecorder";
  * placeholder: a disabled Record button. The microphone is allowed only on
  * the lesson route (next.config.ts), so a working recorder there would fail.
  *
+ * VOICE-014 (docs/decisions/0189): while the AI analysis is switched on (`context.analysis`),
+ * a task that is not a `before` task lists its "expressions to listen for" as "Try to use".
+ * A `before` task hides the list so the baseline is honest (0156 Decision 8).
+ *
  * TCH-006: a linked student's lesson client puts "Ask the teacher" at the
  * foot of the card through `context.renderAsk`; nobody else has one.
  */
@@ -36,6 +40,18 @@ export function VoiceTaskBlockView({ block, context }: { block: VoiceTaskBlock; 
       <p className="mt-1 text-xs text-muted-foreground">
         {voiceCopy.upTo} {formatVoiceDuration(block.maxSeconds)}
       </p>
+      {context?.analysis && block.compare !== "before" && block.listenFor && block.listenFor.length > 0 && (
+        <div className="mt-3">
+          <p className="text-xs font-semibold text-muted-foreground">{voiceCopy.tryToUse}</p>
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+            {block.listenFor.map((phrase) => (
+              <li key={phrase} className="max-w-full break-words rounded-full bg-highlight px-2.5 py-1 text-xs font-medium text-highlight-foreground">
+                {phrase}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {context ? (
         <VoiceRecorder block={block} context={context} />
       ) : (

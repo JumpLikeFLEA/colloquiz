@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import { Link2, Mic, Square, Trash2 } from "lucide-react";
 import { voiceCopy } from "@/lib/alliengll/voiceCopy";
 import type { VoiceTaskBlock } from "@/lib/lessons";
@@ -12,12 +13,25 @@ import {
   resolveUploadMime,
   uploadPercent,
 } from "@/lib/voice/recorder";
+import type { VoiceCap } from "@/lib/voice/analysisCaps";
+import { capNoticeText } from "@/lib/voice/capNotice";
 import { voiceObjectName, type VoiceMimeType } from "@/lib/voice/recording";
 import { postVoiceSubmission, sendVoiceTake, uploadVoiceTake } from "@/lib/voice/send";
 import { addTake, findTake, removeTake, takesFull } from "@/lib/voice/takes";
 import type { VoiceTaskSubmission, VoiceTasksContext } from "@/lib/voice/taskContext";
 import { SUBMIT_BUTTON_CLASS } from "../practice/practiceClasses";
 import { FeedbackContentView } from "./FeedbackContentView";
+
+// VOICE-014 (docs/decisions/0189): the AI feedback view is its own chunk, fetched only when a
+// sent take is drawn while the analysis is switched on. ssr: false because it polls.
+const VoiceAnalysisPanel = dynamic(() => import("./analysis/VoiceAnalysisPanel").then((m) => m.VoiceAnalysisPanel), {
+  ssr: false,
+  loading: () => <div className="mt-1 h-24 rounded-xl border border-border bg-card" aria-hidden="true" />,
+});
+
+function formatCapTime(iso: string): string {
+  return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
 
 /**
  * The voice recorder (VOICE-005, docs/decisions/0111): record -> listen ->
@@ -31,7 +45,8 @@ import { FeedbackContentView } from "./FeedbackContentView";
  *     recordings ... stay on your device and are never uploaded".
  *   - send: as practice, plus Send. The upload happens only on Send.
  *   - sent: the learner's own take plays back, "waiting for feedback";
- *     recording again and sending replaces it (0110 Decision 3).
+ *     recording again and sending replaces it (0110 Decision 3). While the AI analysis is
+ *     switched on (`context.analysis`), the AI feedback view sits under it (VOICE-014).
  *   - feedback published: shown under the recording; the block is locked.
  *   - unsupported: no getUserMedia or no MediaRecorder (an in-app browser,
  *     say): the open-in-your-browser fallback (0097), with a Copy link.
@@ -79,6 +94,7 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   const timersRef = useRef<{ tick?: ReturnType<typeof setInterval>; limit?: ReturnType<typeof setTimeout> }>({});
   const urlsRef = useRef<string[]>([]);
   const refreshedRef = useRef(false);
+  const capRef = useRef<VoiceCap | null>(null);
 
   // Release the microphone and every blob URL when the block goes away.
   useEffect(() => {
@@ -189,6 +205,7 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
     }
     setNotice(null);
     setFailedId(null);
+    capRef.current = null;
     setProgress(0);
     setSendingId(id);
     setPhase("sending");
@@ -214,7 +231,11 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
           return data.session?.access_token ?? null;
         },
         upload: uploadVoiceTake,
-        submit: postVoiceSubmission,
+        submit: async (body) => {
+          const res = await postVoiceSubmission(body);
+          capRef.current = res.cap ?? null;
+          return res;
+        },
       },
     );
 
@@ -236,6 +257,15 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
         return;
       case "locked":
         setNotice({ text: voiceCopy.lockedMeanwhile, error: false });
+        setSendingId(null);
+        setPhase("idle");
+        return;
+      case "capped":
+        // The take stays in the list, unsent; retrying now would be refused again.
+        setNotice({
+          text: capRef.current ? capNoticeText(capRef.current, formatCapTime) : voiceCopy.capNotSent,
+          error: false,
+        });
         setSendingId(null);
         setPhase("idle");
         return;
@@ -285,6 +315,7 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   const busy = phase === "starting" || phase === "recording" || phase === "sending";
   const showSent = sent !== null && phase !== "recording";
   const full = takesFull(takes);
+  const showAnalysis = context.analysis === true && mode === "send" && showSent;
 
   return (
     <div className="mt-4 flex flex-col gap-3">
@@ -304,7 +335,17 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
               <p className="text-xs text-muted-foreground">{voiceCopy.locked}</p>
             </>
           ) : (
-            <p className="text-sm font-medium text-foreground">{voiceCopy.sent}</p>
+            <p className="text-sm font-medium text-foreground">
+              {showAnalysis && context.mode === "send" && context.slot === "self_paced" ? voiceCopy.sentSelfPaced : voiceCopy.sent}
+            </p>
+          )}
+          {showAnalysis && (
+            <VoiceAnalysisPanel
+              key={sent.id}
+              submissionId={sent.id}
+              cohort={context.mode === "send" && context.slot === "enrolment"}
+              listenFor={block.compare === "before" ? undefined : block.listenFor}
+            />
           )}
         </div>
       )}

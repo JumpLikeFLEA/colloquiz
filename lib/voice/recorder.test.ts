@@ -103,6 +103,9 @@ describe("submitOutcome", () => {
     expect(submitOutcome(403, "lesson_not_open")).toBe("practice");
     expect(submitOutcome(401, "unauthenticated")).toBe("practice");
     expect(submitOutcome(409, "locked")).toBe("locked");
+    expect(submitOutcome(429, "voice_cap")).toBe("capped");
+    // Control: a 429 without the cap code is still just "try again".
+    expect(submitOutcome(429, "rate_limited")).toBe("retry");
     expect(submitOutcome(422, "object_missing")).toBe("retry");
     expect(submitOutcome(500, "internal")).toBe("retry");
   });

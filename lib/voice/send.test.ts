@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { isDuplicateUpload, sendVoiceTake, storageObjectUrl, type SendDeps } from "./send";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { isDuplicateUpload, postVoiceSubmission, sendVoiceTake, storageObjectUrl, type SendDeps } from "./send";
 
 const input = {
   supabaseUrl: "http://127.0.0.1:54321",
@@ -56,6 +56,38 @@ describe("sendVoiceTake", () => {
     );
     expect(await sendVoiceTake(input, deps({ submit: vi.fn().mockResolvedValue({ status: 409, error: "locked" }) }))).toBe("locked");
     expect(await sendVoiceTake(input, deps({ submit: vi.fn().mockRejectedValue(new Error("offline")) }))).toBe("retry");
+  });
+
+  it("maps a refusal by an AI feedback cap to 'capped', not 'retry'", async () => {
+    const capped = vi.fn().mockResolvedValue({ status: 429, error: "voice_cap", cap: { kind: "task_cap", retryAt: null } });
+    expect(await sendVoiceTake(input, deps({ submit: capped }))).toBe("capped");
+  });
+});
+
+describe("postVoiceSubmission", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const answer = (status: number, body: unknown) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status, json: async () => body }));
+  const body = { submissionId: "s1", lessonId: "l1", blockId: "v1", objectName: "c/u/s1.ogg" };
+
+  it("reads the cap kind and time from a voice_cap answer", async () => {
+    answer(429, { ok: false, error: "voice_cap", kind: "daily_cap", retryAt: "2026-10-22T18:00:00.000Z" });
+    expect(await postVoiceSubmission(body)).toEqual({
+      status: 429,
+      error: "voice_cap",
+      cap: { kind: "daily_cap", retryAt: "2026-10-22T18:00:00.000Z" },
+    });
+    answer(429, { ok: false, error: "voice_cap", kind: "task_cap", retryAt: null });
+    expect((await postVoiceSubmission(body)).cap).toEqual({ kind: "task_cap", retryAt: null });
+  });
+
+  it("gives no cap for any other answer, or for a cap kind it does not know", async () => {
+    answer(500, { ok: false, error: "internal" });
+    expect((await postVoiceSubmission(body)).cap).toBeNull();
+    answer(429, { ok: false, error: "voice_cap", kind: "monthly_cap" });
+    expect((await postVoiceSubmission(body)).cap).toBeNull();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 502, json: async () => Promise.reject(new Error("html")) }));
+    expect(await postVoiceSubmission(body)).toEqual({ status: 502, error: null, cap: null });
   });
 });
 

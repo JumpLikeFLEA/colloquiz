@@ -2562,3 +2562,33 @@ Appended to in the same commit as the change it records. Referenced from
   rows reach 456px inside Studio's scroll container; measured before this change), which is not
   from this field and is not fixed here. Do not store an empty array, and do not copy the
   Before list over an After list the author has written.
+- AI feedback under a voice take (2026-10-22, VOICE-014, docs/decisions/0189). Inside the
+  voice-task card, under a sent take, a `rounded-xl border bg-card` section labelled by a
+  `bg-brand-subtle` "AI feedback" pill (`Sparkles`), shown only while the analysis is switched
+  on (`context.analysis`); with the mode off nothing here renders or downloads. It is the
+  recorder's `next/dynamic` chunk. A finished analysis, top to bottom: "What worked"; four count
+  cards in a `grid-cols-2 sm:grid-cols-4` of `bg-muted` tiles (value, label, and "was N" from the
+  first take on a final; they are counts of what was marked, so no colour judges them); the
+  learner's words with each marked phrase a real `<button>` (`aria-pressed`), told apart by
+  underline as well as colour (errors `bg-warning-subtle text-warning` wavy, good moments and
+  self-corrections `bg-brand-subtle text-brand-text` solid and dotted, a hesitation `bg-muted`
+  dashed, an expression from the lesson `bg-highlight` double), a key naming the kinds shown, and
+  one `aria-live` box under the text that explains the tapped phrase; the lesson's expressions
+  used (and, off a `before` task, those not used yet); "One thing to fix" and an "All errors (n)"
+  `<details>`; "How it sounds"; the goal in a `bg-brand-subtle` card (first) or the goal verdict,
+  "Then and now" pairs and "Next step" (final); a collapsed "Day 1 feedback" `<details>`. The
+  states with no feedback are a title and a muted line in the same box: analysing (a pulsing dot,
+  `motion-safe`, `role="status"`), failed, "Feedback withdrawn — send again", paused, and "AI
+  limit reached; your teacher will still answer." on a cohort course. A task that is not a
+  `before` task lists "Try to use" as `bg-highlight` chips under its limit line (practice
+  learners too). A send refused for a cap shows the muted notice line, names the limit and, for
+  the daily one, the local time. Errors use the `warning` tokens, never `destructive`. Existing
+  classes and tokens; no new colours. Measured at 360px (`scrollWidth/innerWidth`, local stack,
+  seeded learner): 360/360 on a self-paced lesson showing a first result, a final result with
+  its baseline, analysing, failed, withdrawn and paused, 360/360 on a cohort lesson showing the
+  limit state and a result beside published feedback, and with a phrase tapped open; 1280/1280
+  at 1280px. Not measured: dark mode, every disclosure open, the daily-cap notice in a browser.
+  `npm run budget`: the voice lessons 326.4 KB before, 327.0 KB after with the mode off, 333.6 KB
+  with it on; the free lesson unchanged at 256.5 KB.
+  Do not draw the feedback while the mode is off, do not colour a count or an error as a failure,
+  and do not render any stored text as HTML.
