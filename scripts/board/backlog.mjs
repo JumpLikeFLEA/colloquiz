@@ -4239,6 +4239,44 @@ export const CARDS = [
     ],
   },
   {
+    key: 'SHELL-033',
+    title: 'The rest of the learner pages in the Alina Cher look: messages, settings, invite, join',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2886,
+    dependsOn: ['PROG-007'],
+    goal:
+      '/my and /runs are on the grid paper (PROG-007, docs/decisions/0191); five pages a learner reaches from them still carry the gradient band (0156 Decision 13).',
+    acceptance: [
+      '/my/messages, /my/messages/[teacherId], /my/settings, /invite/[token] and /join/[token] take the paper look with the tokens and classes PROG-007 used (BandTopBar and AccountMenu tone="paper", PAPER_CARD_CLASS / PAPER_PANEL_CLASS, SectionHeading display). Nothing about access, messaging, settings or claiming changes.',
+      'GradientBackdrop, GRADIENT_BAND_CLASS, GLASS_PILL_CLASS and WHITE_CTA_CLASS are deleted if nothing uses them any more, or the decision file names what still does.',
+      '`npm run budget` before and after for /my/messages, /my/settings, /invite and /join. Usable at 360px in each state (signed in and out, the in-app-browser notice, the delete dialog, a thread with an attachment); docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'Proposed by PROG-007 (docs/decisions/0191, "Not done"). 0166 named these pages as that card\'s, ' +
+      'but its acceptance line named only /my and /runs.',
+  },
+  {
+    key: 'SHELL-034',
+    title: 'The calendar, feed and Telegram reminder panels on the paper look',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2887,
+    dependsOn: ['PROG-007'],
+    goal:
+      'On /my the calendar, the "Subscribe in your calendar" card and the "Reminders in Telegram" card keep the plain bordered frame between paper-framed sections (PROG-007, 0191).',
+    acceptance: [
+      'CalendarView, CalendarFeedPanel and TelegramRemindersPanel take a paper variant (a prop, default unchanged) used by /my; Studio\'s calendar, messages and course pages are unchanged (screenshots of both).',
+      'Month grid, agenda, chips and every state of the two panels (no link, link shown once, replace confirm, pending, on, turned off, error line) are readable in light and dark and keep their behaviour.',
+      '`npm run budget` before and after for /my and /courses/coh005-fixture (the reminders card also renders there). Usable at 360px in each state; docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'Proposed by PROG-007 (docs/decisions/0191, "Not done"). These components are shared with Studio, ' +
+      'which stays indigo and unframed, so the change is a variant, not a restyle in place.',
+  },
+  {
     key: 'SHELL-029',
     title: 'The English sign-in panel in the Alina Cher look',
     milestone: 'M4',
