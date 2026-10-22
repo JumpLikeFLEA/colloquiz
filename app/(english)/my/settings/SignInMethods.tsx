@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { PAPER_PANEL_CLASS } from "../../surfaceClasses";
 import type { SignInLabels } from "./settingsCopy";
 
 // Colloquiz's ProvidersSection order, so the two lists read the same.
@@ -110,7 +111,7 @@ export function SignInMethods({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="divide-y divide-border rounded-2xl border border-border bg-card">
+      <div className={`${PAPER_PANEL_CLASS} divide-y divide-border`}>
         {loadError && (
           <p className="px-4 py-4 text-sm text-destructive-text sm:px-5">{labels.loadError.replace("{error}", loadError)}</p>
         )}

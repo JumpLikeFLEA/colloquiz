@@ -5,12 +5,17 @@ import { invitePath, type InvitePreview } from "@/lib/runInvites";
 import { getInvitePreview } from "@/lib/runInvitesServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { SUBMIT_BUTTON_CLASS } from "@/app/components/lesson-player/practice/practiceClasses";
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
-import { GradientBackdrop } from "../../HeroDecor";
 import { LinkStatementCard } from "../../LinkStatementCard";
-import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../surfaceClasses";
+import {
+  HERO_ENTER_CLASS,
+  OFFSET_CTA_CLASS,
+  OUTLINE_CTA_CLASS,
+  PAPER_PANEL_CLASS,
+  PAPER_PILL_CLASS,
+  PAPER_PILL_HIGHLIGHT_CLASS,
+} from "../../surfaceClasses";
 import { inviteCopy } from "./inviteCopy";
 
 // The title and description a link preview shows (docs/decisions/0137).
@@ -25,10 +30,6 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     description: inviteCopy.metaDescriptionFor(preview.courseTitle),
   };
 }
-
-// The paid-lesson card's secondary button (LessonUnavailable.tsx).
-const SECONDARY_BUTTON_CLASS =
-  "inline-flex min-h-11 items-center rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand";
 
 /**
  * COH-003 (docs/decisions/0107) — where an invite link lands. English, no
@@ -57,25 +58,25 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const here = invitePath(token);
 
   return (
-    <main className="flex flex-1 flex-col bg-background" data-invite-state={preview.state}>
-      <section className={GRADIENT_BAND_CLASS}>
-        <GradientBackdrop />
-        <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
-          <BandTopBar account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={here} />} />
+    // The Alina Cher grid paper (SHELL-033, docs/decisions/0192), as the lesson page's own states.
+    <main className="grid-paper flex flex-1 flex-col" data-invite-state={preview.state}>
+      <section>
+        <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
+          <BandTopBar tone="paper" account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={here} tone="paper" />} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
-            <span className={GLASS_PILL_CLASS}>{inviteCopy.eyebrow}</span>
+            <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{inviteCopy.eyebrow}</span>
             {preview.state === "not_found" ? (
-              <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">
                 {inviteCopy.notFound.title}
               </h1>
             ) : (
               <>
-                <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+                <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">
                   {preview.courseTitle}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {preview.runTitle && <span className={GLASS_PILL_CLASS}>{preview.runTitle}</span>}
-                  <span className={GLASS_PILL_CLASS}>{inviteCopy.tier[preview.tier]}</span>
+                  {preview.runTitle && <span className={PAPER_PILL_CLASS}>{preview.runTitle}</span>}
+                  <span className={PAPER_PILL_CLASS}>{inviteCopy.tier[preview.tier]}</span>
                 </div>
               </>
             )}
@@ -83,8 +84,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         </div>
       </section>
 
-      <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
-        <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+      <div className={`${LESSON_READING_FRAME_CLASS} pb-10 pt-4 sm:pb-12`}>
+        <section className={`${PAPER_PANEL_CLASS} flex flex-col items-center gap-4 px-6 py-10 text-center`}>
           <InviteState preview={preview} signedIn={signedIn} token={token} here={here} />
         </section>
       </div>
@@ -107,7 +108,7 @@ function InviteState({
     return (
       <>
         <Body>{inviteCopy.notFound.body}</Body>
-        <Link href="/" className={SECONDARY_BUTTON_CLASS}>
+        <Link href="/" className={OUTLINE_CTA_CLASS}>
           {inviteCopy.home}
         </Link>
       </>
@@ -115,7 +116,7 @@ function InviteState({
   }
 
   const courseLink = (
-    <Link href={`/courses/${preview.courseSlug}`} className={SECONDARY_BUTTON_CLASS}>
+    <Link href={`/courses/${preview.courseSlug}`} className={OUTLINE_CTA_CLASS}>
       {inviteCopy.goToCourse}
     </Link>
   );
@@ -127,7 +128,7 @@ function InviteState({
           <Title>{inviteCopy.pending.title}</Title>
           {preview.teacherName && <LinkStatementCard lang="en" teacherName={preview.teacherName} />}
           <Body>{inviteCopy.pending.signedOutBody}</Body>
-          <Link href={`/login?${new URLSearchParams({ next: here }).toString()}`} className={SUBMIT_BUTTON_CLASS}>
+          <Link href={`/login?${new URLSearchParams({ next: here }).toString()}`} className={OFFSET_CTA_CLASS}>
             {inviteCopy.pending.signedOutCta}
           </Link>
         </>
@@ -159,7 +160,7 @@ function InviteState({
         </Body>
         <form action="/api/invites/claim" method="post">
           <input type="hidden" name="token" value={token} />
-          <button type="submit" className={SUBMIT_BUTTON_CLASS}>
+          <button type="submit" className={OFFSET_CTA_CLASS}>
             {inviteCopy.pending.join}
           </button>
         </form>
@@ -182,7 +183,7 @@ function InviteState({
       {preview.state === "claimed_by_you" ? (
         courseLink
       ) : (
-        <Link href="/" className={SECONDARY_BUTTON_CLASS}>
+        <Link href="/" className={OUTLINE_CTA_CLASS}>
           {inviteCopy.home}
         </Link>
       )}
@@ -191,7 +192,7 @@ function InviteState({
 }
 
 function Title({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-lg font-semibold text-foreground">{children}</h2>;
+  return <h2 className="font-display text-lg font-extrabold text-foreground">{children}</h2>;
 }
 
 function Body({ children }: { children: React.ReactNode }) {

@@ -13,8 +13,7 @@ import { MessageComposer } from "@/app/components/messages/MessageComposer";
 import { MessageThread } from "@/app/components/messages/MessageThread";
 import { AccountMenu } from "../../../AccountMenu";
 import { BandTopBar } from "../../../BandTopBar";
-import { GradientBackdrop } from "../../../HeroDecor";
-import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../../surfaceClasses";
+import { HERO_ENTER_CLASS, PAPER_EMPTY_BOX_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../../surfaceClasses";
 import { messagesCopy } from "../messagesCopy";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -57,31 +56,33 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
   const m = messagesCopy[lang];
 
   return (
-    <main className="bg-background">
-      <section className={GRADIENT_BAND_CLASS}>
-        <GradientBackdrop />
-        <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
+    // The Alina Cher grid paper (SHELL-033, docs/decisions/0192). The thread and the composer are
+    // shared with Studio and keep their own look.
+    <main className="grid-paper">
+      <section>
+        <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
+            tone="paper"
             back={{ href: "/my/messages", label: m.backToList }}
             account={
               signedIn && (
-                <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />
+                <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" tone="paper" />
               )
             }
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
-            <span className={GLASS_PILL_CLASS}>{m.title}</span>
-            <h1 className="text-balance break-words text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.title}</span>
+            <h1 className="text-balance break-words font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">
               {thread.peerLabel}
             </h1>
-            <p className="max-w-xl text-base text-white/80 sm:text-lg">{m.privateNote(thread.peerLabel)}</p>
+            <p className="max-w-xl text-base text-muted-foreground sm:text-lg">{m.privateNote(thread.peerLabel)}</p>
           </div>
         </div>
       </section>
 
-      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-8 py-12 sm:py-16`}>
+      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-8 pb-12 pt-4 sm:pb-16`}>
         {messages.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <p className={`${PAPER_EMPTY_BOX_CLASS} p-6 text-center text-sm text-muted-foreground`}>
             {m.noMessages}
           </p>
         ) : (
@@ -102,7 +103,7 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
         {thread.isOpen ? (
           <MessageComposer teacherId={teacherId} studentId={user.id} labels={m.composer} />
         ) : (
-          <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+          <p className={`${PAPER_EMPTY_BOX_CLASS} p-4 text-sm text-muted-foreground`}>
             {m.closedNote(thread.peerLabel)}
           </p>
         )}

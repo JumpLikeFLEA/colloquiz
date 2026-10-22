@@ -2639,3 +2639,28 @@ Appended to in the same commit as the change it records. Referenced from
   tokens and classes only; no new colours. Do not put the gradient band back on these two pages, and
   do not import `AnalysisResult` statically into `/runs`: it ships its chunk to a visitor who sees no
   analysis (measured 245.3 KB signed out).
+- The rest of the learner pages in the Alina Cher look (2026-10-22, SHELL-033,
+  docs/decisions/0192), SUPERSEDING the gradient bands of 0151, 0181, 0107 and 0148 on
+  `/my/messages`, `/my/messages/[teacherId]`, `/my/settings`, `/invite/[token]` and
+  `/join/[token]` (their content, states and copy stand). Every page is grid paper
+  (`.grid-paper`) with `BandTopBar` and `AccountMenu` in `tone="paper"`, a yellow eyebrow
+  pill, the title in `font-display`, `SectionHeading display`, ink-outlined cards with the
+  offset shadow (`PAPER_CARD_CLASS` for the message rows, `PAPER_PANEL_CLASS` for the rest),
+  the yellow tile on the message rows, and the dashed ink box for an empty or closed thread.
+  Invite and join: the state card is one paper panel, "Join" and "Sign in or create an
+  account" are the violet offset button (`OFFSET_CTA_CLASS`), the secondary link is
+  `OUTLINE_CTA_CLASS`, and the run and tier pills are ink-outlined. Settings: the appearance,
+  export and sign-in cards take the panel frame and the "Data and privacy" rule is ink; the
+  delete danger zone keeps its destructive tokens. The thread, composer and attachment card
+  are shared with Studio and unchanged. Removed: `GradientBackdrop` (`HeroDecor.tsx`),
+  `GRADIENT_BAND_CLASS`, `GLASS_PILL_CLASS`, `WHITE_CTA_CLASS`. Existing tokens and classes
+  only; no new colours. Measured at 360px (`scrollWidth/innerWidth`, local stack): 360/360 on
+  `/join` (signed out, signed in, already linked, invalid token, RU), `/invite` (signed out,
+  signed in, invalid token), `/my/messages` (closed conversation, RU, a new link), a thread
+  with an exercise attachment and an unbroken word, a live thread with the composer, and
+  `/my/settings` (EN, RU, an in-app-browser user agent, the delete dialog open at x 22 width
+  316). `npm run budget` before and after: `/invite` and `/join` 175.9 / 175.9 KB,
+  `/my/messages` 175.9 / 175.9, `/my/settings` 199.4 / 199.7 (limit 208). Not measured: the
+  unlink confirm (one sign-in method in the fixture), the invite page's used, expired and
+  revoked states, a phone. Do not put the gradient band back on these pages, and do not
+  restyle the shared thread for them without checking Studio.

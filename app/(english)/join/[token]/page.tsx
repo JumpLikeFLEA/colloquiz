@@ -7,12 +7,16 @@ import { joinPath, type TeacherJoinPreview } from "@/lib/teacherLinks";
 import { getTeacherJoinPreview } from "@/lib/teacherLinksServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { SUBMIT_BUTTON_CLASS } from "@/app/components/lesson-player/practice/practiceClasses";
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
-import { GradientBackdrop } from "../../HeroDecor";
 import { LinkStatementCard } from "../../LinkStatementCard";
-import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../surfaceClasses";
+import {
+  HERO_ENTER_CLASS,
+  OFFSET_CTA_CLASS,
+  OUTLINE_CTA_CLASS,
+  PAPER_PANEL_CLASS,
+  PAPER_PILL_HIGHLIGHT_CLASS,
+} from "../../surfaceClasses";
 import { joinCopy } from "./joinCopy";
 
 // A teacher's link is private to whoever they send it to: no indexing, and a
@@ -22,11 +26,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
   return { title: joinCopy[lang].metaTitle, robots: { index: false } };
 }
-
-// The paid-lesson card's secondary button (LessonUnavailable.tsx), as the
-// invite page uses it.
-const SECONDARY_BUTTON_CLASS =
-  "inline-flex min-h-11 items-center rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand";
 
 /**
  * TCH-001 (docs/decisions/0148) — where a teacher's student link lands.
@@ -60,24 +59,25 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
   const here = joinPath(token);
 
   return (
-    <main className="flex flex-1 flex-col bg-background" data-join-state={preview.state}>
-      <section className={GRADIENT_BAND_CLASS}>
-        <GradientBackdrop />
-        <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
+    // The Alina Cher grid paper (SHELL-033, docs/decisions/0192), as the invite page.
+    <main className="grid-paper flex flex-1 flex-col" data-join-state={preview.state}>
+      <section>
+        <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
-            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={here} />}
+            tone="paper"
+            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={here} tone="paper" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
-            <span className={GLASS_PILL_CLASS}>{m.eyebrow}</span>
-            <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
+            <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">
               {preview.state === "not_found" ? m.notFound.title : m.headingFor(preview.teacherName)}
             </h1>
           </div>
         </div>
       </section>
 
-      <div className={`${LESSON_READING_FRAME_CLASS} py-10 sm:py-12`}>
-        <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-sm">
+      <div className={`${LESSON_READING_FRAME_CLASS} pb-10 pt-4 sm:pb-12`}>
+        <section className={`${PAPER_PANEL_CLASS} flex flex-col items-center gap-4 px-6 py-10 text-center`}>
           <JoinState preview={preview} signedIn={signedIn} token={token} here={here} lang={lang} />
         </section>
       </div>
@@ -104,7 +104,7 @@ function JoinState({
     return (
       <>
         <Body>{m.notFound.body}</Body>
-        <Link href="/" className={SECONDARY_BUTTON_CLASS}>
+        <Link href="/" className={OUTLINE_CTA_CLASS}>
           {m.home}
         </Link>
       </>
@@ -117,7 +117,7 @@ function JoinState({
       <>
         <Title>{copy.title}</Title>
         <Body>{copy.body}</Body>
-        <Link href={preview.state === "self" ? "/" : "/my"} className={SECONDARY_BUTTON_CLASS}>
+        <Link href={preview.state === "self" ? "/" : "/my"} className={OUTLINE_CTA_CLASS}>
           {preview.state === "self" ? m.home : m.myCourses}
         </Link>
       </>
@@ -131,7 +131,7 @@ function JoinState({
       {!signedIn ? (
         <>
           <Body>{m.signedOutBody}</Body>
-          <Link href={`/login?${new URLSearchParams({ next: here }).toString()}`} className={SUBMIT_BUTTON_CLASS}>
+          <Link href={`/login?${new URLSearchParams({ next: here }).toString()}`} className={OFFSET_CTA_CLASS}>
             {m.signedOutCta}
           </Link>
         </>
@@ -148,7 +148,7 @@ function JoinState({
           </Body>
           <form action="/api/teacher-links/join" method="post">
             <input type="hidden" name="token" value={token} />
-            <button type="submit" className={SUBMIT_BUTTON_CLASS}>
+            <button type="submit" className={OFFSET_CTA_CLASS}>
               {m.join}
             </button>
           </form>
@@ -160,7 +160,7 @@ function JoinState({
 }
 
 function Title({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-lg font-semibold text-foreground">{children}</h2>;
+  return <h2 className="font-display text-lg font-extrabold text-foreground">{children}</h2>;
 }
 
 function Body({ children }: { children: React.ReactNode }) {

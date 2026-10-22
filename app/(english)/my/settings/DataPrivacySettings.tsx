@@ -13,6 +13,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { EXPORT_ENDPOINT, exportFilename } from "@/lib/accountExport";
 import { DELETE_CONFIRM_PHRASE, DELETE_ENDPOINT, type DeleteBlockingGroup } from "@/lib/accountDelete";
+import { PAPER_PANEL_CLASS } from "../../surfaceClasses";
 import type { DataLabels } from "./settingsCopy";
 
 /** Where a learner lands once the account is gone: the English sign-in panel
@@ -61,7 +62,7 @@ export function DataPrivacySettings({ labels }: { labels: DataLabels }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div className={`${PAPER_PANEL_CLASS} flex flex-col gap-4 p-4 sm:p-5`}>
         <div>
           <p className="text-sm font-medium text-foreground">{labels.exportTitle}</p>
           <p className="mt-1 text-xs text-muted-foreground">{labels.exportBody}</p>

@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { asThemePreference, THEME_STORAGE_KEY, type ThemePreference } from "@/lib/theme";
+import { PAPER_PANEL_CLASS } from "../../surfaceClasses";
 import type { AppearanceLabels } from "./settingsCopy";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
@@ -110,7 +111,7 @@ export function AppearanceSettings({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div className={`${PAPER_PANEL_CLASS} flex flex-col gap-4 p-4 sm:p-5`}>
         <fieldset className="flex flex-col gap-3">
           <legend className="text-sm font-medium text-foreground">{labels.legend}</legend>
 

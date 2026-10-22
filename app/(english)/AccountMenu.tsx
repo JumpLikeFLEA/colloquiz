@@ -42,13 +42,12 @@ import { accountCopy } from "./accountCopy";
  * getSignedInAccount, fail-soft, so it adds no client JS and no way for the
  * chrome to break a page.
  *
- * The band clips only horizontally (`overflow-x-clip`, GRADIENT_BAND_CLASS)
- * and has no transform, so the `fixed` layer still covers the viewport and
- * the card may hang below the band onto the page: with My courses and Studio
- * it is taller than the compact bands, and a band clipping both axes cut it
- * off. The card uses the popover tokens, not the
- * band's translucent white: it has to be readable over the gradient and
- * over the page content alike.
+ * The card may hang below the top bar onto the page: with My courses and
+ * Studio it is taller than the compact bands, and a container that clipped
+ * both axes cut it off (the gradient band, which clipped only horizontally,
+ * until SHELL-033, docs/decisions/0192, moved the last pages to the paper).
+ * The card uses the popover tokens, not the band's translucent white: it
+ * has to be readable over the gradient and over the page content alike.
  */
 export function AccountMenu({
   email,

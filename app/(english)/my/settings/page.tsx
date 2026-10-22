@@ -14,9 +14,8 @@ import { getThemePreference } from "@/lib/themePreferenceServer";
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
-import { GradientBackdrop } from "../../HeroDecor";
 import { SectionHeading } from "../../SectionHeading";
-import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS } from "../../surfaceClasses";
+import { HERO_ENTER_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../surfaceClasses";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { DataPrivacySettings } from "./DataPrivacySettings";
 import { SignInMethods } from "./SignInMethods";
@@ -68,33 +67,34 @@ export default async function MySettingsPage() {
   ) as Record<OAuthProvider, boolean>;
 
   return (
-    <main className="bg-background">
-      <section className={GRADIENT_BAND_CLASS}>
-        <GradientBackdrop />
-        <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
+    // The Alina Cher grid paper (SHELL-033, docs/decisions/0192).
+    <main className="grid-paper">
+      <section>
+        <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
+            tone="paper"
             back={{ href: "/my", label: s.backToMy }}
             // Sign-out from here returns to `/`: `/my/settings` would only
             // bounce a signed-out visitor to the sign-in page.
-            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" tone="paper" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
-            <span className={GLASS_PILL_CLASS}>{s.eyebrow}</span>
-            <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{s.title}</h1>
-            <p className="max-w-xl text-base text-white/80 sm:text-lg">{s.lead}</p>
+            <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{s.eyebrow}</span>
+            <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{s.title}</h1>
+            <p className="max-w-xl text-base text-muted-foreground sm:text-lg">{s.lead}</p>
           </div>
         </div>
       </section>
 
-      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 py-12 sm:gap-16 sm:py-16`}>
+      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 pb-12 pt-4 sm:gap-16 sm:pb-16`}>
         <section className="flex flex-col gap-6" data-settings="appearance">
-          <SectionHeading title={s.appearanceTitle} />
+          <SectionHeading display title={s.appearanceTitle} />
           <p className="-mt-3 text-sm text-muted-foreground">{s.appearanceLead}</p>
           <AppearanceSettings userId={user.id} initialPreference={themePreference} labels={s.appearance} />
         </section>
 
         <section className="flex flex-col gap-6" data-settings="sign-in">
-          <SectionHeading title={s.signInTitle} />
+          <SectionHeading display title={s.signInTitle} />
           <p className="-mt-3 text-sm text-muted-foreground">{s.signInLead}</p>
           <SignInMethods identities={identities} loadError={identityError} available={available} labels={s.signIn} />
         </section>
@@ -102,8 +102,8 @@ export default async function MySettingsPage() {
         {/* Last and set apart, as on the Colloquiz page: these are rights, not
             preferences, and the destructive half must never read as one more
             row of settings. */}
-        <section className="flex flex-col gap-6 border-t-2 border-border pt-12" data-settings="data">
-          <SectionHeading title={s.dataTitle} />
+        <section className="flex flex-col gap-6 border-t-2 border-ink pt-12" data-settings="data">
+          <SectionHeading display title={s.dataTitle} />
           <p className="-mt-3 text-sm text-muted-foreground">{s.dataLead}</p>
           <DataPrivacySettings labels={s.data} />
           <p className="text-xs text-muted-foreground">
