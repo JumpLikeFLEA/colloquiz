@@ -1,7 +1,7 @@
 # 0195 — VOICE-016: voice analyses in the export, the purge and erasure
 
-Status: written 2026-10-22 (VOICE-016, #241). Migration 098 is applied to the local stack only, not to
-the hosted project (the hosted-apply gate has not been run for it).
+Status: written 2026-10-22 (VOICE-016, #241). Migration 098 is applied to the local stack and, at the owner's
+instruction on 2026-10-22, to hosted through the gate (see "Hosted").
 
 ## Context
 
@@ -65,13 +65,34 @@ Earlier verify scripts for the objects 098 touches re-run and pass: 094 (83 cell
 
 ## Not here
 
-- The privacy policy's retention table has no row for the send ledger ("a count of how many recordings of
-  each task you have sent" is listed in section 3.2, with no retention). The ledger now
-  expires at 6 months; the table should say so. Legal copy is reviewed text, so a card is proposed instead
-  of an edit (see the card's evidence comment).
-- Hosted apply: 098 is written, not applied. The route and cron calls need 098; until it is applied the
-  export route fails (a missing RPC is a section error, by design: a partial export is worse than none) and
-  the cron's ledger call logs and answers 500. Apply 098 through the gate before deploying this commit.
+- The privacy policy's retention table had no row for the send ledger ("a count of how many recordings of
+  each task you have sent" is listed in section 3.2, with no retention). Added at the owner's instruction
+  (2026-10-22, no card): a row in section 7 of the draft 1.7 (still unpublished, so no version bump; "Last
+  updated" moved to 2026-10-22). The owner re-reads it when publishing 1.7 (OPS-026).
+
+## Hosted
+
+Applied 2026-10-22 through the hosted-apply gate, at the owner's instruction.
+
+- Print rule right before applying: latest migration 098 (the one applied), latest `delete_my_account` body
+  096, `voice_mark_removed` still 060's.
+- Probe before (read-only, `db query --linked`): history matched through 097 with 098 pending; the 5
+  required functions and 4 required tables present; `my_voice_analyses_export` and `voice_purge_ledger`
+  absent; `voice_mark_removed` without `voice_analyses`; `delete_my_account` names the ledger (096); 0 rows
+  in `voice_analyses`, `voice_analysis_sends` and `voice_submissions`.
+- Not destructive: `CREATE OR REPLACE` of two new functions and one re-emitted; no DROP, TRUNCATE, or
+  DELETE/UPDATE of an existing row at apply time. Applied by `db query --linked -f`, exit 0, then
+  `migration repair --status applied 098` (`migration list --linked`: 098 local and remote both `098`).
+- Probe after: both new functions present; `voice_mark_removed` now names `voice_analyses`;
+  `my_voice_analyses_export`: authenticated yes, anon no; `voice_purge_ledger` and `voice_mark_removed`:
+  service_role yes, authenticated no.
+- `supabase/verify/098` on hosted: the plain run exits 0 (the CLI prints no NOTICE); a scratch copy with only
+  the final `RAISE NOTICE` turned into `RAISE EXCEPTION` printed `VOICE-016 PASS: 098 full protocol (40
+  asserted cells)`.
+- Afterwards, read-only: 0 seeded users and courses, and 0 rows in `voice_analysis_sends`, `voice_analyses`,
+  `voice_submissions`, `voice_object_deletions` and the voice bucket.
+
+Deploy this commit after this point: the export route and the purge cron now find their functions.
 
 ## Revisit when
 

@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.7 · Last updated 2026-10-21
+Version 1.7 · Last updated 2026-10-22
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -300,6 +300,7 @@ data processing addendum.
 | Telegram identity | Until you close your account; then erased with your profile details |
 | Voice recordings | A recording you replace is deleted when you replace it. In a cohort course, all recordings are deleted 6 months after the end of the run. In any other course, a recording is deleted 6 months after you sent it. In both cases a recording is also deleted when you delete your account, whichever comes first |
 | Voice transcripts and AI feedback | Deleted together with the recording they were made from, at the same time and for the same reasons. The feedback on a later recording can quote short passages of your first recording; those quotes are part of that later feedback and are deleted with it |
+| The count of recordings you sent for each task (kept to apply the limits on AI feedback) | Deleted 6 months after you sent the recording, or when you delete your account, whichever comes first. If the feedback made from that recording is still kept (a cohort course keeps recordings until 6 months after the run ends), the count is deleted once the feedback is |
 | What AssemblyAI and Anthropic keep | AssemblyAI: we ask it to delete each transcript as soon as we have received it, and its documentation says it begins deleting audio 24 hours after a request and finishes within 48 hours; it keeps some metadata for logging and billing. Anthropic: its published policy is to delete inputs and outputs within 30 days of receipt, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy. |
 | The author's written feedback and final comment | Until you close your account; then **deleted outright** |
 | Invite contact labels | Once you claim the invite, kept with your enrolment and deleted when you delete your account. A label never claimed is deleted 30 days after the invite expires or is revoked |
