@@ -1,12 +1,12 @@
 import { after, NextResponse, type NextRequest } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseVoiceAnalysisMode } from "@/lib/voice/analysis/mode";
 import { runAnalysisForSubmission } from "@/lib/voice/analysis/server";
 import { shouldReclaim } from "@/lib/voice/analysis/staging";
-import { readAnalysisStatus, type StatusDeps } from "@/lib/voice/analysis/status";
+import { readAnalysisStatus } from "@/lib/voice/analysis/status";
+import { statusDeps } from "@/lib/voice/analysis/statusDeps";
 
 /**
  * GET /api/voice/submissions/<id>/analysis — where one take's analysis stands (VOICE-012,
@@ -22,75 +22,6 @@ import { readAnalysisStatus, type StatusDeps } from "@/lib/voice/analysis/status
  * The offer is only a hint. voice_analysis_claim is atomic and refuses while any lease is
  * live, so a poll that arrives while a run is working changes nothing.
  */
-
-function statusDeps(supabase: SupabaseClient, userId: string, admin: () => SupabaseClient) {
-  // The row as RLS showed it, kept for the re-claim check below (per request, never shared).
-  const seen: { status: string; updatedAt: string } = { status: "", updatedAt: "" };
-  const deps: StatusDeps = {
-    async ownsTake(id) {
-      const { data, error } = await supabase
-        .from("voice_submissions")
-        .select("id")
-        .eq("id", id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (error) throw error;
-      return data !== null;
-    },
-    async readVisible(id) {
-      const { data, error } = await supabase
-        .from("voice_analyses")
-        .select("status, transcript, result, updated_at")
-        .eq("submission_id", id)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return null;
-      seen.status = data.status as string;
-      seen.updatedAt = data.updated_at as string;
-      return { status: data.status as string, transcript: data.transcript as string | null, result: data.result };
-    },
-    async readHidden(id) {
-      const { data, error } = await admin()
-        .from("voice_analyses")
-        .select("hidden_at")
-        .eq("submission_id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.hidden_at != null;
-    },
-    async readLedger(id) {
-      const { data, error } = await admin()
-        .from("voice_analysis_sends")
-        .select("analysed, uncounted_reason")
-        .eq("submission_id", id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (error) throw error;
-      return data ? { analysed: data.analysed as boolean, uncountedReason: data.uncounted_reason as string | null } : null;
-    },
-    async readBaselineId(id) {
-      const { data, error } = await admin()
-        .from("voice_analyses")
-        .select("baseline_submission_id")
-        .eq("submission_id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return (data?.baseline_submission_id as string | null) ?? null;
-    },
-    async readBaseline(id) {
-      // Under the caller's session again: a hidden or purged first analysis simply is not there.
-      const { data, error } = await supabase
-        .from("voice_analyses")
-        .select("status, transcript, result")
-        .eq("submission_id", id)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data || data.status !== "done" || typeof data.transcript !== "string") return null;
-      return { transcript: data.transcript as string, result: data.result };
-    },
-  };
-  return { deps, seen };
-}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

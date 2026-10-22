@@ -24,6 +24,12 @@ export const finalCopy = {
     heading: "Final comment",
     pending: "Your teacher's final comment isn't ready yet. It appears here once it's published.",
   },
+  /** The final take's AI feedback (PROG-007, docs/decisions/0191). The states reuse voiceAnalysisCopy. */
+  analysis: {
+    heading: "AI feedback on your After recording",
+    working: "Your AI feedback is still being prepared. Reload this page in a minute.",
+    openLesson: "Open the lesson",
+  },
   signedOut: {
     title: "Sign in to see your before and after",
     body: "This page shows your own recordings, so you need to be signed in.",

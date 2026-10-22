@@ -75,6 +75,8 @@ const USERS = {
   editor: "play006-editor@example.com",
   // PROG-002 (docs/decisions/0120): the learner home's fixture learner.
   learnerHome: "prog002-learner@example.com",
+  // PROG-007 (docs/decisions/0191): the before/after screen fixture learner.
+  finalScreen: "prog007-learner@example.com",
 } as const;
 
 const VALID_DOCUMENT = [
@@ -305,6 +307,7 @@ async function main() {
   await seedRealLessonFixture(editorId);
   await seedCohortRunFixture(editorId);
   await seedLearnerHomeFixture(await upsertUser(USERS.learnerHome));
+  await seedFinalScreenFixture(await upsertUser(USERS.finalScreen));
 
   console.log("Done.");
 }
@@ -556,6 +559,173 @@ async function seedLearnerHomeFixture(learnerId: string): Promise<void> {
   );
   if (fbErr) throw new Error(`voice_feedback upsert failed: ${fbErr.message}`);
   console.log("Learner home fixture:", USERS.learnerHome, "enrolment:", enrolmentId);
+}
+
+// PROG-007 (docs/decisions/0191): a learner whose before/after screen shows everything: a second
+// run of the COH-005 course that STARTED 23 days ago (so week four is open and the "After" slot
+// is readable; the first run starts in the future and stays as 0115 left it), both takes
+// recorded and analysed (a first, then a final compared with it) and a published final comment.
+// `scripts/budget.ts` measures `/runs/<id>` signed in as this learner with VOICE_ANALYSIS_MODE=on;
+// with the mode `off` the AI feedback is not drawn and the page reads as before. Fixed ids and
+// every write idempotent: nothing is written for a take whose analysis row already exists. No
+// provider is called; results go in through voice_analysis_finish (097), as VOICE-014's run does.
+const FINAL_SCREEN_RUN_ID = "c0050000-0000-4000-8000-00000000f1a1";
+const FINAL_SCREEN_IDS = {
+  before: "f0070000-0000-4000-8000-0000000000b1",
+  after: "f0070000-0000-4000-8000-0000000000b2",
+} as const;
+const FIRST_FIXTURE_TEXT = "Yesterday I go to my favourite place with my friend. Um, I made my mind to stay there. I had a great time.";
+const FINAL_FIXTURE_TEXT = "Yesterday I went to my favourite place with my friend. I made up my mind quickly and I had a great time.";
+
+function spanOf(text: string, quote: string): { start: number; end: number } {
+  const start = text.indexOf(quote);
+  if (start < 0) throw new Error(`fixture: "${quote}" not in the text`);
+  return { start, end: start + quote.length };
+}
+
+async function seedFinalScreenFixture(learnerId: string): Promise<void> {
+  const weekOne = await publishedVersionId("coh005-fixture", "week-one");
+  const weekFour = await publishedVersionId("coh005-fixture", "week-four");
+
+  // 23 days ago: week four (day 21) is open and the run has not ended, which an enrolment insert
+  // needs (058: run_ended). Taken once, on the first seed; the row is never updated afterwards, and
+  // an existing enrolment stays valid once the run has ended.
+  const runStart = new Date(Date.now() - 23 * 86_400_000).toISOString();
+  const { error: runErr } = await supabase
+    .from("course_runs")
+    .upsert(
+      { id: FINAL_SCREEN_RUN_ID, course_id: weekOne.courseId, title: "Fixture run (started)", starts_at: runStart },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+  if (runErr) throw new Error(`final-screen run insert failed: ${runErr.message}`);
+
+  const { data: existing, error: enrolReadErr } = await supabase
+    .from("run_enrolments")
+    .select("id")
+    .eq("run_id", FINAL_SCREEN_RUN_ID)
+    .eq("user_id", learnerId)
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (enrolReadErr) throw new Error(`final-screen enrolment read failed: ${enrolReadErr.message}`);
+  let enrolmentId = existing?.id as string | undefined;
+  if (!enrolmentId) {
+    const { data: created, error: enrolErr } = await supabase
+      .from("run_enrolments")
+      .insert({ run_id: FINAL_SCREEN_RUN_ID, user_id: learnerId, tier: "basic", source_ref: "seed:prog007" })
+      .select("id")
+      .single();
+    if (enrolErr) throw new Error(`final-screen enrolment insert failed: ${enrolErr.message}`);
+    enrolmentId = created.id as string;
+  }
+
+  const take = async (id: string, lesson: typeof weekOne, blockId: string, text: string, result: unknown, instruction: "first" | "final", baseline: string | null) => {
+    const objectName = `${lesson.courseId}/${learnerId}/${id}.webm`;
+    const up = await supabase.storage
+      .from("voice-recordings")
+      .upload(objectName, new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0, 0, 0, 0]), { contentType: "audio/webm", upsert: true });
+    if (up.error) throw new Error(`voice object upload failed: ${up.error.message}`);
+    const { error: subErr } = await supabase.from("voice_submissions").upsert(
+      {
+        id,
+        enrolment_id: enrolmentId,
+        user_id: learnerId,
+        course_id: lesson.courseId,
+        lesson_id: lesson.lessonId,
+        block_id: blockId,
+        lesson_version_id: lesson.versionId,
+        object_name: objectName,
+        content_type: "audio/webm",
+        size_bytes: 8,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+    if (subErr) throw new Error(`voice_submissions upsert failed (${blockId}): ${subErr.message}`);
+
+    const { data: done, error: readErr } = await supabase.from("voice_analyses").select("submission_id").eq("submission_id", id).maybeSingle();
+    if (readErr) throw new Error(`voice_analyses read failed: ${readErr.message}`);
+    if (done) return;
+    const { data: send, error: sendErr } = await supabase
+      .from("voice_analysis_sends")
+      .insert({ user_id: learnerId, lesson_id: lesson.lessonId, block_id: blockId, submission_id: id, slot: "enrolment" })
+      .select("id")
+      .single();
+    if (sendErr) throw new Error(`voice_analysis_sends insert failed: ${sendErr.message}`);
+    const { error: rowErr } = await supabase.from("voice_analyses").insert({ submission_id: id, send_id: send.id });
+    if (rowErr) throw new Error(`voice_analyses insert failed: ${rowErr.message}`);
+    const fin = await supabase.rpc("voice_analysis_finish", {
+      p_submission_id: id,
+      p_transcript: text,
+      p_result: result,
+      p_instruction: instruction,
+      p_prompt_version: `${instruction}-v1`,
+      p_model: "claude-sonnet-5-5",
+      p_usage: {},
+      p_baseline: baseline,
+    });
+    if (fin.error || fin.data !== true) throw new Error(`voice_analysis_finish failed: ${fin.error?.message ?? fin.data}`);
+  };
+
+  const first = {
+    v: 1,
+    kind: "first",
+    summary: "You told a clear story about a place you like.",
+    howItSounds: "Friendly, with one small pause.",
+    goal: "Use the past simple two times in your next recording.",
+    goalReached: null,
+    nextStep: null,
+    expressionsUsed: [{ expression: "make up my mind", quote: "made my mind", exact: false, span: spanOf(FIRST_FIXTURE_TEXT, "made my mind") }],
+    highlights: [
+      { quote: "Um,", kind: "hesitation", note: "A short pause before the idea.", span: spanOf(FIRST_FIXTURE_TEXT, "Um,") },
+      { quote: "I had a great time", kind: "strength", note: "A natural phrase.", span: spanOf(FIRST_FIXTURE_TEXT, "I had a great time") },
+    ],
+    errors: [{ quote: "I go", category: "grammar", correction: "I went", explanation: "It happened yesterday, so use the past.", span: spanOf(FIRST_FIXTURE_TEXT, "I go") }],
+    mainError: 0,
+    thenNow: [],
+    counts: { errors: 1, highlights: 2, hesitations: 1, expressionsUsed: 1, expressionsListed: 1, thenNow: 0 },
+    coverage: { analysedSeconds: 20, truncated: false },
+    dropped: { expressions: 0, highlights: 0, errors: 0, thenNow: 0 },
+  };
+  const final = {
+    v: 1,
+    kind: "final",
+    summary: "Your story is clearer and your verbs are in the past.",
+    howItSounds: "Smoother than the first time.",
+    goal: null,
+    goalReached: { status: "reached", note: "You said “went” and “had”: two past forms." },
+    nextStep: "Keep telling short stories about yesterday.",
+    expressionsUsed: [{ expression: "make up my mind", quote: "made up my mind", exact: true, span: spanOf(FINAL_FIXTURE_TEXT, "made up my mind") }],
+    highlights: [{ quote: "I had a great time", kind: "strength", note: "The same good phrase, now with the past.", span: spanOf(FINAL_FIXTURE_TEXT, "I had a great time") }],
+    errors: [],
+    mainError: null,
+    thenNow: [
+      {
+        then: "I go to my favourite place",
+        now: "I went to my favourite place",
+        note: "Now in the past.",
+        thenSpan: spanOf(FIRST_FIXTURE_TEXT, "I go to my favourite place"),
+        nowSpan: spanOf(FINAL_FIXTURE_TEXT, "I went to my favourite place"),
+      },
+    ],
+    counts: { errors: 0, highlights: 1, hesitations: 0, expressionsUsed: 1, expressionsListed: 1, thenNow: 1 },
+    coverage: { analysedSeconds: 18, truncated: false },
+    dropped: { expressions: 0, highlights: 0, errors: 0, thenNow: 0 },
+  };
+  await take(FINAL_SCREEN_IDS.before, weekOne, "vb", FIRST_FIXTURE_TEXT, first, "first", null);
+  await take(FINAL_SCREEN_IDS.after, weekFour, "va", FINAL_FIXTURE_TEXT, final, "final", FINAL_SCREEN_IDS.before);
+
+  const { error: commentErr } = await supabase.from("run_final_comments").upsert(
+    {
+      enrolment_id: enrolmentId,
+      user_id: learnerId,
+      course_id: weekOne.courseId,
+      run_id: FINAL_SCREEN_RUN_ID,
+      body: { paragraphs: [{ runs: [{ text: "A big step: " }, { text: "your past tense is solid now.", bold: true }] }] },
+      published_at: new Date().toISOString(),
+    },
+    { onConflict: "enrolment_id", ignoreDuplicates: true },
+  );
+  if (commentErr) throw new Error(`run_final_comments upsert failed: ${commentErr.message}`);
+  console.log("Final-screen fixture:", USERS.finalScreen, "run:", FINAL_SCREEN_RUN_ID);
 }
 
 main().catch((e) => {

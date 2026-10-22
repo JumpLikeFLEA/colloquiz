@@ -3,7 +3,8 @@
 import { useMemo, type ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { voiceAnalysisCopy as copy } from "@/lib/alliengll/voiceAnalysisCopy";
-import { isInProgress, parseStoredAnalysis, type AnalysisStatus } from "@/lib/voice/analysis/view";
+import { parseStoredAnalysis } from "@/lib/voice/analysis/parseStored";
+import { isInProgress, type AnalysisStatus } from "@/lib/voice/analysis/view";
 import { AnalysisResult } from "./AnalysisResult";
 import { useAnalysisStatus, type StatusFetcher } from "./useAnalysisStatus";
 

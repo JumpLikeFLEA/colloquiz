@@ -210,6 +210,19 @@ const ROUTES: RouteBudget[] = [
   // precedent, docs/decisions/0057). Re-derive both from a real
   // `npm run budget` run before raising it.
   { path: "/my", budgetKB: 180, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
+  // PROG-007 (docs/decisions/0191): the same page for the before/after fixture learner, who
+  // has two analysed takes, so with VOICE_ANALYSIS_MODE=on the "AI feedback" list renders.
+  // The list is a Server Component's markup, so the figure equals the entry above (174.4 KB
+  // before and after). budgetKB is that plus ~4.5% headroom (the PLAY-012 precedent, 0057).
+  { path: "/my", budgetKB: 182, guardForbiddenSignatures: true, signInAs: "prog007-learner@example.com" },
+  // PROG-007 (docs/decisions/0191): the before/after screen SIGNED IN, as the fixture learner of
+  // a run that started 23 days ago (scripts/seed-local-fixtures.ts): both takes recorded and
+  // analysed, a published final comment. With VOICE_ANALYSIS_MODE=on it draws the final AI
+  // feedback beside the comment (the view's client chunk, 5.7 KB compressed, without the schema
+  // library: docs/decisions/0191 "Budget"); the signed-out entry above measures the sign-in card
+  // only. Measured 176.3 KB before and 171.0 KB after (local stack, mode on); budgetKB is the
+  // after figure plus ~4.5% headroom (the PLAY-012 precedent, 0057).
+  { path: "/runs/c0050000-0000-4000-8000-00000000f1a1", budgetKB: 179, guardForbiddenSignatures: true, signInAs: "prog007-learner@example.com" },
   // TCH-004 (docs/decisions/0151): the learner's message list, signed in as the
   // same learner-home fixture. It ships the layout's JS only: the composer
   // lives on the thread page (/my/messages/[teacherId]), whose URL carries a

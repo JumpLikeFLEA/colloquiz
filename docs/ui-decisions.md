@@ -2616,3 +2616,26 @@ Appended to in the same commit as the change it records. Referenced from
   with its pager, dark mode, the lapsed-seat banner on these pages.
   Do not draw a hidden analysis as removed from Studio (the author needs to see what was withdrawn),
   and do not list a take the caller only owns: the list is scoped to the courses they edit.
+- `/my` and the before/after screen in the Alina Cher look (2026-10-22, PROG-007,
+  docs/decisions/0191), SUPERSEDING the gradient bands of 0120 and 0115 on `/my` and `/runs/[runId]`
+  (their content, sections and states stand). Both pages are grid paper (`.grid-paper`) with
+  `BandTopBar` and `AccountMenu` in `tone="paper"`: a yellow eyebrow pill, the title in
+  `font-display`, `SectionHeading display`, ink-outlined cards with the offset shadow
+  (`PAPER_CARD_CLASS`, `PAPER_PANEL_CLASS`), the yellow numeral tile, the yellow level pill, and a
+  grid-paper level tile for a course with no cover; empty boxes use the ink dashed border.
+  - `/my` gains "AI feedback on your recordings" ("ИИ-разбор ваших записей" in RU, the saved choice)
+    between Teachers/Reminders and Feedback: one row per finished, shown analysis, newest first, at
+    most 12, each a link to its lesson with a "Recording" / "Final recording" pill and the local time.
+    Absent when there is none, when the mode is `off` and when the read fails.
+  - `/runs` shows the After take's AI feedback (the lesson page's view, read once, not polled) beside
+    the final comment from `lg` and above it on a phone; "still being prepared", failed, withdrawn,
+    paused and limit states reuse the lesson page's copy; nothing is drawn with the mode `off`, for a
+    signed-out visitor or for a purged take. With no analysis the comment keeps the reading width.
+  Measured at 360px: `scrollWidth/innerWidth` 360/360 on `/my` with the list (EN, RU) and without,
+  and on `/runs` signed in, signed out and with the mode `off`; 1280/1280 in Edge, light and dark.
+  `npm run budget`: `/my` 174.4 / 174.4 KB, `/runs` signed in 176.3 / 171.0, signed out 176.3 /
+  180.7 (limit 184). Not measured: a phone, an in-app browser, the non-`done` analysis states in a
+  browser. `/my/messages`, `/my/settings`, `/invite` and `/join` keep the gradient band. Existing
+  tokens and classes only; no new colours. Do not put the gradient band back on these two pages, and
+  do not import `AnalysisResult` statically into `/runs`: it ships its chunk to a visitor who sees no
+  analysis (measured 245.3 KB signed out).

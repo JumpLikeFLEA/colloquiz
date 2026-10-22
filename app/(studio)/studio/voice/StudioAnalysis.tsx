@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { AnalysisResult } from "@/app/components/lesson-player/blocks/analysis/AnalysisResult";
-import { parseStoredAnalysis } from "@/lib/voice/analysis/view";
+import { parseStoredAnalysis } from "@/lib/voice/analysis/parseStored";
 import { STATE_LABEL, STATE_PILL, canHide, studioAnalysisState } from "@/lib/voice/analysis/studioList";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";

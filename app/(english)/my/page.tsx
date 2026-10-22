@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, Check, ClipboardList, ExternalLink, MessageSquare, Video } from "lucide-react";
+import { ArrowRight, Check, ClipboardList, ExternalLink, MessageSquare, Sparkles, Video } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
@@ -24,12 +24,15 @@ import { TimeZoneSync } from "@/app/components/calendar/TimeZoneSync";
 import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
 import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
 import { getMyTelegramLinked } from "@/lib/telegram/status";
+import { learnerAnalysisHref, type LearnerAnalysisRow } from "@/lib/voice/analysis/learnerList";
+import { getLearnerAnalyses } from "@/lib/voice/analysis/learnerRead";
+import { authUserFrom } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { AccountMenu } from "../AccountMenu";
 import { BandTopBar } from "../BandTopBar";
-import { GradientBackdrop } from "../HeroDecor";
 import { LocalDateTime } from "../LocalDateTime";
 import { SectionHeading } from "../SectionHeading";
-import { GLASS_PILL_CLASS, GRADIENT_BAND_CLASS, HERO_ENTER_CLASS, LIFT_CARD_CLASS } from "../surfaceClasses";
+import { HERO_ENTER_CLASS, PAPER_CARD_CLASS, PAPER_PANEL_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../surfaceClasses";
 import { myCopy } from "./myCopy";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,10 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
 // the course page.
 const LINK_BUTTON_CLASS =
   "inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand";
-const ROW_CARD_CLASS =
-  "flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5";
+// SHELL-028's frame and numeral tile (docs/decisions/0166), on the grid paper since PROG-007.
+const ROW_CARD_CLASS = `${PAPER_PANEL_CLASS} flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5`;
 const ICON_TILE_CLASS =
-  "flex size-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-white shadow-md shadow-brand/30";
+  "flex size-10 flex-none items-center justify-center rounded-xl border-2 border-ink bg-highlight text-highlight-foreground";
+const EMPTY_BOX_CLASS = "rounded-2xl border-2 border-dashed border-ink/40 p-6 text-center";
 const SMALL_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-brand-subtle px-2 py-0.5 text-xs font-medium text-brand-text";
 const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground";
 
@@ -66,7 +70,7 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  */
 export default async function MyPage({ searchParams }: { searchParams: Promise<{ month?: string | string[] }> }) {
   const { month: rawMonth } = await searchParams;
-  const [home, teachers, threads, homework, calendar, feed, telegramLinked] = await Promise.all([
+  const [home, teachers, threads, homework, calendar, feed, telegramLinked, analyses] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
     getStudentThreads(),
@@ -74,6 +78,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
     getStudentCalendar(typeof rawMonth === "string" ? rawMonth : undefined),
     getStudentFeedStatus(),
     getMyTelegramLinked(),
+    getStudentAnalyses(),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
@@ -83,31 +88,33 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const hasEnrolment = home.courses.some((c) => c.enrolments.length > 0);
 
   return (
-    <main className="bg-background">
-      <section className={GRADIENT_BAND_CLASS}>
-        <GradientBackdrop />
-        <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
+    // The Alina Cher grid paper (PROG-007, docs/decisions/0191), as the course
+    // page and the lesson page have had since SHELL-028 (0166).
+    <main className="grid-paper">
+      <section>
+        <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
+            tone="paper"
             back={{ href: "/#catalogue", label: m.backToCatalogue }}
             // Sign-out from here returns to `/`: `/my` itself would only
             // bounce a signed-out visitor to the sign-in page.
-            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" tone="paper" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
-            <span className={GLASS_PILL_CLASS}>{m.eyebrow}</span>
-            <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{m.title}</h1>
-            <p className="max-w-xl text-base text-white/80 sm:text-lg">{m.lead}</p>
+            <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
+            <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{m.title}</h1>
+            <p className="max-w-xl text-base text-muted-foreground sm:text-lg">{m.lead}</p>
           </div>
         </div>
       </section>
 
-      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 py-12 sm:gap-16 sm:py-16`}>
+      <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 pb-12 pt-4 sm:gap-16 sm:pb-16`}>
         {home.nextCall && <NextCall lang={lang} call={home.nextCall} />}
 
         <section className="flex flex-col gap-6" data-my="courses">
-          <SectionHeading title={m.coursesTitle} />
+          <SectionHeading display title={m.coursesTitle} />
           {home.courses.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border p-6 text-center">
+            <div className={`${EMPTY_BOX_CLASS} flex flex-col items-center gap-4`}>
               <p className="text-sm text-muted-foreground">{m.coursesEmpty}</p>
               <Link href="/#catalogue" className={LINK_BUTTON_CLASS}>
                 {m.browseCourses}
@@ -127,7 +134,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
 
         {homework.length > 0 && (
           <section className="flex flex-col gap-6" data-my="homework">
-            <SectionHeading title={m.homeworkTitle} />
+            <SectionHeading display title={m.homeworkTitle} />
             <p className="-mt-3 text-sm text-muted-foreground">{m.homeworkLead}</p>
             <ul className="flex flex-col gap-3">
               {homework.map((h) => (
@@ -142,7 +149,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
         {calendar && calendar.items.length > 0 && (
           <section id="calendar" className="flex scroll-mt-6 flex-col gap-6" data-my="calendar">
             <TimeZoneSync />
-            <SectionHeading title={m.calendarTitle} />
+            <SectionHeading display title={m.calendarTitle} />
             <p className="-mt-3 text-sm text-muted-foreground">{m.calendarLead}</p>
             <CalendarView {...calendar} lang={lang} basePath="/my" />
             {feed && (
@@ -157,8 +164,8 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
 
         {threads.length > 0 && (
           <section className="flex flex-col gap-6" data-my="messages">
-            <SectionHeading title={m.messagesTitle} />
-            <Link href="/my/messages" className={`${LIFT_CARD_CLASS} flex items-center gap-3 p-4 sm:p-5`}>
+            <SectionHeading display title={m.messagesTitle} />
+            <Link href="/my/messages" className={`${PAPER_CARD_CLASS} flex items-center gap-3 p-4 sm:p-5`}>
               <span className={ICON_TILE_CLASS}>
                 <MessageSquare className="size-4" aria-hidden="true" />
               </span>
@@ -179,7 +186,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
 
         {teachers.length > 0 && (
           <section className="flex flex-col gap-6" data-my="teachers">
-            <SectionHeading title={m.teachersTitle} />
+            <SectionHeading display title={m.teachersTitle} />
             <p className="-mt-3 text-sm text-muted-foreground">{m.teachersLead}</p>
             <ul className="flex flex-col gap-3">
               {teachers.map((teacher) => (
@@ -198,11 +205,27 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           </section>
         )}
 
+        {/* PROG-007: the learner's own finished AI feedback, a doorway to each lesson. Left
+            out while the mode is `off` (no read is made) and when there is none. */}
+        {analyses.length > 0 && (
+          <section className="flex flex-col gap-6" data-my="ai-feedback">
+            <SectionHeading display title={m.aiTitle} />
+            <p className="-mt-3 text-sm text-muted-foreground">{m.aiLead}</p>
+            <ul className="flex flex-col gap-3">
+              {analyses.map((row) => (
+                <li key={row.submissionId}>
+                  <AnalysisRow lang={lang} row={row} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {(hasEnrolment || home.feedback.length > 0) && (
           <section className="flex flex-col gap-6" data-my="feedback">
-            <SectionHeading title={m.feedbackTitle} />
+            <SectionHeading display title={m.feedbackTitle} />
             {home.feedback.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              <p className={`${EMPTY_BOX_CLASS} text-sm text-muted-foreground`}>
                 {m.feedbackEmpty}
               </p>
             ) : (
@@ -277,6 +300,20 @@ async function getStudentHomework(): Promise<MyHomework[]> {
   }
 }
 
+// Like the Messages row, the AI feedback list is a courtesy: if its read fails
+// the section is left out and the page still renders. The list reads under the
+// learner's own session and returns nothing while the mode is `off`.
+async function getStudentAnalyses(): Promise<LearnerAnalysisRow[]> {
+  try {
+    const supabase = await createClient();
+    const user = await authUserFrom(supabase);
+    return user ? await getLearnerAnalyses(supabase, user.id) : [];
+  } catch (e) {
+    console.error("/my: voice analyses failed", e);
+    return [];
+  }
+}
+
 function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {
   return lang === "ru" ? "ru-RU" : "en-GB";
 }
@@ -288,7 +325,7 @@ function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {
 function TeacherRow({ lang, teacher }: { lang: SurfaceLang; teacher: MyTeacher }) {
   const m = myCopy[lang];
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+    <div className={`${PAPER_PANEL_CLASS} flex flex-col gap-3 p-4 sm:p-5`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="break-words text-sm font-semibold text-foreground sm:text-base">{teacher.teacherName}</p>
@@ -339,7 +376,7 @@ function HomeworkRow({ lang, homework: h }: { lang: SurfaceLang; homework: MyHom
           ? m.homeworkOpensOn(new Date(h.opensAt).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" }))
           : null;
   return (
-    <Link href={homeworkHref(h)} className={`${LIFT_CARD_CLASS} flex gap-3 p-4 sm:p-5`} data-homework-done={h.done}>
+    <Link href={homeworkHref(h)} className={`${PAPER_CARD_CLASS} flex gap-3 p-4 sm:p-5`} data-homework-done={h.done}>
       <span className={ICON_TILE_CLASS}>
         {h.done ? <Check className="size-4" aria-hidden="true" /> : <ClipboardList className="size-4" aria-hidden="true" />}
       </span>
@@ -371,11 +408,47 @@ function HomeworkRow({ lang, homework: h }: { lang: SurfaceLang; homework: MyHom
   );
 }
 
+// One analysed take (PROG-007, docs/decisions/0191): where it was recorded, when, and a link to
+// that lesson, where the feedback itself is drawn. The whole row is the link when the lesson is
+// still readable; otherwise it is the same row with no link and no arrow.
+function AnalysisRow({ lang, row }: { lang: SurfaceLang; row: LearnerAnalysisRow }) {
+  const m = myCopy[lang];
+  const href = learnerAnalysisHref(row);
+  const where = [row.courseTitle, row.lessonTitle].filter(Boolean).join(" · ");
+  const body = (
+    <>
+      <span className={ICON_TILE_CLASS}>
+        <Sparkles className="size-4" aria-hidden="true" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <p className="break-words text-sm font-semibold text-foreground sm:text-base">{where || m.aiFirst}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={SMALL_PILL_CLASS}>{row.kind === "final" ? m.aiFinal : m.aiFirst}</span>
+          <span className="text-xs text-muted-foreground sm:text-sm">
+            <LocalDateTime iso={row.sentAt} locale={localeFor(lang)} />
+          </span>
+        </div>
+      </div>
+      {href && <ArrowRight className="size-3.5 flex-none self-center text-brand-text" aria-hidden="true" />}
+    </>
+  );
+  return href ? (
+    <Link href={href} className={`${PAPER_CARD_CLASS} flex gap-3 p-4 sm:p-5`} data-analysis-kind={row.kind}>
+      {body}
+      <span className="sr-only">{m.openLesson}</span>
+    </Link>
+  ) : (
+    <div className={`${PAPER_PANEL_CLASS} flex gap-3 p-4 sm:p-5`} data-analysis-kind={row.kind}>
+      {body}
+    </div>
+  );
+}
+
 function NextCall({ lang, call }: { lang: SurfaceLang; call: NonNullable<LearnerHome["nextCall"]> }) {
   const m = myCopy[lang];
   return (
     <section className="flex flex-col gap-6" data-my="next-call">
-      <SectionHeading title={m.nextCallTitle} />
+      <SectionHeading display title={m.nextCallTitle} />
       <div className={ROW_CARD_CLASS}>
         <div className="flex min-w-0 items-start gap-3">
           <span className={ICON_TILE_CLASS}>
@@ -411,21 +484,22 @@ function CourseRow({ lang, card }: { lang: SurfaceLang; card: HomeCourseCard }) 
   // it; two <a> cannot nest.
   return (
     <div
-      className={`${LIFT_CARD_CLASS} relative flex h-full flex-col gap-3 p-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand sm:p-5`}
+      className={`${PAPER_CARD_CLASS} relative flex h-full flex-col gap-3 p-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand sm:p-5`}
     >
       <div className="flex gap-3">
-        <div className="relative size-16 flex-none overflow-hidden rounded-xl bg-muted">
+        <div className="relative size-16 flex-none overflow-hidden rounded-xl border-2 border-ink bg-muted">
           {course.coverImageUrl ? (
             <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="64px" />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
-              <span className="text-base font-semibold tracking-tight text-white/90">{course.level}</span>
+            // CourseCard's grid-paper level tile (0165), not a gradient.
+            <div className="grid-paper relative flex h-full items-center justify-center overflow-hidden bg-brand-subtle">
+              <span className="relative font-display text-base font-extrabold tracking-tight text-brand-text">{course.level}</span>
             </div>
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={SMALL_PILL_CLASS}>{course.level}</span>
+            <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{course.level}</span>
             {latest && (
               <span className={MUTED_PILL_CLASS}>
                 {latest.tier === "extended" ? m.tierExtended : m.tierBasic}
@@ -443,14 +517,14 @@ function CourseRow({ lang, card }: { lang: SurfaceLang; card: HomeCourseCard }) 
           <dl className="mt-auto flex flex-wrap gap-x-5 gap-y-1 pt-1">
             <div className="flex flex-col-reverse">
               <dt className="text-xs text-muted-foreground">{m.attempted}</dt>
-              <dd className="text-base font-semibold text-foreground">
+              <dd className="font-display text-base font-extrabold text-foreground">
                 {progress.attempted} {m.of} {progress.total}
               </dd>
             </div>
             {progress.averagePercent !== null && (
               <div className="flex flex-col-reverse">
                 <dt className="text-xs text-muted-foreground">{m.average}</dt>
-                <dd className="text-base font-semibold text-foreground">{progress.averagePercent}%</dd>
+                <dd className="font-display text-base font-extrabold text-foreground">{progress.averagePercent}%</dd>
               </div>
             )}
           </dl>
@@ -484,7 +558,7 @@ function FeedbackCard({ lang, item }: { lang: SurfaceLang; item: FeedbackItem })
 
   return (
     <article
-      className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
+      className={`${PAPER_PANEL_CLASS} flex flex-col gap-3 p-4 sm:p-5`}
       data-feedback-kind={item.kind}
     >
       <div className="flex flex-col gap-0.5">

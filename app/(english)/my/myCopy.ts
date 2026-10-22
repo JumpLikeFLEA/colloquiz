@@ -32,6 +32,11 @@ type MyStrings = {
   finalComment: string;
   openLesson: string;
   openBeforeAfter: string;
+  /** The AI feedback section (PROG-007, docs/decisions/0191). */
+  aiTitle: string;
+  aiLead: string;
+  aiFirst: string;
+  aiFinal: string;
   teachersTitle: string;
   teachersLead: string;
   linkedSince: string;
@@ -85,6 +90,10 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     finalComment: "Итоговый комментарий",
     openLesson: "Открыть урок",
     openBeforeAfter: "До и после",
+    aiTitle: "ИИ-разбор ваших записей",
+    aiLead: "Разбор делается автоматически по расшифровке записи, на английском. Он может ошибаться и не является оценкой.",
+    aiFirst: "Запись",
+    aiFinal: "Итоговая запись",
     teachersTitle: "Ваши преподаватели",
     teachersLead: "Преподаватель видит ваши ответы и результаты, пока вы подключены. Отключиться можно в любой момент.",
     linkedSince: "Подключены с",
@@ -133,6 +142,10 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     finalComment: "Final comment",
     openLesson: "Open lesson",
     openBeforeAfter: "Before and after",
+    aiTitle: "AI feedback on your recordings",
+    aiLead: "Made automatically from a transcript of each recording. It can be wrong. It is not a grade.",
+    aiFirst: "Recording",
+    aiFinal: "Final recording",
     teachersTitle: "Your teachers",
     teachersLead: "A teacher sees your answers and scores while you are linked. You can leave at any time.",
     linkedSince: "Linked since",

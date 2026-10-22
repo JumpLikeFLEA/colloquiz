@@ -5,12 +5,12 @@ import {
   markDetail,
   marksOf,
   parseStatusBody,
-  parseStoredAnalysis,
   pollDelayMs,
   shouldGiveUp,
   statCards,
   type ViewAnalysis,
 } from "./view";
+import { parseStoredAnalysis } from "./parseStored";
 
 const TRANSCRIPT = "Yesterday I go to the shop. Um, I made my mind and I bought a <b>red</b> coat.";
 
