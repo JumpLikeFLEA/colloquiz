@@ -2592,3 +2592,27 @@ Appended to in the same commit as the change it records. Referenced from
   with it on; the free lesson unchanged at 256.5 KB.
   Do not draw the feedback while the mode is off, do not colour a count or an error as a failure,
   and do not render any stored text as HTML.
+- Studio: "AI feedback" (2026-10-22, VOICE-015, docs/decisions/0190). Studio only; no learner page
+  changes. Composed from existing classes and tokens; no new colours:
+  - A "AI feedback" nav entry (`Sparkles`) after Reviews. `/studio/voice` is a heading, a Course
+    Select (the review queue's filter row, URL-driven) and one link row per analysed take in the
+    runs page's frame (`rounded-2xl border bg-card`, `hover:bg-accent`): the learner's label, a
+    state pill (Done `bg-brand-subtle text-brand-text`, Failed `bg-warning-subtle text-warning`,
+    Analysing and Withdrawn muted), a muted Cohort / Self-paced pill, course · lesson, the sent
+    time. 25 per page with Newer / Older links.
+  - `/studio/voice/[submissionId]`: a back link, the learner and course header, the task prompt,
+    the take's native audio (`SignedAudio`), then the learner's own AI feedback view
+    (`AnalysisResult`, read-only) with the model and prompt version in a muted line. "Hide this
+    analysis" is an outlined `min-h-11` button that opens the page's AlertDialog ("The learner will
+    see "Feedback withdrawn — send again"… This can't be undone."). A hidden analysis stays on the
+    page, marked Withdrawn, with a line saying what the learner sees, and no button. The button is
+    inside `WriteArea`, so a lapsed seat sees it disabled.
+  - The cohort review card gains the same view in a collapsed `<details>` beside the written-feedback
+    editor at `lg` and under it below, so the queue stays short. The queue, the inbox and the
+    published-feedback lock are unchanged; a self-paced take never appears in them.
+  Measured at 360px (local stack, `scrollWidth/innerWidth`): 360/360 on the list, a finished final, a
+  withdrawn take, a failed take and the review queue; 360/360 with the Hide confirm open (dialog 22 to
+  337 px) and the review card's analysis opened; 1280/1280 in the last two. Not measured: the list
+  with its pager, dark mode, the lapsed-seat banner on these pages.
+  Do not draw a hidden analysis as removed from Studio (the author needs to see what was withdrawn),
+  and do not list a take the caller only owns: the list is scoped to the courses they edit.

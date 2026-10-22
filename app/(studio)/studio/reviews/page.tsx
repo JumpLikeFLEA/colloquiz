@@ -13,6 +13,7 @@ import {
   toReviewRow,
 } from "@/lib/reviews/queue";
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
+import { readAnalyses } from "@/lib/voice/analysis/studioRead";
 import { LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { FinalCommentCard } from "./FinalCommentCard";
 import { RecordingCard, type RecordingCardRow } from "./RecordingCard";
@@ -66,12 +67,20 @@ export default async function ReviewsPage({
     if (error) throw new Error(error.message);
     for (const s of data ?? []) if (s.object_name) objectNames.set(s.id, s.object_name);
   }
+  // VOICE-015: the AI analysis of each listed take, beside the written-feedback box. A read only:
+  // the queue, its statuses and the feedback lock are decided by review_queue() as before.
+  const analyses = await readAnalyses(supabase, ids);
   const cards: RecordingCardRow[] = await Promise.all(
     listed.map(async (r) => {
       const name = r.submissionId ? objectNames.get(r.submissionId) : undefined;
       const signed = name ? await signVoicePlaybackUrl(supabase, name) : null;
       const prompt = InlineContentSchema.safeParse(r.blockPrompt);
-      return { ...r, promptText: prompt.success ? inlinePlainText(prompt.data) : "", playbackUrl: signed?.url ?? null };
+      return {
+        ...r,
+        promptText: prompt.success ? inlinePlainText(prompt.data) : "",
+        playbackUrl: signed?.url ?? null,
+        analysis: (r.submissionId && analyses.get(r.submissionId)) || null,
+      };
     }),
   );
 

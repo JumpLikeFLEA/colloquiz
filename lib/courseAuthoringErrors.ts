@@ -114,6 +114,8 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   // A self-paced take (094, VOICE-010) has no written feedback, only the AI
   // analysis. The review queue never lists one, so this answers a direct call.
   self_paced_take: { status: 409, message: "This recording is from a self-paced course, so it has no written feedback." },
+  // Hiding an AI analysis (096 hide_voice_analysis, VOICE-015): only a finished one.
+  not_done: { status: 409, message: "Only a finished analysis can be hidden." },
   // Shared with set_enrolment_tier (066, COH-007), so it names the state,
   // not one action.
   enrolment_revoked: {

@@ -6,6 +6,7 @@ import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { learnerLabel, type ReviewRow } from "@/lib/reviews/queue";
 import { FeedbackEditor } from "./FeedbackEditor";
 import { SignedAudio } from "@/app/components/voice/SignedAudio";
+import { StudioAnalysis, type StudioAnalysisData } from "@/app/(studio)/studio/voice/StudioAnalysis";
 import { STATUS_LABEL, STATUS_PILL, weekLabel } from "./statusLabels";
 
 // One row of review_queue() (062): a learner's voice task in one week. A
@@ -14,7 +15,12 @@ import { STATUS_LABEL, STATUS_PILL, weekLabel } from "./statusLabels";
 // checks can_edit_course itself; the page then refreshes so the row's status
 // and the learner × week table move with it.
 
-export type RecordingCardRow = ReviewRow & { promptText: string; playbackUrl: string | null };
+export type RecordingCardRow = ReviewRow & {
+  promptText: string;
+  playbackUrl: string | null;
+  /** VOICE-015: the take's AI analysis, when it has one. */
+  analysis: StudioAnalysisData | null;
+};
 
 export function RecordingCard({ row }: { row: RecordingCardRow }) {
   const router = useRouter();
@@ -64,16 +70,26 @@ export function RecordingCard({ row }: { row: RecordingCardRow }) {
           ) : (
             <SignedAudio submissionId={row.submissionId} initialUrl={row.playbackUrl} />
           )}
-          <FeedbackEditor
-            initial={row.feedbackBody}
-            publishedAt={row.feedbackPublishedAt}
-            label={`Feedback for ${label}`}
-            publishHint="Publishing shows it to the learner and locks their recording."
-            onSave={async (body, publish) => {
-              await postJson("/api/studio/reviews/feedback", { submissionId: row.submissionId, body, publish });
-              router.refresh();
-            }}
-          />
+          {/* VOICE-015: beside the written feedback on a wide screen, under it on a phone. */}
+          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+            <div className="min-w-0">
+              <FeedbackEditor
+                initial={row.feedbackBody}
+                publishedAt={row.feedbackPublishedAt}
+                label={`Feedback for ${label}`}
+                publishHint="Publishing shows it to the learner and locks their recording."
+                onSave={async (body, publish) => {
+                  await postJson("/api/studio/reviews/feedback", { submissionId: row.submissionId, body, publish });
+                  router.refresh();
+                }}
+              />
+            </div>
+            {row.analysis && (
+              <div className="min-w-0">
+                <StudioAnalysis data={row.analysis} collapsible />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </article>
