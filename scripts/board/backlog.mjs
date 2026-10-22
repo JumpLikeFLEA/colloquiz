@@ -4277,6 +4277,24 @@ export const CARDS = [
       'which stays indigo and unframed, so the change is a variant, not a restyle in place.',
   },
   {
+    key: 'SHELL-035',
+    title: 'Remove the unused band tone from BandTopBar, AccountMenu and LanguageToggle',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 2888,
+    dependsOn: ['SHELL-033'],
+    goal:
+      'Every English-surface caller passes tone="paper" since SHELL-033, so the white-on-gradient tone is dead code kept alive by default props (0192 Decision 6).',
+    acceptance: [
+      'BandTopBar, AccountMenu and LanguageToggle have no `band` branch: the paper look is the only one, the `tone` prop is gone or has no default that selects dead code, and every caller is updated. `rg` for `tone="paper"` and for the band-only class strings (`text-white`, `ring-white`, `bg-white/10` in those three files) shows what remains and why.',
+      '`npm run check && npm test` exit 0 (AccountMenu.test.tsx updated, not deleted). `npm run budget` before and after for /, a course page, a lesson, /my and /invite. Usable at 360px with the account menu open on /, a course page and /my; docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'Proposed by SHELL-033 (docs/decisions/0192, Decision 6). A signature change, not a restyle: no page should ' +
+      'look different, so screenshots before and after are the evidence for "no visual change".',
+  },
+  {
     key: 'SHELL-029',
     title: 'The English sign-in panel in the Alina Cher look',
     milestone: 'M4',
