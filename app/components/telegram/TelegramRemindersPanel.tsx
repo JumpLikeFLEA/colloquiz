@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS, PAPER_PANEL_CLASS } from "@/app/(english)/surfaceClasses";
 import type { TelegramPanelCopy } from "./telegramCopy";
 
 // COH-010 (docs/decisions/0173) — "Get reminders in Telegram". The deep link is
@@ -15,15 +16,26 @@ const BUTTON_CLASS =
 const QUIET_BUTTON_CLASS =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50";
 
+// SHELL-034 (docs/decisions/0193): the paper variant, for pages on the grid paper. The
+// frame is the paper panel, the primary action the violet offset button, the secondary the
+// ink-outlined one, the address field an ink outline. Class names only.
+const PAPER_BUTTON_CLASS = `${OFFSET_CTA_CLASS} justify-center text-sm disabled:cursor-not-allowed disabled:opacity-50`;
+const PAPER_QUIET_BUTTON_CLASS = `${OUTLINE_CTA_CLASS} disabled:cursor-not-allowed disabled:opacity-50`;
+const FRAME_CLASS = "flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5";
+const PAPER_FRAME_CLASS = `flex flex-col gap-3 p-4 sm:p-5 ${PAPER_PANEL_CLASS}`;
+
 export function TelegramRemindersPanel({
   linked,
   lang,
   copy,
+  paper = false,
 }: {
   /** Reminders on, read on the server (my_telegram_link). */
   linked: boolean;
   lang: "ru" | "en";
   copy: TelegramPanelCopy;
+  /** The grid-paper look (SHELL-034); false keeps the plain frame. */
+  paper?: boolean;
 }) {
   const router = useRouter();
   const [url, setUrl] = useState<string | null>(null);
@@ -74,9 +86,11 @@ export function TelegramRemindersPanel({
   }
 
   const isOn = linked && !turnedOff;
+  const BUTTON = paper ? PAPER_BUTTON_CLASS : BUTTON_CLASS;
+  const QUIET_BUTTON = paper ? PAPER_QUIET_BUTTON_CLASS : QUIET_BUTTON_CLASS;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5" data-telegram-reminders>
+    <div className={paper ? PAPER_FRAME_CLASS : FRAME_CLASS} data-telegram-reminders>
       <h3 className="text-base font-semibold text-foreground">{copy.title}</h3>
       <p className="text-sm text-muted-foreground">{isOn ? copy.leadOn : copy.leadOff}</p>
 
@@ -84,10 +98,10 @@ export function TelegramRemindersPanel({
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">{copy.pendingHint}</p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <a href={url} target="_blank" rel="noopener noreferrer" className={BUTTON_CLASS}>
+            <a href={url} target="_blank" rel="noopener noreferrer" className={BUTTON}>
               {copy.open}
             </a>
-            <button type="button" onClick={() => router.refresh()} className={QUIET_BUTTON_CLASS}>
+            <button type="button" onClick={() => router.refresh()} className={QUIET_BUTTON}>
               {copy.check}
             </button>
           </div>
@@ -104,14 +118,14 @@ export function TelegramRemindersPanel({
 
       {isOn ? (
         <div>
-          <button type="button" onClick={turnOff} disabled={busy} className={QUIET_BUTTON_CLASS}>
+          <button type="button" onClick={turnOff} disabled={busy} className={QUIET_BUTTON}>
             {copy.turnOff}
           </button>
         </div>
       ) : (
         !url && (
           <div>
-            <button type="button" onClick={create} disabled={busy} className={BUTTON_CLASS}>
+            <button type="button" onClick={create} disabled={busy} className={BUTTON}>
               {copy.get}
             </button>
           </div>

@@ -2664,3 +2664,20 @@ Appended to in the same commit as the change it records. Referenced from
   unlink confirm (one sign-in method in the fixture), the invite page's used, expired and
   revoked states, a phone. Do not put the gradient band back on these pages, and do not
   restyle the shared thread for them without checking Studio.
+- Calendar, feed and Telegram reminder panels in the Alina Cher look (2026-10-22, SHELL-034,
+  docs/decisions/0193), finishing 0191 and 0192 on `/my`. `CalendarView`, `CalendarFeedPanel` and
+  `TelegramRemindersPanel` take a `paper` prop (default off); `/my` passes it to all three and the course
+  page to the Telegram panel it shows an enrolled cohort learner. Paper: the panels take `PAPER_PANEL_CLASS`,
+  the primary button is the violet offset button and the secondary the ink-outlined one, the address field has
+  an ink outline; the month table is `border-2 border-ink shadow-offset` with `border-ink/30` inner lines,
+  the nav links are ink-outlined, "today" is the marker yellow instead of the violet disc, chips gain a
+  `border-ink/30` outline, an empty agenda is the dashed ink box. Chip fills, copy, the error line's
+  destructive tokens and every state are unchanged. Studio's calendar and messages pages pass nothing and
+  keep the plain frame (0 ink-framed nodes measured there). Existing classes and tokens; no new colours.
+  Measured at 360px (`scrollWidth/innerWidth`, local stack, `prog002-learner`): 360/360 on `/my` with
+  items, with an empty month, in RU and in dark; 360/360 for the feed panel (link shown, has-token,
+  replace confirm, turned off, error line) and the Telegram panel (pending, on, turned off, error line),
+  also on `/courses/coh005-fixture`; 1280/1280 on `/my` light and dark. `npm run budget`: `/my` 174.4 to
+  174.8 KB (limit 180, 182), `/courses/coh005-fixture` 175.4 to 175.4 (limit 181). Not measured: Studio's
+  calendar with items, a phone, an in-app browser. Do not restyle these components in place: Studio shares
+  them, so the paper look stays behind the prop.

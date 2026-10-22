@@ -151,12 +151,13 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             <TimeZoneSync />
             <SectionHeading display title={m.calendarTitle} />
             <p className="-mt-3 text-sm text-muted-foreground">{m.calendarLead}</p>
-            <CalendarView {...calendar} lang={lang} basePath="/my" />
+            <CalendarView {...calendar} lang={lang} basePath="/my" paper />
             {feed && (
               <CalendarFeedPanel
                 hasToken={feed.hasToken}
                 createdLabel={feed.createdAt ? formatFeedDate(feed.createdAt, lang) : null}
                 lang={lang}
+                paper
               />
             )}
           </section>
@@ -201,7 +202,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
         {/* COH-010: reminders are for an enrolee; a failed read leaves the panel out. */}
         {hasEnrolment && telegramLinked !== null && (
           <section data-my="reminders">
-            <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} />
+            <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} paper />
           </section>
         )}
 

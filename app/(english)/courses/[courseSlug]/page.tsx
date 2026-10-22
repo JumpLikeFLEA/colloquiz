@@ -192,7 +192,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         {cohort && enrolled && <BeforeAfterLinks lang={lang} enrolments={cohort.enrolments} runs={cohort.runs} />}
 
         {cohort && enrolled && telegramLinked !== null && (
-          <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} />
+          <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} paper />
         )}
 
         <section className="flex flex-col gap-6">
