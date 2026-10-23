@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { DateTimeField } from "@/app/components/DateTimeField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { buildEventPayload, EVENT_TITLE_MAX, type CalendarEvent } from "@/lib/calendarEvents";
 import { toLocalDateTime } from "@/lib/cohortSchedule";
@@ -109,13 +110,13 @@ function EventDialog({
             <label htmlFor="event-start" className="text-xs font-medium text-foreground">
               Starts
             </label>
-            <input id="event-start" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className={INPUT} />
+            <DateTimeField id="event-start" value={start} onChange={setStart} timeLabel="Start time" />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="event-end" className="text-xs font-medium text-foreground">
               Ends <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
-            <input id="event-end" type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className={INPUT} />
+            <DateTimeField id="event-end" value={end} onChange={setEnd} timeLabel="End time" optional />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="event-link" className="text-xs font-medium text-foreground">

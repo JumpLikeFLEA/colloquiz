@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DateTimeField } from "@/app/components/DateTimeField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { fromLocalDateTime, toLocalDateTime } from "@/lib/cohortSchedule";
 import { postJson } from "../postJson";
@@ -72,13 +73,12 @@ export function RunDialog({
             <label htmlFor="run-start" className="text-xs font-medium text-foreground">
               Start
             </label>
-            <input
+            <DateTimeField
               id="run-start"
-              type="datetime-local"
               value={start}
-              onChange={(e) => setStart(e.target.value)}
+              onChange={setStart}
+              timeLabel="Start time"
               disabled={startLocked}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none disabled:opacity-60 disabled:cursor-not-allowed"
             />
             {startLocked && (
               <p className="text-xs text-muted-foreground">

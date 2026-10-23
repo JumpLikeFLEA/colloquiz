@@ -2708,3 +2708,22 @@ Appended to in the same commit as the change it records. Referenced from
   and help replies name homework too. Copy only: no new element, class or token. 360px not measured
   (a wrapping paragraph in the existing card). Do not drop the sentence: the panel must say what the
   bot sends.
+- Studio date fields use the app's calendar, not the browser picker (2026-10-23, ad hoc). The eight
+  native `<input type="date">` / `datetime-local` fields in Studio (run start, call, event start and
+  end, homework due date in Assign and Edit, seat "Through" in Add and Extend) opened the browser's
+  own unstyled picker. They are now `DateField` (a button in the inputs' look with a `CalendarDays`
+  icon, showing "20 Oct 2026" or "Pick a date", opening `ui/calendar` in a `ui/popover`, Monday first,
+  the chosen day in `bg-brand`, "Clear" on an optional field) and `DateTimeField` (that button plus a
+  typed 24-hour `HH:MM` box; "9:05" becomes "09:05" on blur, anything else shows "Enter the time as
+  HH:MM, e.g. 19:00." in `text-destructive-text` and the value stays empty, so Create/Save stay
+  disabled as before). Values keep the native inputs' strings (`lib/dateField.ts`), so no caller's
+  state or validation changed; a started run's start is still locked (both halves disabled).
+  `ui/calendar.tsx` was re-vendored for react-day-picker v9+: the old copy used the v8 API under
+  `@ts-nocheck` while v10.0.1 is installed, and was imported nowhere. Studio only: no English route
+  references the picker's chunks (client-reference manifests of the build). Existing tokens; no new
+  colours. Measured at 360px with each popover open (local stack, Edge, Europe/Belgrade):
+  `scrollWidth/innerWidth` 360/360 for New run, Add call, Add event (end), seat Add and Extend,
+  and Assign homework, popover 238-242 px wide from x 37-41; 1280/1280 with the run popover open,
+  light and dark. Round trip: 9 Nov 2026 09:05 saved as `2026-11-09T08:05:00+00:00`; seat Through
+  15 Nov saved as `2026-11-15T22:59:59+00:00`. Not measured: Edit homework's dialog. Do not put
+  native date inputs back in Studio.

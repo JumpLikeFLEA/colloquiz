@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DateTimeField } from "@/app/components/DateTimeField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { fromLocalDateTime, MAX_WEEKLY_REPEATS, toLocalDateTime, weeklyRepeats } from "@/lib/cohortSchedule";
@@ -70,13 +71,7 @@ export function CallDialog({
             <label htmlFor="call-start" className="text-xs font-medium text-foreground">
               {call || repeat === 1 ? "Date and time" : "First call"}
             </label>
-            <input
-              id="call-start"
-              type="datetime-local"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
-            />
+            <DateTimeField id="call-start" value={start} onChange={setStart} timeLabel="Call time" />
           </div>
           <input
             value={meetUrl}

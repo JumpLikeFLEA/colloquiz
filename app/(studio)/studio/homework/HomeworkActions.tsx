@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { DateField } from "@/app/components/DateField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { HOMEWORK_NOTE_MAX } from "@/lib/homework/homework";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
@@ -125,12 +126,12 @@ function HomeworkActionsInner({
               <label htmlFor={`due-${assignmentId}`} className="text-xs font-medium text-foreground">
                 Due date (optional)
               </label>
-              <input
+              <DateField
                 id={`due-${assignmentId}`}
-                type="date"
                 value={draftDue}
-                onChange={(e) => setDraftDue(e.target.value)}
-                className={`${INPUT_CLASS} w-full sm:w-48`}
+                onChange={setDraftDue}
+                optional
+                className="w-full sm:w-48"
               />
             </div>
             <div className="flex flex-col gap-1">

@@ -31,6 +31,7 @@ import {
   type SeatRow,
   type SeatState,
 } from "@/lib/authorSeats";
+import { DateField } from "@/app/components/DateField";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 
@@ -291,7 +292,7 @@ function AddSeatForm({ onAdded }: { onAdded: () => void }) {
           <label htmlFor="seat-until" className="text-xs text-muted-foreground">
             Through (optional, blank = no expiry)
           </label>
-          <input id="seat-until" type="date" value={until} onChange={(e) => setUntil(e.target.value)} className={INPUT} />
+          <DateField id="seat-until" value={until} onChange={setUntil} optional placeholder="No expiry" className="w-full min-w-0" />
         </div>
         <div className="space-y-1 sm:col-span-2">
           <label htmlFor="seat-notes" className="text-xs text-muted-foreground">
@@ -450,7 +451,7 @@ function ExtendDialog({
             <label htmlFor="extend-until" className="text-xs text-muted-foreground">
               Through
             </label>
-            <input id="extend-until" type="date" value={until} onChange={(e) => setUntil(e.target.value)} className={INPUT} />
+            <DateField id="extend-until" value={until} onChange={setUntil} className="w-full min-w-0" />
             {until && !expiresAt && <p className="text-xs text-destructive-text">That is not a valid date.</p>}
           </div>
         </div>

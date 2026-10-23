@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ClipboardList } from "lucide-react";
+import { DateField } from "@/app/components/DateField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { HOMEWORK_NOTE_MAX, type AssignableCourse } from "@/lib/homework/homework";
@@ -185,12 +186,12 @@ function AssignHomeworkDialog({
               <label htmlFor="homework-due" className="text-xs font-medium text-foreground">
                 Due date (optional)
               </label>
-              <input
+              <DateField
                 id="homework-due"
-                type="date"
                 value={dueOn}
-                onChange={(e) => setDueOn(e.target.value)}
-                className={`${INPUT_CLASS} w-full sm:w-48`}
+                onChange={setDueOn}
+                optional
+                className="w-full sm:w-48"
               />
             </div>
 
