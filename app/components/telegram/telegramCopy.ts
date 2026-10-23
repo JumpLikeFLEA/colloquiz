@@ -8,6 +8,8 @@ export type TelegramLang = "ru" | "en";
 export type TelegramPanelCopy = {
   title: string;
   leadOff: string;
+  // TCH-014: the off-state lead for a learner with a teacher but no enrolment.
+  leadOffStudent?: string;
   leadOn: string;
   get: string;
   open: string;
@@ -23,6 +25,8 @@ export const telegramPanelCopy: Record<TelegramLang, TelegramPanelCopy> = {
     title: "Напоминания в Telegram",
     leadOff:
       "Бот напишет, когда откроется новая неделя курса, придёт отзыв на вашу запись или итоговый комментарий, а на расширенном тарифе — когда скоро созвон. Если преподаватель задаст домашнее задание, бот напишет об этом и накануне срока. Он запомнит язык сайта и ваш часовой пояс.",
+    leadOffStudent:
+      "Бот напишет, когда преподаватель ответит вам в приложении и когда задаст домашнее задание — и ещё раз накануне срока. Он запомнит язык сайта и ваш часовой пояс.",
     leadOn: "Напоминания включены: бот пишет вам в Telegram. Отключить можно здесь или командой /stop в боте.",
     get: "Получать напоминания в Telegram",
     open: "Открыть Telegram",
@@ -36,6 +40,8 @@ export const telegramPanelCopy: Record<TelegramLang, TelegramPanelCopy> = {
     title: "Reminders in Telegram",
     leadOff:
       "The bot will message you when a new week of the course opens, when feedback on a recording or a final comment arrives, and, on the extended tier, before a call. If a teacher assigns you homework, it messages you then and the day before it is due. It saves the site's language and your time zone.",
+    leadOffStudent:
+      "The bot will message you when a teacher replies to you in the app and when they assign you homework, and again the day before it is due. It saves the site's language and your time zone.",
     leadOn: "Reminders are on: the bot messages you in Telegram. Turn them off here, or with /stop in the bot.",
     get: "Get reminders in Telegram",
     open: "Open Telegram",

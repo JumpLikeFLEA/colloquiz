@@ -86,6 +86,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const m = myCopy[lang];
   const signedIn = await getSignedInAccount();
   const hasEnrolment = home.courses.some((c) => c.enrolments.length > 0);
+  const hasTeacherTie = teachers.length > 0 || threads.length > 0 || homework.length > 0;
 
   return (
     // The Alina Cher grid paper (PROG-007, docs/decisions/0191), as the course
@@ -199,10 +200,17 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           </section>
         )}
 
-        {/* COH-010: reminders are for an enrolee; a failed read leaves the panel out. */}
-        {hasEnrolment && telegramLinked !== null && (
+        {/* COH-010 / TCH-014: reminders are for an enrolee or a learner tied to a teacher (a
+            link, a conversation or homework); a failed read leaves the panel out. An enrolee
+            keeps the course text; anyone else gets the teacher-only lead. */}
+        {(hasEnrolment || hasTeacherTie) && telegramLinked !== null && (
           <section data-my="reminders">
-            <TelegramRemindersPanel linked={telegramLinked} lang={lang} copy={telegramPanelCopy[lang]} paper />
+            <TelegramRemindersPanel
+              linked={telegramLinked}
+              lang={lang}
+              copy={hasEnrolment ? telegramPanelCopy[lang] : { ...telegramPanelCopy[lang], leadOff: telegramPanelCopy[lang].leadOffStudent ?? telegramPanelCopy[lang].leadOff }}
+              paper
+            />
           </section>
         )}
 

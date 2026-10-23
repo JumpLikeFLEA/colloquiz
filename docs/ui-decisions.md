@@ -2727,3 +2727,12 @@ Appended to in the same commit as the change it records. Referenced from
   light and dark. Round trip: 9 Nov 2026 09:05 saved as `2026-11-09T08:05:00+00:00`; seat Through
   15 Nov saved as `2026-11-15T22:59:59+00:00`. Not measured: Edit homework's dialog. Do not put
   native date inputs back in Studio.
+- Reminders panel for a learner with a teacher (2026-10-23, TCH-014, docs/decisions/0200). `/my`
+  shows the "Reminders in Telegram" card to a learner with an active teacher link, a teacher
+  conversation or assigned homework as well as to an enrolee; anyone with none still sees nothing.
+  A learner who is not enrolled reads a shorter off-state lead (EN/RU): teacher replies and homework,
+  and the day before it is due, with no weeks or calls. Same card, classes and tokens; no new colours.
+  Measured at 360px (`npm run viewport360`, local stack): `scrollWidth/innerWidth` 360/360 on `/my`
+  for a linked student with no enrolment (panel present, EN and RU) and for a signed-in user with no
+  tie (panel absent). Not measured: the pending and on states (unchanged component), a phone.
+  Do not show the panel to a learner with no enrolment, link, conversation or homework.
