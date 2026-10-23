@@ -16,6 +16,15 @@ import {
   readFeedbackClaim,
   type FeedbackPingDeps,
 } from "./feedbackPings";
+import {
+  CALLS_PER_MESSAGE,
+  callDigestText,
+  callLine,
+  callWhen,
+  readCallClaim,
+  runCallPings,
+  type CallPingDeps,
+} from "./callPings";
 import { readWeekClaim, runWeekPings, weekLink, weekText, type WeekPingDeps } from "./weekPings";
 import { pingLink, pingNewMessage, pingText, readClaim, type PingDeps } from "./pings";
 import { postSendMessage, sendToUser, type SenderDeps } from "./send";
@@ -497,6 +506,171 @@ describe("week pings (COH-012)", () => {
   it("reports a failed claim without throwing and sends nothing", async () => {
     const d = deps({ claim: vi.fn(async () => { throw new Error("db"); }) });
     expect(await runWeekPings(d)).toEqual({ claimed: 0, sent: 0, notSent: 0, unreadable: 0, claimFailed: true });
+    expect(d.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("call pings (COH-013)", () => {
+  const row = {
+    enrolment_id: "e1",
+    call_id: "k1",
+    recipient_id: "u1",
+    lang: "ru",
+    time_zone: "Europe/Belgrade",
+    course_slug: "future-imperfect",
+    course_title: "Future Imperfect",
+    call_starts_at: "2026-10-28T14:00:00+00:00",
+    call_title: "Speaking club",
+    meet_url: "https://meet.google.com/abc-defg-hij",
+  };
+
+  it("reads a claim row, in the saved language and zone", () => {
+    const c = readCallClaim(row)!;
+    expect(c).toMatchObject({
+      enrolmentId: "e1",
+      callId: "k1",
+      recipientId: "u1",
+      lang: "ru",
+      timeZone: "Europe/Belgrade",
+      courseTitle: "Future Imperfect",
+      callTitle: "Speaking club",
+      meetUrl: "https://meet.google.com/abc-defg-hij",
+    });
+    expect(c.startsAt.toISOString()).toBe("2026-10-28T14:00:00.000Z");
+    expect(readCallClaim({ ...row, lang: "xx" })!.lang).toBe("en");
+    expect(readCallClaim({ ...row, time_zone: null })!.timeZone).toBeNull();
+    expect(readCallClaim({ ...row, call_title: null })!.callTitle).toBeNull();
+  });
+
+  it("reads anything that is not a complete row as null", () => {
+    expect(readCallClaim(null)).toBeNull();
+    expect(readCallClaim({ ...row, meet_url: "" })).toBeNull();
+    expect(readCallClaim({ ...row, call_starts_at: "not a date" })).toBeNull();
+    expect(readCallClaim({ ...row, call_starts_at: null })).toBeNull();
+    expect(readCallClaim({ ...row, course_title: "" })).toBeNull();
+    expect(readCallClaim({ ...row, recipient_id: 5 })).toBeNull();
+    expect(readCallClaim({ ...row, call_id: undefined })).toBeNull();
+  });
+
+  it("puts the time in the saved zone, and in UTC with none or an unknown one", () => {
+    const at = new Date("2026-10-28T14:00:00Z");
+    // 28 Oct 2026 is after the EU clock change: Belgrade is UTC+1.
+    expect(callWhen(at, "en", "Europe/Belgrade")).toMatch(/15:00/);
+    expect(callWhen(at, "en", "Asia/Tokyo")).toMatch(/23:00/);
+    expect(callWhen(at, "en", null)).toMatch(/14:00.*UTC/);
+    expect(callWhen(at, "en", "Not/AZone")).toMatch(/14:00.*UTC/);
+    expect(callWhen(at, "ru", "Europe/Belgrade")).toMatch(/15:00/);
+    // the date moves with the zone: 23:30 UTC is already the next day in Tokyo
+    expect(callWhen(new Date("2026-10-28T23:30:00Z"), "en", "Asia/Tokyo")).toMatch(/29/);
+  });
+
+  it("words a call line: when, course and call title, the join link on its own line", () => {
+    const line = callLine(readCallClaim(row)!);
+    expect(line).toMatch(/^• .*15:00.* — Future Imperfect · Speaking club\nhttps:\/\/meet\.google\.com\/abc-defg-hij$/);
+    expect(callLine(readCallClaim({ ...row, call_title: null })!)).toMatch(/ — Future Imperfect\nhttps/);
+  });
+
+  it("clips a very long authored title", () => {
+    const long = "x".repeat(300);
+    const line = callLine(readCallClaim({ ...row, call_title: long })!);
+    expect(line.length).toBeLessThan(300);
+    expect(line).toContain("…");
+  });
+
+  it("headers the digest in the saved language and promises no lead time", () => {
+    const ru = callDigestText([readCallClaim(row)!]);
+    const en = callDigestText([readCallClaim({ ...row, lang: "en" })!]);
+    expect(ru.startsWith("Ближайшие созвоны:\n\n• ")).toBe(true);
+    expect(en.startsWith("Calls coming up:\n\n• ")).toBe(true);
+    // 0140: the cron fires once a day inside its hour, so no text names a lead time
+    for (const text of [ru, en]) expect(text).not.toMatch(/hour|час|минут|minute/i);
+  });
+
+  const deps = (over: Partial<CallPingDeps> = {}): CallPingDeps => ({
+    claim: vi.fn(async () => [
+      row,
+      { ...row, enrolment_id: "e2", call_id: "k2", call_starts_at: "2026-10-28T10:00:00+00:00", call_title: "Warm-up" },
+      { ...row, enrolment_id: "e3", call_id: "k3", recipient_id: "u2", lang: "en", time_zone: null },
+    ]),
+    send: vi.fn(async () => "sent" as const),
+    ...over,
+  });
+
+  it("sends one digest per learner, calls in time order, in that learner's language", async () => {
+    const d = deps();
+    expect(await runCallPings(d, 50)).toEqual({
+      claimed: 3,
+      messages: 2,
+      sent: 2,
+      notSent: 0,
+      unreadable: 0,
+      claimFailed: false,
+    });
+    expect(d.claim).toHaveBeenCalledWith(50);
+    expect(d.send).toHaveBeenCalledTimes(2);
+    const first = (d.send as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(first[0]).toBe("u1");
+    expect(first[1]).toMatch(/^Ближайшие созвоны:/);
+    expect(first[1].indexOf("Warm-up")).toBeGreaterThan(-1);
+    expect(first[1].indexOf("Warm-up")).toBeLessThan(first[1].indexOf("Speaking club"));
+    const second = (d.send as ReturnType<typeof vi.fn>).mock.calls[1];
+    expect(second[0]).toBe("u2");
+    expect(second[1]).toMatch(/^Calls coming up:/);
+    expect(second[1]).toMatch(/14:00.*UTC/);
+  });
+
+  it("splits a learner's calls over messages past the cap", async () => {
+    const many = Array.from({ length: CALLS_PER_MESSAGE + 1 }, (_, i) => ({
+      ...row,
+      enrolment_id: `e${i}`,
+      call_id: `k${i}`,
+      call_starts_at: new Date(Date.UTC(2026, 9, 28, 8, i)).toISOString(),
+    }));
+    const d = deps({ claim: vi.fn(async () => many) });
+    const s = await runCallPings(d);
+    expect(s).toMatchObject({ claimed: CALLS_PER_MESSAGE + 1, messages: 2, sent: 2 });
+    const bullets = (d.send as ReturnType<typeof vi.fn>).mock.calls.map((c) => (c[1].match(/•/g) ?? []).length);
+    expect(bullets).toEqual([CALLS_PER_MESSAGE, 1]);
+  });
+
+  it("sends nothing when SQL claimed nothing (a re-run, a basic tier, a stopped link)", async () => {
+    for (const none of [[], null, undefined]) {
+      const d = deps({ claim: vi.fn(async () => none) });
+      expect(await runCallPings(d)).toEqual({
+        claimed: 0,
+        messages: 0,
+        sent: 0,
+        notSent: 0,
+        unreadable: 0,
+        claimFailed: false,
+      });
+      expect(d.send).not.toHaveBeenCalled();
+    }
+  });
+
+  it("counts a blocked, failed or thrown send and still sends the rest", async () => {
+    const send = vi
+      .fn<CallPingDeps["send"]>()
+      .mockResolvedValueOnce("blocked")
+      .mockRejectedValueOnce(new Error("net"))
+      .mockResolvedValueOnce("sent");
+    const d = deps({
+      send,
+      claim: vi.fn(async () => [row, { ...row, call_id: "k2", recipient_id: "u2" }, { ...row, call_id: "k3", recipient_id: "u3" }]),
+    });
+    expect(await runCallPings(d)).toMatchObject({ claimed: 3, messages: 3, sent: 1, notSent: 2 });
+    expect(send).toHaveBeenCalledTimes(3);
+  });
+
+  it("skips an unreadable row without sending it and still sends the readable ones", async () => {
+    const d = deps({ claim: vi.fn(async () => [{ ...row, meet_url: null }, { ...row, call_id: "k9", recipient_id: "u9" }]) });
+    expect(await runCallPings(d)).toMatchObject({ claimed: 2, messages: 1, sent: 1, unreadable: 1 });
+    expect(d.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a failed claim without throwing and sends nothing", async () => {
+    const d = deps({ claim: vi.fn(async () => { throw new Error("db"); }) });
+    expect(await runCallPings(d)).toMatchObject({ claimed: 0, messages: 0, claimFailed: true });
     expect(d.send).not.toHaveBeenCalled();
   });
 });

@@ -2,8 +2,8 @@
 // it. No I/O: the webhook handler and the sender import this, and vitest drives
 // it. Event wording: the feedback / final comment text is lib/telegram/
 // feedbackPings.ts (COH-011) and the message ping's is lib/telegram/pings.ts
-// (TCH-012), the week-open text is lib/telegram/weekPings.ts (COH-012); call wording
-// (COH-013) is still to come.
+// (TCH-012), the week-open text is lib/telegram/weekPings.ts (COH-012) and the call
+// digest's is lib/telegram/callPings.ts (COH-013).
 
 export type TelegramLang = "ru" | "en";
 
