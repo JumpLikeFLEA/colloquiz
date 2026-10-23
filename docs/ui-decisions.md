@@ -2702,3 +2702,9 @@ Appended to in the same commit as the change it records. Referenced from
   page and `/invite`. `npm run budget` unchanged on the public routes. Not measured: signed-in routes
   (`/my`, the account menu open) — the budget fixtures could not sign in locally, before or after — and
   before/after screenshots. Do not add a tone prop back; a gradient band would be its own component.
+- Reminders panel and bot wording mention homework (2026-10-23, TCH-013, docs/decisions/0199). The
+  `/my` and course-page "Reminders in Telegram" card's off-state lead gains one sentence, EN/RU: "If a
+  teacher assigns you homework, it messages you then and the day before it is due." The bot's linked
+  and help replies name homework too. Copy only: no new element, class or token. 360px not measured
+  (a wrapping paragraph in the existing card). Do not drop the sentence: the panel must say what the
+  bot sends.

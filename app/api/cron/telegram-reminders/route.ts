@@ -1,19 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendWeekPings } from "@/lib/telegram/weekPings";
 import { sendCallPings } from "@/lib/telegram/callPings";
+import { sendHomeworkDuePings } from "@/lib/telegram/homeworkPings";
 
 /**
  * GET /api/cron/telegram-reminders — the daily Telegram reminders, scheduled in
  * vercel.json: "week N is open" (COH-012, docs/decisions/0197; 0140 event 1) and the
  * digest of an extended enrolee's calls that start soon (COH-013, docs/decisions/0198;
- * 0140 event 4).
+ * 0140 event 4) and the digest of homework due tomorrow in the student's own time zone
+ * (TCH-013, docs/decisions/0199).
  *
  * telegram_week_ping_claim() (migration 099) and telegram_call_ping_claim() (migration
- * 100), both service_role only, decide which (enrolment, week) or (enrolment, call) is due
+ * 100) and telegram_homework_due_claim() (migration 101), all service_role only, decide
+ * which (enrolment, week), (enrolment, call) or (assignment, student) is due
  * and log it before this route sends; the route words the text and sends it
  * (lib/telegram/weekPings.ts, callPings.ts). A send that fails is counted, not retried:
- * the log row is already written (docs/decisions/0177 Decision 4). The two jobs are
- * independent: one failing (say a migration not applied yet) does not stop the other.
+ * the log row is already written (docs/decisions/0177 Decision 4). The three jobs are
+ * independent: one failing (say a migration not applied yet) does not stop the others.
  *
  * Same guard as voice-purge (docs/decisions/0110): without CRON_SECRET, and its Bearer
  * header, it refuses everything.
@@ -38,8 +41,19 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const homework = await sendHomeworkDuePings();
+  if (homework.claimFailed) console.error("telegram_homework_due_claim failed");
+  if (homework.notSent > 0 || homework.unreadable > 0) {
+    console.error(
+      `telegram homework pings: ${homework.notSent} of ${homework.messages} messages not sent, ${homework.unreadable} unreadable of ${homework.claimed} claimed`,
+    );
+  }
+
   return NextResponse.json(
-    { weeks, calls },
-    { status: weeks.claimFailed || calls.claimFailed ? 500 : 200, headers: { "Cache-Control": "no-store" } },
+    { weeks, calls, homework },
+    {
+      status: weeks.claimFailed || calls.claimFailed || homework.claimFailed ? 500 : 200,
+      headers: { "Cache-Control": "no-store" },
+    },
   );
 }

@@ -25,6 +25,20 @@ import {
   runCallPings,
   type CallPingDeps,
 } from "./callPings";
+import {
+  HOMEWORK_PER_MESSAGE,
+  NEW_HOMEWORK_BATCH,
+  SEND_CONCURRENCY,
+  dueDigestText,
+  homeworkLink,
+  homeworkTitle,
+  newHomeworkText,
+  pingNewHomework,
+  readHomeworkClaim,
+  runHomeworkDuePings,
+  type HomeworkDueDeps,
+  type NewHomeworkDeps,
+} from "./homeworkPings";
 import { readWeekClaim, runWeekPings, weekLink, weekText, type WeekPingDeps } from "./weekPings";
 import { pingLink, pingNewMessage, pingText, readClaim, type PingDeps } from "./pings";
 import { postSendMessage, sendToUser, type SenderDeps } from "./send";
@@ -672,5 +686,240 @@ describe("call pings (COH-013)", () => {
     const d = deps({ claim: vi.fn(async () => { throw new Error("db"); }) });
     expect(await runCallPings(d)).toMatchObject({ claimed: 0, messages: 0, claimFailed: true });
     expect(d.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("homework pings (TCH-013)", () => {
+  const ORIGIN = "https://colloquiz.app";
+  const TODAY = new Date("2026-10-23T08:00:00Z");
+  const row = {
+    assignment_id: "h1",
+    recipient_id: "u1",
+    lang: "en",
+    course_slug: "future-imperfect",
+    course_title: "Future Imperfect",
+    lesson_title: "Lesson 3",
+    due_on: "2026-10-25",
+  };
+
+  it("reads a claim row", () => {
+    expect(readHomeworkClaim(row)).toEqual({
+      assignmentId: "h1",
+      recipientId: "u1",
+      lang: "en",
+      courseSlug: "future-imperfect",
+      courseTitle: "Future Imperfect",
+      lessonTitle: "Lesson 3",
+      dueOn: "2026-10-25",
+    });
+    expect(readHomeworkClaim({ ...row, lang: "xx" })!.lang).toBe("en");
+    expect(readHomeworkClaim({ ...row, lesson_title: null })!.lessonTitle).toBeNull();
+    expect(readHomeworkClaim({ ...row, due_on: null })!.dueOn).toBeNull();
+  });
+
+  it("reads anything that is not a complete row as null", () => {
+    expect(readHomeworkClaim(null)).toBeNull();
+    expect(readHomeworkClaim({ ...row, course_title: "" })).toBeNull();
+    expect(readHomeworkClaim({ ...row, recipient_id: 5 })).toBeNull();
+    expect(readHomeworkClaim({ ...row, assignment_id: undefined })).toBeNull();
+    expect(readHomeworkClaim({ ...row, due_on: "tomorrow" })).toBeNull();
+  });
+
+  it("titles a lesson as course · lesson and a whole course as the course", () => {
+    expect(homeworkTitle(readHomeworkClaim(row)!)).toBe("Future Imperfect · Lesson 3");
+    expect(homeworkTitle(readHomeworkClaim({ ...row, lesson_title: null })!)).toBe("Future Imperfect");
+    expect(homeworkTitle({ courseTitle: "x".repeat(300), lessonTitle: null }).length).toBeLessThan(100);
+    expect(homeworkTitle({ courseTitle: "c", lessonTitle: "y".repeat(300) })).toContain("…");
+  });
+
+  it("words new homework in the saved language, with the date when there is one", () => {
+    const en = newHomeworkText(readHomeworkClaim(row)!, ORIGIN, TODAY);
+    expect(en).toBe("New homework from your teacher: “Future Imperfect · Lesson 3” (due 25 Oct). https://colloquiz.app/my");
+    const ru = newHomeworkText(readHomeworkClaim({ ...row, lang: "ru" })!, ORIGIN, TODAY);
+    expect(ru).toMatch(/^Новое домашнее задание от преподавателя: «Future Imperfect · Lesson 3» \(срок: 25 окт\.\)\. https:\/\/colloquiz\.app\/my$/);
+    const none = newHomeworkText(readHomeworkClaim({ ...row, due_on: null, lesson_title: null })!, ORIGIN, TODAY);
+    expect(none).toBe("New homework from your teacher: “Future Imperfect”. https://colloquiz.app/my");
+  });
+
+  it("carries no teacher name and none of the teacher's note", () => {
+    const text = newHomeworkText(
+      readHomeworkClaim({ ...row, note: "Anna, you must finish this!", teacher_name: "Mrs Smith" })!,
+      ORIGIN,
+      TODAY,
+    );
+    expect(text).not.toMatch(/Anna|Smith|finish/);
+    expect(homeworkLink(ORIGIN)).toBe("https://colloquiz.app/my");
+  });
+
+  it("words the due digest: a header, a bullet per homework, one link", () => {
+    const claims = [readHomeworkClaim(row)!, readHomeworkClaim({ ...row, assignment_id: "h2", lesson_title: null })!];
+    expect(dueDigestText(claims, ORIGIN)).toBe(
+      "Homework due tomorrow:\n\n• Future Imperfect · Lesson 3\n• Future Imperfect\n\nhttps://colloquiz.app/my",
+    );
+    const ru = dueDigestText([readHomeworkClaim({ ...row, lang: "ru" })!], ORIGIN);
+    expect(ru.startsWith("Домашнее задание на завтра:\n\n• ")).toBe(true);
+  });
+
+  describe("new homework", () => {
+    const deps = (over: Partial<NewHomeworkDeps> = {}): NewHomeworkDeps => ({
+      claim: vi.fn(async () => [row, { ...row, recipient_id: "u2", lang: "ru" }]),
+      send: vi.fn(async () => "sent" as const),
+      origin: ORIGIN,
+      now: () => TODAY,
+      ...over,
+    });
+
+    it("sends one message to each claimed student, in their language", async () => {
+      const d = deps();
+      expect(await pingNewHomework("h1", d)).toEqual({
+        claimed: 2,
+        messages: 2,
+        sent: 2,
+        notSent: 0,
+        unreadable: 0,
+        claimFailed: false,
+      });
+      expect(d.claim).toHaveBeenCalledTimes(1);
+      expect(d.claim).toHaveBeenCalledWith("h1", NEW_HOMEWORK_BATCH);
+      const calls = (d.send as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls.map((c) => c[0])).toEqual(["u1", "u2"]);
+      expect(calls[0][1]).toMatch(/^New homework/);
+      expect(calls[1][1]).toMatch(/^Новое домашнее задание/);
+    });
+
+    it("sends nothing when SQL claimed nothing (a repeat, an unlinked or stopped student, a draft course)", async () => {
+      for (const none of [[], null, undefined]) {
+        const d = deps({ claim: vi.fn(async () => none) });
+        expect(await pingNewHomework("h1", d)).toMatchObject({ claimed: 0, messages: 0, sent: 0, claimFailed: false });
+        expect(d.send).not.toHaveBeenCalled();
+      }
+    });
+
+    it("asks again while a full batch comes back, and stops at a short one", async () => {
+      const batch = (n: number, from: number) =>
+        Array.from({ length: n }, (_, i) => ({ ...row, recipient_id: `u${from + i}` }));
+      const claim = vi
+        .fn<NewHomeworkDeps["claim"]>()
+        .mockResolvedValueOnce(batch(3, 0))
+        .mockResolvedValueOnce(batch(3, 3))
+        .mockResolvedValueOnce(batch(1, 6));
+      const d = deps({ claim });
+      const s = await pingNewHomework("h1", d, 3);
+      expect(s).toMatchObject({ claimed: 7, messages: 7, sent: 7 });
+      expect(claim).toHaveBeenCalledTimes(3);
+      expect(claim).toHaveBeenLastCalledWith("h1", 3);
+    });
+
+    it("sends with a few in flight, not all at once and not one by one", async () => {
+      let inFlight = 0;
+      let peak = 0;
+      const send = vi.fn(async () => {
+        inFlight++;
+        peak = Math.max(peak, inFlight);
+        await new Promise((r) => setTimeout(r, 1));
+        inFlight--;
+        return "sent" as const;
+      });
+      const many = Array.from({ length: SEND_CONCURRENCY * 3 }, (_, i) => ({ ...row, recipient_id: `u${i}` }));
+      const d = deps({ send, claim: vi.fn(async () => many) });
+      await pingNewHomework("h1", d, 100);
+      expect(send).toHaveBeenCalledTimes(many.length);
+      expect(peak).toBe(SEND_CONCURRENCY);
+    });
+
+    it("counts a blocked, failed or thrown send and still sends the rest", async () => {
+      const send = vi
+        .fn<NewHomeworkDeps["send"]>()
+        .mockResolvedValueOnce("blocked")
+        .mockRejectedValueOnce(new Error("net"))
+        .mockResolvedValueOnce("sent");
+      const d = deps({
+        send,
+        claim: vi.fn(async () => [row, { ...row, recipient_id: "u2" }, { ...row, recipient_id: "u3" }]),
+      });
+      expect(await pingNewHomework("h1", d)).toMatchObject({ claimed: 3, messages: 3, sent: 1, notSent: 2 });
+      expect(send).toHaveBeenCalledTimes(3);
+    });
+
+    it("skips an unreadable row and still sends the readable ones", async () => {
+      const d = deps({ claim: vi.fn(async () => [{ ...row, course_slug: null }, { ...row, recipient_id: "u9" }]) });
+      expect(await pingNewHomework("h1", d)).toMatchObject({ claimed: 2, messages: 1, sent: 1, unreadable: 1 });
+    });
+
+    it("reports a failed claim without throwing and sends nothing", async () => {
+      const d = deps({ claim: vi.fn(async () => { throw new Error("db"); }) });
+      expect(await pingNewHomework("h1", d)).toMatchObject({ claimed: 0, messages: 0, claimFailed: true });
+      expect(d.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("due tomorrow", () => {
+    const deps = (over: Partial<HomeworkDueDeps> = {}): HomeworkDueDeps => ({
+      claim: vi.fn(async () => [
+        row,
+        { ...row, assignment_id: "h2", lesson_title: null },
+        { ...row, assignment_id: "h3", recipient_id: "u2", lang: "ru" },
+      ]),
+      send: vi.fn(async () => "sent" as const),
+      origin: ORIGIN,
+      ...over,
+    });
+
+    it("sends one digest per student, in that student's language", async () => {
+      const d = deps();
+      expect(await runHomeworkDuePings(d, 50)).toEqual({
+        claimed: 3,
+        messages: 2,
+        sent: 2,
+        notSent: 0,
+        unreadable: 0,
+        claimFailed: false,
+      });
+      expect(d.claim).toHaveBeenCalledWith(50);
+      const calls = (d.send as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls[0][0]).toBe("u1");
+      expect(calls[0][1]).toBe(
+        "Homework due tomorrow:\n\n• Future Imperfect · Lesson 3\n• Future Imperfect\n\nhttps://colloquiz.app/my",
+      );
+      expect(calls[1][0]).toBe("u2");
+      expect(calls[1][1]).toMatch(/^Домашнее задание на завтра:/);
+    });
+
+    it("splits a student's homework over messages past the cap", async () => {
+      const many = Array.from({ length: HOMEWORK_PER_MESSAGE + 1 }, (_, i) => ({ ...row, assignment_id: `h${i}` }));
+      const d = deps({ claim: vi.fn(async () => many) });
+      expect(await runHomeworkDuePings(d)).toMatchObject({ claimed: HOMEWORK_PER_MESSAGE + 1, messages: 2, sent: 2 });
+      const bullets = (d.send as ReturnType<typeof vi.fn>).mock.calls.map((c) => (c[1].match(/•/g) ?? []).length);
+      expect(bullets).toEqual([HOMEWORK_PER_MESSAGE, 1]);
+    });
+
+    it("sends nothing when SQL claimed nothing (a second run, done homework, no link)", async () => {
+      for (const none of [[], null, undefined]) {
+        const d = deps({ claim: vi.fn(async () => none) });
+        expect(await runHomeworkDuePings(d)).toMatchObject({ claimed: 0, messages: 0, sent: 0, claimFailed: false });
+        expect(d.send).not.toHaveBeenCalled();
+      }
+    });
+
+    it("counts a blocked, failed or thrown send and still sends the rest", async () => {
+      const send = vi
+        .fn<HomeworkDueDeps["send"]>()
+        .mockResolvedValueOnce("blocked")
+        .mockRejectedValueOnce(new Error("net"))
+        .mockResolvedValueOnce("sent");
+      const d = deps({
+        send,
+        claim: vi.fn(async () => [row, { ...row, recipient_id: "u2" }, { ...row, recipient_id: "u3" }]),
+      });
+      expect(await runHomeworkDuePings(d)).toMatchObject({ claimed: 3, messages: 3, sent: 1, notSent: 2 });
+    });
+
+    it("skips an unreadable row and reports a failed claim without throwing", async () => {
+      const d = deps({ claim: vi.fn(async () => [{ ...row, course_title: null }, { ...row, recipient_id: "u9" }]) });
+      expect(await runHomeworkDuePings(d)).toMatchObject({ claimed: 2, messages: 1, sent: 1, unreadable: 1 });
+      const bad = deps({ claim: vi.fn(async () => { throw new Error("db"); }) });
+      expect(await runHomeworkDuePings(bad)).toMatchObject({ claimed: 0, messages: 0, claimFailed: true });
+      expect(bad.send).not.toHaveBeenCalled();
+    });
   });
 });

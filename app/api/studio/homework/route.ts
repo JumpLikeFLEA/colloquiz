@@ -1,6 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { pingForHomework } from "@/lib/telegram/homeworkPings";
 import { HOMEWORK_NOTE_MAX, homeworkErrorMessage, isHomeworkId, parseAssignInput, parseDueDate } from "@/lib/homework/homework";
 
 /**
@@ -13,6 +14,10 @@ import { HOMEWORK_NOTE_MAX, homeworkErrorMessage, isHomeworkId, parseAssignInput
  * the assignment's own teacher; students linked to that teacher; groups that
  * are theirs). This route validates the shape and relays the RPC's error code
  * as a message.
+ *
+ * TCH-013 (docs/decisions/0199): once an assign has succeeded, after() asks SQL which of
+ * the linked, not-stopped recipients to tell on Telegram and sends it. It runs after the
+ * response, never throws, and cannot change the answer above.
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -51,7 +56,17 @@ export async function POST(request: NextRequest) {
         p_groups: i.groupIds,
       }),
     );
-    return out.failure ?? NextResponse.json({ id: out.result.id });
+    if (out.failure) return out.failure;
+    const assignmentId = String(out.result.id);
+    after(async () => {
+      const summary = await pingForHomework(assignmentId);
+      if (summary.claimFailed || summary.notSent > 0 || summary.unreadable > 0) {
+        console.error(
+          `telegram homework pings: ${summary.notSent} of ${summary.messages} not sent, ${summary.unreadable} unreadable, claim ${summary.claimFailed ? "failed" : "ok"}`,
+        );
+      }
+    });
+    return NextResponse.json({ id: out.result.id });
   }
 
   if (body.action === "update" && isHomeworkId(body.assignmentId)) {
