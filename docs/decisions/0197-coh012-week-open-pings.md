@@ -1,8 +1,9 @@
 # 0197 — COH-012: a Telegram message when a week of a cohort course opens
 
-Status: built. Migration 099 is written and applied to the local stack twice, with its verify
-script passing (`COH-012 PASS`); it is NOT applied to hosted, as the card says. Decided
-unattended under `--no-approval`; each call below is one the owner can overturn.
+Status: built. Migration 099 was written and applied to the local stack twice, and then, at the
+owner's request and through the hosted-apply gate, to hosted (history 001..099 level); its verify
+script printed `COH-012 PASS` on both. Decided unattended under `--no-approval`; each call below
+is one the owner can overturn.
 
 ## Context
 
@@ -73,11 +74,6 @@ guard.
 
 ## Not done here
 
-- **Hosted migration.** The card asks for "written, not applied". Applying 099 is the gate's
-  job when the owner wants it; the route returns 500 on hosted until then (the function does
-  not exist) and logs `telegram_week_ping_claim failed`. The cron entry is in `vercel.json`, so
-  it starts firing on the next deploy: apply 099 before pushing, or accept a daily 500 in the
-  meantime.
 - **The route was not driven end to end** against a running server: the local `.env.local`
   points at the hosted project. The claim was called over PostgREST on the local stack with the
   service key (`[]` on an empty stack; the same call as anon is 401), the SQL by the verify
