@@ -16,6 +16,7 @@ import {
   readFeedbackClaim,
   type FeedbackPingDeps,
 } from "./feedbackPings";
+import { readWeekClaim, runWeekPings, weekLink, weekText, type WeekPingDeps } from "./weekPings";
 import { pingLink, pingNewMessage, pingText, readClaim, type PingDeps } from "./pings";
 import { postSendMessage, sendToUser, type SenderDeps } from "./send";
 import { handleUpdate, isValidWebhookSecret, type WebhookDeps } from "./webhook";
@@ -393,5 +394,109 @@ describe("feedback pings", () => {
     expect(
       await pingFeedbackPublished("voice", "s", deps({ send: vi.fn(async () => { throw new Error("net"); }) })),
     ).toBe("error");
+  });
+});
+
+describe("week pings (COH-012)", () => {
+  const ORIGIN = "https://colloquiz.app";
+  const row = {
+    enrolment_id: "e1",
+    week: 2,
+    recipient_id: "u1",
+    lang: "ru",
+    course_slug: "future-imperfect",
+    course_title: "Future Imperfect",
+    run_id: "r1",
+    opened_at: "2026-10-20T10:00:00Z",
+  };
+
+  it("reads a claim row, in the saved language", () => {
+    expect(readWeekClaim(row)).toEqual({
+      enrolmentId: "e1",
+      week: 2,
+      recipientId: "u1",
+      lang: "ru",
+      courseSlug: "future-imperfect",
+      courseTitle: "Future Imperfect",
+    });
+    expect(readWeekClaim({ ...row, lang: "xx" })!.lang).toBe("en");
+  });
+
+  it("reads anything that is not a complete row as null", () => {
+    expect(readWeekClaim(null)).toBeNull();
+    expect(readWeekClaim({ ...row, week: 0 })).toBeNull();
+    expect(readWeekClaim({ ...row, week: 2.5 })).toBeNull();
+    expect(readWeekClaim({ ...row, week: "2" })).toBeNull();
+    expect(readWeekClaim({ ...row, course_title: "" })).toBeNull();
+    expect(readWeekClaim({ ...row, recipient_id: null })).toBeNull();
+    expect(readWeekClaim({ ...row, enrolment_id: 5 })).toBeNull();
+  });
+
+  it("words 0140's texts in both languages: week 1 is 'the course has started'", () => {
+    const w2 = readWeekClaim(row)!;
+    expect(weekText(w2, ORIGIN)).toBe(
+      "Неделя 2 курса «Future Imperfect» открыта: https://colloquiz.app/courses/future-imperfect",
+    );
+    expect(weekText({ ...w2, lang: "en" }, ORIGIN)).toBe(
+      "Week 2 of “Future Imperfect” is open: https://colloquiz.app/courses/future-imperfect",
+    );
+    const w1 = { ...w2, week: 1 };
+    expect(weekText(w1, ORIGIN)).toBe("Курс «Future Imperfect» начался: https://colloquiz.app/courses/future-imperfect");
+    expect(weekText({ ...w1, lang: "en" }, ORIGIN)).toBe(
+      "“Future Imperfect” has started: https://colloquiz.app/courses/future-imperfect",
+    );
+  });
+
+  it("encodes the slug in the link", () => {
+    expect(weekLink({ courseSlug: "a b/c" }, ORIGIN)).toBe("https://colloquiz.app/courses/a%20b%2Fc");
+  });
+
+  const deps = (over: Partial<WeekPingDeps> = {}): WeekPingDeps => ({
+    claim: vi.fn(async () => [row, { ...row, enrolment_id: "e2", recipient_id: "u2", lang: "en", week: 1 }]),
+    send: vi.fn(async () => "sent" as const),
+    origin: ORIGIN,
+    ...over,
+  });
+
+  it("claims, then sends each worded text to its recipient", async () => {
+    const d = deps();
+    expect(await runWeekPings(d, 50)).toEqual({ claimed: 2, sent: 2, notSent: 0, unreadable: 0, claimFailed: false });
+    expect(d.claim).toHaveBeenCalledWith(50);
+    expect(d.send).toHaveBeenNthCalledWith(1, "u1", expect.stringContaining("Неделя 2"));
+    expect(d.send).toHaveBeenNthCalledWith(2, "u2", expect.stringContaining("has started"));
+  });
+
+  it("sends nothing when SQL claimed nothing (a re-run, no week open, nobody linked)", async () => {
+    for (const none of [[], null, undefined]) {
+      const d = deps({ claim: vi.fn(async () => none) });
+      expect(await runWeekPings(d)).toEqual({ claimed: 0, sent: 0, notSent: 0, unreadable: 0, claimFailed: false });
+      expect(d.send).not.toHaveBeenCalled();
+    }
+  });
+
+  it("counts a blocked, failed or thrown send and still sends the rest", async () => {
+    const send = vi
+      .fn<WeekPingDeps["send"]>()
+      .mockResolvedValueOnce("blocked")
+      .mockRejectedValueOnce(new Error("net"));
+    const d = deps({
+      send,
+      claim: vi.fn(async () => [row, { ...row, enrolment_id: "e2" }, { ...row, enrolment_id: "e3" }]),
+    });
+    send.mockResolvedValueOnce("sent");
+    expect(await runWeekPings(d)).toEqual({ claimed: 3, sent: 1, notSent: 2, unreadable: 0, claimFailed: false });
+    expect(send).toHaveBeenCalledTimes(3);
+  });
+
+  it("skips an unreadable row without sending it", async () => {
+    const d = deps({ claim: vi.fn(async () => [{ ...row, course_slug: null }, row]) });
+    expect(await runWeekPings(d)).toEqual({ claimed: 2, sent: 1, notSent: 0, unreadable: 1, claimFailed: false });
+    expect(d.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a failed claim without throwing and sends nothing", async () => {
+    const d = deps({ claim: vi.fn(async () => { throw new Error("db"); }) });
+    expect(await runWeekPings(d)).toEqual({ claimed: 0, sent: 0, notSent: 0, unreadable: 0, claimFailed: true });
+    expect(d.send).not.toHaveBeenCalled();
   });
 });

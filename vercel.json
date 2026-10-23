@@ -3,6 +3,7 @@
   "regions": ["dub1"],
   "crons": [
     { "path": "/api/cron/voice-purge", "schedule": "41 3 * * *" },
-    { "path": "/api/cron/voice-analysis-sweep", "schedule": "47 3 * * *" }
+    { "path": "/api/cron/voice-analysis-sweep", "schedule": "47 3 * * *" },
+    { "path": "/api/cron/telegram-reminders", "schedule": "17 7 * * *" }
   ]
 }
