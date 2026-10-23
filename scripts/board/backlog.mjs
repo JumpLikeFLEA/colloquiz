@@ -4189,9 +4189,9 @@ export const CARDS = [
       'Privacy 1.8 and Subprocessors 1.5 (0184, review of 2026-10-23) are deployed to production. Terms stay 1.3 (095 applied 2026-10-21).',
       'Owner, before the mode is on: the AssemblyAI and Anthropic accounts whose keys production uses are under the providers\' standard terms, with the date recorded in 0184; spend limits are set at both; the number of real production accounts is printed, and if there are any, each one is told of privacy 1.8 before the switch (by email, or in the app for Telegram-only accounts, which have no email).',
       'The owner sets the production env and prints it from the Vercel env list: ASSEMBLYAI_API_KEY, ANTHROPIC_API_KEY, VOICE_ANALYSIS_MODEL and CRON_SECRET, with VOICE_ANALYSIS_MODE printed as off (or unset) before the switch. An env change takes effect only on a new deployment.',
-      'On production, printed: under paused, a take uploads and no provider is called. Then, under on, a self-paced take and a cohort take each reach done, the AssemblyAI record of each reads "Deleted by user.", and the URL AssemblyAI fetched names no learner (the first hosted run of 0187\'s staging path).',
+      'On production, printed: a Telegram account deleted beforehand (in-app erasure, then the auth user) signs up fresh, opens the test course and sends a voice take that reaches done; the AssemblyAI record reads "Deleted by user." and no staged copy is left (the first hosted run of 0187\'s staging path). Paused and the second slot type are not run on production (owner, 2026-10-23): paused ran locally (0187 C), and the slot type only picks which before take an after take is compared with (loadBaseline, lib/voice/analysis/server.ts).',
     ],
-    notes: 'Absorbs OPS-026 (0184). Lines 2 to 4 are the owner\'s: production env, provider dashboards and deploys are not a session\'s.',
+    notes: 'Absorbs OPS-026 (0184). Lines 2 to 4 are the owner\'s: production env, provider dashboards and deploys are not a session\'s. Line 4 relaxed by the owner on 2026-10-23 (0184 "Go-live").',
   },
   {
     key: 'SHELL-027',

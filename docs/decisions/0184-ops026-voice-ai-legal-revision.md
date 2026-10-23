@@ -4,7 +4,8 @@ Status: drafted 2026-10-21 (OPS-026, #230). Live since the deploy of 2026-10-21
 (0183 "Hosted": /terms 1.3 and /privacy 1.7). Migration 095 was applied to hosted that day.
 4fae5bf (0195) later changed the rendered 1.7 text. Corrected on 2026-10-23 as Privacy 1.8 and
 Subprocessors 1.5; Terms stay 1.3. OPS-026 is merged into OPS-027, and the switch the owner
-still controls is VOICE_ANALYSIS_MODE. This is not legal advice.
+still controls is VOICE_ANALYSIS_MODE. It was switched on in production on 2026-10-23
+(OPS-027, see "Go-live"). This is not legal advice.
 
 ## Context
 
@@ -178,6 +179,80 @@ and the us-west-2 CDN of 0182 belongs to `/v2/upload`.
 ## To publish
 
 Superseded: see OPS-027 (review of 2026-10-23).
+
+## Go-live (OPS-027), 2026-10-23
+
+`VOICE_ANALYSIS_MODE` is `on` in production from the redeploy of the evening of 2026-10-23
+(CEST). The outputs below are the owner's, copied as pasted.
+
+Owner, before the switch (2026-10-23):
+
+- Production shows Privacy 1.8, Subprocessors 1.5 and Terms 1.3.
+- The AssemblyAI and Anthropic accounts whose keys production uses are under the providers'
+  standard terms (confirmed 2026-10-23). This closes the first item of "Not established".
+- Spend limits: the providers' defaults, set at both.
+- Real production accounts to tell about 1.8: none, so no notice was sent (§13) and the in-app
+  notice card of Decision 2 is still not needed.
+
+Scope of the production run, relaxed by the owner on 2026-10-23: no `paused` run on production
+(0187 scenario C ran it locally), one self-paced take and no cohort take, starting from a fresh
+Telegram sign-up. The Telegram test account was erased in the app, then its auth user was deleted
+in the Supabase dashboard: the in-app erasure bans the user rather than deleting it
+(`app/api/account/delete/route.ts`), so the same Telegram login would otherwise be refused. The
+test course is self-paced, published for the run, with a signed-in voice lesson.
+
+`vercel env ls production` (owner, 21:17 CEST), the rows this card sets or uses:
+
+```
+ ANTHROPIC_API_KEY                  Hidden                      Secret    Production                  1m ago
+ VOICE_ANALYSIS_MODE                eyJ2IjoidjIiLCJjIj…         Config    Production                  3m ago
+ VOICE_ANALYSIS_MODEL               eyJ2IjoidjIiLCJjIj…         Config    Production                  3m ago
+ ASSEMBLYAI_API_KEY                 Hidden                      Secret    Production                  4m ago
+ CRON_SECRET                        Hidden                      Secret    Production                  13d ago
+```
+
+- This print was taken after `VOICE_ANALYSIS_MODE` was created, about 3 minutes before it.
+  "Off before the switch" therefore rests on that creation time (unset reads as `off`,
+  `lib/voice/analysis/mode.ts`), not on a print of the list without it.
+- The values of the two Config rows are shown by the run below: the analysis ran, which only
+  `on` does (`voiceAnalysisAction`), and its `model` reads `claude-sonnet-5-5`.
+- `CRON_SECRET` was already set for the voice purge and is reused by the sweep.
+
+Production run (owner, about 21:30 CEST), the first hosted run of 0187's staging path:
+
+`voice_analyses` joined to `voice_submissions`, newest rows:
+
+```
+| status | instruction | model             | stt_job_id                           | stt_deleted | failure | self_paced |
+| ------ | ----------- | ----------------- | ------------------------------------ | ----------- | ------- | ---------- |
+| done   | first       | claude-sonnet-5-5 | 20663714-3522-44ce-9dc7-d7487f63f6f0 | true        | null    | true       |
+```
+
+Staged copies left in the `voice-recordings` bucket (`storage.objects`, names of two segments):
+
+```
+Success. No rows returned
+```
+
+AssemblyAI, `GET https://api.eu.assemblyai.com/v2/transcript/20663714-3522-44ce-9dc7-d7487f63f6f0`:
+
+```
+id        : 20663714-3522-44ce-9dc7-d7487f63f6f0
+status    : completed
+text      : Deleted by user.
+audio_url : http://deleted_by_user
+words     :
+```
+
+Not measured on production:
+
+- The URL AssemblyAI fetched. After the delete its record reads `http://deleted_by_user`, and the
+  Supabase edge logs were not read. That the URL names no learner rests on `stagedObjectName`
+  (`lib/voice/analysis/staging.ts`) and its unit test, not on a production print.
+- The staged-copy query ran without a positive control (the same query over three segments would
+  list the take itself).
+- A cohort take, a `final` take with a baseline, and `paused` on hosted.
+- The fresh account's `terms_version`.
 
 ## Revisit when
 
