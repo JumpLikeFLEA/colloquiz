@@ -2689,3 +2689,10 @@ Appended to in the same commit as the change it records. Referenced from
   navigation never runs and makes React warn. `AuthScreen` clears its in-flight state on a persisted `pageshow`,
   so the sign-in buttons are usable after Back from a provider. No visual change. `npm run budget`: `/my` 174.8
   to 175.0 KB, `/login` 286.8 to 286.9. Do not render a `<script>` from a component reachable by a link.
+- Landing's "#catalogue" links are plain `<a>` (2026-10-23, ad hoc). The header's "Courses" and the
+  hero's "All courses" were `next/link` `Link`s to `#catalogue`; once the URL already ended in
+  `#catalogue`, a second click did nothing, because Next scrolls on a same-path navigation only when
+  the hash changes (`onlyHashChange`, `next/dist/client/components/segment-cache/navigation.js`).
+  A plain anchor gets the browser's own fragment scroll, which repeats on the same hash. No visual
+  change; classes unchanged. Links to `/#catalogue` from other pages stay `Link` (the path changes).
+  Do not swap these two back to `Link`.

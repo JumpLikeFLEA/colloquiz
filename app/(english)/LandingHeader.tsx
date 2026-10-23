@@ -57,12 +57,15 @@ export function LandingHeader({
       <span className="font-accent text-lg leading-none text-brand-text sm:order-2 sm:text-xl">
         {TAGLINE}
       </span>
-      <Link
+      {/* A plain <a>, not Link: a Link to the hash already in the URL does not
+          scroll (Next scrolls only when the hash changes, `onlyHashChange` in
+          next/dist/client/components/segment-cache/navigation.js). */}
+      <a
         href="#catalogue"
         className="inline-flex min-h-11 items-center justify-self-end rounded-lg px-3 text-sm font-semibold text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand sm:order-3 sm:ml-auto"
       >
         {t.navCourses}
-      </Link>
+      </a>
     </header>
   );
 }

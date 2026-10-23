@@ -107,13 +107,14 @@ export function LandingContent({
               </p>
               <div className={`${HERO_ENTER_CLASS} delay-200 flex flex-wrap items-center gap-x-6 gap-y-2`}>
                 {primaryCta}
-                <Link
+                {/* A plain <a>, not Link: see LandingHeader's "Courses". */}
+                <a
                   href="#catalogue"
                   className="inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-base font-semibold text-brand-text underline decoration-2 underline-offset-4 outline-none hover:decoration-brand focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {t.catalogueLink}
                   <ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
+                </a>
               </div>
               <div className={`${HERO_ENTER_CLASS} delay-300`}>{heroBio[lang]}</div>
             </div>
