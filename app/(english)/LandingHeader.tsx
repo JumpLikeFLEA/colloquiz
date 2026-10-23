@@ -10,7 +10,7 @@ import { LanguageToggle } from "./LanguageToggle";
  * the paper ground, ink on grid, not on a gradient band any more. The toggle
  * is the shared `LanguageToggle` the course pages also carry (docs/decisions/
  * 0080, extending the 2026-09-28 landing exception in docs/handoff.md,
- * "Audience and language"), here in its `paper` tone. "Alina Cher" is the
+ * "Audience and language"), here on the page ground. "Alina Cher" is the
  * English surface's name (owner, 2026-10-17, docs/decisions/0161) and
  * "английский с умом" its tagline, Russian in both languages (0156 Decision
  * 11). The tagline has no oval: the owner's mockups put it on the headline's
@@ -22,7 +22,7 @@ import { LanguageToggle } from "./LanguageToggle";
  * docs/decisions/0085).
  *
  * A signed-in learner gets `account` (the server-rendered `AccountMenu`,
- * SHELL-019, docs/decisions/0086, rendered with `tone="paper"`) in the login
+ * SHELL-019, docs/decisions/0086) in the login
  * link's place: /login would only bounce them back to / (proxy.ts).
  *
  * Layout: a two-column grid on a phone (wordmark and controls, then tagline
@@ -44,7 +44,7 @@ export function LandingHeader({
     <header className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-0.5 sm:flex sm:gap-x-4">
       <span className="font-display text-lg tracking-tight text-foreground sm:order-1 sm:text-xl">{t.wordmark}</span>
       <div className="flex items-center gap-1.5 sm:order-4">
-        <LanguageToggle lang={lang} label={t.languageGroupLabel} onChange={onSetLang} tone="paper" />
+        <LanguageToggle lang={lang} label={t.languageGroupLabel} onChange={onSetLang} />
         {account ?? (
           <Link
             href="/login?next=/"

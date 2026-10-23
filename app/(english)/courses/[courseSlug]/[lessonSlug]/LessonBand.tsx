@@ -55,7 +55,7 @@ export function LessonBand({
   return (
     <section className="grid-paper border-b-2 border-ink">
       <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-10 pt-5 sm:pb-12 lg:pt-6`}>
-        <BandTopBar back={{ href: `/courses/${courseSlug}`, label: p.backToCourse }} account={account} tone="paper" />
+        <BandTopBar back={{ href: `/courses/${courseSlug}`, label: p.backToCourse }} account={account} />
         <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
           <p className="line-clamp-1 font-accent text-xl leading-none text-brand-text">{courseTitle}</p>
           <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{title}</h1>

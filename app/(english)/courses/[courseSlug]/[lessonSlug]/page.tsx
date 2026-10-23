@@ -79,7 +79,7 @@ export default async function LessonPage({
       itemCount={lesson.itemCount}
       homework={homework}
       account={
-        signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={`/courses/${courseSlug}/${lessonSlug}`} tone="paper" />
+        signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={`/courses/${courseSlug}/${lessonSlug}`} />
       }
     />
   );

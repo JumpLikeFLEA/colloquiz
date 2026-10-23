@@ -22,7 +22,7 @@ import { courseCopy } from "./courseCopy";
  * The course page's hero (docs/decisions/0079 D1–D3), on the Alina Cher grid
  * paper since SHELL-028 (docs/decisions/0166), in the landing's vocabulary
  * (0165): ink outlines, the offset shadow, a yellow level pill, the display
- * face for the title and the violet offset button. `BandTopBar` (paper tone), then the text column on
+ * face for the title and the violet offset button. `BandTopBar`, then the text column on
  * the left (level and "whole course is free" pills, title, lead, a size
  * line, the two progress numbers once anything is attempted, the violet
  * CTA) and the cover on the right at `lg`. On a phone the cover moves above
@@ -75,9 +75,9 @@ export function CourseHero({
       <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-12 pt-5 sm:pb-16 lg:gap-12 lg:pb-20 lg:pt-6`}>
         <BandTopBar
           back={{ href: "/#catalogue", label: c.backToCatalogue }}
-          toggle={<LanguageToggle lang={lang} label={c.languageGroupLabel} tone="paper" />}
+          toggle={<LanguageToggle lang={lang} label={c.languageGroupLabel} />}
           account={account}
-          tone="paper"
+         
         />
 
         <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">

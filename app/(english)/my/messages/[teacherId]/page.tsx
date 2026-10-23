@@ -62,11 +62,11 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
-            tone="paper"
+           
             back={{ href: "/my/messages", label: m.backToList }}
             account={
               signedIn && (
-                <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" tone="paper" />
+                <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />
               )
             }
           />

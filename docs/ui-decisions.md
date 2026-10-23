@@ -2696,3 +2696,9 @@ Appended to in the same commit as the change it records. Referenced from
   A plain anchor gets the browser's own fragment scroll, which repeats on the same hash. No visual
   change; classes unchanged. Links to `/#catalogue` from other pages stay `Link` (the path changes).
   Do not swap these two back to `Link`.
+- Band tone removed from `BandTopBar`, `AccountMenu`, `LanguageToggle` (2026-10-23, SHELL-035,
+  docs/decisions/0196). The `tone` prop and the white-on-gradient branch are deleted; the paper look is
+  the only one, so no page changes. Measured at 360px: `scrollWidth/innerWidth` 360/360 on `/`, a course
+  page and `/invite`. `npm run budget` unchanged on the public routes. Not measured: signed-in routes
+  (`/my`, the account menu open) — the budget fixtures could not sign in locally, before or after — and
+  before/after screenshots. Do not add a tone prop back; a gradient band would be its own component.

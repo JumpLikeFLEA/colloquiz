@@ -94,11 +94,11 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
-            tone="paper"
+           
             back={{ href: "/#catalogue", label: m.backToCatalogue }}
             // Sign-out from here returns to `/`: `/my` itself would only
             // bounce a signed-out visitor to the sign-in page.
-            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" tone="paper" />}
+            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>

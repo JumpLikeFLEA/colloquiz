@@ -72,11 +72,11 @@ export default async function MySettingsPage() {
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
-            tone="paper"
+           
             back={{ href: "/my", label: s.backToMy }}
             // Sign-out from here returns to `/`: `/my/settings` would only
             // bounce a signed-out visitor to the sign-in page.
-            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" tone="paper" />}
+            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{s.eyebrow}</span>

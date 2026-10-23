@@ -142,7 +142,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         coverImageUrl={course.coverImageUrl}
         totals={totals}
         progress={progress}
-        account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} tone="paper" />}
+        account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           continueLesson
             ? { href: `/courses/${courseSlug}/${continueLesson.slug}`, label: `${c.continuePrefix}${continueLesson.title}` }
