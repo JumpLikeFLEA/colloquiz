@@ -313,7 +313,10 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   }
 
   const busy = phase === "starting" || phase === "recording" || phase === "sending";
-  const showSent = sent !== null && phase !== "recording";
+  // The sent take stays on screen while recording again: hiding it collapsed the
+  // card (and remounted the AI panel), so the page shrank and jumped
+  // (docs/ui-decisions.md, 2026-10-24).
+  const showSent = sent !== null;
   const full = takesFull(takes);
   const showAnalysis = context.analysis === true && mode === "send" && showSent;
 

@@ -2736,3 +2736,25 @@ Appended to in the same commit as the change it records. Referenced from
   for a linked student with no enrolment (panel present, EN and RU) and for a signed-in user with no
   tie (panel absent). Not measured: the pending and on states (unchanged component), a phone.
   Do not show the panel to a learner with no enrolment, link, conversation or homework.
+- Voice task: the sent take stays while recording again; the lesson paper reaches the footer
+  (2026-10-24, ad hoc). Owner report: on a lesson with a sent take, "Record again" left a wide
+  white band between the lesson and the footer, and the page jumped. Two causes:
+  - `VoiceRecorder` hid the sent block (playback, "Sent…" line, AI feedback panel) for the whole
+    recording (`showSent` excluded `phase === "recording"`) and remounted it on Stop, so the page
+    shrank, the browser clamped the scroll, and the AI panel came back through its loading box.
+    The sent block now stays on screen while recording; Record/Stop and the takes list are
+    unchanged.
+  - The lesson wrapper had no `flex-1` inside the English layout's sticky-footer column, so on a
+    page shorter than the viewport the leftover space was the body's white, not grid paper. Both
+    `LessonPageClient` and `LinkedLessonPageClient` wrappers are now `grid-paper flex-1 pb-8`;
+    `LinkedLessonPageClient` had no `grid-paper` at all (missed by SHELL-028, 0166), so a student
+    with a teacher now gets the paper too.
+  Measured (local stack, Edge, `prog007-learner` on `/courses/coh005-fixture/week-one`, AI
+  analysis on, scrolled to the bottom, every frame tracked from Record again to 3 s after Stop).
+  Before: at 1280x1000 the page fell from 1622 to 1000 px, scroll 622 to 0, a 152 px gap under
+  the paper; at 360x800, 1833 to 831 px, scroll 1033 to 31. After: page height never below its
+  start (1622 / 1833), scroll unchanged (622 / 1033), gap 0 in every state; the same for a linked
+  student (1678 / 1889, scroll 678 / 1089, gap 0) and at 1280x2400 (page shorter than the
+  viewport, gap 0, linked and not). `npm run viewport360`: 360/360. `npm run budget` identical
+  before and after on every route. Existing classes and tokens; no new colours. Do not hide the
+  sent block while recording, and do not drop `flex-1` from the lesson wrappers.

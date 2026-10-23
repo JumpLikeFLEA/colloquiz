@@ -89,7 +89,7 @@ export function LinkedLessonPageClient({
   );
 
   return (
-    <div className="pb-8">
+    <div className="grid-paper flex-1 pb-8">
       {header}
       <LessonPlayer
         document={document}

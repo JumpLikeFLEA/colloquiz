@@ -293,6 +293,20 @@ describe("VoiceRecorder (VOICE-005)", () => {
     expect(screen.getByRole("button", { name: "Record again" })).toBeDefined();
   });
 
+  it("sent, recording again: the sent take and its status stay on screen", async () => {
+    installMedia();
+    const { container } = render(
+      <VoiceTaskBlockView
+        block={block}
+        context={send({ v1: { id: "s1", playbackUrl: "https://signed/x", removed: false, feedback: null } })}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Record again" }));
+    expect(await screen.findByRole("button", { name: "Stop" })).toBeDefined();
+    expect(container.querySelector('audio[src="https://signed/x"]')).not.toBeNull();
+    expect(screen.getByText("Sent. Waiting for feedback.")).toBeDefined();
+  });
+
   it("feedback published: shown under the recording, bold kept, and the block is locked", () => {
     installMedia();
     render(
