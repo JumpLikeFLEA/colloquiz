@@ -101,6 +101,9 @@ produces WebM or Ogg is still not established.
 
 ## Decision 7 — the microphone header covers the lesson route only
 
+Superseded by 0202: a soft navigation into a lesson kept the previous page's
+`microphone=()`, so the header is now `microphone=(self)` on every route.
+
 `next.config.ts` adds a rule for
 `/courses/:courseSlug/:lessonSlug((?!opengraph-image$)[^/]+)` that sends
 `microphone=(self)`. It overrides the global `microphone=()` because the

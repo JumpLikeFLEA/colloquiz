@@ -67,9 +67,13 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // microphone=(self) on every route, not only the lesson page: a policy is
+  // fixed when the document loads, and a learner usually reaches a lesson by a
+  // client-side navigation from `/` or the course page, so a lesson-only rule
+  // left Chrome refusing the recorder without a prompt (docs/decisions/0202).
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    value: "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
   },
 ];
 
@@ -105,22 +109,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      // VOICE-005 (docs/decisions/0111): the voice recorder needs the
-      // microphone on the lesson page, and only there. The rule above sends
-      // microphone=() everywhere; when two rules set the same key the later
-      // one wins (Next headers docs), so this overrides it for
-      // /courses/<course>/<lesson> alone. The course page has one segment
-      // fewer, and its og:image route (/courses/<course>/opengraph-image)
-      // is excluded by the lookahead.
-      {
-        source: "/courses/:courseSlug/:lessonSlug((?!opengraph-image$)[^/]+)",
-        headers: [
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
-          },
-        ],
-      },
     ];
   },
   // SHELL-001: Colloquiz moved wholesale under /app so the English surface
