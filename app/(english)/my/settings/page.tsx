@@ -68,7 +68,7 @@ export default async function MySettingsPage() {
 
   return (
     // The Alina Cher grid paper (SHELL-033, docs/decisions/0192).
-    <main className="grid-paper">
+    <main className="grid-paper flex-1">
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar

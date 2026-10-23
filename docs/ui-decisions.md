@@ -2758,3 +2758,12 @@ Appended to in the same commit as the change it records. Referenced from
   viewport, gap 0, linked and not). `npm run viewport360`: 360/360. `npm run budget` identical
   before and after on every route. Existing classes and tokens; no new colours. Do not hide the
   sent block while recording, and do not drop `flex-1` from the lesson wrappers.
+  Same day, owner report on `/my`: every English page whose root is `<main className="grid-paper">`
+  had the same white band on a page shorter than the viewport. Those six roots (the course page,
+  the lesson page's paid/sign-in state, `/my`, `/my/messages`, `/my/messages/[teacherId]`,
+  `/my/settings`) are now `grid-paper flex-1`, like the landing, `/invite`, `/join` and `/runs`
+  already were. Measured (local stack, Edge, gap from `<main>`'s bottom to the footer's top, a
+  viewport taller than the page): before, 934 / 1752 / 1358 / 1866 / 1398 / 608 px at 1280 and
+  704 / 1730 / 1520 / 1878 / 1120 / 500 at 360, in that order; after, 0 on all twelve.
+  `npm run viewport360`: 360/360 on all six. `npm run budget` identical. A new English page on
+  grid paper takes `flex-1` on its root.

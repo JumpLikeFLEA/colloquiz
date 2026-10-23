@@ -88,7 +88,7 @@ export default async function LessonPage({
     // docs/decisions/0079 D8; ANON-011's sign-in prompt (0104). The course
     // editor's "Visitor view" renders the same component (AUTH-009).
     return (
-      <main className="grid-paper">
+      <main className="grid-paper flex-1">
         <LessonUnavailable
           band={band}
           courseSlug={courseSlug}

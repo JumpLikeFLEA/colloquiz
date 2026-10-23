@@ -132,7 +132,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     // height double-counted against EnglishFooter and forced a scrollbar on
     // a short course (same bug as the landing page, docs/ui-decisions.md,
     // 2026-09-28).
-    <main className="grid-paper">
+    <main className="grid-paper flex-1">
       <CourseHero
         lang={lang}
         title={course.title}

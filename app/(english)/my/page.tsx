@@ -91,7 +91,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   return (
     // The Alina Cher grid paper (PROG-007, docs/decisions/0191), as the course
     // page and the lesson page have had since SHELL-028 (0166).
-    <main className="grid-paper">
+    <main className="grid-paper flex-1">
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
