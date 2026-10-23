@@ -3907,6 +3907,42 @@ export const CARDS = [
       'Printed on seeded data: one ping per student across two cron runs; a done or unlinked student gets none.',
     ],
   },
+  {
+    key: 'TCH-014',
+    title: 'Offer the Telegram reminders panel to a learner with a teacher link',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 2912,
+    dependsOn: ['TCH-012', 'TCH-013'],
+    goal:
+      'The panel on /my is shown to an enrolee only (app/(english)/my/page.tsx, hasEnrolment; 0173 Decision 3), so a student ' +
+      'whose only tie is a teacher link can never link the bot and gets no message or homework pings. 0177 and 0199 both flagged it.',
+    acceptance: [
+      '/my shows the Telegram reminders panel to a signed-in learner with an active teacher link, a teacher conversation or homework assigned to them, as well as to an enrolee; a learner with none of these still does not see it.',
+      'The panel text tells such a learner what the bot sends them (homework, teacher messages) and does not mention weeks or calls they do not have.',
+      'Printed on the local stack: the panel is present for a linked student with no enrolment and absent for a signed-in user with no enrolment, link, conversation or homework; /my measured at 360px (`npm run viewport360`) in both states.',
+    ],
+    notes: 'Docs: docs/decisions/0177 "Not done here", 0199 "Not done here". Reuses create_telegram_link_token, which 0173 Decision 3 left open to any signed-in user.',
+  },
+  {
+    key: 'OPS-029',
+    title: 'Legal wording for Telegram homework and teacher-message pings',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 2913,
+    dependsOn: ['TCH-012', 'TCH-013'],
+    goal:
+      'The privacy policy and subprocessors.md describe the Telegram bot as messaging a user "about a course you joined". ' +
+      'Teacher-message pings (0177) and homework pings (0199) are a new purpose and, for teachers, a new audience. ' +
+      'Legal copy is reviewed text and was deliberately not edited by either card.',
+    acceptance: [
+      'Drafts for docs/release/legal/privacy-policy.md (the Telegram reminders data row, the Art. 6 row, section 5 "a fixed sentence and a link, never the text of your message or anyone\'s name", retention) and the Telegram row of subprocessors.md, covering homework from a teacher and messages from a teacher or student; proposed wording is in docs/decisions/0177 and 0199 Decision 12.',
+      'Material-change handling per docs/decisions/0095: version bump and whether the in-app notice of Terms §10 is needed (none before launch).',
+      'The owner reviews and publishes; nothing under docs/release/legal/ changes without that.',
+    ],
+  },
   // AI voice feedback on every course and the "Alina Cher" redesign of the English learner
   // surface (owner, 2026-10-17, docs/decisions/0156). Ranked above the Telegram reminders.
   {
