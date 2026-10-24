@@ -2858,6 +2858,6 @@ Appended to in the same commit as the change it records. Referenced from
   existing tokens; no new colours. Measured at 360px (local stack, Edge, an admin):
   `scrollWidth/innerWidth` 360/360 on the page and on Studio's scroll area, with usage only, with
   expenses and limits, with each dialog open, with the error showing and with the delete confirm
-  open. Not measured: dark mode, a phone. Unresolved: the dev overlay showed "1 Issue" on this page;
-  only the CSP report-only notices were in the console, source not found. Do not add usage to
+  open. Not measured: dark mode, a phone. The dev overlay's "1 Issue" is the CSP report-only notice
+  ("'upgrade-insecure-requests' is ignored…"), which `/studio/authors` shows too: not this page. Do not add usage to
   "Paid this month": a top-up already paid for it.
