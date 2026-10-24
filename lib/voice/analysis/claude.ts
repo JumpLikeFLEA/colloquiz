@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import type { TokenUsage } from "../../costs/usageEvent";
 import { AnalysisStepError, isTransientStatus } from "./errors";
 import {
   FinalAnalysisSchema,
@@ -31,11 +32,7 @@ export function voiceAnalysisModel(env: Record<string, string | undefined> = pro
 }
 
 /** Stored in voice_analyses.usage. Tokens only; what they cost is a calculation, not a fact. */
-export type ClaudeUsage = {
-  inputTokens: number;
-  outputTokens: number;
-  cacheWriteTokens: number;
-  cacheReadTokens: number;
+export type ClaudeUsage = TokenUsage & {
   effort: "high";
   stopReason: string | null;
   /** The server-side fallback model answered instead of the one asked for. */
@@ -101,25 +98,35 @@ export function createClaudeAnalyser(options: {
           );
         }
         if (e instanceof Error && e.message.startsWith("Failed to parse structured output")) {
-          throw new AnalysisStepError("Claude answer was not the schema's JSON", "llm_unparsable", false);
+          // The model ran, but `parse` dropped the response and its usage with it: the ledger
+          // records a call of unknown size (0207 Decision 4).
+          throw new AnalysisStepError("Claude answer was not the schema's JSON", "llm_unparsable", false, {
+            model,
+            tokens: null,
+          });
         }
         throw new AnalysisStepError("Claude call failed", "llm_unknown", true);
       }
 
-      // The send goes back to the learner for both (voice_analysis_fail).
-      if (res.stop_reason === "refusal") throw new AnalysisStepError("Claude refused", "llm_refusal", false);
-      if (res.stop_reason === "max_tokens") throw new AnalysisStepError("Claude answer cut off", "llm_max_tokens", false);
-      if (!res.parsed_output) throw new AnalysisStepError("Claude answer did not match the schema", "llm_unparsable", false);
-
       const u = res.usage;
+      const tokens: TokenUsage = {
+        inputTokens: u.input_tokens,
+        outputTokens: u.output_tokens,
+        cacheWriteTokens: u.cache_creation_input_tokens ?? 0,
+        cacheReadTokens: u.cache_read_input_tokens ?? 0,
+      };
+      // The send goes back to the learner for these (voice_analysis_fail); the call was paid
+      // for all the same, so its usage travels on the error to the ledger.
+      const spent = { model: res.model, tokens };
+      if (res.stop_reason === "refusal") throw new AnalysisStepError("Claude refused", "llm_refusal", false, spent);
+      if (res.stop_reason === "max_tokens") throw new AnalysisStepError("Claude answer cut off", "llm_max_tokens", false, spent);
+      if (!res.parsed_output) throw new AnalysisStepError("Claude answer did not match the schema", "llm_unparsable", false, spent);
+
       return {
         raw: res.parsed_output as RawAnalysis,
         model: res.model,
         usage: {
-          inputTokens: u.input_tokens,
-          outputTokens: u.output_tokens,
-          cacheWriteTokens: u.cache_creation_input_tokens ?? 0,
-          cacheReadTokens: u.cache_read_input_tokens ?? 0,
+          ...tokens,
           effort: "high",
           stopReason: res.stop_reason,
           fallbackRan: (u as { iterations?: { type: string }[] }).iterations?.some((i) => i.type === "fallback_message") ?? false,

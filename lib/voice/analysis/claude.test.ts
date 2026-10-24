@@ -108,6 +108,11 @@ describe("createClaudeAnalyser", () => {
     await expect(createClaudeAnalyser({ apiKey: "k", fetchFn }).analyse(input)).rejects.toMatchObject({
       code: "llm_refusal",
       transient: false,
+      // The call was paid for: its usage travels to the ledger (0207 Decision 4).
+      spent: {
+        model: "claude-sonnet-5-5",
+        tokens: { inputTokens: 300, outputTokens: 700, cacheWriteTokens: 2000, cacheReadTokens: 0 },
+      },
     });
   });
 
@@ -118,6 +123,8 @@ describe("createClaudeAnalyser", () => {
     await expect(createClaudeAnalyser({ apiKey: "k", fetchFn }).analyse(input)).rejects.toMatchObject({
       code: "llm_unparsable",
       transient: false,
+      // `parse` threw and dropped the response: the model ran, its tokens are unknown.
+      spent: { model: "claude-sonnet-5-5", tokens: null },
     });
   });
 

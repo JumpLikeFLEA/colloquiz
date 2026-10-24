@@ -1,3 +1,5 @@
+import type { SpentCall } from "../costs/usageEvent";
+
 /**
  * A pipeline step that did not work (CNT-018), the shape of voice/analysis/errors.ts.
  *
@@ -15,6 +17,8 @@ export class ImportStepError extends Error {
     message: string,
     readonly code: string,
     readonly transient: boolean,
+    /** Set when the model ran and was paid for, so the usage ledger can record the call (0207 Decision 4). */
+    readonly spent?: SpentCall,
   ) {
     super(message);
     this.name = "ImportStepError";

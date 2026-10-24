@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createUsageRecorder } from "@/lib/costs/ledgerServer";
 import { createImportClaude } from "./claude";
 import type { ImportClaude } from "./claudeTypes";
 import { IMPORT_BUCKET } from "./formats";
@@ -124,6 +125,7 @@ export function createPipelineDeps(env: Record<string, string | undefined> = pro
     claude: claudeFromEnv(env),
     prompt: readPrompt,
     now: () => Date.now(),
+    recordUsage: createUsageRecorder(admin),
   };
 }
 

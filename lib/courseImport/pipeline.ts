@@ -1,6 +1,7 @@
 import { CourseFileSchema } from "../lessons/courseFile";
 import { parseLessonDocument } from "../lessons";
-import type { CallUsage, ImportClaude, ImportDocument } from "./claudeTypes";
+import { claudeEvent, recordSafely, tokensOf, type RecordUsage } from "../costs/usageEvent";
+import type { CallUsage, ImportAnswer, ImportClaude, ImportDocument, ImportTurn } from "./claudeTypes";
 import { ImportStepError } from "./errors";
 import { COURSE_IMPORT_FORMAT_INFO, type CourseImportFormat } from "./formats";
 import { readStoredLessons, validateLessonResponse, type DraftedLesson } from "./lessonResponse";
@@ -103,6 +104,8 @@ export type PipelineDeps = {
   /** The prompt file's text, comment stripped. */
   prompt(name: ImportPromptName): Promise<string>;
   now(): number;
+  /** The usage ledger (OPS-031, 0207): every paid call, success or not. Never throws through recordSafely. */
+  recordUsage: RecordUsage;
   /** Test hook; defaults to STEP_BUDGET_MS. */
   budgetMs?: number;
 };
@@ -118,6 +121,32 @@ export type PipelineOutcome =
 
 const PLAN_MAX_TOKENS = 16_000;
 const LESSON_MAX_TOKENS = 64_000;
+
+/**
+ * One model call, recorded in the usage ledger whatever its outcome. The row's own usage list
+ * (course_imports.usage) is still kept by the caller; this is the copy that outlives the row.
+ */
+async function converse(
+  deps: PipelineDeps,
+  step: string,
+  input: { system: string; document: ImportDocument; turns: ImportTurn[]; maxTokens: number },
+): Promise<ImportAnswer> {
+  let answer: ImportAnswer;
+  try {
+    answer = await deps.claude.converse(input);
+  } catch (e) {
+    // A refused or cut-off answer was still paid for (0207 Decision 4).
+    if (e instanceof ImportStepError && e.spent) {
+      await recordSafely(deps.recordUsage, claudeEvent("course_import", step, e.spent, "failed"));
+    }
+    throw e;
+  }
+  await recordSafely(
+    deps.recordUsage,
+    claudeEvent("course_import", step, { model: answer.model, tokens: tokensOf(answer.usage) }, "ok"),
+  );
+  return answer;
+}
 
 function usageList(value: unknown): CallUsage[] {
   return Array.isArray(value) ? (value as CallUsage[]) : [];
@@ -204,7 +233,7 @@ async function runSteps(importId: string, row: ImportRow, deps: PipelineDeps): P
         const system = await deps.prompt("system");
         const instruction = await deps.prompt("plan");
         const started1 = deps.now();
-        const answer = await deps.claude.converse({
+        const answer = await converse(deps, "plan", {
           system,
           document,
           turns: [{ role: "user", text: buildPlanMessage(instruction, course) }],
@@ -217,7 +246,7 @@ async function runSteps(importId: string, row: ImportRow, deps: PipelineDeps): P
         if (!parsed.ok) {
           // The plan gets the same single repair as a lesson.
           const repairInstruction = await deps.prompt("repair");
-          const again = await deps.claude.converse({
+          const again = await converse(deps, "plan-repair", {
             system,
             document,
             turns: [
@@ -373,7 +402,12 @@ async function draftLesson(input: {
 
   const usage = usageList(row.usage).slice();
   const t0 = deps.now();
-  let answer = await deps.claude.converse({ system, document, turns: [{ role: "user", text: first }], maxTokens: LESSON_MAX_TOKENS });
+  let answer = await converse(deps, `lesson-${index + 1}`, {
+    system,
+    document,
+    turns: [{ role: "user", text: first }],
+    maxTokens: LESSON_MAX_TOKENS,
+  });
   usage.push({ step: `lesson-${index + 1}`, ...answer.usage, ms: deps.now() - t0 });
 
   let result = validateLessonResponse(answer.text, { slug });
@@ -384,7 +418,7 @@ async function draftLesson(input: {
     repaired = true;
     const repairInstruction = await deps.prompt("repair");
     const t1 = deps.now();
-    answer = await deps.claude.converse({
+    answer = await converse(deps, `lesson-${index + 1}-repair`, {
       system,
       document,
       turns: [

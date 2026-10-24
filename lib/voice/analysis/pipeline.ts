@@ -1,3 +1,4 @@
+import { claudeEvent, recordSafely, tokensOf, type RecordUsage } from "../../costs/usageEvent";
 import type { ClaudeAnalyser } from "./claude";
 import { AnalysisStepError } from "./errors";
 import { voiceAnalysisAction, type VoiceAnalysisMode } from "./mode";
@@ -8,7 +9,7 @@ import {
   type StoredAnalysis,
   type VoiceAnalysisInstruction,
 } from "./schema";
-import type { SttClient } from "./assemblyai";
+import { STT_MODEL, type SttClient } from "./assemblyai";
 import { validateAnalysis } from "./validate";
 import type { FirstAnalysisContext } from "./schema";
 
@@ -99,6 +100,8 @@ export type PipelineDeps = {
   instruction(kind: VoiceAnalysisInstruction): Promise<string>;
   sleep(ms: number): Promise<void>;
   now(): number;
+  /** The usage ledger (OPS-031, 0207): every paid call, success or not. Never throws through recordSafely. */
+  recordUsage: RecordUsage;
 };
 
 export type PipelineOutcome =
@@ -136,6 +139,9 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
     return { kind: "failed", code };
   };
 
+  // The ledger's step for the Claude call: the instruction, once it is chosen.
+  let claudeStep = "analysis";
+
   try {
     const loaded = await store.load(submissionId);
     if (!loaded.ok) return await fail(loaded.code);
@@ -168,13 +174,28 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
         return { kind: "waiting" };
       }
       if (result.status === "error") return await fail("stt_job_error");
-      if (result.text.trim().length === 0) return await fail("no_speech");
+      // A finished transcript is billed by its length, speech or not. It is recorded once:
+      // a later run starts from the stored transcript and never reaches here.
+      const transcribed = {
+        provider: "assemblyai",
+        feature: "voice_analysis",
+        model: STT_MODEL,
+        step: "transcript",
+        tokens: null,
+        audioSeconds: result.audioSeconds,
+        outcome: "ok",
+      } as const;
+      if (result.text.trim().length === 0) {
+        await recordSafely(deps.recordUsage, transcribed);
+        return await fail("no_speech");
+      }
 
       // The model is shown, and its quotes are checked against, the prompt-safe text, so
       // that is what is stored: every offset in the result is into this string.
       transcript = promptSafeText(result.text);
       audioSeconds = result.audioSeconds;
       await store.advance(submissionId, "analysing", { transcript, audioSeconds: audioSeconds ?? undefined });
+      await recordSafely(deps.recordUsage, transcribed);
     }
 
     // The transcript is stored; the provider's copy goes now (0156 Decision 16, 0182
@@ -189,6 +210,7 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
 
     // ── Step 2: the analysis ────────────────────────────────────────────────
     const choice = chooseInstruction(job.task.role, job.baseline !== null);
+    claudeStep = choice.kind;
     const firstTranscript = choice.kind === "final" ? (job.baseline?.transcript ?? null) : null;
     const system = await deps.instruction(choice.kind);
     const answer = await deps.claude.analyse({
@@ -203,6 +225,11 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
         firstAnalysis: choice.kind === "final" ? (job.baseline?.firstAnalysis ?? null) : null,
       }),
     });
+    // Recorded before the result is validated or stored: a take replaced meanwhile still cost this.
+    await recordSafely(
+      deps.recordUsage,
+      claudeEvent("voice_analysis", claudeStep, { model: answer.model, tokens: tokensOf(answer.usage) }, "ok"),
+    );
 
     const truncated = audioSeconds !== null && audioSeconds > VOICE_ANALYSIS_MAX_SECONDS;
     const result = validateAnalysis(answer.raw, {
@@ -230,6 +257,10 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
     // result writes nothing (096, voice_analysis_finish).
     return stored ? { kind: "done" } : { kind: "discarded" };
   } catch (e) {
+    // A refused, cut-off or unparsable answer was still paid for (0207 Decision 4).
+    if (e instanceof AnalysisStepError && e.spent) {
+      await recordSafely(deps.recordUsage, claudeEvent("voice_analysis", claudeStep, e.spent, "failed"));
+    }
     if (e instanceof AnalysisStepError && !e.transient) return await fail(e.code);
     // Transient, or unexpected: record nothing. The lease expires and the next status poll
     // claims the row again; the sweep fails it after 24 hours if that never works.

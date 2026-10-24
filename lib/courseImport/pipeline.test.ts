@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { UsageEvent } from "../costs/usageEvent";
 import { lessonAnswer, PLAN, planAnswer } from "./__fixtures__/lesson";
 import type { ImportAnswer, ImportClaude, ImportDocument, ImportTurn } from "./claudeTypes";
 import { ImportStepError } from "./errors";
@@ -152,10 +153,18 @@ class FakeFiles {
   }
 }
 
-function setup(opts: { format?: CourseImportFormat; script: (string | Error)[]; mode?: "on" | "off"; budgetMs?: number }) {
+function setup(opts: {
+  format?: CourseImportFormat;
+  script: (string | Error)[];
+  mode?: "on" | "off";
+  budgetMs?: number;
+  /** Makes every ledger write throw. */
+  ledgerDown?: boolean;
+}) {
   const store = new FakeStore(newRow(opts.format));
   const claude = new FakeClaude(opts.script);
   const files = new FakeFiles();
+  const usage: UsageEvent[] = [];
   let clock = 0;
   const deps: PipelineDeps = {
     mode: opts.mode ?? "on",
@@ -166,8 +175,12 @@ function setup(opts: { format?: CourseImportFormat; script: (string | Error)[]; 
     // Every read of the clock is 10 ms later, so a budget of 0 is exceeded after the first step.
     now: () => (clock += 10),
     budgetMs: opts.budgetMs,
+    recordUsage: async (event) => {
+      if (opts.ledgerDown) throw new Error("ledger down");
+      usage.push(event);
+    },
   };
-  return { store, claude, files, deps };
+  return { store, claude, files, deps, usage };
 }
 
 const HAPPY = () => [planAnswer(), lessonAnswer("why-two-tenses"), lessonAnswer("signal-words")];
@@ -384,5 +397,52 @@ describe("runCourseImport", () => {
 
     expect(out).toEqual({ kind: "retry", code: "unexpected" });
     expect(store.failed).toEqual([]);
+  });
+});
+
+describe("runCourseImport: the usage ledger (OPS-031, 0207)", () => {
+  const TOKENS = { inputTokens: 10, outputTokens: 5, cacheWriteTokens: 0, cacheReadTokens: 0 };
+
+  it("records every model call of a finished import, with its step", async () => {
+    const t = setup({ script: HAPPY() });
+    expect((await runCourseImport("imp1", t.deps)).kind).toBe("done");
+    expect(t.usage).toEqual(
+      ["plan", "lesson-1", "lesson-2"].map((step) => ({
+        provider: "anthropic",
+        feature: "course_import",
+        model: "fake-model",
+        step,
+        tokens: TOKENS,
+        audioSeconds: null,
+        outcome: "ok",
+      })),
+    );
+    // The ledger and the row's own list agree on the number of calls.
+    expect((t.store.row.usage as unknown[]).length).toBe(t.usage.length);
+  });
+
+  it("a refused lesson is recorded as failed with the tokens it reported, and the job fails", async () => {
+    const spent = { model: "fake-model", tokens: { ...TOKENS, outputTokens: 99 } };
+    const t = setup({ script: [planAnswer(), new ImportStepError("refused", "llm_refusal", false, spent)] });
+    expect(await runCourseImport("imp1", t.deps)).toEqual({ kind: "failed", code: "llm_refusal" });
+    expect(t.usage.map((e) => `${e.step}:${e.outcome}`)).toEqual(["plan:ok", "lesson-1:failed"]);
+    expect(t.usage[1].tokens).toEqual(spent.tokens);
+  });
+
+  it("a transient failure, which carries nothing spent, records nothing for that call", async () => {
+    const t = setup({ script: [planAnswer(), new ImportStepError("overloaded", "llm_http_529", true)] });
+    expect((await runCourseImport("imp1", t.deps)).kind).toBe("retry");
+    expect(t.usage.map((e) => e.step)).toEqual(["plan"]);
+  });
+
+  it("a repair turn is its own call, recorded under its own step", async () => {
+    const t = setup({ script: [planAnswer(), "not json at all", lessonAnswer("why-two-tenses"), lessonAnswer("signal-words")] });
+    expect((await runCourseImport("imp1", t.deps)).kind).toBe("done");
+    expect(t.usage.map((e) => e.step)).toEqual(["plan", "lesson-1", "lesson-1-repair", "lesson-2"]);
+  });
+
+  it("a ledger that throws does not change the outcome", async () => {
+    const t = setup({ script: HAPPY(), ledgerDown: true });
+    expect((await runCourseImport("imp1", t.deps)).kind).toBe("done");
   });
 });

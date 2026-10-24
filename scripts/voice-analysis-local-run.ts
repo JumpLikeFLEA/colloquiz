@@ -29,6 +29,7 @@ import { createClaudeAnalyser } from "../lib/voice/analysis/claude";
 import { createSttClient } from "../lib/voice/analysis/assemblyai";
 import { runVoiceAnalysis, type PipelineDeps } from "../lib/voice/analysis/pipeline";
 import { createPipelineStore, createStager, readInstruction } from "../lib/voice/analysis/server";
+import { createUsageRecorder } from "../lib/costs/ledgerServer";
 
 const args = process.argv.slice(2);
 const opt = (n: string) => args.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3);
@@ -362,6 +363,7 @@ async function scenarioD(l: Learner, s: { courseId: string; lessonId: string }) 
     instruction: readInstruction,
     sleep,
     now: () => Date.now(),
+    recordUsage: createUsageRecorder(admin),
   };
   const outcome = await runVoiceAnalysis(take.submissionId, deps);
   say({ scenario: "D", step: "outcome", outcome });

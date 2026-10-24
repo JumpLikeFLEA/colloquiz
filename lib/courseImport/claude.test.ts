@@ -160,6 +160,10 @@ describe("createImportClaude", () => {
     const err = await createImportClaude({ apiKey: "k", fetchFn }).converse(input).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ImportStepError);
     expect(err).toMatchObject({ code: "llm_refusal", transient: false });
+    // It was paid for: its usage travels to the ledger (0207 Decision 4).
+    expect(err).toMatchObject({
+      spent: { model: "claude-opus-5-5", tokens: { inputTokens: 400, outputTokens: 900, cacheWriteTokens: 3000, cacheReadTokens: 0 } },
+    });
   });
 
   it("a cut-off answer fails the job", async () => {

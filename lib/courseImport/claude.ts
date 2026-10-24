@@ -1,5 +1,6 @@
 import Anthropic, { toFile } from "@anthropic-ai/sdk";
 import type { BetaContentBlockParam, BetaMessageParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
+import type { TokenUsage } from "../costs/usageEvent";
 import type { CallUsage, ImportAnswer, ImportClaude, ImportDocument } from "./claudeTypes";
 import { ImportStepError, isTransientStatus } from "./errors";
 
@@ -89,23 +90,29 @@ export function createImportClaude(options: {
         throw classify(e, document.kind === "file");
       }
 
+      const u = res.usage;
+      const tokens: TokenUsage = {
+        inputTokens: u.input_tokens,
+        outputTokens: u.output_tokens,
+        cacheWriteTokens: u.cache_creation_input_tokens ?? 0,
+        cacheReadTokens: u.cache_read_input_tokens ?? 0,
+      };
+
       // Checked before the text is read: a refused or cut-off answer is a failure whatever
-      // it contains, and saying it again would cost the same again.
-      if (res.stop_reason === "refusal") throw new ImportStepError("Claude refused", "llm_refusal", false);
-      if (res.stop_reason === "max_tokens") throw new ImportStepError("Claude answer cut off", "llm_max_tokens", false);
+      // it contains, and saying it again would cost the same again. It was paid for, so its
+      // usage travels on the error to the ledger (0207 Decision 4).
+      const spent = { model: res.model, tokens };
+      if (res.stop_reason === "refusal") throw new ImportStepError("Claude refused", "llm_refusal", false, spent);
+      if (res.stop_reason === "max_tokens") throw new ImportStepError("Claude answer cut off", "llm_max_tokens", false, spent);
 
       const text = res.content
         .filter((b): b is Extract<typeof b, { type: "text" }> => b.type === "text")
         .map((b) => b.text)
         .join("");
 
-      const u = res.usage;
       const usage: Omit<CallUsage, "step"> = {
         model: res.model,
-        inputTokens: u.input_tokens,
-        outputTokens: u.output_tokens,
-        cacheWriteTokens: u.cache_creation_input_tokens ?? 0,
-        cacheReadTokens: u.cache_read_input_tokens ?? 0,
+        ...tokens,
         effort: "high",
         stopReason: res.stop_reason,
         fallbackRan: (u as { iterations?: { type: string }[] }).iterations?.some((i) => i.type === "fallback_message") ?? false,

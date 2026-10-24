@@ -1,3 +1,5 @@
+import type { SpentCall } from "../../costs/usageEvent";
+
 /**
  * A pipeline step that did not work (VOICE-012). One class for both providers, so the
  * pipeline asks one question of any failure: may it be tried again?
@@ -17,6 +19,8 @@ export class AnalysisStepError extends Error {
     message: string,
     readonly code: string,
     readonly transient: boolean,
+    /** Set when the model ran and was paid for, so the usage ledger can record the call (0207 Decision 4). */
+    readonly spent?: SpentCall,
   ) {
     super(message);
     this.name = "AnalysisStepError";

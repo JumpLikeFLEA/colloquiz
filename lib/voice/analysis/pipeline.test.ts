@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { UsageEvent } from "../../costs/usageEvent";
 import type { SttClient, SttTranscript } from "./assemblyai";
 import type { ClaudeAnalysis, ClaudeAnalyser } from "./claude";
 import { AnalysisStepError } from "./errors";
@@ -52,10 +53,13 @@ function build(opts: {
   finish?: boolean;
   deleted?: boolean;
   clock?: { t: number };
+  /** Makes every ledger write throw. */
+  ledgerDown?: boolean;
 }) {
   const log: Log = [];
   const finished: FinishArgs[] = [];
   const claudeCalls: { kind: string; system: string; user: string }[] = [];
+  const usage: UsageEvent[] = [];
   const clock = opts.clock ?? { t: 0 };
   const sttQueue: SttTranscript[] = [
     ...(opts.stt ?? [{ status: "completed", text: TRANSCRIPT, audioSeconds: 61.4 } as SttTranscript]),
@@ -116,8 +120,12 @@ function build(opts: {
       clock.t += ms;
     },
     now: () => clock.t,
+    recordUsage: async (event) => {
+      if (opts.ledgerDown) throw new Error("ledger down");
+      usage.push(event);
+    },
   };
-  return { deps, log, finished, claudeCalls, clock };
+  return { deps, log, finished, claudeCalls, clock, usage };
 }
 
 describe("runVoiceAnalysis: the whole run", () => {
@@ -389,5 +397,90 @@ describe("runVoiceAnalysis: the provider copy", () => {
     expect(stored).toBeGreaterThan(-1);
     expect(deleted).toBeGreaterThan(stored);
     expect(analysed).toBeGreaterThan(deleted);
+  });
+});
+
+describe("runVoiceAnalysis: the usage ledger (OPS-031, 0207)", () => {
+  const TOKENS = { inputTokens: 300, outputTokens: 700, cacheWriteTokens: 2000, cacheReadTokens: 0 };
+
+  it("a finished take records the transcript and the Claude call, once each", async () => {
+    const t = build({});
+    expect((await runVoiceAnalysis(ID, t.deps)).kind).toBe("done");
+    expect(t.usage).toEqual([
+      {
+        provider: "assemblyai",
+        feature: "voice_analysis",
+        model: "universal-3-5-pro",
+        step: "transcript",
+        tokens: null,
+        audioSeconds: 61.4,
+        outcome: "ok",
+      },
+      {
+        provider: "anthropic",
+        feature: "voice_analysis",
+        model: "claude-sonnet-5-5",
+        step: "first",
+        tokens: TOKENS,
+        audioSeconds: null,
+        outcome: "ok",
+      },
+    ]);
+  });
+
+  it("a run that starts from a stored transcript records only the Claude call", async () => {
+    const t = build({
+      claim: { claimed: true, status: "analysing", sttJobId: "job-1", transcript: TRANSCRIPT, audioSeconds: 61.4 },
+    });
+    expect((await runVoiceAnalysis(ID, t.deps)).kind).toBe("done");
+    expect(t.usage.map((e) => e.provider)).toEqual(["anthropic"]);
+  });
+
+  it("a refusal is recorded as failed with the tokens it reported", async () => {
+    const t = build({
+      claude: async () => {
+        throw new AnalysisStepError("refused", "llm_refusal", false, { model: "claude-sonnet-5-5", tokens: TOKENS });
+      },
+    });
+    expect(await runVoiceAnalysis(ID, t.deps)).toEqual({ kind: "failed", code: "llm_refusal" });
+    expect(t.usage[1]).toMatchObject({ provider: "anthropic", step: "first", tokens: TOKENS, outcome: "failed" });
+  });
+
+  it("an unparsable answer is recorded as failed with unknown tokens, never as zero", async () => {
+    const t = build({
+      claude: async () => {
+        throw new AnalysisStepError("unparsable", "llm_unparsable", false, { model: "claude-sonnet-5-5", tokens: null });
+      },
+    });
+    expect((await runVoiceAnalysis(ID, t.deps)).kind).toBe("failed");
+    expect(t.usage[1]).toMatchObject({ provider: "anthropic", tokens: null, outcome: "failed" });
+  });
+
+  it("a transient failure, which carries nothing spent, records no Claude call", async () => {
+    const t = build({
+      claude: async () => {
+        throw new AnalysisStepError("overloaded", "llm_http_503", true);
+      },
+    });
+    expect((await runVoiceAnalysis(ID, t.deps)).kind).toBe("retry");
+    expect(t.usage.map((e) => e.provider)).toEqual(["assemblyai"]);
+  });
+
+  it("a take with no speech still records its transcript before failing", async () => {
+    const t = build({ stt: [{ status: "completed", text: "  ", audioSeconds: 12 }] });
+    expect(await runVoiceAnalysis(ID, t.deps)).toEqual({ kind: "failed", code: "no_speech" });
+    expect(t.usage).toEqual([expect.objectContaining({ provider: "assemblyai", audioSeconds: 12 })]);
+  });
+
+  it("a take replaced while it ran still records the Claude call it paid for", async () => {
+    const t = build({ finish: false });
+    expect((await runVoiceAnalysis(ID, t.deps)).kind).toBe("discarded");
+    expect(t.usage.map((e) => e.provider)).toEqual(["assemblyai", "anthropic"]);
+  });
+
+  it("a ledger that throws does not change the outcome", async () => {
+    const t = build({ ledgerDown: true });
+    expect((await runVoiceAnalysis(ID, t.deps)).kind).toBe("done");
+    expect(t.log).toContain("finish");
   });
 });

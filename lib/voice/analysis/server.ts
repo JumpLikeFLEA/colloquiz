@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createUsageRecorder } from "@/lib/costs/ledgerServer";
 import { signVoicePlaybackUrl } from "../storage";
 import { VOICE_BUCKET } from "../recording";
 import { createSttClient, type SttClient } from "./assemblyai";
@@ -254,6 +255,7 @@ export function createPipelineDeps(env: Record<string, string | undefined> = pro
     instruction: readInstruction,
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
     now: () => Date.now(),
+    recordUsage: createUsageRecorder(admin),
   };
 }
 
