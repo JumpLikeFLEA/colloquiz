@@ -120,5 +120,6 @@ Choices made while writing it, none of which changes a Decision above:
   full protocol`; the unmodified script also exits clean. Counts before and after, identical:
   3 courses, 14 lessons, 19 versions, 3 editors, 3 seats, 21 users, 21 profiles, 0 imports, 0
   objects in the bucket, 0 `@verify.test` users.
-- `COURSE_IMPORT_MODE` is not set anywhere hosted, so production import stays off (0203
-  Decision 6; OPS-030 gates turning it on).
+- Applying 103 does not switch import on: the mode is read from `COURSE_IMPORT_MODE`, which fails
+  closed (anything but `on` is off, `lib/courseImport/mode.ts`). Not checked: whether the Vercel
+  project has the variable set. OPS-030 gates turning it on (Decision 6).
