@@ -109,7 +109,8 @@ at `/studio`. It holds:
 - course editing, moved from `/app/admin/courses`;
 - the voice review queue;
 - the learners roster;
-- an inbox of what needs attention.
+- an inbox of what needs attention;
+- for admins, a Costs page (`/studio/costs`, docs/decisions/0207): usage from a durable ledger, bills and limits typed in by hand.
 
 It is author-only: anyone with `can_edit_course`. It has its own root
 layout, its chrome is English, and it has no JS budget of its own. Nothing

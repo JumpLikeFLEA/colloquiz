@@ -29,6 +29,9 @@ export default defineConfig({
         test: {
           name: "editor",
           environment: "jsdom",
+          // Heavy component tests exceed the 5 s default when the whole suite runs in
+          // parallel; the same files pass alone and with --maxWorkers=2 (OPS-032 run).
+          testTimeout: 20000,
           include: ["app/**/*.test.{ts,tsx}"],
         },
       },

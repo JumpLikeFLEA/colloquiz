@@ -409,6 +409,24 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     goTo: { label: "Open Authors", path: "/studio/authors" },
     audience: "admin",
   },
+  {
+    slug: "costs",
+    title: "Costs",
+    purpose: "See what the app spends on Claude and AssemblyAI, what you paid, and how close you are to your limits.",
+    steps: [
+      "Open **Costs** in the menu. Pick a month with the arrows.",
+      "**Paid this month** is the money you entered: bills plus credit top-ups. Usage at list price is shown beside it and is never added to it.",
+      "To record a bill or a credit top-up, press **Add an expense**. Edit or delete it from its row.",
+      "To watch a resource such as database size or egress, press **Add a limit**. Say whether the app measures it, or enter a reading by hand.",
+    ],
+    tips: [
+      "**Credit left (estimate)** comes from your last top-up and the app's usage, so it is only an estimate.",
+      "The ledger holds no user, take or import id, so it survives account deletion.",
+      "Prices were taken from the providers' pricing pages on 2026-10-24.",
+    ],
+    goTo: { label: "Open Costs", path: "/studio/costs" },
+    audience: "admin",
+  },
 ];
 
 /** Whether the reader may see an article (0206 Decision 8). */

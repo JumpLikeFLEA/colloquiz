@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, CalendarDays, ClipboardList, ExternalLink, Inbox, FileUp, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, ClipboardList, ExternalLink, Inbox, FileUp, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -38,6 +38,9 @@ const importsItem: NavItem = { label: "Imports", href: "/studio/imports", icon: 
 
 // Author seats (TCH-007): admin only, shown last. The page 404s for anyone else.
 const authorsItem: NavItem = { label: "Authors", href: "/studio/authors", icon: UserCog };
+
+// Costs (OPS-032, docs/decisions/0207): admin only, after Authors. The page 404s for anyone else.
+const costsItem: NavItem = { label: "Costs", href: "/studio/costs", icon: Wallet };
 
 /** Imports goes in right after Courses, for a grant holder only. */
 function withImports(items: NavItem[], canImport: boolean): NavItem[] {
@@ -128,7 +131,7 @@ export function StudioSidebar({
 
       <SidebarContent className="px-3 py-4">
         <nav className="flex flex-col gap-1">
-          {[...withImports(workItems, canImport), ...(isAdmin ? [authorsItem] : []), guideItem].map((item) => (
+          {[...withImports(workItems, canImport), ...(isAdmin ? [authorsItem, costsItem] : []), guideItem].map((item) => (
             <NavLink
               key={item.href}
               item={item}

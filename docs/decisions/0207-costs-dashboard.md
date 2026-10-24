@@ -108,6 +108,30 @@ What the app records today:
    - Receipts are a reference (an invoice number or URL), not an uploaded
      file (owner).
 
+9. **"Spent" means money paid; usage is shown beside it, never added to it.**
+   - A month's spend is the bills and credit top-ups entered for it: cash
+     that left the project, each line with an invoice reference.
+   - The ledger's estimate is what the app consumed. Most of that was paid
+     for in advance by a top-up, so adding the two would count prepaid
+     credit twice.
+   - The dashboard and the report show both, labelled as such. Rejected:
+     summing them into one "total".
+10. **Prices as read on 2026-10-24** from
+    `platform.claude.com/docs/en/about-claude/pricing` and
+    `assemblyai.com/pricing`, in USD:
+    - Claude Opus 5.5, per MTok: $4 input, $5 cache write (5 min), $0.20
+      cache read, $20 output.
+    - Claude Sonnet 5.5, per MTok: $2 input, $2.50 cache write, $0.10 cache
+      read, $10 output.
+    - AssemblyAI Universal-3.5 Pro: $0.21 per audio hour, the same in the EU.
+
+    The page states no long-context surcharge for either Claude model.
+    Both pipelines cache with the default 5-minute TTL
+    (`cache_control: { type: "ephemeral" }`), so writes are priced at the
+    5-minute rate. A day before a model's first dated price gets that first
+    price. Any model the table does not list, including a server-side
+    fallback model, is unpriced (Decision 6).
+
 ## What would make us revisit
 
 - A sponsor or accountant needs billed figures, not estimates: add the Admin

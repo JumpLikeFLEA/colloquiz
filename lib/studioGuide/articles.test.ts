@@ -107,6 +107,7 @@ describe("articles", () => {
       "authors",
       "catalogue-listing",
       "import-grants",
+      "costs",
     ]) {
       expect(findArticle(slug), slug).toBeDefined();
     }
@@ -132,12 +133,12 @@ describe("articles", () => {
 
 describe("visibility (0206 Decision 8)", () => {
   const plain = { isAdmin: false, canImport: false };
-  const adminOnly = ["authors", "catalogue-listing", "import-grants"];
+  const adminOnly = ["authors", "catalogue-listing", "import-grants", "costs"];
   it("a plain author misses the import and admin articles; the grant shows import, an admin all", () => {
     const hidden = GUIDE_ARTICLES.filter((a) => !canReadArticle(a, plain)).map((a) => a.slug);
     expect(hidden).toEqual(["import-a-course", ...adminOnly]);
-    expect(visibleArticles(plain).length).toBe(GUIDE_ARTICLES.length - 4);
-    expect(visibleArticles({ isAdmin: false, canImport: true }).length).toBe(GUIDE_ARTICLES.length - 3);
+    expect(visibleArticles(plain).length).toBe(GUIDE_ARTICLES.length - 5);
+    expect(visibleArticles({ isAdmin: false, canImport: true }).length).toBe(GUIDE_ARTICLES.length - 4);
     expect(visibleArticles({ isAdmin: true, canImport: true }).length).toBe(GUIDE_ARTICLES.length);
   });
   it("an admin article is for admins only", () => {

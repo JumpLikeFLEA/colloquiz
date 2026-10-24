@@ -2848,3 +2848,16 @@ Appended to in the same commit as the change it records. Referenced from
   no seat (absent); 360/360 on `/studio/guide` and five articles; 360/360 on `/studio/authors`
   with the welcome card showing. Not measured: dark mode, a phone. Copy is pending owner review.
   Do not store a dismissal, and do not tick "Preview" or "access levels": nothing records them.
+- Studio: Costs (2026-10-24, OPS-032, docs/decisions/0207, migration 105 applied to the local
+  stack only, not to the hosted project). Admin only; a plain user gets Studio's 404 on the page and
+  a 403 from `/api/studio/costs`. A "Costs" nav entry for admins and a month selector (previous/next
+  icon buttons), then: "Paid this month" (bills plus credit top-ups entered by hand; the app's usage
+  at list price sits beside it and is never added to it), "Credit left (estimate)", usage by day
+  (UTC), "Bills" (expenses) and "Resources" (limits, measured by the app or by a hand-entered
+  reading). Add and edit dialogs and a delete AlertDialog reuse the runs page's frame and the
+  existing tokens; no new colours. Measured at 360px (local stack, Edge, an admin):
+  `scrollWidth/innerWidth` 360/360 on the page and on Studio's scroll area, with usage only, with
+  expenses and limits, with each dialog open, with the error showing and with the delete confirm
+  open. Not measured: dark mode, a phone. Unresolved: the dev overlay showed "1 Issue" on this page;
+  only the CSP report-only notices were in the console, source not found. Do not add usage to
+  "Paid this month": a top-up already paid for it.
