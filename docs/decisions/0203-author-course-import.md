@@ -98,3 +98,27 @@ Choices made while writing it, none of which changes a Decision above:
 - The flag survives a lapse: a lapsed seat keeps `can_import` and `_can_import` answers false until
   the seat is extended. The switch shows the stored flag and says so (docs/ui-decisions.md).
 - `delete_my_account` is not re-emitted: the flag is on the seat row, which 082 already deletes.
+
+### CNT-018 (migration 103)
+
+- Real-key local run: the Future Imperfect PDF only (owner, 2026-10-24: "pdf only for now"). The
+  DOCX path is covered by `docx.test.ts` (a table survives conversion) but has not run against the
+  model; the card's acceptance line was reworded to say so. Run: `scripts/course-import-local-run.ts
+  --kill`, 8 lessons, killed in `planning` with the Anthropic file recorded, recovered by the next
+  poll after the 300 s lease (342 s), same file, bucket object and file gone afterwards.
+- Imported lessons are written with `access_level = entitled`; the author opens one before
+  publishing (CNT-019).
+- Hosted (2026-10-24, through the hosted-apply gate). Print rule right before applying: latest
+  migration `102_course_import_grant.sql`, latest `delete_my_account` body `096_voice_analyses.sql`.
+  Read-only probe first: `migration list --linked` 001 to 102 on both sides, 103 local only; the
+  required functions and tables present; no `course_imports` table, no `course-imports` bucket, no
+  `course_import*` function, no policy; `lesson_versions.source` already allows `import`. Applied
+  with `db query --linked -f`, then `migration repair --status applied 103`. Probe after: the
+  table, the bucket, 11 `course_import*` functions and the policy exist, and `delete_my_account`
+  now mentions `course_imports`. Verify script on hosted: a scratch copy whose last line raises
+  instead of notices (`db query` returns no NOTICEs, the 0164 method) printed `CNT-018 PASS: 103
+  full protocol`; the unmodified script also exits clean. Counts before and after, identical:
+  3 courses, 14 lessons, 19 versions, 3 editors, 3 seats, 21 users, 21 profiles, 0 imports, 0
+  objects in the bucket, 0 `@verify.test` users.
+- `COURSE_IMPORT_MODE` is not set anywhere hosted, so production import stays off (0203
+  Decision 6; OPS-030 gates turning it on).
