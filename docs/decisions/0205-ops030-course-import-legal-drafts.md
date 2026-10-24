@@ -1,8 +1,8 @@
 # 0205 — OPS-030: legal drafts for importing a course from a file
 
-Status: DRAFTS ONLY. Nothing under `docs/release/legal/` is changed by this card; the owner
-reviews and publishes (the OPS-029 precedent, 0201). Decided unattended under `--no-approval`;
-the drafts are proposals, the owner can overturn any of them. This is not legal advice.
+Status: approved by the owner on 2026-10-24 with the corrections in "Review of 2026-10-24";
+published as privacy 1.9 and subprocessors 1.6 on 2026-10-24, live from the next production
+deploy. Terms unchanged (1.3). This is not legal advice.
 
 ## Context
 
@@ -49,7 +49,7 @@ quotes; the owner should open the links before relying on them (the 0184 caveat)
 **Not established:** whether the "30 days" retention covers Files API content in the same way as
 messages (the page points to the retention policy but does not say). The draft therefore says what
 we do (delete it ourselves when the import ends) and what Anthropic's published policy says, and
-does not promise a number for the Files copy alone.
+does not promise a number for the Files copy alone. Resolved in the review of 2026-10-24.
 
 ## Drafts
 
@@ -191,6 +191,55 @@ says the first half before the author starts.
    repo; the owner states it.
 6. **The privacy policy's audience.** The policy says "you" throughout; a grant holder is a user of
    the Service, so no separate teacher section is added (0201 Decision 5).
+
+## Review of 2026-10-24
+
+Owner facts (2026-10-24):
+
+- There is no account to notify, so this is a version bump with no notice (Decision 5).
+- `COURSE_IMPORT_MODE` is not set in production (it fails closed: off).
+- `ANTHROPIC_API_KEY` and `CRON_SECRET` are set in production.
+
+Order: OPS-030 first, as privacy 1.9 and subprocessors 1.6. OPS-029 (0201) becomes 1.10 and 1.7.
+
+Corrections to the drafts:
+
+- (a) Clean-up takes about three days, not two. The sweep fails a stuck import with
+  `finished_at = now()`, and in the same call it selects leftovers only when `finished_at` is
+  older than 10 minutes, so that import's copies go at the next daily run (103 §7).
+- (b) Anthropic's retention for the PDF copy is established. The privacy-centre article (dated
+  2026-07-01, read 2026-10-24) lists "a service with longer retention under your control (e.g.
+  Files API)" as an exception to the 30-day deletion. The API and data retention page says files
+  are "retained until explicitly deleted or they reach their configured expiration" and marks the
+  Files API not ZDR-eligible. The 30-day sentence now covers only the rest of the requests and
+  the answers, and the subprocessors cell no longer says the voice retention sentence applies to
+  imports.
+- (c) "It does not receive your name" was too strong: a PDF goes whole, document properties
+  included. The text now says we add nothing about the author, and that the file's own contents
+  go as they are.
+- (d) "The text the model has already written" overstated what is sent back. Later calls carry the
+  plan and the titles of drafted lessons, and a repair carries the answer being fixed
+  (`request.ts`, `pipeline.ts`).
+- (e) Places the draft missed:
+  - §3.5: a file you import joins the "please do not put" sentence.
+  - §6: Anthropic handles imported files.
+  - §12's opening now reads "three places. None of them".
+  - §7: the label of the voice retention row.
+  - The "Not a subprocessor" cross-reference.
+- (f) §5 no longer says who sees the draft ("only you and the other editors"). It says the draft
+  is in the author's Studio and nothing is published.
+- (g) §7 says deleting the course does not delete its import record (`course_id` is `ON DELETE
+  SET NULL`).
+
+Unchanged on purpose:
+
+- Terms: §5 and §6.2 cover an uploaded file.
+- §8: the export does not include course imports, and §8's list does not claim it.
+
+Known gap, outside the text: on account deletion, an Anthropic file whose delete fails is logged
+and never retried (`app/api/account/delete/route.ts`). This is rare: the account must be deleted
+while a PDF import holds a file, and the delete must fail. Candidate fix before the mode is on:
+upload with an expiry as a backstop, or queue the id for the sweep. The owner decides.
 
 ## For the owner
 

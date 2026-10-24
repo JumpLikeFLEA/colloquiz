@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.8 · Last updated 2026-10-23
+Version 1.9 · Last updated 2026-10-24
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -33,6 +33,11 @@ Version 1.8 · Last updated 2026-10-23
 > AssemblyAI and Anthropic accounts whose keys production uses under the providers' standard
 > terms, and keep hosted `VOICE_ANALYSIS_MODE` `off` until then. Do not write that we
 > "opted out" of AssemblyAI's model-improvement programme until the owner has set it.
+>
+> **1.9 adds course imports from a file (docs/decisions/0205, approved 2026-10-24).**
+> Production keeps `COURSE_IMPORT_MODE` unset (off) until 1.9 and subprocessors 1.6 are
+> deployed. If `lib/courseImport/` or migration 103 changes what is sent or how long a copy
+> lives, re-check sections 5 and 7.
 
 ---
 
@@ -75,6 +80,7 @@ recording (section 12) is not such a decision; section 12 says why.
 | Feedback and question reports | When you submit them | To fix problems and moderate the question bank |
 | Telegram identity — if you sign in with Telegram: an identifier Telegram issues for this Service (not your Telegram account number), your name and your username, as Telegram returns them | Sign-in with Telegram | Account identity and sign-in. Instead of an email address, a Telegram account has a username, which is what a course author sees |
 | Voice recordings — if you are signed in and send one for a voice task, in any course: the audio | You, in the voice task | So you get automatic feedback on it (section 12), so the course author can listen and, in a cohort course, answer in writing, and so you can compare your first and last recording |
+| Files you import — if you are an author with the import permission and you upload a file to draft a course (PDF, Word, Markdown or plain text): the file, and the title, address and level you enter | You, in Studio | So the Service can draft a course from your file for you to review and edit (section 12) |
 | Messages — if you write to a teacher you have linked to: what you write and, if you choose, a frozen copy of an exercise and your answer to it | You, in the messages page or the "Ask the teacher" link on an exercise | So you can ask your teacher a question about the content or a task. Only you and that teacher see it |
 | Invite contact label — an author's note of a name and a contact (email or @telegram) for someone they invite to a course | The course author, not you | To send you the invite. Only the course author sees it |
 
@@ -101,6 +107,7 @@ recording (section 12) is not such a decision; section 12 says why.
 | Cohort enrolments — if you join a cohort course: the run, your tier, when you joined and, if it happened, when your access was ended (for example after a refund) | To give you access to the course and to open its lessons week by week |
 | The author's written feedback on a voice task, and a final comment — if you join a cohort course | So you can read it under your recording |
 | Voice transcripts and AI feedback — for a voice recording you send: a text transcript of what you said (including filler words and false starts), the automatic feedback made from it, which instruction version and AI model made it, and a count of how many recordings of each task you have sent | To show you the feedback, to compare your first and last recording, and to keep the limits on how many recordings get feedback |
+| Course imports — for each import: its status, the plan and the lessons the AI wrote, a report of what it changed or flagged, how many tokens each AI call used and which model and instruction version made them, and the reason if it failed | To show you its progress and the report, to apply the limits on how many imports you can start, and so we can fix problems |
 
 **Your numeric skill rating is never shown to anyone, including you.** It is stored with
 database permissions that make it unreadable outside the duel calculation itself; only a
@@ -171,7 +178,7 @@ We do not collect special-category data (health, race, religion, political opini
 biometrics, sexual orientation), payment details, or precise location. We do not use voice recordings to recognise or identify you, so they are not biometric data. We collect no
 payment details: paid courses are paid to the author through a third-party platform, and
 we never see your card or account details there. Please do not put such information into free-text fields such as your display
-name or feedback.
+name or feedback, or into a file you import.
 
 ## 4. Why we process it, and our legal basis
 
@@ -186,6 +193,7 @@ name or feedback.
 | Running a cohort course you joined: your enrolments (run and tier), opening its lessons week by week, recording which lessons you opened, and your voice recordings with the author's written feedback and final comment | **Contract** (Art. 6(1)(b)) — providing the course you joined |
 | Sending your voice recording to a speech-to-text provider and an AI provider, and showing you the feedback, when you press Send on a voice task | **Contract** (Art. 6(1)(b)) — voice feedback is a feature of the Service that you start yourself by pressing Send; nothing is sent to either provider before that |
 | A course author hearing the recordings you send, and reading their transcripts and the AI feedback, in any course you take while signed in | **Contract** (Art. 6(1)(b)) in a cohort course you joined. In a free course or a course you were given access to, **legitimate interests** (Art. 6(1)(f)) — letting the author see whether the feedback is wrong, hide it, and improve the course; you can object (section 8) |
+| Sending a file you chose to import to an AI provider, and drafting a course from it, when you press Start import | **Contract** (Art. 6(1)(b)) — a feature of the Service that an administrator enabled for your account and that you start yourself; nothing is sent before you press the button |
 | A course author seeing, in a cohort course you joined, your email or Telegram username, your invite's contact label, how you found the course, and your activity in it | **Contract** (Art. 6(1)(b)) — running the course you joined |
 | Storing the answers you give while signed in, so they can be shown back to you and a lesson can resume | **Contract** (Art. 6(1)(b)) — saving your answers and scores as part of your progress is part of the Service, as Terms section 4 describes. Where a reader holds that this goes beyond what the contract needs, **legitimate interests** (Art. 6(1)(f)) — giving you your answers back. You can object (section 8) |
 | A teacher you have linked to seeing your answers and scores, writing to you, grouping you and assigning you homework | **Contract** (Art. 6(1)(b)) — the teacher relationship you asked for by linking, after the app has told you what the teacher will see. We considered consent and did not choose it: a link made by claiming a run invite is a step to join a course you have chosen, so consent to it would not be freely given. You can leave a link at any time whatever the basis (section 5) |
@@ -268,6 +276,18 @@ we send it to train models (section 12), and section 7 says how long each keeps 
 are not signed in, a recording stays on your device and is never uploaded: no provider
 receives it.
 
+**Course imports.** If you are an author with the import permission and you import a file,
+**Anthropic** receives all of it: the whole PDF, or the whole text of a Word, Markdown or
+text file (we leave out a Word file's images). With it go the title, address and level you
+entered, our instructions, and parts of what the model has already written for the same
+import, such as its plan. We add nothing about you: no name, email or account identifier,
+and not the name of your file. Whatever the file itself contains goes as it is, including
+any author details a PDF keeps in its document properties, so please do not import a file
+that contains other people's personal data, such as students' names and contact details,
+or health details. Anthropic acts as our processor and does not train on what we send
+(section 12); section 7 says how long it keeps it. The result is a new draft course in your
+Studio, and nothing is published until you publish it.
+
 **Invite contact labels** are seen only by the course author. **Cohort enrolments** and
 **lesson opens** are visible to you and to the course author. The author's **written
 feedback and final comment** are visible to you and to the author. If you sign in with
@@ -291,7 +311,7 @@ applicable, the **EU–US Data Privacy Framework**. Details are in the
 that endpoint processes and stores audio and transcripts in the EU. It stores its account
 and usage data in the United States, and its staff outside the EU may access a recording or
 transcript when handling an incident or a support request, under the transfer terms of its
-data processing addendum. **Anthropic**, which handles transcripts, does not state where it
+data processing addendum. **Anthropic**, which handles transcripts and imported files, does not state where it
 processes them, so we treat that as a transfer outside the EEA under the Standard
 Contractual Clauses in its data processing addendum.
 
@@ -311,7 +331,10 @@ Contractual Clauses in its data processing addendum.
 | Voice recordings | A recording you replace is deleted when you replace it. In a cohort course, all recordings are deleted 6 months after the end of the run. In any other course, a recording is deleted 6 months after you sent it. In both cases a recording is also deleted when you delete your account, whichever comes first |
 | Voice transcripts and AI feedback | Deleted together with the recording they were made from, at the same time and for the same reasons. The feedback on a later recording can quote short passages of your first recording; those quotes are part of that later feedback and are deleted with it |
 | The count of recordings you sent for each task (kept to apply the limits on AI feedback) | Deleted 6 months after you sent the recording, or when you delete your account, whichever comes first. If the feedback made from that recording is still kept (a cohort course keeps recordings until 6 months after the run ends), the count is deleted once the feedback is |
-| What AssemblyAI and Anthropic keep | AssemblyAI: as soon as we have a transcript we ask AssemblyAI to delete it, and its documentation says the audio it read is deleted with the transcript. If that request fails, its documentation says it starts deleting a transcript automatically 30 days after it was made. It keeps some metadata for logging and billing. Anthropic: its published policy is to delete inputs and outputs within 30 days of receipt, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy. |
+| What AssemblyAI and Anthropic keep of a voice recording | AssemblyAI: as soon as we have a transcript we ask AssemblyAI to delete it, and its documentation says the audio it read is deleted with the transcript. If that request fails, its documentation says it starts deleting a transcript automatically 30 days after it was made. It keeps some metadata for logging and billing. Anthropic: its published policy is to delete inputs and outputs within 30 days of receipt, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy. |
+| A file you import (our copy, and for a PDF the copy at Anthropic) | Deleted when the import finishes or fails, and when you delete your account. An import that stops without finishing is failed after 24 hours, and a daily clean-up then deletes any copy left behind, normally within about three days of the upload |
+| Import records (status, plan, drafted lessons, report, token counts) | Until you delete your account; then **deleted outright**. Deleting the course does not delete them. The draft course itself is course content and is kept for as long as the course is |
+| What Anthropic keeps of an import | A PDF stays in Anthropic's file storage until we delete it, which we do when the import ends (above). Anthropic's retention policy treats that storage as under our control rather than under its 30-day deletion; its documentation says a deleted file may still be used by a request running at that moment, and is then deleted under its data retention policy. Everything else an import sends, including the text of a Word, Markdown or text file, and Claude's answers: Anthropic's published policy is to delete inputs and outputs within 30 days of receipt or generation, and to keep them for up to 2 years if a request is flagged as a violation of its usage policy |
 | The author's written feedback and final comment | Until you close your account; then **deleted outright** |
 | Invite contact labels | Once you claim the invite, kept with your enrolment and deleted when you delete your account. A label never claimed is deleted 30 days after the invite expires or is revoked |
 | Cohort enrolments | Until you close your account; then **deleted outright** |
@@ -362,6 +385,8 @@ When you delete your account we, immediately and irreversibly:
 - erase your voice recordings with their transcripts and AI feedback, the author's written feedback and final comment, your
   cohort enrolments, your lesson opens, the invite contact label kept with your
   enrolment, and your Telegram identity;
+- delete your course imports with the plan, lessons and report they stored, and any copy
+  of an imported file still held, here or at Anthropic;
 - close your sign-in — you can no longer access the account, and neither can anyone else.
 
 We **retain your quiz results and any questions or quizzes you contributed, in
@@ -400,7 +425,7 @@ If you are under 18, a parent or guardian should be aware of your use of the Ser
 
 ## 12. AI systems
 
-We use AI systems in two places. Neither makes a decision about you.
+We use AI systems in three places. None of them makes a decision about you.
 
 **Quiz questions.** Some questions in the library are drafted with the help of an AI system
 and then reviewed. **No personal data of yours is sent to that system** — it receives only
@@ -431,8 +456,15 @@ you. This feedback decides nothing: it grants or refuses no access, no certifica
 price and no mark, and nothing in the Service changes for you whatever it says. It is
 advice for your own study, which you can ignore or replace by recording again.
 
-**Training.** We do not use your recordings, transcripts or feedback to train any model,
-and neither provider uses them for training. Anthropic's Commercial Terms say it may not
+**Drafting a course from your file.** If you are an author with the import permission, a
+language model (**Anthropic's Claude**) reads the file you import and drafts a course from
+it: lessons, exercises, answer keys and explanations. A draft can be wrong. It is a draft
+course in your Studio that you read and edit before you publish it, and the import shows a
+report of what it changed or could not do. It uses nothing about learners from the
+Service and decides nothing about anyone.
+
+**Training.** We do not use your recordings, transcripts, feedback or imported files to train any model,
+and no provider uses them for training. Anthropic's Commercial Terms say it may not
 train models on customer content from its services. AssemblyAI's documentation says it does
 not use files sent to its European servers for training, and we send every recording there.
 
@@ -445,7 +477,8 @@ We will post any change here with a new version number and date. For a change th
 materially affects your rights, we will tell you in the app or by email before it takes
 effect. Version 1.7 added voice recordings in every course and the AI feedback in
 section 12. Version 1.8 corrected what Anthropic receives for a final recording, and what AssemblyAI
-keeps, where it keeps it, and why it does not train on recordings.
+keeps, where it keeps it, and why it does not train on recordings. Version 1.9 added
+importing a course from a file, for authors who have the permission (sections 3 to 7, 9 and 12).
 
 ---
 
