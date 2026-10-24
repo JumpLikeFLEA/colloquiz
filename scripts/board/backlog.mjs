@@ -4452,6 +4452,73 @@ export const CARDS = [
       'Lesson 6\'s missing presentation is a HYPOTHESIS, unverified: it was published before the ' +
       'authored file carried presentation: "sort".',
   },
+  {
+    key: 'AUTH-021',
+    title: 'Course import grant on author seats',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 3050,
+    dependsOn: [],
+    goal:
+      'Only an author an admin has granted may import a course file (0203 Decision 1). The grant ' +
+      'lives on the seat and lapses with it.',
+    acceptance: [
+      'Migration 102: author_seats.can_import BOOLEAN NOT NULL DEFAULT FALSE; set_author_seat_import(p_user, p_on) (is_admin, the 082 RPC shape); author_seats_list() returns can_import; _can_import(p_user) = is_admin OR (_author_seat_active AND can_import), REVOKEd from app roles; can_import_course() for the caller, granted to authenticated. Written, applied locally; print rule.',
+      'Verify script, full protocol: a non-admin cannot set the grant; an admin can; a granted active seat, a granted lapsed seat, an ungranted active seat and an admin each give the expected can_import_course(), positive control beside every denial. Earlier verify scripts for re-emitted functions re-run and PASS.',
+      '/studio/authors: a "Course import" switch on each seat card (ui/switch, the CourseListingPanel pattern) through a new "import" action in app/api/studio/authors/route.ts. Measured at 360px; docs/ui-decisions.md entry.',
+    ],
+  },
+  {
+    key: 'CNT-018',
+    title: 'Course import pipeline: file to draft course',
+    milestone: 'M4',
+    epic: 'CNT',
+    type: 'task',
+    rank: 3060,
+    dependsOn: ['AUTH-021'],
+    goal:
+      'A granted author\'s uploaded PDF, DOCX, Markdown or text file becomes a new draft course ' +
+      'with no admin in the loop (0203 Decisions 2-6), drafted by claude-opus-5-5.',
+    acceptance: [
+      'Migration 103: course_imports (one row per import, status pending|planning|drafting|committing|done|failed, a lease, plan/lessons/qa/usage JSONB, prompt_version, model, course_id); a private course-imports bucket (32 MB; pdf, docx, markdown, text; <user_id>/... paths, insert needs _can_import); caps 3 per 24 h and 10 per 30 days as a BEFORE INSERT trigger raising PT429 (admins exempt); course_import_commit granted to service_role only, re-checking _can_import and _studio_can_write, creating the course (draft, author_id, course_editors), lessons with the file\'s slugs and lesson_versions with source = import, never publishing; delete_my_account re-emitted from its latest body. Written; print rule.',
+      'Pure modules under lib/courseImport/ (formats, docx via mammoth, step machine, plan and lesson-response schemas, repair decision, mode) under vitest, including a DOCX fixture whose table survives conversion.',
+      'claude.ts: model from COURSE_IMPORT_MODEL (default claude-opus-5-5), effort high, streaming, the file uploaded once to the Files API and deleted at the end, the server-side refusal fallback; a refusal or max_tokens fails the job; a lesson that fails LessonFileSchema/parseLessonDocument gets one repair turn. COURSE_IMPORT_MODE off|on. Usage stored per call. Prompts in prompts/course-import/*-v1.md, split from draft-lesson.md with its rules kept.',
+      'Routes: signed upload URL, POST /api/studio/imports (after()), GET status that re-claims an expired lease; a daily cron fails rows stuck over 24 h and removes leftover objects. Local run with a real key (asked before spending): the Future Imperfect PDF and a DOCX each reach done; a step killed mid-way recovers on the next poll; the bucket object and the Anthropic file are gone afterwards (all printed).',
+      'Verify script, full protocol: no grant, a lapsed seat at create and at commit, a cap hit and commit as authenticated are each refused, with positive controls beside them; an account deletion removes the import rows.',
+    ],
+  },
+  {
+    key: 'CNT-019',
+    title: 'Studio: import a course from a file',
+    milestone: 'M4',
+    epic: 'CNT',
+    type: 'task',
+    rank: 3070,
+    dependsOn: ['CNT-018'],
+    goal: 'The author starts an import, watches it and reviews its QA report in Studio (0203).',
+    acceptance: [
+      '/studio/courses shows "Import from file" when can_import_course() is true. /studio/imports/new: file picker stating formats and limits before it opens, title, slug (the New course dialog\'s slug-from-title and slug_taken handling), level, a line saying the file is sent to Anthropic to draft the course.',
+      '/studio/imports/[id]: steps (Reading file, Planning, Lesson k of n, Saving) by polling, then the QA report (per-lesson notes, conversions flagged) and "Open course"; a failure shows its reason. /studio/imports lists past imports; an "Imports" nav entry for grant holders.',
+      'Every state measured at 360px; docs/ui-decisions.md entry. Existing classes and tokens only.',
+    ],
+  },
+  {
+    key: 'OPS-030',
+    title: 'Legal revision for course import, then go-live',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3080,
+    dependsOn: ['CNT-018'],
+    goal:
+      'Anthropic would receive files uploaded by authors, a purpose subprocessors.md and the privacy ' +
+      'policy do not list (0203 Decision 6). Production keeps COURSE_IMPORT_MODE=off until both say so.',
+    acceptance: [
+      'Drafts of docs/release/legal/subprocessors.md and privacy-policy.md naming the purpose (drafting a course from an author\'s uploaded file), what is sent and its retention, with changelog entries; the owner approves the text.',
+      'After publication, the owner sets COURSE_IMPORT_MODE=on in production; one import on production reaches done (evidence in the card).',
+    ],
+  },
 ];
 
 export function rankOf(key) {

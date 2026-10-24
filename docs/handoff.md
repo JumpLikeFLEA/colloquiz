@@ -116,8 +116,14 @@ layout, its chrome is English, and it has no JS budget of its own. Nothing
 from it may reach an English route. It is a tool, not a third product
 surface. The Colloquiz admin tools stay at `/app/admin`.
 
-The PDF -> JSON -> import path stays, run by the maintainer, with no
-Studio UI. **Planned (owner, 2026-10-11, docs/decisions/0125, AUTH-015 to
+The PDF -> JSON -> import path stays, run by the maintainer.
+**Changed (owner, 2026-10-24, docs/decisions/0203, AUTH-021, CNT-018,
+CNT-019, OPS-030):** an author with an admin-given import grant on their
+seat can also upload a PDF, DOCX, Markdown or text file in Studio. Claude
+(`claude-opus-5-5`) drafts it into a new, unlisted draft course that
+the author reviews and publishes. Planned, M4; production stays off until
+the legal revision (OPS-030) is published.
+**Planned (owner, 2026-10-11, docs/decisions/0125, AUTH-015 to
 AUTH-018):** an author who already edits a course can also build one in
 Studio: create a course, add exercises from the lesson editor, group a
 lesson's blocks into chapters (a chapter is a level-1 heading, so a lesson
