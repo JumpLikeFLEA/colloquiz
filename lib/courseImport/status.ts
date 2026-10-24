@@ -7,6 +7,9 @@ import { readStoredPlan } from "./plan";
  * it here.
  */
 
+/** The columns the owner's session may read for the status view (granted in migration 103). */
+export const IMPORT_STATUS_COLUMNS = "status, plan, lessons_done, qa, course_id, failure, created_at, updated_at, finished_at";
+
 export type ImportStatusRow = {
   status: string;
   plan: unknown;

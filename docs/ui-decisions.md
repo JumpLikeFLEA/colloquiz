@@ -2781,3 +2781,45 @@ Appended to in the same commit as the change it records. Referenced from
   66-character unbroken name): `scrollWidth/innerWidth` 360/360 loaded, after switching on and
   after switching off, via `npm run viewport360` and a browser script. Not measured: the page with
   a toast showing. Do not decide in the client whether a seat may import.
+- Studio: import a course from a file (2026-10-24, CNT-019, docs/decisions/0204). Studio only;
+  composed from the New course dialog's field classes, the runs page's card frame and the
+  existing tokens, no new colours:
+  - `/studio/courses` gains an outlined "Import from file" link (`FileUp`, the Cancel button's
+    border classes) beside "New course", only for a holder of the import grant. The header row now
+    wraps (`flex-wrap`), because the two buttons beside the title pushed the page's scroller to 430px
+    at 360px.
+  - An "Imports" nav entry (`FileUp`) right after Courses, grant holders only.
+  - `/studio/imports`: a heading with a primary "Import from file" link, then one
+    `rounded-2xl border bg-card` link row per import (title, slug · level · format · local time,
+    and a pill: Done `bg-brand-subtle text-brand-text`, In progress muted, Failed
+    `bg-warning-subtle text-warning`, the review queue's tokens). Empty: the dashed box.
+  - `/studio/imports/new`: a `rounded-2xl border bg-card` form. File (the limits line sits above the
+    native picker: "PDF, DOCX, Markdown or plain text, up to 32 MB. Images in a DOCX are left
+    out."), Title, Slug (follows the title until typed in; `slug_taken` and `invalid_slug` show under
+    the field, as in the New course dialog), Level, a muted `bg-muted` line saying the file is sent to
+    Anthropic, the `destructive-subtle` error box (a cap reads "You have reached the limit of 3
+    imports in 24 hours. You can import again from …"), and a `bg-brand` "Start import" that reads
+    "Uploading…" then "Starting…". With the mode off, one dashed note replaces the form.
+  - `/studio/imports/[id]`: a back link, the title (breaks anywhere) over slug · level, then a card
+    with the four steps (a `bg-brand` check disc when done, a spinning `Loader2` in
+    `bg-brand-subtle` when active, a muted dot when waiting; the spinner is `motion-safe`) and, while
+    running, a muted line about leaving the page. A failure is the `destructive-subtle` box with the
+    sentence from `failureMessage`, the code in muted text and "Start a new import". Done: a primary
+    "Open course", then "Review before you publish": course-level flags (a `text-warning`
+    `AlertTriangle`), how marks became scores, plan notes, then one card per lesson with its exercise
+    count and minutes, flags, a "Rewritten for the screen" list (a `bg-warning-subtle` "Converted"
+    pill and the original instruction) and the model's notes. Warnings use the `warning` tokens,
+    never `destructive`: a flag is for the author's attention, not a failure.
+  Measured at 360px (local stack, an admin, rows seeded in each state, strings with a 65-character
+  unbroken word; `scrollWidth/innerWidth`, with the page's own scroller `main` checked too, which the
+  document width does not show): 360/360 and main 360/360 on `/studio/courses` with the link, the
+  sidebar open with the Imports entry, the list, a running import (lesson 2 of 3), a planning import,
+  a failed import, a done import with the report, a done import with no stored report, the form
+  empty, with an unsupported file, filled and with `slug_taken`, and a real import started through
+  the routes just after upload and after it failed (no valid key, so `llm_http_401`, nothing spent);
+  1280/1280 on all of those except the started ones. Also checked: an editor without the grant sees
+  no link and no nav entry, and `/studio/imports`, `/studio/imports/new` and another author's import
+  are 404 for them (the course list loading is the positive control). Not measured: a frozen seat's
+  banner on these pages, the daily-cap line in a browser, a phone.
+  Do not show the entry on a failed `can_import_course()` read, and do not colour a report flag
+  destructive.

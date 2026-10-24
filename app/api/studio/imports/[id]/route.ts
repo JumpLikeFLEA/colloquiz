@@ -3,7 +3,7 @@ import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { runImportById } from "@/lib/courseImport/server";
 import { shouldReclaim } from "@/lib/courseImport/steps";
-import { importStatusView, type ImportStatusRow } from "@/lib/courseImport/status";
+import { IMPORT_STATUS_COLUMNS, importStatusView, type ImportStatusRow } from "@/lib/courseImport/status";
 
 /**
  * GET /api/studio/imports/<id> — where one import stands (CNT-018, docs/decisions/0203). The
@@ -19,8 +19,6 @@ import { importStatusView, type ImportStatusRow } from "@/lib/courseImport/statu
  */
 export const maxDuration = 300;
 
-const COLUMNS = "status, plan, lessons_done, qa, course_id, failure, created_at, updated_at, finished_at";
-
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const headers = { "Cache-Control": "no-store" };
@@ -29,7 +27,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ ok: false, error: "unauthenticated" }, { status: 401, headers });
 
   try {
-    const { data, error } = await supabase.from("course_imports").select(COLUMNS).eq("id", id).eq("user_id", user.id).maybeSingle();
+    const { data, error } = await supabase.from("course_imports").select(IMPORT_STATUS_COLUMNS).eq("id", id).eq("user_id", user.id).maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404, headers });
 

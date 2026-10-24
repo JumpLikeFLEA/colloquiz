@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardList, ExternalLink, Inbox, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, type LucideIcon } from "lucide-react";
+import { CalendarDays, ClipboardList, ExternalLink, Inbox, FileUp, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -30,8 +30,18 @@ const workItems: NavItem[] = [
   { label: "Calendar", href: "/studio/calendar", icon: CalendarDays },
 ];
 
+// Course import (CNT-019): only for a holder of the grant (can_import_course()), right under Courses.
+const importsItem: NavItem = { label: "Imports", href: "/studio/imports", icon: FileUp };
+
 // Author seats (TCH-007): admin only, shown last. The page 404s for anyone else.
 const authorsItem: NavItem = { label: "Authors", href: "/studio/authors", icon: UserCog };
+
+/** Imports goes in right after Courses, for a grant holder only. */
+function withImports(items: NavItem[], canImport: boolean): NavItem[] {
+  if (!canImport) return items;
+  const at = items.findIndex((i) => i.href === "/studio/courses");
+  return [...items.slice(0, at + 1), importsItem, ...items.slice(at + 1)];
+}
 
 function NavLink({
   item,
@@ -78,10 +88,13 @@ function NavLink({
 
 export function StudioSidebar({
   isAdmin,
+  canImport,
   waitingCount,
   unansweredCount,
 }: {
   isAdmin: boolean;
+  /** can_import_course() (CNT-019): shows the Imports entry. */
+  canImport: boolean;
   waitingCount: number | null;
   /** Threads whose last message is the student's (TCH-004); null hides it. */
   unansweredCount: number | null;
@@ -112,7 +125,7 @@ export function StudioSidebar({
 
       <SidebarContent className="px-3 py-4">
         <nav className="flex flex-col gap-1">
-          {(isAdmin ? [...workItems, authorsItem] : workItems).map((item) => (
+          {[...withImports(workItems, canImport), ...(isAdmin ? [authorsItem] : [])].map((item) => (
             <NavLink
               key={item.href}
               item={item}

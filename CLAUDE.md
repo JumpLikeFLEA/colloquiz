@@ -233,7 +233,9 @@ refactor.
     The row in `course_imports` (migration 103) is the state, and
     `app/api/cron/course-import-sweep` fails rows stuck over 24 h and removes
     leftover objects and Anthropic files. Prompts: `prompts/course-import/`.
-    Mode `COURSE_IMPORT_MODE` is `off` unless set to `on`.
+    Mode `COURSE_IMPORT_MODE` is `off` unless set to `on`. Studio pages:
+    `/studio/imports`, `/new`, `/[id]` (CNT-019, docs/decisions/0204); `access.ts` asks
+    `can_import_course()`, `qaView.ts` reads the stored report.
 - `supabase/migrations/NNN_*.sql` — schema. Numbered, applied in order, by me
   or by a session that passed "The hosted-apply gate". Latest applied: 055
   (owner-confirmed 2026-10-10 that every migration through 055 is applied to

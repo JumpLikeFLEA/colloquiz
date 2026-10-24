@@ -121,8 +121,9 @@ The PDF -> JSON -> import path stays, run by the maintainer.
 CNT-019, OPS-030):** an author with an admin-given import grant on their
 seat can also upload a PDF, DOCX, Markdown or text file in Studio. Claude
 (`claude-opus-5-5`) drafts it into a new, unlisted draft course that
-the author reviews and publishes. Planned, M4; production stays off until
-the legal revision (OPS-030) is published.
+the author reviews and publishes. Built through CNT-019 (Studio's
+`/studio/imports`, docs/decisions/0204); production stays off until the
+legal revision (OPS-030) is published.
 **Planned (owner, 2026-10-11, docs/decisions/0125, AUTH-015 to
 AUTH-018):** an author who already edits a course can also build one in
 Studio: create a course, add exercises from the lesson editor, group a

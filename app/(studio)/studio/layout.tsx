@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { SidebarProvider } from "@/app/components/ui/sidebar";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
+import { canImportCourse } from "@/lib/courseImport/access";
 import { waitingCount } from "@/lib/studio/inbox";
 import { unansweredThreads } from "@/lib/messages/messages";
 import { getStudioWriteState } from "@/lib/studioWriteState";
@@ -40,12 +41,12 @@ export default async function StudioLayout({ children }: { children: React.React
   // TCH-008 (docs/decisions/0155): a lapsed seat reads but does not write. The
   // database refuses every write itself; this only tells the page so, once,
   // and hands the same answer to the controls that would otherwise fail.
-  const writeState = await getStudioWriteState();
+  const [writeState, canImport] = await Promise.all([getStudioWriteState(), canImportCourse()]);
   const banner = writeBanner(writeState);
 
   return (
     <SidebarProvider>
-      <StudioSidebar isAdmin={access.isAdmin} waitingCount={waiting} unansweredCount={unanswered} />
+      <StudioSidebar isAdmin={access.isAdmin} canImport={canImport} waitingCount={waiting} unansweredCount={unanswered} />
       {/* min-w-0: same reason as the Colloquiz (main) layout — a flex item
           otherwise refuses to shrink below its widest unbreakable content. */}
       <div className="flex min-w-0 min-h-svh flex-1 flex-col">

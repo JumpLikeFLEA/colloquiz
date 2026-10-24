@@ -1,5 +1,6 @@
 import { ShieldAlert } from "lucide-react";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
+import { canImportCourse } from "@/lib/courseImport/access";
 import { listAuthoredCourses } from "@/lib/courseAuthoring";
 import { CoursesListView } from "./CoursesListView";
 
@@ -27,11 +28,11 @@ export default async function AdminCoursesPage() {
     );
   }
 
-  const courses = await listAuthoredCourses(isAdmin ? undefined : editableCourseIds);
+  const [courses, canImport] = await Promise.all([listAuthoredCourses(isAdmin ? undefined : editableCourseIds), canImportCourse()]);
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <CoursesListView courses={courses} />
+      <CoursesListView courses={courses} canImport={canImport} />
     </div>
   );
 }
