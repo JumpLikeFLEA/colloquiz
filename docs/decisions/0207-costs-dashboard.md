@@ -132,6 +132,18 @@ What the app records today:
     price. Any model the table does not list, including a server-side
     fallback model, is unpriced (Decision 6).
 
+11. **The report is built by `GET /api/studio/costs/report?from=YYYY-MM&to=YYYY-MM`** (OPS-033).
+    - Whole months, at most 24, admin only, `Cache-Control: no-store`. It reads through the same
+      RPCs and `summarizePeriod()` as the page, so its totals are the page's totals.
+    - `@react-pdf/renderer` 4.9.0 is imported only by `lib/costs/reportDocument.tsx`, which only
+      that route imports. It is not in any English route's client-reference manifest.
+    - Cyrillic: PT Sans Regular and Bold (SIL OFL 1.1, `assets/fonts/`, licence beside them) are
+      registered by file path and shipped with the route through `outputFileTracingIncludes`
+      in `next.config.ts`. The PDF default fonts have no Cyrillic.
+    - Colours are CSS names (`black`, `dimgray`, `silver`): a PDF has no CSS variables, and a hex
+      literal would fail the hex guard.
+    - Rejected: a font package such as `@fontsource/*` (a second dependency for two files).
+
 ## What would make us revisit
 
 - A sponsor or accountant needs billed figures, not estimates: add the Admin

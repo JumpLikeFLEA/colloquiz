@@ -84,6 +84,8 @@ const nextConfig: NextConfig = {
     "/api/voice/**": ["./prompts/voice-analysis/**/*"],
     "/api/studio/imports": ["./prompts/course-import/**/*"],
     "/api/studio/imports/**": ["./prompts/course-import/**/*"],
+    // OPS-033: the sponsor report embeds PT Sans (Cyrillic) read from disk at request time.
+    "/api/studio/costs/report": ["./assets/fonts/**/*"],
   },
   // Drop the `X-Powered-By: Next.js` banner — no reason to advertise the stack.
   poweredByHeader: false,

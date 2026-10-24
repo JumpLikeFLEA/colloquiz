@@ -14,6 +14,7 @@ import { pluralize } from "@/lib/format";
 import { CARD, PILL } from "./costsClasses";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { LimitsPanel } from "./LimitsPanel";
+import { SponsorReportCard } from "./SponsorReportCard";
 
 // /studio/costs (OPS-032, docs/decisions/0207). Admin only: anyone else gets
 // Studio's 404, as on /studio/authors. getCourseAccess() picks the 404; the
@@ -252,6 +253,13 @@ export default async function CostsPage({ searchParams }: { searchParams: Promis
         </div>
         <LimitsPanel rows={rows} />
       </section>
+
+      <SponsorReportCard
+        months={Array.from({ length: 24 }, (_, i) => shiftMonth(thisMonth, -(23 - i))).concat(
+          month > thisMonth || month < shiftMonth(thisMonth, -23) ? [month] : [],
+        )}
+        defaultMonth={month}
+      />
     </div>
   );
 }

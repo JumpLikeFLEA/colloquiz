@@ -2861,3 +2861,15 @@ Appended to in the same commit as the change it records. Referenced from
   open. Not measured: dark mode, a phone. The dev overlay's "1 Issue" is the CSP report-only notice
   ("'upgrade-insecure-requests' is ignored…"), which `/studio/authors` shows too: not this page. Do not add usage to
   "Paid this month": a top-up already paid for it.
+- Studio: Sponsor report card (2026-10-24, OPS-033, docs/decisions/0207 Decision 11). Admin only,
+  last on `/studio/costs`: a `rounded-2xl border bg-card` card with a short line on what the PDF
+  holds, two month Selects (From, To; the last 24 months, `min-h-11`, two columns), a muted
+  `text-destructive-text` line when From is after To, and a primary "Download PDF" link
+  (`FileDown`, `PRIMARY_BUTTON`) to `/api/studio/costs/report`. A plain download link, disabled
+  while the period is reversed. Existing classes and tokens; no new colours.
+  Measured at 360px (local stack, an admin, `scrollWidth/innerWidth`): 360/360 and `main` 360/360.
+  `npm run budget`, before and after (local stack): identical on every route (`/` 191.7 / 191.7 KB, course page
+  175.4 / 175.4, `/my` 175.1 / 175.1, `/login` 286.9 / 286.9); `/runs/...f1a1` 180.8 KB reads OVER BUDGET (limit
+  179) both before and after. 0 client-reference manifests and 0 `.next/static` chunks mention react-pdf.
+  Not measured: dark mode, the Select open. Do not offer the report to a non-admin: the route
+  answers 403 and the page is admin-only.

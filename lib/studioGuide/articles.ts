@@ -418,8 +418,10 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "**Paid this month** is the money you entered: bills plus credit top-ups. Usage at list price is shown beside it and is never added to it.",
       "To record a bill or a credit top-up, press **Add an expense**. Edit or delete it from its row.",
       "To watch a resource such as database size or egress, press **Add a limit**. Say whether the app measures it, or enter a reading by hand.",
+      "To show a sponsor what the project spends, go to **Sponsor report** at the bottom of the page, choose the first and last month, and press **Download PDF**.",
     ],
     tips: [
+      "The sponsor report has the paid totals by month and category, every expense with its reference, and the usage estimate with how it is calculated. It has no learner data.",
       "**Credit left (estimate)** comes from your last top-up and the app's usage, so it is only an estimate.",
       "The ledger holds no user, take or import id, so it survives account deletion.",
       "Prices were taken from the providers' pricing pages on 2026-10-24.",
