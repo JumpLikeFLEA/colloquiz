@@ -4560,6 +4560,58 @@ export const CARDS = [
     ],
     notes: 'Docs: docs/decisions/0206.',
   },
+  // Costs: a usage ledger, a Studio dashboard and a sponsor report (owner, 2026-10-24, docs/decisions/0207).
+  {
+    key: 'OPS-031',
+    title: 'A durable ledger of Claude and AssemblyAI usage',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3100,
+    dependsOn: [],
+    goal:
+      'Provider usage lives only in voice_analyses.usage and course_imports.usage, which are deleted with a take or an ' +
+      'account, and refused or cut-off calls are never recorded (0207 Context). Keep one row per provider call, with no ' +
+      'personal data, so spend can be computed for any past month.',
+    acceptance: [
+      'Migration 104: provider_usage_events (provider, feature, model, step, token counts, audio_seconds, outcome; no user or take id), RLS on with no policies; record_provider_usage() for service_role only; admin_usage_summary(from, to) for admins only; an insert-only backfill from the usage still stored in voice_analyses and course_imports.',
+      'Both pipelines record each provider call through an injected recordUsage dependency: success, a refusal or max_tokens with its usage, an unparsable answer with null tokens (0207 Decision 4). A failing ledger write is logged and never fails the pipeline. Covered by the pipelines\' vitest suites.',
+      'supabase/verify/104 full protocol: positive control beside every denial, and the backfill count equals an independent count of the source rows on a non-empty seeded set. Applied locally and re-applied once; hosted only through the gate.',
+    ],
+    notes: 'Docs: docs/decisions/0207.',
+  },
+  {
+    key: 'OPS-032',
+    title: 'Studio: costs dashboard for admins',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3101,
+    dependsOn: ['OPS-031'],
+    goal: 'One admin-only page in Studio for what the project spends and what it has left (0207).',
+    acceptance: [
+      'Migration 105: manual_expenses (bills and credit top-ups, USD, reference) and resource_limits (plan limits and dated manual readings), admin-only RPCs; admin_resource_usage() measures database size and Storage per bucket.',
+      'lib/costs: a dated price table, pricing of usage totals (an unknown model is unpriced, never $0), the month summary and the estimated credit left, all under vitest.',
+      '/studio/costs (admin only, a "Costs" nav entry): the month\'s total, AI estimate, bills and credit left; spend by provider and feature; daily bars; resources against limits; expense and limit editing. Every state measured at 360px; docs/ui-decisions.md entry; a Studio Guide article for admins. Existing classes and tokens only.',
+    ],
+    notes: 'Docs: docs/decisions/0207.',
+  },
+  {
+    key: 'OPS-033',
+    title: 'Sponsor report: a PDF of expenses',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3102,
+    dependsOn: ['OPS-032'],
+    goal: 'An admin downloads a PDF of the project\'s expenses for a period, to show sponsors (0207 Decision 8).',
+    acceptance: [
+      'GET /api/studio/costs/report?from=&to= (admin only, no-store) returns a PDF built with @react-pdf/renderer from the same summary as the page: totals by month and category, every manual expense with its reference, the usage estimate with its method note, unpriced usage listed apart. No per-user rows.',
+      'Cyrillic text renders (an embedded OFL font). The renderer reaches no English route (client-reference manifests) and npm run budget is unchanged on every English route.',
+      '/studio/costs gains a "Sponsor report" card with a period and Download. The generated PDF is opened and its totals match the page.',
+    ],
+    notes: 'Docs: docs/decisions/0207. New npm dependency approved by the owner in the planning session.',
+  },
 ];
 
 export function rankOf(key) {
