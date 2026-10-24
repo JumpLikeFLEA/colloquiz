@@ -225,6 +225,15 @@ refactor.
     equality in `scoring.ts` for course items. **Planned (M0).**
   - `lib/entitlement.ts` — the client-side MIRROR of the entitlement SQL
     function. Mirror only; the function is the authority. **Planned (M3).**
+  - `lib/courseImport/` — the course import pipeline (CNT-018, docs/decisions/
+    0203): a granted author's PDF, DOCX, Markdown or text file becomes a draft
+    course. `pipeline.ts` is the step machine over injected deps (store, files,
+    model), tested without a network; `server.ts` wires the real ones;
+    `claude.ts` is the streaming Anthropic client (Files API, refusal fallback).
+    The row in `course_imports` (migration 103) is the state, and
+    `app/api/cron/course-import-sweep` fails rows stuck over 24 h and removes
+    leftover objects and Anthropic files. Prompts: `prompts/course-import/`.
+    Mode `COURSE_IMPORT_MODE` is `off` unless set to `on`.
 - `supabase/migrations/NNN_*.sql` — schema. Numbered, applied in order, by me
   or by a session that passed "The hosted-apply gate". Latest applied: 055
   (owner-confirmed 2026-10-10 that every migration through 055 is applied to

@@ -82,6 +82,8 @@ const nextConfig: NextConfig = {
   // time (lib/voice/analysis/server.ts), so the routes that run the pipeline ship the folder.
   outputFileTracingIncludes: {
     "/api/voice/**": ["./prompts/voice-analysis/**/*"],
+    "/api/studio/imports": ["./prompts/course-import/**/*"],
+    "/api/studio/imports/**": ["./prompts/course-import/**/*"],
   },
   // Drop the `X-Powered-By: Next.js` banner — no reason to advertise the stack.
   poweredByHeader: false,

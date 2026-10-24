@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authUserFrom } from "@/lib/auth";
 import type { DeleteBlockingGroup } from "@/lib/accountDelete";
 import { removeVoiceObjects } from "@/lib/voice/storage";
+import { IMPORT_BUCKET } from "@/lib/courseImport/formats";
+import { claudeFromEnv } from "@/lib/courseImport/server";
 
 /**
  * POST /api/account/delete — erase the caller's account by anonymisation
@@ -28,7 +30,7 @@ export async function POST() {
     }
 
     const result = data as
-      | { ok: true; voice_objects?: string[] }
+      | { ok: true; voice_objects?: string[]; import_objects?: string[]; import_files?: string[] }
       | { ok: false; reason: string; groups?: DeleteBlockingGroup[] };
 
     if (!result.ok) {
@@ -62,6 +64,26 @@ export async function POST() {
       const { failed } = await removeVoiceObjects(admin, result.voice_objects);
       if (failed.length > 0) {
         console.error(`account delete: ${failed.length} voice object(s) left queued for the purge`);
+      }
+    }
+
+    // Course imports (CNT-018, migration 103): the RPC deleted the rows and returned what they
+    // held, the uploaded files in the private course-imports bucket and the copies at Anthropic.
+    // A bucket object that is not removed here has no row left to name it, so the daily sweep
+    // (app/api/cron/course-import-sweep) finds it as an orphan. An Anthropic file that is not
+    // deleted has nothing left to find it by: the failure is logged and nothing retries it.
+    if (result.import_objects && result.import_objects.length > 0) {
+      const { error: removeError } = await admin.storage.from(IMPORT_BUCKET).remove(result.import_objects);
+      if (removeError) console.error("account delete: import objects left for the sweep:", removeError.message);
+    }
+    if (result.import_files && result.import_files.length > 0) {
+      if (process.env.ANTHROPIC_API_KEY?.trim()) {
+        const claude = claudeFromEnv();
+        for (const fileId of result.import_files) {
+          if (!(await claude.deleteFile(fileId))) console.error("account delete: an Anthropic import file was not deleted");
+        }
+      } else {
+        console.error("account delete: ANTHROPIC_API_KEY is not set; Anthropic import files were not deleted");
       }
     }
 
