@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardList, ExternalLink, Inbox, FileUp, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, ClipboardList, ExternalLink, Inbox, FileUp, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -29,6 +29,9 @@ const workItems: NavItem[] = [
   { label: "Messages", href: "/studio/messages", icon: MessageSquare },
   { label: "Calendar", href: "/studio/calendar", icon: CalendarDays },
 ];
+
+// The Guide (TCH-015, docs/decisions/0206 Decision 10): for every Studio user, last of the work items.
+const guideItem: NavItem = { label: "Guide", href: "/studio/guide", icon: BookOpen };
 
 // Course import (CNT-019): only for a holder of the grant (can_import_course()), right under Courses.
 const importsItem: NavItem = { label: "Imports", href: "/studio/imports", icon: FileUp };
@@ -125,7 +128,7 @@ export function StudioSidebar({
 
       <SidebarContent className="px-3 py-4">
         <nav className="flex flex-col gap-1">
-          {[...withImports(workItems, canImport), ...(isAdmin ? [authorsItem] : [])].map((item) => (
+          {[...withImports(workItems, canImport), ...(isAdmin ? [authorsItem] : []), guideItem].map((item) => (
             <NavLink
               key={item.href}
               item={item}

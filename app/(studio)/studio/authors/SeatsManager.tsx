@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CalendarPlus, Home, Pencil, Plus, Snowflake } from "lucide-react";
+import { CalendarPlus, Check, Copy, Home, Pencil, Plus, Snowflake } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,9 @@ import {
   type SeatRow,
   type SeatState,
 } from "@/lib/authorSeats";
+import { SITE_URL } from "@/lib/site";
+import { formatSeatDate } from "@/lib/studioWriteLock";
+import { welcomeMessage } from "@/lib/studioGuide/welcome";
 import { Switch } from "@/app/components/ui/switch";
 import { DateField } from "@/app/components/DateField";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
@@ -266,6 +269,8 @@ function AddSeatForm({ onAdded }: { onAdded: () => void }) {
   const [until, setUntil] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  // TCH-015 (0206 Decision 12): the message to send the teacher, kept until the next add.
+  const [welcome, setWelcome] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -279,6 +284,7 @@ function AddSeatForm({ onAdded }: { onAdded: () => void }) {
     try {
       await postJson("/api/studio/authors", { action: "add", email, publicName: name, expiresAt, notes });
       toast.success("Seat added.");
+      setWelcome(welcomeMessage({ name, siteUrl: SITE_URL, expiresOn: expiresAt ? formatSeatDate(expiresAt) : null }));
       setEmail("");
       setName("");
       setUntil("");
@@ -292,6 +298,7 @@ function AddSeatForm({ onAdded }: { onAdded: () => void }) {
   }
 
   return (
+    <div className="space-y-6">
     <form onSubmit={submit} className="rounded-2xl border border-border bg-card px-4 py-3 space-y-3">
       <h2 className="text-sm font-semibold text-foreground">Add a teacher</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -352,6 +359,42 @@ function AddSeatForm({ onAdded }: { onAdded: () => void }) {
         </p>
       </div>
     </form>
+    {welcome && <WelcomeCard text={welcome} onClose={() => setWelcome(null)} />}
+    </div>
+  );
+}
+
+function WelcomeCard({ text, onClose }: { text: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+  return (
+    <div className="rounded-2xl border border-border bg-card px-4 py-3 space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold text-foreground">Message for the teacher</h2>
+        <p className="text-xs text-muted-foreground mt-1">The app sends no email. Copy this and send it yourself.</p>
+      </div>
+      <textarea
+        readOnly
+        value={text}
+        rows={10}
+        aria-label="Welcome message"
+        onFocus={(e) => e.currentTarget.select()}
+        className={INPUT}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={copy} className={PRIMARY_BUTTON}>
+          {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -2823,3 +2823,28 @@ Appended to in the same commit as the change it records. Referenced from
   banner on these pages, the daily-cap line in a browser, a phone.
   Do not show the entry on a failed `can_import_course()` read, and do not colour a report flag
   destructive.
+- Studio onboarding: "Get started" card, Guide, welcome message (2026-10-24, TCH-015,
+  docs/decisions/0206). Studio only; composed from the inbox's row frame, the sidebar's brand
+  tokens and the student-link panel's Copy field; no new colours.
+  - `/studio` gains a `rounded-2xl border bg-card` card above the inbox for an author-seat holder
+    (not an admin, not a grantee with no seat, not while the seat is lapsed). "Get started" lists
+    four core steps (Create a course, Add a lesson, Publish the course, Invite students) and, under
+    "Optional", Add a cover and a summary, Preview a lesson as a learner, Choose who can open each
+    lesson, Assign homework. A step is a `bg-brand` check disc when ticked, a bordered circle when
+    not; each row has an action link and "How?" to its article. Preview and access are links only
+    and never tick. Once the core steps are ticked it collapses to "You're set up" with the
+    optional steps left, and it is gone when the tickable optional ones are done or the inbox has
+    items. Nothing is stored. Ticks and the focus course: `lib/studioGuide/checklist.ts`.
+  - A "Guide" entry (`BookOpen`) is last in the Studio nav. `/studio/guide` lists the articles as
+    link rows; `/studio/guide/[slug]` shows purpose, numbered steps (button labels in bold), "Good
+    to know" and a "Go there" button. Server Components, zero client JS. The import article is a
+    404 without `can_import_course()`. Articles are data in `lib/studioGuide/articles.ts`; a Studio
+    flow change updates its article in the same commit (CLAUDE.md).
+  - `/studio/authors`: after "Add seat" a "Message for the teacher" card shows the welcome text in
+    a read-only textarea with Copy and Close.
+  Measured at 360px (`scrollWidth/innerWidth`, document and the page's own `main`, local stack,
+  seeded seat holders): 360/360 for a fresh seat, part-way (course + lesson), core done ("You're
+  set up"), all done (card absent), lapsed seat (absent), seatless admin (absent), a grantee with
+  no seat (absent); 360/360 on `/studio/guide` and five articles; 360/360 on `/studio/authors`
+  with the welcome card showing. Not measured: dark mode, a phone. Copy is pending owner review.
+  Do not store a dismissal, and do not tick "Preview" or "access levels": nothing records them.

@@ -171,6 +171,10 @@ refactor.
   vendored runtime code imported by app components, kept unlinted for the same
   reason `ui/**` is. The name is a leftover; the code is live. Do not delete
   it as part of any Figma cleanup.
+- **The Studio Guide stays true.** A change to a Studio flow (a button's label, a step, a
+  page it lives on) updates its article in `lib/studioGuide/articles.ts` in the same commit
+  (docs/decisions/0206 Decision 11). `lib/studioGuide/articles.test.ts` fails if an article's
+  "Go there" path stops matching a real `app/(studio)` route or a checklist step loses its article.
 - **`.design-sync/tw-input.css` is generated** by `build-pkg.mjs` from
   `app/globals.css`. globals.css is the single source of truth; treat
   tw-input.css as read-only.

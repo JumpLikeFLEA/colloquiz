@@ -32,6 +32,8 @@ export type AuthoredCourse = {
   level: CefrLevel;
   status: "draft" | "published";
   lessonCount: number;
+  /** ISO. The Studio checklist names the newest draft as its focus course (TCH-015, 0206 Decision 4). */
+  createdAt: string;
 };
 
 /** Cohort fields (058, docs/decisions/0093). Read only by the course editor,
@@ -47,7 +49,7 @@ export async function listAuthoredCourses(courseIds?: string[]): Promise<Authore
   const supabase = await createClient();
   let query = supabase
     .from("courses")
-    .select("id, slug, title, description, subtitle, cover_image_url, level, status, lessons(count)")
+    .select("id, slug, title, description, subtitle, cover_image_url, level, status, created_at, lessons(count)")
     .order("title");
   if (courseIds !== undefined) query = query.in("id", courseIds);
   const { data, error } = await query;
@@ -62,6 +64,7 @@ export async function listAuthoredCourses(courseIds?: string[]): Promise<Authore
     coverImageUrl: c.cover_image_url,
     level: c.level as CefrLevel,
     status: c.status as "draft" | "published",
+    createdAt: c.created_at as string,
     lessonCount: (c.lessons as { count: number }[] | null)?.[0]?.count ?? 0,
   }));
 }
@@ -111,7 +114,7 @@ export async function getAuthoredCourseDetail(
 
   const { data: course, error: courseErr } = await supabase
     .from("courses")
-    .select("id, slug, title, description, subtitle, cover_image_url, level, status, format, how_to_join_url")
+    .select("id, slug, title, description, subtitle, cover_image_url, level, status, format, how_to_join_url, created_at")
     .eq("id", courseId)
     .maybeSingle();
   if (courseErr) throw new Error(courseErr.message);
@@ -151,6 +154,7 @@ export async function getAuthoredCourseDetail(
       level: course.level as CefrLevel,
       status: course.status as "draft" | "published",
       lessonCount: (lessons ?? []).length,
+      createdAt: course.created_at as string,
       format: course.format as CourseFormat,
       howToJoinUrl: course.how_to_join_url,
     },

@@ -110,3 +110,18 @@ first course. Whether the time actually shortens is not measured (Decision 9).
   instead.
 - Studio gets a second language: the articles are English, like the rest of
   Studio's chrome.
+
+## Decided while building TCH-015 (unattended)
+
+- **Admins never see the checklist, seat or not.** An admin lists every course, so no course is
+  theirs to follow (Decision 4). Decision 6 hides it for a seatless admin; an admin who also holds
+  a seat is hidden too.
+- **Two articles instead of "Create or import".** `create-a-course` (everyone) and
+  `import-a-course` (needs the import grant, Decision 8), so the gating is per article.
+- **A lesson is published from its Preview screen** ("Publish this version",
+  `PreviewClient.tsx`), not from the editor, so the Publish article starts there. A published
+  course needs a cover, a summary and a lesson open to anyone (`publish_course`, 083), which is
+  why a ticked "Publish" always ticks "cover and summary" too.
+- **"Invite students" ticks from a claimed invite** by asking `course_run_invites` per course,
+  only when no student link or linked student has ticked it already.
+- A failed read hides the card instead of ticking on a guess.

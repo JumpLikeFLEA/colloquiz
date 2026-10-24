@@ -14,6 +14,10 @@ import {
 import { LocalTime, LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { weekLabel } from "./reviews/statusLabels";
 import { threadPath, unansweredThreads } from "@/lib/messages/messages";
+import { canImportCourse } from "@/lib/courseImport/access";
+import { getStudioWriteState } from "@/lib/studioWriteState";
+import { GetStarted } from "./GetStarted";
+import { getChecklist } from "./getChecklist";
 import { getDraftRows, getEditorCalls, getTeacherThreads, getWaitingRows } from "./inboxData";
 
 // /studio — the "Needs attention" inbox (AUTH-012, docs/decisions/0109
@@ -165,6 +169,14 @@ export default async function StudioInbox() {
     questions !== null &&
     questions.length === 0;
 
+  // TCH-015 (0206): the get-started card for a seat holder, until the core steps are done.
+  const checklist = await getChecklist({
+    access,
+    writeState: await getStudioWriteState(),
+    canImport: await canImportCourse(),
+    inboxHasItems: !nothing,
+  });
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
@@ -177,6 +189,8 @@ export default async function StudioInbox() {
           Times are in your timezone (<LocalTimeZone />).
         </p>
       </div>
+
+      <GetStarted checklist={checklist} />
 
       {nothing ? (
         <div className={EMPTY_BOX}>
