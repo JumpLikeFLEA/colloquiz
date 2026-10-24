@@ -79,6 +79,10 @@ BEGIN
   SELECT x, 'authenticated', 'authenticated', 'v104-' || x || '@verify.test' FROM unnest(ARRAY[a, p]) x;
   UPDATE profiles SET role = 'admin' WHERE id = a;
 
+  -- A database that already holds ledger rows (a backfill, or live calls) would add to the totals
+  -- checked below. Start this transaction from an empty table; the ROLLBACK restores them.
+  DELETE FROM provider_usage_events;
+
   -- ── 0. Static facts ─────────────────────────────────────────────────────
   PERFORM pg_temp.check_eq('RLS is on and the table has no policy',
     (SELECT relrowsecurity::text FROM pg_class WHERE oid = 'public.provider_usage_events'::regclass) || '/' ||
