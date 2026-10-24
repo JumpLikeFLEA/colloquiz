@@ -27,6 +27,12 @@ export type SeatRow = {
   courses: number;
   /** Students with an active link to the teacher. */
   linkedStudents: number;
+  /**
+   * The admin's grant to import a course file (102, docs/decisions/0203). The
+   * flag only; whether the seat can import right now also needs it to be
+   * active, which `can_import_course()` decides in SQL.
+   */
+  canImport: boolean;
 };
 
 /** One row of `author_seats_list()` (082), in the app's own field names. */
@@ -43,7 +49,15 @@ export function toSeatRow(raw: Record<string, unknown>): SeatRow {
     daysLeft: typeof raw.days_left === "number" ? raw.days_left : null,
     courses: Number(raw.courses ?? 0),
     linkedStudents: Number(raw.linked_students ?? 0),
+    canImport: raw.can_import === true,
   };
+}
+
+/** The one muted line under a seat's "Course import" switch. Display only. */
+export function importHint(row: Pick<SeatRow, "canImport" | "isActive">): string {
+  if (!row.canImport) return "Can't import a course from a file.";
+  if (!row.isActive) return "Allowed, but the seat has lapsed: it works again when the seat is extended.";
+  return "Can import a course from a PDF, DOCX, Markdown or text file into a new draft.";
 }
 
 /** Seats with this many days left or fewer are flagged as ending soon. Display only. */
@@ -120,6 +134,7 @@ export const SEAT_ERRORS: Record<string, { status: number; message: string }> = 
   already_seated: { status: 409, message: "That account already has a seat. Edit or extend it below." },
   invalid_name: { status: 400, message: `Enter a public name of up to ${SEAT_NAME_MAX_LENGTH} characters.` },
   invalid_notes: { status: 400, message: `Notes can be up to ${SEAT_NOTES_MAX_LENGTH} characters.` },
+  invalid_value: { status: 400, message: "That is not a valid setting." },
   invalid_kind: { status: 400, message: "That is not a kind of seat." },
   expiry_in_past: { status: 400, message: "Pick a date in the future. To end a seat now, use Freeze." },
   seat_not_found: { status: 404, message: "That seat no longer exists." },

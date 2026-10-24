@@ -18,8 +18,9 @@ const isoOrNull = (v: unknown): string | null | undefined => {
  *   { action: "expiry", userId, expiresAt }                    -> { ok }   (null = no expiry)
  *   { action: "freeze", userId }                               -> { ok }
  *   { action: "kind", userId, kind }                           -> { ok }
+ *   { action: "import", userId, on }                           -> { ok }   (102, AUTH-021)
  *
- * Each is a SECURITY DEFINER RPC (082) that checks `is_admin` itself and
+ * Each is a SECURITY DEFINER RPC (082, 102) that checks `is_admin` itself and
  * answers `forbidden` otherwise. This route validates the shape and relays
  * the RPC's code as a message; it is not the gate.
  */
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     notes?: unknown;
     userId?: unknown;
     kind?: unknown;
+    on?: unknown;
   };
   try {
     body = await request.json();
@@ -80,6 +82,11 @@ export async function POST(request: NextRequest) {
     case "kind": {
       if (!isId(body.userId) || (body.kind !== "house" && body.kind !== "teacher")) return bad();
       call = supabase.rpc("set_author_seat_kind", { p_user: body.userId, p_kind: body.kind });
+      break;
+    }
+    case "import": {
+      if (!isId(body.userId) || typeof body.on !== "boolean") return bad();
+      call = supabase.rpc("set_author_seat_import", { p_user: body.userId, p_on: body.on });
       break;
     }
     default:

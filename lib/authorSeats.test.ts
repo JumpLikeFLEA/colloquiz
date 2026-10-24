@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expiryFromDateInput, extendedDate, localDateString, seatState, toSeatRow } from "./authorSeats";
+import { expiryFromDateInput, extendedDate, importHint, localDateString, seatState, toSeatRow } from "./authorSeats";
 
 describe("toSeatRow", () => {
   it("maps an author_seats_list row to the app's field names", () => {
@@ -16,6 +16,7 @@ describe("toSeatRow", () => {
         days_left: 77,
         courses: 3,
         linked_students: 12,
+        can_import: true,
       }),
     ).toEqual({
       userId: "u1",
@@ -29,12 +30,13 @@ describe("toSeatRow", () => {
       daysLeft: 77,
       courses: 3,
       linkedStudents: 12,
+      canImport: true,
     });
   });
 
   it("keeps nulls and defaults an unknown kind to teacher", () => {
     const row = toSeatRow({ user_id: "u2", kind: "owner", public_name: "B", created_at: "x", is_active: false });
-    expect(row).toMatchObject({ kind: "teacher", notes: null, expiresAt: null, daysLeft: null, isActive: false, courses: 0, linkedStudents: 0 });
+    expect(row).toMatchObject({ kind: "teacher", notes: null, expiresAt: null, daysLeft: null, isActive: false, courses: 0, linkedStudents: 0, canImport: false });
   });
 });
 
@@ -97,5 +99,25 @@ describe("expiryFromDateInput", () => {
     expect(expiryFromDateInput("")).toBeNull();
     expect(expiryFromDateInput("31/12/2026")).toBeNull();
     expect(expiryFromDateInput("2026-02-31")).toBeNull();
+  });
+});
+
+describe("importHint", () => {
+  it("says what the switch does, and warns when a granted seat has lapsed", () => {
+    expect(importHint({ canImport: false, isActive: true })).toBe("Can't import a course from a file.");
+    expect(importHint({ canImport: true, isActive: true })).toMatch(/^Can import a course/);
+    expect(importHint({ canImport: true, isActive: false })).toMatch(/lapsed/);
+  });
+
+  it("an ungranted lapsed seat is just not allowed", () => {
+    expect(importHint({ canImport: false, isActive: false })).toBe("Can't import a course from a file.");
+  });
+});
+
+describe("toSeatRow canImport", () => {
+  it("is true only for a literal true", () => {
+    expect(toSeatRow({ user_id: "u", created_at: "x", can_import: "true" }).canImport).toBe(false);
+    expect(toSeatRow({ user_id: "u", created_at: "x" }).canImport).toBe(false);
+    expect(toSeatRow({ user_id: "u", created_at: "x", can_import: true }).canImport).toBe(true);
   });
 });

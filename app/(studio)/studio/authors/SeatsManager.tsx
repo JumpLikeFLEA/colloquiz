@@ -25,12 +25,14 @@ import {
 import {
   expiryFromDateInput,
   extendedDate,
+  importHint,
   SEAT_NAME_MAX_LENGTH,
   SEAT_NOTES_MAX_LENGTH,
   seatState,
   type SeatRow,
   type SeatState,
 } from "@/lib/authorSeats";
+import { Switch } from "@/app/components/ui/switch";
 import { DateField } from "@/app/components/DateField";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
@@ -92,6 +94,12 @@ export function SeatsManager({ seats }: { seats: SeatRow[] }) {
               onEdit={() => setEditing(seat)}
               onExtend={() => setExtending(seat)}
               onFreeze={() => setFreezing(seat)}
+              onImport={(on) =>
+                act(
+                  { action: "import", userId: seat.userId, on },
+                  on ? "Course import allowed." : "Course import turned off.",
+                )
+              }
               onToggleHouse={() =>
                 act(
                   { action: "kind", userId: seat.userId, kind: seat.kind === "house" ? "teacher" : "house" },
@@ -161,14 +169,17 @@ function SeatCard({
   onExtend,
   onFreeze,
   onToggleHouse,
+  onImport,
 }: {
   seat: SeatRow;
   onEdit: () => void;
   onExtend: () => void;
   onFreeze: () => void;
   onToggleHouse: () => void;
+  onImport: (on: boolean) => Promise<boolean>;
 }) {
   const state = seatState(seat);
+  const [importBusy, setImportBusy] = useState(false);
   return (
     <li className="rounded-2xl border border-border bg-card px-4 py-3 space-y-3" data-studio="author-seat">
       <div className="space-y-1">
@@ -202,6 +213,28 @@ function SeatCard({
       </dl>
 
       {seat.notes && <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{seat.notes}</p>}
+
+      {/* AUTH-021 (0203 Decision 1): the grant is the admin's; whether it works now needs an active seat, which SQL decides. */}
+      <div className="flex min-w-0 items-start gap-3">
+        <Switch
+          checked={seat.canImport}
+          disabled={importBusy}
+          onCheckedChange={async (on) => {
+            setImportBusy(true);
+            try {
+              await onImport(on);
+            } finally {
+              setImportBusy(false);
+            }
+          }}
+          aria-label={`Course import: ${seat.publicName}`}
+          className="mt-0.5"
+        />
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-sm font-medium text-foreground">Course import</p>
+          <p className="text-xs text-muted-foreground">{importHint(seat)}</p>
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={onEdit} className={SECONDARY_BUTTON}>

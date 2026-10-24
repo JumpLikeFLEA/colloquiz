@@ -82,3 +82,19 @@ This reverses three recorded positions:
 - Imports fail validation often enough that the repair turn is not enough.
 - The stored `usage` shows a cost far from the estimate in Decision 4.
 - A teacher asks for slide decks.
+
+## Implementation notes
+
+### AUTH-021 (migration 102)
+
+Choices made while writing it, none of which changes a Decision above:
+
+- `author_seats_list()` gained an output column, which `CREATE OR REPLACE` cannot do, so 102 drops
+  and re-creates it with the same grants in one transaction (the only `DROP`; no table or column).
+  Verified by `supabase/verify/102_course_import_grant.sql` (admin sees the column per seat, a
+  teacher and anon are still refused) and by re-running `supabase/verify/082_author_seats.sql`.
+- `set_author_seat_import` answers `invalid_value` for a NULL flag, rather than writing NULL into a
+  NOT NULL column and surfacing a 500.
+- The flag survives a lapse: a lapsed seat keeps `can_import` and `_can_import` answers false until
+  the seat is extended. The switch shows the stored flag and says so (docs/ui-decisions.md).
+- `delete_my_account` is not re-emitted: the flag is on the seat row, which 082 already deletes.

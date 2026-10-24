@@ -2767,3 +2767,17 @@ Appended to in the same commit as the change it records. Referenced from
   704 / 1730 / 1520 / 1878 / 1120 / 500 at 360, in that order; after, 0 on all twelve.
   `npm run viewport360`: 360/360 on all six. `npm run budget` identical. A new English page on
   grid paper takes `flex-1` on its root.
+- Course import switch on author seats (2026-10-24, AUTH-021, docs/decisions/0203 Decision 1,
+  migration 102 applied to the local stack only, not to the hosted project). Studio only; no
+  learner page changes. Each seat card on `/studio/authors` gains, between the notes and the
+  button row, a "Course import" row: the `ui/switch` (as `ListedSwitch`) beside the label and
+  one `text-xs text-muted-foreground` line ("Can't import a course from a file." / "Can import a
+  course from a PDF, DOCX, Markdown or text file into a new draft." / "Allowed, but the seat has
+  lapsed: it works again when the seat is extended."). It posts `{ action: "import", userId, on }`
+  to `/api/studio/authors`, toasts the outcome and refreshes; the switch is disabled while the
+  call is in flight. The flag is shown as stored, and the lapsed wording is a hint: whether the
+  seat can import now is `can_import_course()`, not this card. Admin only, like the page. Existing
+  classes and tokens; no new colours. Measured at 360px (local stack, an admin, a seat with a
+  66-character unbroken name): `scrollWidth/innerWidth` 360/360 loaded, after switching on and
+  after switching off, via `npm run viewport360` and a browser script. Not measured: the page with
+  a toast showing. Do not decide in the client whether a seat may import.
