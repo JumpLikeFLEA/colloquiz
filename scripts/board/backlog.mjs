@@ -4519,6 +4519,47 @@ export const CARDS = [
       'After publication, the owner sets COURSE_IMPORT_MODE=on in production; one import on production reaches done (evidence in the card).',
     ],
   },
+  // Studio onboarding for a teacher on a new seat (owner, 2026-10-24, docs/decisions/0206).
+  {
+    key: 'TCH-015',
+    title: 'Studio: get-started checklist, Guide and welcome text',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 3090,
+    dependsOn: [],
+    goal:
+      'A teacher on a new seat lands on /studio and sees only "Nothing needs your attention" (app/(studio)/studio/page.tsx), ' +
+      'with no help anywhere in Studio. Shorten the time from a seat to a first course that is published and shared (0206 Decision 1).',
+    acceptance: [
+      '/studio shows a "Get started" checklist to an author-seat holder while the core steps are not all ticked: create a course, add a lesson, publish, invite students (a student link, a linked student or a claimed cohort invite); extras: cover and summary, lesson access levels (link only), assign homework; "Preview as a learner" is a link only (0206 Decisions 3-4). Ticks come from existing reads (listAuthoredCourses, getJoinLinkState, getLinkedStudents), and the course steps follow one named focus course.',
+      'Once the core steps are ticked, the checklist collapses to "You\'re set up" with the remaining extras, and it is gone when they are done or when inbox items exist; it is hidden for a seatless admin or grantee and while the seat is lapsed. No stored dismissal, no schema change (0206 Decisions 5-6).',
+      'lib/studioGuide/ holds the articles as typed data (slug, title, what it is for, numbered steps, tips, "Go there" path, visibility), rendered by one server component at /studio/guide and /studio/guide/[slug] with zero client JS. Path articles: Your first course, Create or import a course, Lessons and exercises, Preview, Access levels, Cover and summary, Publish, Your student link, Homework.',
+      'Import articles show only with can_import_course(), admin articles only to admins (0206 Decision 8). A "Guide" entry is in the Studio sidebar, and every checklist step has a "How?" link to its article.',
+      'A vitest checks that every "Go there" path matches a real app/(studio) route and that every checklist step names an existing article. CLAUDE.md gains the standing rule that a Studio flow change updates its article in the same commit.',
+      '/studio/authors shows a ready-to-send welcome message with Copy after "Add seat" (0206 Decision 12).',
+      'Printed on the local stack: the checklist for a seat holder who is fresh, part-way, core done and all done, with a lapsed seat, and for a seatless admin. Each new state measured at 360px (scrollWidth/innerWidth). docs/ui-decisions.md entry. No new npm dependency. Copy pending owner review at Verify.',
+    ],
+    notes: 'Docs: docs/decisions/0206. Reuse the inbox RowLink/EMPTY_BOX, StudioSidebar NavItem list, getCourseAccess/canEnterStudio (lib/courseAccess.ts), and the invite dialog\'s Copy field.',
+  },
+  {
+    key: 'TCH-016',
+    title: 'Studio Guide: articles for the remaining features',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 3091,
+    dependsOn: ['TCH-015'],
+    goal:
+      'TCH-015 ships the Guide with the articles on the path to a first course. Every other Studio feature still has no ' +
+      'plain-English instructions (0206 Decision 13).',
+    acceptance: [
+      'lib/studioGuide/ gains articles for: Voice tasks, Reviews and AI feedback, Groups, Messages and Telegram, Calendar and events, Course access, Learners and stats, Cohort runs, calls and invites, Your seat and what a lapse does, and the admin articles (Authors, catalogue listing, import grants), each gated per 0206 Decision 8.',
+      'The TCH-015 vitest covers every new article (paths resolve, no orphan slugs) and passes.',
+      '/studio/guide and each new article measured at 360px (scrollWidth/innerWidth). Copy pending owner review at Verify.',
+    ],
+    notes: 'Docs: docs/decisions/0206.',
+  },
 ];
 
 export function rankOf(key) {
