@@ -1,24 +1,16 @@
 import { ListedSwitch } from "@/app/(studio)/studio/courses/[id]/ListedSwitch";
 import type { CourseListingRow } from "@/lib/listedCourses";
 
-// TCH-010 (docs/decisions/0171) — the admin's catalogue list on /studio/authors:
-// one row per course with its author and the Listed switch. Server-rendered
-// rows around the one client switch. Composed from the seat cards' classes and
-// tokens; no new colours.
+// TCH-010 (docs/decisions/0171) — the admin's catalogue list, on /studio/catalogue
+// since docs/decisions/0208 (it was at the bottom of /studio/authors): one row per
+// course with its author and the Listed switch. Server-rendered rows around the
+// one client switch. Composed from the seat cards' classes and tokens; no new
+// colours.
 const PILL = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium";
 
 export function CourseListingPanel({ courses }: { courses: CourseListingRow[] }) {
   return (
-    <section className="space-y-3" aria-labelledby="catalogue-heading">
-      <div className="space-y-1">
-        <h2 id="catalogue-heading" className="text-lg font-semibold text-foreground">
-          Catalogue
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          A teacher&apos;s published course opens by its link. It appears on the landing page and in the catalogue only
-          when you list it here.
-        </p>
-      </div>
+    <section className="space-y-3" aria-label="Courses">
       {courses.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
           No courses yet.

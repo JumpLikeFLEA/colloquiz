@@ -276,7 +276,7 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
                     href={`/studio/reviews${reviewFiltersQuery({ course: e.courseId, run: e.runId, status: "all" })}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors sm:ml-auto"
                   >
-                    Write feedback in Reviews
+                    Write feedback
                   </Link>
                 </div>
 

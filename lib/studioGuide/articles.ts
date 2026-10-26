@@ -65,7 +65,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     title: "Import a course from a file",
     purpose: "Turn a PDF, DOCX, Markdown or text file into a draft course.",
     steps: [
-      "Open **Imports** in the menu and press **Import from file**.",
+      "Open **Courses** in the menu and press **Import from file**. **Imports**, next to it, lists the imports you have started.",
       "Choose the file, type a title and pick the level.",
       "Press **Start import** and wait. You can leave the page; the import keeps going.",
       "When it is done, press **Open course**. Read the notes under **Review before you publish**: they list what the import changed or was unsure about.",
@@ -211,22 +211,22 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
   },
   {
     slug: "reviews-and-ai-feedback",
-    title: "Reviews and AI feedback",
+    title: "Teacher review and AI feedback",
     purpose: "Answer cohort recordings in writing, and see or hide the AI feedback learners get.",
     steps: [
-      "Open **Reviews** in the menu. Use the Course, Run, Week and Status filters to find a recording.",
+      "Open **Recordings** in the menu and choose the **Teacher review** tab. Use the Course, Run, Week and Status filters to find a recording.",
       "Listen to the take, write your feedback in the box (the **Bold** button or Ctrl/⌘+B makes text bold), and check **What the learner sees**.",
       "Press **Publish**. Use **Save draft** to keep it private until you are ready.",
-      "To read the AI feedback on any recording of your courses, open **AI feedback** in the menu and choose a take.",
+      "To read the AI feedback on any recording of your courses, choose the **AI feedback** tab and open a take.",
       "If an analysis is wrong, open it and press **Hide this analysis**. The learner then sees that the feedback was withdrawn and can send the recording again.",
     ],
     tips: [
       "Once feedback is published the learner can no longer replace that recording.",
       "AI feedback is shown to the learner at once and is never a score. On a cohort course it sits beside your written feedback.",
       "A hidden analysis stays in the list, marked Withdrawn, so you can see what was hidden. Hiding cannot be undone.",
-      "Final comments for a whole run are in the **Final comments** section of Reviews.",
+      "Final comments for a whole run are in the **Final comments** section of Teacher review.",
     ],
-    goTo: { label: "Open Reviews", path: "/studio/reviews" },
+    goTo: { label: "Open Teacher review", path: "/studio/reviews" },
     audience: "all",
   },
   {
@@ -381,7 +381,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     title: "Catalogue listing",
     purpose: "Choose which published courses appear in the public catalogue.",
     steps: [
-      "Open **Authors** and scroll to **Catalogue**, or open a course and find its **Catalogue** card.",
+      "Open **Catalogue** in the menu, or open a course and find its **Catalogue** card.",
       "Switch a published course on to list it. Switch it off to take it out.",
     ],
     tips: [
@@ -389,7 +389,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "A draft cannot be listed: the switch is disabled.",
       "Listed courses show **By <name>** on the course page, unless it is a house course.",
     ],
-    goTo: { label: "Open Authors", path: "/studio/authors" },
+    goTo: { label: "Open Catalogue", path: "/studio/catalogue" },
     audience: "admin",
   },
   {
@@ -398,7 +398,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     purpose: "Let a teacher import a course from a file.",
     steps: [
       "Open **Authors**. Each seat has a **Course import** switch.",
-      "Switch it on for a seat. The teacher then sees **Imports** in the menu and **Import from file** on the Courses page.",
+      "Switch it on for a seat. The teacher then sees **Import from file** and **Imports** on the Courses page.",
       "Switch it off to remove the ability.",
     ],
     tips: [

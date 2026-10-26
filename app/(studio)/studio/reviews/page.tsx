@@ -15,6 +15,7 @@ import {
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
 import { readAnalyses } from "@/lib/voice/analysis/studioRead";
 import { LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
+import { RecordingsTabs } from "../RecordingsTabs";
 import { FinalCommentCard } from "./FinalCommentCard";
 import { RecordingCard, type RecordingCardRow } from "./RecordingCard";
 import { ReviewFilters } from "./ReviewFilters";
@@ -32,7 +33,7 @@ import { STATUS_FILTER_LABEL } from "./statusLabels";
 // the filter menus and the learner × week table need more than the
 // filtered list, and the queue is one cohort's worth of rows, not a feed.
 
-export const metadata = { title: "Reviews" };
+export const metadata = { title: "Teacher review" };
 
 export default async function ReviewsPage({
   searchParams,
@@ -89,8 +90,9 @@ export default async function ReviewsPage({
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="space-y-3">
+        <RecordingsTabs tab="reviews" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
+          <h1 className="text-2xl font-bold text-foreground">Teacher review</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Learners&apos; voice recordings, your feedback, and each learner&apos;s final comment.
           </p>

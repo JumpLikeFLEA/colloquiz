@@ -2873,3 +2873,25 @@ Appended to in the same commit as the change it records. Referenced from
   179) both before and after. 0 client-reference manifests and 0 `.next/static` chunks mention react-pdf.
   Not measured: dark mode, the Select open. Do not offer the report to a non-admin: the route
   answers 403 and the page is admin-only.
+- Studio nav in sections (2026-10-26, ad hoc, docs/decisions/0208), SUPERSEDING the nav order in
+  the SHELL-020, AUTH-012, VOICE-015, CNT-019, TCH-007, OPS-032 and TCH-015 entries (their pages
+  stand). `StudioSidebar` is Inbox, then labelled groups in the old "Leave Studio" label classes:
+  "Content" (Courses, Recordings), "Students" (Learners, Homework, Messages, Calendar), "Admin" for
+  admins only (Authors, Catalogue, Costs, Colloquiz admin with a trailing `ExternalLink` glyph), then
+  an unlabelled Guide / View site group at the end of the scrolling list; Sign out alone in the footer.
+  The "Leave Studio" group is gone. Active links carry `aria-current="page"`.
+  - Recordings is one entry for `/studio/reviews` and `/studio/voice`, and both pages open with
+    `RecordingsTabs` ("Teacher review" | "AI feedback", `min-h-11` pills in `ProgressTabs`' classes).
+    It links to the queue while the waiting count is above 0, else to the AI list, and carries the
+    waiting badge, which left Inbox. The queue's `h1` and title, the course editor's link, the run
+    card's icon label and the learner page's link now say "Teacher review" / "Write feedback".
+  - Imports has no nav entry: Courses gains an outlined "Imports" link (`History`) beside "Import
+    from file", grant holders only, and Courses is active on `/studio/imports/**`.
+  - The catalogue list moved from `/studio/authors` to its own admin page, `/studio/catalogue`
+    (`h1` "Catalogue", the lead, `CourseListingPanel` without its own heading). Authors is seats only.
+  Measured (hosted, two throwaway users, deleted): 360px `scrollWidth/innerWidth` and `main` 360/360
+  on `/studio`, `/studio/courses`, `/studio/reviews`, `/studio/voice`, `/studio/catalogue`,
+  `/studio/authors`; the sheet open 288px wide, document 360/360. Not reached: Recordings pointing at
+  the queue (waiting count 0), dark mode. Existing classes and tokens; no new colours. Do not append
+  a grant-only or admin-only entry to the shared groups, and do not put Guide and View site back in
+  the footer: three footer rows pushed Admin below the fold on an 800px phone.

@@ -8,7 +8,7 @@ import { listingHint } from "@/lib/listedCourses";
 import { postJson } from "./postJson";
 
 // TCH-010 (docs/decisions/0171) — the admin's "Listed in the catalogue" switch,
-// shared by the course editor and /studio/authors. The state shown is what the
+// shared by the course editor and /studio/catalogue. The state shown is what the
 // server last returned; whether the course may be listed is decided by
 // set_course_listed (088), and a refusal is toasted, not guessed in advance.
 // Only a published course can be switched on; a listed course can always be

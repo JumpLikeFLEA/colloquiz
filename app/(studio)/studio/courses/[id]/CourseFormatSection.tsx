@@ -149,7 +149,7 @@ export function CourseFormatSection({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
           >
             <MessageSquareText className="size-3.5" />
-            Reviews
+            Teacher review
           </Link>
         </>
       )}

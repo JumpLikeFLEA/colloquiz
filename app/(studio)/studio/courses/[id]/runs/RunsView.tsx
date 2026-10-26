@@ -206,7 +206,7 @@ function RunsViewInner({
                     {/* VOICE-006: this run's recordings in the review queue. */}
                     <Link
                       href={`/studio/reviews${reviewFiltersQuery({ course: courseId, run: run.id })}`}
-                      aria-label={`Reviews for ${run.title || "this run"}`}
+                      aria-label={`Teacher review for ${run.title || "this run"}`}
                       title="Recordings and feedback"
                       className={ICON_BUTTON}
                     >

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, CalendarDays, ClipboardList, ExternalLink, Inbox, FileUp, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, Sparkles, UserCog, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, ClipboardList, ExternalLink, Inbox, LayoutGrid, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, UserCog, Users, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -15,38 +15,55 @@ import {
 // Studio nav (SHELL-020, docs/decisions/0109 Decision 11): built from the
 // vendored ui/sidebar with the same link classes as AppSidebar's nav, so it
 // reads as the same app family without importing the Colloquiz shell.
+//
+// Grouped by task and audience (docs/decisions/0208): Inbox, then Content and
+// Students for every Studio user, Admin for admins only, then Guide and the
+// way back to the site. An entry that only some users have belongs in its own section or
+// on its parent's page, never appended to the shared list.
 
-type NavItem = { label: string; href: string; icon: LucideIcon; exact?: boolean };
+type NavItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  /** Active on the exact path only (/studio itself would match every page). */
+  exact?: boolean;
+  /** Further path prefixes that count as this entry (0208 Decisions 2-3). */
+  match?: string[];
+  /** Leaves Studio: a trailing arrow, never shown as active. */
+  external?: boolean;
+};
 
-const workItems: NavItem[] = [
-  // /studio itself: active on the exact path only, or it would match every page.
-  { label: "Inbox", href: "/studio", icon: Inbox, exact: true },
-  { label: "Courses", href: "/studio/courses", icon: Library },
-  { label: "Reviews", href: "/studio/reviews", icon: MessageSquareText },
-  { label: "AI feedback", href: "/studio/voice", icon: Sparkles },
+type BadgeFor = (href: string) => { count: number | null; label: string } | null;
+
+const inboxItem: NavItem = { label: "Inbox", href: "/studio", icon: Inbox, exact: true };
+
+const studentItems: NavItem[] = [
   { label: "Learners", href: "/studio/learners", icon: Users },
   { label: "Homework", href: "/studio/homework", icon: ClipboardList },
   { label: "Messages", href: "/studio/messages", icon: MessageSquare },
   { label: "Calendar", href: "/studio/calendar", icon: CalendarDays },
 ];
 
-// The Guide (TCH-015, docs/decisions/0206 Decision 10): for every Studio user, last of the work items.
-const guideItem: NavItem = { label: "Guide", href: "/studio/guide", icon: BookOpen };
+// Admin only: each page 404s for anyone else (TCH-007, TCH-010, OPS-032).
+// /app/admin has no index page of its own; the review queue is the first entry
+// of AppSidebar's Admin section that stays in Colloquiz.
+const adminItems: NavItem[] = [
+  { label: "Authors", href: "/studio/authors", icon: UserCog },
+  { label: "Catalogue", href: "/studio/catalogue", icon: LayoutGrid },
+  { label: "Costs", href: "/studio/costs", icon: Wallet },
+  { label: "Colloquiz admin", href: "/app/admin/review", icon: Shield, external: true },
+];
 
-// Course import (CNT-019): only for a holder of the grant (can_import_course()), right under Courses.
-const importsItem: NavItem = { label: "Imports", href: "/studio/imports", icon: FileUp };
+// The Guide (TCH-015, docs/decisions/0206 Decision 10) and the way back to the site.
+const closingItems: NavItem[] = [
+  { label: "Guide", href: "/studio/guide", icon: BookOpen },
+  { label: "View site", href: "/", icon: ExternalLink, external: true },
+];
 
-// Author seats (TCH-007): admin only, shown last. The page 404s for anyone else.
-const authorsItem: NavItem = { label: "Authors", href: "/studio/authors", icon: UserCog };
-
-// Costs (OPS-032, docs/decisions/0207): admin only, after Authors. The page 404s for anyone else.
-const costsItem: NavItem = { label: "Costs", href: "/studio/costs", icon: Wallet };
-
-/** Imports goes in right after Courses, for a grant holder only. */
-function withImports(items: NavItem[], canImport: boolean): NavItem[] {
-  if (!canImport) return items;
-  const at = items.findIndex((i) => i.href === "/studio/courses");
-  return [...items.slice(0, at + 1), importsItem, ...items.slice(at + 1)];
+function isActive(item: NavItem, pathname: string): boolean {
+  if (item.external) return false;
+  const prefixes = [item.href, ...(item.match ?? [])];
+  return prefixes.some((p) => pathname === p || (!item.exact && pathname.startsWith(p + "/")));
 }
 
 function NavLink({
@@ -65,6 +82,7 @@ function NavLink({
     <Link
       href={item.href}
       prefetch={false}
+      aria-current={active ? "page" : undefined}
       className={cn(
         "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all",
         active ? "bg-brand-subtle text-brand-text" : "text-foreground hover:bg-accent",
@@ -79,6 +97,10 @@ function NavLink({
         <Icon size={16} />
       </div>
       <p className="flex-1 min-w-0 text-sm font-medium leading-none truncate">{item.label}</p>
+      {/* Leaves Studio; "View site" already carries the arrow as its icon. */}
+      {item.external && item.icon !== ExternalLink && (
+        <ExternalLink size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+      )}
       {/* AppSidebar's duels badge, same classes (AUTH-012). */}
       {badge != null && badge > 0 && (
         <span
@@ -92,28 +114,71 @@ function NavLink({
   );
 }
 
+function NavSection({
+  label,
+  items,
+  pathname,
+  badgeFor,
+}: {
+  label?: string;
+  items: NavItem[];
+  pathname: string;
+  badgeFor: BadgeFor;
+}) {
+  return (
+    <div>
+      {label && <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2">{label}</p>}
+      <nav className="flex flex-col gap-1" aria-label={label}>
+        {items.map((item) => {
+          const badge = badgeFor(item.href);
+          return (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(item, pathname)}
+              badge={badge?.count}
+              badgeLabel={badge?.label}
+            />
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
+
 export function StudioSidebar({
   isAdmin,
-  canImport,
   waitingCount,
   unansweredCount,
 }: {
   isAdmin: boolean;
-  /** can_import_course() (CNT-019): shows the Imports entry. */
-  canImport: boolean;
+  /** review_queue's waiting takes (AUTH-012); null hides the badge. */
   waitingCount: number | null;
   /** Threads whose last message is the student's (TCH-004); null hides it. */
   unansweredCount: number | null;
 }) {
   const pathname = usePathname();
 
-  // "View site" and the admin link leave Studio, so they never show as active.
-  // /app/admin has no index page of its own; the review queue is the first
-  // entry of AppSidebar's Admin section that stays in Colloquiz.
-  const exitItems: NavItem[] = [
-    { label: "View site", href: "/", icon: ExternalLink },
-    ...(isAdmin ? [{ label: "Colloquiz admin", href: "/app/admin/review", icon: Shield }] : []),
+  // Recordings is the review queue and the AI feedback list under one entry
+  // (0208 Decision 2). It opens the queue while something waits for feedback,
+  // else the AI list, which covers every course, self-paced ones too.
+  const contentItems: NavItem[] = [
+    // Imports live on the Courses page (0208 Decision 3).
+    { label: "Courses", href: "/studio/courses", icon: Library, match: ["/studio/imports"] },
+    {
+      label: "Recordings",
+      href: waitingCount != null && waitingCount > 0 ? "/studio/reviews" : "/studio/voice",
+      icon: MessageSquareText,
+      match: ["/studio/reviews", "/studio/voice"],
+    },
   ];
+
+  // Each count sits on the entry where the work is done (0208 Decision 5).
+  const badgeFor: BadgeFor = (href) => {
+    if (href === "/studio/reviews" || href === "/studio/voice") return { count: waitingCount, label: "waiting for feedback" };
+    if (href === "/studio/messages") return { count: unansweredCount, label: "unanswered" };
+    return null;
+  };
 
   return (
     <Sidebar>
@@ -129,26 +194,14 @@ export function StudioSidebar({
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
-        <nav className="flex flex-col gap-1">
-          {[...withImports(workItems, canImport), ...(isAdmin ? [authorsItem, costsItem] : []), guideItem].map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              active={pathname === item.href || (!item.exact && pathname.startsWith(item.href + "/"))}
-              badge={item.href === "/studio" ? waitingCount : item.href === "/studio/messages" ? unansweredCount : null}
-              badgeLabel={item.href === "/studio/messages" ? "unanswered" : undefined}
-            />
-          ))}
-        </nav>
-        <div className="mt-4">
-          <p className="text-xs text-muted-foreground font-medium tracking-wider px-3 mb-2">Leave Studio</p>
-          <nav className="flex flex-col gap-1">
-            {exitItems.map((item) => (
-              <NavLink key={item.href} item={item} active={false} />
-            ))}
-          </nav>
-        </div>
+      <SidebarContent className="px-3 py-4 gap-4">
+        <NavSection items={[inboxItem]} pathname={pathname} badgeFor={badgeFor} />
+        <NavSection label="Content" items={contentItems} pathname={pathname} badgeFor={badgeFor} />
+        <NavSection label="Students" items={studentItems} pathname={pathname} badgeFor={badgeFor} />
+        {isAdmin && <NavSection label="Admin" items={adminItems} pathname={pathname} badgeFor={badgeFor} />}
+        {/* Last in the scrolling list, not in the footer: three footer rows ate
+            a phone sheet's height and pushed Admin below the fold (0208). */}
+        <NavSection items={closingItems} pathname={pathname} badgeFor={badgeFor} />
       </SidebarContent>
 
       <SidebarFooter className="px-3 py-4 border-t border-sidebar-border">

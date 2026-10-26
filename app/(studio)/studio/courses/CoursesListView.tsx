@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, ChevronRight, FileUp, Plus } from "lucide-react";
+import { BookOpen, ChevronRight, FileUp, History, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -96,13 +96,23 @@ function CoursesListViewInner({ courses, canImport = false }: { courses: Authore
         <div className="flex flex-wrap items-center gap-2">
           {/* CNT-019: shown to a holder of the import grant (can_import_course(), read by the page). */}
           {canImport && (
-            <Link
-              href="/studio/imports/new"
-              className="flex min-h-9 items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium hover:bg-accent transition-colors"
-            >
-              <FileUp className="size-4" />
-              Import from file
-            </Link>
+            <>
+              {/* The imports list has no nav entry of its own (docs/decisions/0208 Decision 3). */}
+              <Link
+                href="/studio/imports"
+                className="flex min-h-9 items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium hover:bg-accent transition-colors"
+              >
+                <History className="size-4" />
+                Imports
+              </Link>
+              <Link
+                href="/studio/imports/new"
+                className="flex min-h-9 items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium hover:bg-accent transition-colors"
+              >
+                <FileUp className="size-4" />
+                Import from file
+              </Link>
+            </>
           )}
           <button
             onClick={() => setCreating(true)}

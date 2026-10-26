@@ -1,15 +1,14 @@
 import { notFound } from "next/navigation";
 import { getCourseAccess } from "@/lib/courseAccess";
 import { getAuthorSeats } from "@/lib/authorSeatsServer";
-import { getCourseListing } from "@/lib/listedCoursesServer";
 import { SeatsManager } from "./SeatsManager";
-import { CourseListingPanel } from "./CourseListingPanel";
 
 // /studio/authors — author seats (TCH-007, docs/decisions/0141 Decision 18,
 // 0154). Admin only: anyone else, a teacher included, gets Studio's own 404,
 // the same as every other page that is not theirs. The page gate is
 // getCourseAccess(); the data boundary is author_seats_list() (082), which
-// raises for a non-admin caller.
+// raises for a non-admin caller. The catalogue list that used to sit below the
+// seats is /studio/catalogue (docs/decisions/0208).
 
 export const metadata = { title: "Authors" };
 
@@ -17,7 +16,7 @@ export default async function AuthorsPage() {
   const access = await getCourseAccess();
   if (!access.isAdmin) notFound();
 
-  const [seats, courses] = await Promise.all([getAuthorSeats(), getCourseListing()]);
+  const seats = await getAuthorSeats();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -29,7 +28,6 @@ export default async function AuthorsPage() {
         </p>
       </div>
       <SeatsManager seats={seats} />
-      <CourseListingPanel courses={courses} />
     </div>
   );
 }
