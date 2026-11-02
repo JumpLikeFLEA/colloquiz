@@ -1,8 +1,10 @@
 # 0213 — TCH-018: homework results by exercise
 
-Status: built; migration 106 applied to the local stack only (twice, to show
-it re-applies), verify `supabase/verify/106_homework_results.sql` prints
-`TCH-018 PASS`. Not applied to hosted. Decided unattended under `--no-approval`.
+Status: built; migration 106 applied to the local stack (twice, to show it
+re-applies) and, at the owner's request through the hosted-apply gate, to hosted.
+`supabase/verify/106_homework_results.sql` prints `TCH-018 PASS` on both (hosted: the
+CLI prints no NOTICEs, so a scratch copy surfaced the PASS as an exception; nothing
+left behind). Decided unattended under `--no-approval`.
 
 ## Context
 

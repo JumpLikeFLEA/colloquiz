@@ -2958,7 +2958,7 @@ Appended to in the same commit as the change it records. Referenced from
   banner with the section, dark mode, a phone. Do not hide the section from a lapsed seat, and do not list
   an undated unfinished assignment.
 - Homework results by exercise (2026-11-02, TCH-018, docs/decisions/0213, migration 106 applied to the
-  local stack only, not to the hosted project). Studio only. Each homework card with recipients gains an
+  local stack and, at the owner's request through the hosted-apply gate, to hosted). Studio only. Each homework card with recipients gains an
   outlined "Results by exercise" link (the Edit button's classes) beside Edit and Delete, to
   `/studio/homework/[id]/results`: a "← Homework" back link, the title, the due pill and a muted line, then a
   `rounded-2xl border bg-card` frame holding a real `<table>` in its own `overflow-x-auto` scroller, the student
