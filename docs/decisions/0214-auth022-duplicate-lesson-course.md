@@ -65,6 +65,7 @@ when the original is deleted.
   and cover returned 200 with the same bytes; a lesson copy got its own object and
   survived removal of its source's object; a non-editor was refused with 403 before
   anything was copied.
+- Hosted (gate, 2026-11-02): probe before showed the 4 new functions absent and every prerequisite present; applied with `db query --linked -f`, recorded with `migration repair --status applied 107` (`migration list` then shows 107/107); grants after: anon none, authenticated execute on the two public functions only. The verify script ran on hosted with no error and left 0 rows (0 `v107%` courses, 0 `@verify.test` users). The hosted run prints no notices, so a copy with one wrong expectation was run too and failed at that assertion (`AUTH-022 FAIL ... got 6, want 99`), proving the clean run executed its assertions.
 - 360px and 1280px, see `docs/ui-decisions.md`.
 
 ## What would make us revisit it

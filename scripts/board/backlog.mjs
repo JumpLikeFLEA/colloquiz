@@ -4982,6 +4982,27 @@ export const CARDS = [
     ],
     notes: 'Proposed in #268 (PLAY-019). Worth doing only if the partner republishes lessons learners are part-way through.',
   },
+  // Proposed in AUTH-022's closing comment (#272), filed by the owner 2026-11-02.
+  {
+    key: 'SHELL-038',
+    title: 'Course editor: a long unbroken title must not widen Studio at 360px',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 3295,
+    dependsOn: [],
+    goal:
+      'AUTH-022 measured the course editor at 360px (docs/ui-decisions.md, "Studio: Duplicate a lesson or a course"): with a ' +
+      '64-character unbroken course title the page\'s own scroller (main) reached 1028/360, because the h1 and the slug line ' +
+      'have no break rule and the Publish button is pushed out with them. It was the same with the file stashed, so it is ' +
+      'not from AUTH-022.',
+    acceptance: [
+      'The course editor\'s h1 and slug line break inside a long unbroken word, and the Publish / Unpublish button stays inside the page (class change only, existing tokens).',
+      'Measured at 360px on a course with a 64-character unbroken title, with and without the Stats and Duplicate buttons wrapping: scrollWidth/innerWidth and main scrollWidth/clientWidth printed, main not wider than its box from the title and slug (the 389/360 from long lesson-row titles measured in AUTH-022 is either fixed here or named with its source).',
+      'A docs/ui-decisions.md entry.',
+    ],
+    notes: 'Proposed in #272 (AUTH-022).',
+  },
 ];
 
 export function rankOf(key) {

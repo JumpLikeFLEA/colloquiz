@@ -2972,7 +2972,7 @@ Appended to in the same commit as the change it records. Referenced from
   answer open. Not measured: dark mode, a phone, a lapsed seat's banner. Do not show a student who is not
   a current recipient, and do not decide "best" in the client: `homework_results()` returns it.
 - Studio: Duplicate a lesson or a course (2026-11-02, AUTH-022, docs/decisions/0214, migration 107
-  applied to the local stack only, not to the hosted project). Studio only; no learner page changes.
+  applied to the local stack and, through the hosted-apply gate, to hosted). Studio only; no learner page changes.
   The lesson list gains a copy icon button (`Copy`, the row's existing icon-button classes) before
   Archive, on non-archived rows; the course editor gains an outlined "Duplicate" button beside "Stats"
   (the Stats link's classes). Both open the editor's AlertDialog ("Duplicate <title>?", what is copied
