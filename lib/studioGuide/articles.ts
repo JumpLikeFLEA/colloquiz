@@ -87,9 +87,11 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "Exercises are under the **Exercise** heading of that menu: multiple choice, true / false, put in order, match pairs, fill the gaps and more. A new exercise starts empty, and every message tells you what is missing.",
       "For a long lesson, group the blocks into chapters with **Add chapter**.",
       "Press **Save**. A saved lesson is a draft until you publish it (see **Publish**).",
+      "To make a variant for another level or group, press the copy icon on a lesson row, or **Duplicate** at the top of the course, and confirm. The copy opens at once.",
     ],
     tips: [
       "Write an explanation for each wrong answer. Learners see it when they check their answer.",
+      "A copy is always an unpublished draft with its own images. A copied course is not listed and you are its only editor. Nothing about learners is copied: answers, access, runs, invites, homework and recordings stay with the original.",
       "A lesson is about 10 to 15 minutes. A course is 3 to 8 lessons.",
     ],
     goTo: { label: "Open your courses", path: "/studio/courses" },

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Archive, ArchiveRestore, ChartColumn, Blocks, Eye, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, Archive, ArchiveRestore, ChartColumn, Blocks, Copy, Eye, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +52,7 @@ import type { AuthoredCourseDetail, AuthoredLesson } from "@/lib/courseAuthoring
 import { CoverImagePicker, type UploadCoverImage } from "./CoverImagePicker";
 import { CourseFormatSection, type CourseRunSummary } from "./CourseFormatSection";
 import { DeleteCourseSection } from "./DeleteCourseSection";
+import { DuplicateDialog, type DuplicateTarget } from "./DuplicateDialog";
 import { LessonWeekSelect } from "./LessonWeekSelect";
 import { postJson } from "./postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
@@ -70,6 +71,7 @@ function CourseDetailViewInner({
   const router = useRouter();
   const { course, lessons, editors } = detail;
   const [busy, setBusy] = useState(false);
+  const [duplicating, setDuplicating] = useState<DuplicateTarget | null>(null);
 
   // Course metadata form
   const [title, setTitle] = useState(course.title);
@@ -149,6 +151,7 @@ function CourseDetailViewInner({
 
   return (
     <div className="space-y-10">
+      <DuplicateDialog target={duplicating} onClose={() => setDuplicating(null)} />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{course.title}</h1>
@@ -161,6 +164,14 @@ function CourseDetailViewInner({
             <ChartColumn className="size-3.5" />
             Stats
           </Link>
+          {/* AUTH-022 (0214): a draft copy of the course, for another level or group. */}
+          <button
+            onClick={() => setDuplicating({ kind: "course", courseId: course.id, title: course.title })}
+            className="cursor-pointer mt-3 ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+          >
+            <Copy className="size-3.5" />
+            Duplicate
+          </button>
         </div>
         <button
           onClick={toggleStatus}
@@ -306,6 +317,7 @@ function LessonsSection({
   // Only archiving (not restoring) is confirmed — restoring is purely
   // additive, undoing whatever archiving hid (docs/decisions/0025 Decision 4).
   const [confirmArchive, setConfirmArchive] = useState<AuthoredLesson | null>(null);
+  const [duplicatingLesson, setDuplicatingLesson] = useState<DuplicateTarget | null>(null);
 
   async function createLesson() {
     if (!newTitle.trim()) return;
@@ -535,6 +547,17 @@ function LessonsSection({
                 >
                   <Pencil size={14} />
                 </button>
+                {!lesson.archivedAt && (
+                  <button
+                    onClick={() => setDuplicatingLesson({ kind: "lesson", courseId, lessonId: lesson.id, title: lesson.title })}
+                    disabled={pendingId !== null}
+                    aria-label={`Duplicate ${lesson.title}`}
+                    title="Duplicate"
+                    className="cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
                 <button
                   onClick={() => (lesson.archivedAt ? toggleArchived(lesson) : setConfirmArchive(lesson))}
                   disabled={pendingId !== null}
@@ -608,6 +631,8 @@ function LessonsSection({
           }}
         />
       )}
+
+      <DuplicateDialog target={duplicatingLesson} onClose={() => setDuplicatingLesson(null)} />
 
       <AlertDialog open={confirmArchive !== null} onOpenChange={(open) => { if (!open) setConfirmArchive(null); }}>
         <AlertDialogContent>

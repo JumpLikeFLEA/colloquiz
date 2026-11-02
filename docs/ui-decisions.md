@@ -2971,3 +2971,17 @@ Appended to in the same commit as the change it records. Referenced from
   `scrollWidth/innerWidth` 360/360 on `/studio/homework`, the results grid and the results page with an
   answer open. Not measured: dark mode, a phone, a lapsed seat's banner. Do not show a student who is not
   a current recipient, and do not decide "best" in the client: `homework_results()` returns it.
+- Studio: Duplicate a lesson or a course (2026-11-02, AUTH-022, docs/decisions/0214, migration 107
+  applied to the local stack only, not to the hosted project). Studio only; no learner page changes.
+  The lesson list gains a copy icon button (`Copy`, the row's existing icon-button classes) before
+  Archive, on non-archived rows; the course editor gains an outlined "Duplicate" button beside "Stats"
+  (the Stats link's classes). Both open the editor's AlertDialog ("Duplicate <title>?", what is copied
+  and that no learner data is) with Cancel and "Duplicate" ("Duplicating…" while busy), and land on the
+  copy with a toast. Inside `WriteArea`, so a frozen seat sees them disabled. Existing classes and
+  tokens; no new colours. Measured at 360px (local stack, Edge, an admin, a course with two lessons with
+  50-character unbroken titles): `scrollWidth/innerWidth` 360/360 on the editor, with the course confirm
+  open (dialog x 20, width 320), with the lesson confirm open, on the landed copy and on the copied
+  course; 1280/1280 on the same. The page's own `main` scrolls 389/360 on this fixture with or without
+  this change (measured with the file stashed), from the long seeded titles; with a 64-character unbroken
+  course title the h1 pushes it to 1028 (also pre-existing: the h1 has no break rule). Not measured: dark
+  mode, a lapsed seat's disabled state in a browser, a phone. Do not offer Duplicate on an archived lesson.

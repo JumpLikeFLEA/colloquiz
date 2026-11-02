@@ -16,6 +16,9 @@ export const COURSE_AUTHORING_ERRORS: Record<string, { status: number; message: 
   seat_lapsed: { status: 403, message: SEAT_LAPSED_MESSAGE },
   course_not_found: { status: 404, message: "That course no longer exists." },
   lesson_not_found: { status: 404, message: "That lesson no longer exists." },
+  // duplicate_lesson / duplicate_course (107, AUTH-022).
+  lesson_archived: { status: 409, message: "An archived lesson cannot be duplicated." },
+  id_taken: { status: 409, message: "Could not create the copy. Please try again." },
   invalid_title: { status: 400, message: "Please enter a title." },
   invalid_slug: { status: 400, message: "Slug must be lowercase letters, numbers and hyphens only." },
   invalid_level: { status: 400, message: "Please choose a valid level." },
