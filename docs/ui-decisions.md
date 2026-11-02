@@ -2917,3 +2917,16 @@ Appended to in the same commit as the change it records. Referenced from
   the card. `npm run budget`: free lesson 256.7 / 257.0 KB of 260, course page 175.4 / 176.0 of 182,
   `/completed` 176.0 of 183. Not measured: a phone, an in-app browser, dark mode. Do not put a score on
   the share card or its URL, and do not import `CourseAwareCompletion` statically into the player.
+- Half-done lesson resumes (2026-11-02, PLAY-019, docs/decisions/0210). The lesson's progress strip
+  and completion card count exercises answered on an earlier visit (same lesson version; the server's
+  `lesson_attempts` when signed in, the local attempt store for everyone), so a lesson left at 3 of 6
+  reopens at "3/6" and "3 exercises left", like the course page. Such an exercise gets a muted
+  `text-xs text-muted-foreground` "Answered before" beside its "Exercise N of M" pill, on the pill's
+  line (the pill and the mark are now a `flex items-center gap-2` row with the pill's old `mb-3`),
+  until it is answered again in this visit; its inputs stay empty (0088 option B still declined). The
+  completed card's score is the best per exercise across both, never below the learner's best; when
+  that best is the higher figure the "earned of possible" line is left out. Existing tokens; no new
+  colours. Measured at 360px (local stack, `applied-practice` with 3 of 6 answered):
+  `scrollWidth/innerWidth` 360/360 anonymous and signed in, 1280/1280 both. `npm run budget`: free
+  lesson 257.0 / 259.3 KB of 260. Not measured: a phone, dark mode. Do not restore answers into the
+  inputs without redoing 0088, and do not count another version's attempts here (0210 Decision 3).

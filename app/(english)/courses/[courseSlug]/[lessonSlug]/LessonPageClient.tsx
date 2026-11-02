@@ -5,6 +5,7 @@ import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
+import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 import { LessonProgressStrip } from "./LessonProgressStrip";
 
 /**
@@ -47,6 +48,7 @@ export function LessonPageClient({
   isSignedIn,
   lessonPath,
   previousBestPercent,
+  earlierAttempts,
   voiceTasks,
   lessonTitle,
 }: {
@@ -65,6 +67,8 @@ export function LessonPageClient({
   lessonPath: string;
   /** docs/decisions/0088 — the server's best score for this learner, or null. */
   previousBestPercent: number | null;
+  /** PLAY-019 (docs/decisions/0210) — this version's earlier attempts (signed in). */
+  earlierAttempts?: EarlierAttempt[];
   /** VOICE-005 — set when the lesson has a voice task (docs/decisions/0111). */
   voiceTasks?: VoiceTasksContext;
 }) {
@@ -83,6 +87,7 @@ export function LessonPageClient({
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}
         previousBestPercent={previousBestPercent}
+        earlierAttempts={earlierAttempts}
         voiceTasks={voiceTasks}
         renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
       />

@@ -10,6 +10,7 @@ import type { SessionProgress } from "@/lib/lessonPlayer/session";
 import { pluralize } from "@/lib/pluralCategory";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import type { LessonCourseContext } from "@/lib/courseCompletion";
+import { higherPercent } from "@/lib/lessonPlayer/previousBest";
 import { OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS } from "@/app/(english)/surfaceClasses";
 import { READING_WIDTH_CLASS } from "./columnLayout";
 
@@ -71,7 +72,8 @@ const pointsFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }
  * who has not finished this lesson is not sent back to an earlier one.
  */
 export function LessonCompletion({
-  score,
+  score: lessonScore,
+  bestPercent = null,
   progress,
   review,
   courseSlug,
@@ -81,6 +83,11 @@ export function LessonCompletion({
   course,
 }: {
   score: LessonScoreResult;
+  /** PLAY-019 (docs/decisions/0210) — the learner's best on this lesson as
+   * already known (0088's figure), so the card never shows less. When it is
+   * the higher one it may come from an older version, so the points line,
+   * which describes `score`, is left out. */
+  bestPercent?: number | null;
   progress: SessionProgress;
   /** PLAY-016 — wrong sub-parts with their exercise number and statement. */
   review: ReadonlyArray<ReviewEntry>;
@@ -99,6 +106,10 @@ export function LessonCompletion({
   course?: LessonCourseContext;
 }) {
   const c = alliengllCopy.completion;
+  const shownPercent = higherPercent(lessonScore.percent, bestPercent);
+  const showPoints = lessonScore.percent !== null && lessonScore.percent === shownPercent;
+  const score: LessonScoreResult =
+    lessonScore.status === "scored" ? { ...lessonScore, percent: shownPercent } : lessonScore;
   const complete = progress.total > 0 && progress.answered === progress.total;
   const remaining = progress.total - progress.answered;
 
@@ -120,9 +131,11 @@ export function LessonCompletion({
         </h2>
         <p className="pt-3 text-sm font-medium text-highlight-foreground/75">{c.scoreLabel}</p>
         <p className="font-display text-6xl font-extrabold tracking-tight tabular-nums">{score.percent}%</p>
-        <p className="text-sm tabular-nums text-highlight-foreground/75">
-          {pointsFormat.format(score.earned)} {c.scoreOf} {pointsFormat.format(score.possible)}
-        </p>
+        {showPoints && (
+          <p className="text-sm tabular-nums text-highlight-foreground/75">
+            {pointsFormat.format(score.earned)} {c.scoreOf} {pointsFormat.format(score.possible)}
+          </p>
+        )}
         {next === undefined ? null : next ? (
           <Link href={`/courses/${courseSlug}/${next.slug}`} className={`${OFFSET_CTA_CLASS} mt-5 max-w-full text-sm`}>
             <span className="min-w-0 text-balance">

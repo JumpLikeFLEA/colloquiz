@@ -88,6 +88,9 @@ export const alliengllCopy = {
     // already attempted, so a fresh page doesn't read as lost progress.
     previousBestLabel: "Your best",
     previousBestNote: "Answer again to try to beat it. Your best score is kept.",
+    // PLAY-019 (docs/decisions/0210): beside the pill of an exercise answered
+    // on an earlier visit. Its inputs stay empty; answering again is optional.
+    answeredBefore: "Answered before",
     // The voice task's strings live in lib/alliengll/voiceCopy.ts, loaded
     // only with a voice block (VOICE-005, docs/decisions/0111).
   },

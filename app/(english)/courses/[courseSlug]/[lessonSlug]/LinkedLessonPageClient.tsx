@@ -8,6 +8,7 @@ import type { AskTeacherConfig } from "@/lib/askTeacher/options";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
+import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 import { LessonProgressStrip } from "./LessonProgressStrip";
 
 /**
@@ -41,6 +42,7 @@ export function LinkedLessonPageClient({
   isSignedIn,
   lessonPath,
   previousBestPercent,
+  earlierAttempts,
   voiceTasks,
   lessonTitle,
   askTeacher,
@@ -58,6 +60,8 @@ export function LinkedLessonPageClient({
   isSignedIn: boolean;
   lessonPath: string;
   previousBestPercent: number | null;
+  /** PLAY-019 (docs/decisions/0210) — this version's earlier attempts (signed in). */
+  earlierAttempts?: EarlierAttempt[];
   voiceTasks?: VoiceTasksContext;
   askTeacher: AskTeacherConfig;
 }) {
@@ -107,6 +111,7 @@ export function LinkedLessonPageClient({
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}
         previousBestPercent={previousBestPercent}
+        earlierAttempts={earlierAttempts}
         voiceTasks={voice}
         renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
       />

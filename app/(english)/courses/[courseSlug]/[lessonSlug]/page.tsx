@@ -5,7 +5,8 @@ import { getPublicCourse } from "@/lib/coursePage";
 import { getNextCatalogueCourse } from "@/lib/publicCatalogue";
 import type { LessonCourseContext } from "@/lib/courseCompletion";
 import { getSignedInAccount } from "@/lib/signedInAccount";
-import { getCourseAttemptSummary } from "@/lib/courseAttempts";
+import { getCourseAttemptSummary, getLessonVersionAttempts } from "@/lib/courseAttempts";
+import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 import { bestScoreForLesson, lessonNav, type AttemptsByLessonSlug } from "@/lib/coursePageProgress";
 import { getVoiceTasksContext } from "@/lib/voiceTaskContext";
 import { getAskTeacherOptions } from "@/lib/askTeacher/askTeacherServer";
@@ -124,12 +125,21 @@ export default async function LessonPage({
   // docs/decisions/0088 — the same "Best" the course page shows for this
   // lesson. A failed read shows no note rather than failing the lesson.
   let summary: AttemptsByLessonSlug | null = null;
+  // PLAY-019 (docs/decisions/0210): this version's earlier attempts, so the
+  // strip and the completion card count exercises answered on an earlier
+  // visit. Read beside the summary; a failed read counts nothing as answered.
+  let earlierAttempts: EarlierAttempt[] = [];
   if (signedIn) {
+    const earlierPromise = getLessonVersionAttempts(lesson.lessonVersionId).catch((err) => {
+      console.error("failed to read the lesson's earlier attempts", err);
+      return [] as EarlierAttempt[];
+    });
     try {
       summary = await getCourseAttemptSummary(lesson.courseId);
     } catch (err) {
       console.error("failed to read the lesson's best score", err);
     }
+    earlierAttempts = await earlierPromise;
   }
   const previousBestPercent = summary ? bestScoreForLesson(lessonSlug, summary) : null;
 
@@ -176,6 +186,7 @@ export default async function LessonPage({
     isSignedIn: lesson.isSignedIn,
     lessonPath: `/courses/${courseSlug}/${lessonSlug}`,
     previousBestPercent,
+    earlierAttempts,
     voiceTasks,
     course: courseContext,
   };

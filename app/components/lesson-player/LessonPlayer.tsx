@@ -8,7 +8,8 @@ import { parseLessonDocument } from "@/lib/lessons";
 import type { ItemScoreResult } from "@/lib/items";
 import { alliengllCopy } from "@/lib/alliengll/copy";
 import { recordAnonOpen } from "@/lib/lessonPlayer/anonOpens";
-import { createAttemptStore, uploadPendingAttempts, type AttemptStore } from "@/lib/lessonPlayer/attemptStore";
+import { createAttemptStore, uploadPendingAttempts, type AttemptStore, type StoredAttempt } from "@/lib/lessonPlayer/attemptStore";
+import { earlierAnswers, withEarlierAnswers, type EarlierAnswers, type EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 import {
   scoreSession,
   sessionProgress,
@@ -146,6 +147,11 @@ export interface LessonPlayerProps {
    * the server can't see yet right after a sign-in from the lesson's end.
    * Defaults to null; the admin preview and the demo pass nothing. */
   previousBestPercent?: number | null;
+  /** PLAY-019 (docs/decisions/0210) — the signed-in learner's attempts on
+   * this version from the server. Joined with the local attempt store, they
+   * are the exercises answered on an earlier visit, which the strip and the
+   * completion card count. Defaults to none. */
+  earlierAttempts?: readonly EarlierAttempt[];
   /** VOICE-005 — what the voice blocks may do (docs/decisions/0111). The
    * lesson page passes it when the lesson has a voice task; the admin
    * preview, the demo and tests pass nothing and get the placeholder. */
@@ -153,22 +159,23 @@ export interface LessonPlayerProps {
 }
 
 const NEVER_CHANGES = () => () => {};
-let localBestCache: { attemptId: string; value: number | null } | null = null;
+const NO_ATTEMPTS: readonly StoredAttempt[] = [];
+let localAttemptsCache: { attemptId: string; value: readonly StoredAttempt[] } | null = null;
 
 /**
- * The best score in the local attempt store for this lesson version, read
- * ONCE per page load (keyed on `attemptId`, which page.tsx makes fresh per
- * request). Once is the point: the mount-time upload below empties the store
- * a moment later, and the note must not vanish when it does. The upload is
- * awaited behind a dynamic import and a network call, so this first read,
- * made while rendering, comes before it. A stable value per key is also
- * what `useSyncExternalStore`'s getSnapshot requires.
+ * The local attempt store as it was when this page loaded, read ONCE per page
+ * load (keyed on `attemptId`, which page.tsx makes fresh per request). Once is
+ * the point: the mount-time upload below empties the store a moment later,
+ * and neither the 0088 note nor the answered-before set (0210) may vanish
+ * when it does. The upload is awaited behind a dynamic import and a network
+ * call, so this first read, made while rendering, comes before it. A stable
+ * value per key is also what `useSyncExternalStore`'s getSnapshot requires.
  */
-function localBestAtLoad(attemptId: string, lessonVersionId: string): number | null {
-  if (localBestCache?.attemptId !== attemptId) {
-    localBestCache = { attemptId, value: bestPercentForVersion(createAttemptStore().getAll(), lessonVersionId) };
+function localAttemptsAtLoad(attemptId: string): readonly StoredAttempt[] {
+  if (localAttemptsCache?.attemptId !== attemptId) {
+    localAttemptsCache = { attemptId, value: createAttemptStore().getAll() };
   }
-  return localBestCache.value;
+  return localAttemptsCache.value;
 }
 
 /**
@@ -230,22 +237,30 @@ export function LessonPlayer({
   lessonPath = "",
   renderProgress,
   previousBestPercent = null,
+  earlierAttempts = NO_ATTEMPTS,
   voiceTasks,
   lessonTitle,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
 
-  // docs/decisions/0088. useSyncExternalStore, not a useState initializer:
-  // the server has no localStorage, so its snapshot is null and hydration
-  // matches the server HTML; the client then re-renders with the local
-  // value. Signed-in learners only (the reported case).
-  const showsPreviousBest = isSignedIn && lessonVersionId !== "";
-  const localBest = useSyncExternalStore(
+  // docs/decisions/0088 and 0210. useSyncExternalStore, not a useState
+  // initializer: the server has no localStorage, so its snapshot is empty and
+  // hydration matches the server HTML; the client then re-renders with the
+  // local attempts. The 0088 note is for signed-in learners only (the
+  // reported case); the answered-before set is for everyone.
+  const localAttempts = useSyncExternalStore(
     NEVER_CHANGES,
-    () => (showsPreviousBest ? localBestAtLoad(attemptId, lessonVersionId) : null),
-    () => null,
+    () => (lessonVersionId ? localAttemptsAtLoad(attemptId) : NO_ATTEMPTS),
+    () => NO_ATTEMPTS,
   );
-  const previousBest = showsPreviousBest ? higherPercent(previousBestPercent, localBest) : null;
+  const showsPreviousBest = isSignedIn && lessonVersionId !== "";
+  const previousBest = showsPreviousBest
+    ? higherPercent(previousBestPercent, bestPercentForVersion(localAttempts, lessonVersionId))
+    : null;
+  const earlier = useMemo(
+    () => (parsed.ok ? earlierAnswers(parsed.document, lessonVersionId, [...earlierAttempts, ...localAttempts]) : {}),
+    [parsed, lessonVersionId, earlierAttempts, localAttempts],
+  );
   const [results, setResults] = useState<LessonSessionResults>({});
   const [attemptStore] = useState<AttemptStore>(() => createAttemptStore());
 
@@ -302,6 +317,7 @@ export function LessonPlayer({
     <LessonPlayerBody
       document={dropTitleHeading(parsed.document, lessonTitle)}
       results={results}
+      earlier={earlier}
       attemptId={attemptId}
       onScore={handleScore}
       practiceRenderer={practiceRenderer}
@@ -348,6 +364,7 @@ async function recordSignedInOpen(lessonVersionId: string): Promise<void> {
 function LessonPlayerBody({
   document,
   results,
+  earlier,
   attemptId,
   onScore,
   practiceRenderer,
@@ -362,6 +379,7 @@ function LessonPlayerBody({
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
+  earlier: EarlierAnswers;
   attemptId: string;
   onScore: (itemId: string, result: ItemScoreResult, response: unknown) => void;
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
@@ -377,13 +395,23 @@ function LessonPlayerBody({
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
   // the whole document rather than incremental updates.
+  //
+  // PLAY-019 (docs/decisions/0210): progress and the card's score also count
+  // the exercises answered on an earlier visit (`withEarlierAnswers`), so the
+  // strip agrees with the course page. The funnel event below and the answer
+  // review stay on this visit's own results.
   const lessonScore = scoreSession(document, results);
-  const { answered, total } = sessionProgress(document, results);
+  const counted = withEarlierAnswers(results, earlier);
+  const lessonBest = scoreSession(document, counted);
+  const { answered, total } = sessionProgress(document, counted);
+  // Never below the learner's best (docs/handoff.md): the server's figure
+  // may come from an older version the player no longer counts.
+  const shownPercent = higherPercent(lessonBest.percent, previousBest);
   const progress: LessonProgress = {
     answered,
     total,
     complete: total > 0 && answered === total,
-    percent: lessonScore.status === "scored" ? lessonScore.percent : null,
+    percent: lessonBest.status === "scored" ? shownPercent : null,
   };
 
   // OPS-008 — lesson_complete fires exactly once, on the transition into
@@ -441,6 +469,7 @@ function LessonPlayerBody({
                         number={practiceNumber.get(block.id) ?? 0}
                         total={practiceIds.length}
                         answered={results[block.id] !== undefined}
+                        answeredBefore={earlier[block.id] !== undefined}
                       />
                       {practiceRenderer ? (
                         practiceRenderer({ block, attemptId, onScore: (result, response) => onScore(block.id, result, response) })
@@ -470,7 +499,8 @@ function LessonPlayerBody({
           })}
         </div>
         <LessonCompletion
-          score={lessonScore}
+          score={lessonBest}
+          bestPercent={previousBest}
           progress={{ answered, total }}
           review={reviewEntriesForSession(document, results)}
           courseSlug={courseSlug}
@@ -489,15 +519,35 @@ function LessonPlayerBody({
  * the success tokens with a ✓ once the exercise has a result, so a learner
  * scrolling back up can see which ones are done. It marks "answered",
  * never "correct" (docs/handoff.md: nothing demotivates the learner). */
-function ExercisePill({ number, total, answered }: { number: number; total: number; answered: boolean }) {
+//
+// PLAY-019 (docs/decisions/0210): an exercise answered on an earlier visit,
+// and not yet in this one, gets a muted "Answered before" beside the pill, on
+// the pill's own line, so it adds no height when it appears after hydration.
+// Its inputs stay empty: answers are not restored (0088 option B).
+function ExercisePill({
+  number,
+  total,
+  answered,
+  answeredBefore,
+}: {
+  number: number;
+  total: number;
+  answered: boolean;
+  answeredBefore: boolean;
+}) {
   return (
-    <p
-      className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-        answered ? "bg-success-subtle text-success" : "bg-brand-subtle text-brand-text"
-      }`}
-    >
-      {answered && <Check className="size-3.5" aria-hidden="true" />}
-      {alliengllCopy.player.exerciseLabel} {number} {alliengllCopy.player.exerciseOf} {total}
-    </p>
+    <div className="mb-3 flex items-center gap-2">
+      <p
+        className={`inline-flex flex-none items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+          answered ? "bg-success-subtle text-success" : "bg-brand-subtle text-brand-text"
+        }`}
+      >
+        {answered && <Check className="size-3.5" aria-hidden="true" />}
+        {alliengllCopy.player.exerciseLabel} {number} {alliengllCopy.player.exerciseOf} {total}
+      </p>
+      {answeredBefore && !answered && (
+        <span className="min-w-0 truncate text-xs text-muted-foreground">{alliengllCopy.player.answeredBefore}</span>
+      )}
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { attemptsFromSummaryRows, type AttemptsByLessonSlug } from "@/lib/coursePageProgress";
+import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 
 /**
  * ANON-005 — the course page's real replacement for the `{}` placeholder
@@ -49,4 +50,32 @@ export async function getLastOpenedLessonSlug(supabase: SupabaseClient, courseId
   const lesson = (data?.[0] as { lessons?: { slug: string } | { slug: string }[] } | undefined)?.lessons;
   const row = Array.isArray(lesson) ? lesson[0] : lesson;
   return row?.slug ?? null;
+}
+
+/**
+ * PLAY-019 (docs/decisions/0210) — the signed-in learner's own attempts on one
+ * lesson version, for the player's "answered before" set
+ * (`lib/lessonPlayer/answeredBefore.ts`). `lesson_attempts` has an owner-read
+ * policy (048), so the caller's JWT scopes the rows; the `user_id` filter is
+ * belt-and-braces for the index. Empty when signed out. Throws on a failed
+ * read; the page treats that as "nothing answered before".
+ */
+export async function getLessonVersionAttempts(lessonVersionId: string): Promise<EarlierAttempt[]> {
+  const supabase = await createClient();
+  const user = await authUserFrom(supabase);
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("lesson_attempts")
+    .select("block_id, earned, possible")
+    .eq("user_id", user.id)
+    .eq("lesson_version_id", lessonVersionId);
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((r) => ({
+    lessonVersionId,
+    blockId: r.block_id as string,
+    earned: Number(r.earned),
+    possible: Number(r.possible),
+  }));
 }
