@@ -4902,6 +4902,45 @@ export const CARDS = [
     ],
     notes: 'From the 2026-11-02 project review. Counts from rg on 2026-11-02; re-derive them when the card starts.',
   },
+  // Proposed in PROG-008's closing comment (#267), filed by the owner 2026-11-02.
+  {
+    key: 'PROG-010',
+    title: 'Course complete in an anonymous visitor\'s course hero',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3170,
+    dependsOn: ['PROG-008'],
+    goal:
+      'PROG-008 shows "Course complete" in the course page hero to a signed-in learner only (docs/decisions/0209 Decision 4). ' +
+      'An anonymous visitor\'s progress is known only after hydration, from the local stores, and 0179 forbids local progress ' +
+      'from moving the layout, so a visitor who finished every lesson sees the ordinary hero. Give them the finished state ' +
+      'without a layout shift.',
+    acceptance: [
+      'A reserved-space design (0179) shows the visitor\'s finished state in the hero after hydration, decided by isCourseComplete (lib/courseCompletion.ts) over anonAttemptSummary; nothing re-derives completion.',
+      'Layout shift measured 0 between a fresh and a finished anonymous load (the 0179 method), and the hero\'s height unchanged.',
+      'Measured at 360px (scrollWidth/innerWidth printed) fresh and finished, EN and RU; npm run budget on the course page before and after, within its limit; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'Proposed in #267 (PROG-008).',
+  },
+  {
+    key: 'OPS-037',
+    title: 'Local fixture covers that render in share cards',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3280,
+    dependsOn: [],
+    goal:
+      'On the local stack every course\'s og:image fails: the fixture cover (lesson-images/fixture-cover.png) is not an ' +
+      'image Satori can decode ("Unsupported image type: unknown" in the next start log, PROG-008 run, #267), so the course, ' +
+      'lesson, invite and course-complete share cards cannot be checked locally without editing a cover by hand.',
+    acceptance: [
+      'scripts/seed-local-fixtures.ts uploads a real PNG cover; the reason the current object fails is recorded (re-derived, not assumed).',
+      '/courses/future-imperfect/opengraph-image and /completed/future-imperfect/opengraph-image answer 200 image/png on the local stack (printed), with the cover drawn.',
+    ],
+    notes: 'Proposed in #267 (PROG-008).',
+  },
 ];
 
 export function rankOf(key) {
