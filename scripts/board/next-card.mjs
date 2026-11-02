@@ -160,7 +160,7 @@ export function decide(records, milestones = MILESTONES) {
 function printResult(result) {
   switch (result.kind) {
     case 'milestone-complete':
-      console.log('Return to chat: the active milestone is complete — every card in every milestone (M0-M4) is in Verify, Done or Hold.');
+      console.log('Return to chat: the active milestone is complete — every card in every milestone (M0-M5) is in Verify, Done or Hold.');
       return;
     case 'no-ready':
       console.log(`Return to chat: no pickable cards — the active milestone (${result.active}) has no card in Ready (everything is In progress, Verify, Done, Hold, or has no issue yet).`);

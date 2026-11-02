@@ -29,6 +29,11 @@ export const MILESTONES = [
       'with her written feedback, and the before/after screen.',
   },
   { key: 'M4', title: 'Progression & polish', goal: 'English progression, explanations UI, analytics, SEO.' },
+  {
+    key: 'M5',
+    title: 'Technical debt & test runs',
+    goal: 'Code that is slow, duplicated or unsafe gets fixed without changing what learners or teachers see.',
+  },
 ];
 
 export const EPICS = [
@@ -2731,7 +2736,7 @@ export const CARDS = [
   {
     key: 'OPS-023',
     title: 'Account export size with voice recordings on Vercel',
-    milestone: 'M3',
+    milestone: 'M5',
     epic: 'OPS',
     type: 'task',
     rank: 2493,
@@ -2909,7 +2914,7 @@ export const CARDS = [
   {
     key: 'ANON-018',
     title: 'Telegram sign-in inside in-app browsers, where phones prove it',
-    milestone: 'M3',
+    milestone: 'M5',
     epic: 'ANON',
     type: 'task',
     rank: 2515.5,
@@ -3276,7 +3281,7 @@ export const CARDS = [
   {
     key: 'OPS-020',
     title: 'Cohort dry run on production (M3 exit)',
-    milestone: 'M3',
+    milestone: 'M5',
     epic: 'OPS',
     type: 'task',
     rank: 2590,
@@ -4611,6 +4616,291 @@ export const CARDS = [
       '/studio/costs gains a "Sponsor report" card with a period and Download. The generated PDF is opened and its totals match the page.',
     ],
     notes: 'Docs: docs/decisions/0207. New npm dependency approved by the owner in the planning session.',
+  },
+  // Project review, 2026-11-02 (owner): learner enhancements first, then teacher ones.
+  {
+    key: 'PROG-008',
+    title: 'Course complete: the finishing moment and what comes next',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3110,
+    dependsOn: [],
+    goal:
+      'Finishing a course\'s last lesson shows only "Back to course" (app/components/lesson-player/LessonCompletion.tsx:111-116), ' +
+      'and nothing in app/ or lib/ marks a course complete. docs/handoff.md: "Completion is the product", and revenue tracks ' +
+      'new courses shipped, so a learner who has just finished one is the best prospect for the next. Give the finish a ' +
+      'moment of its own and a way forward.',
+    acceptance: [
+      'A pure function in lib/ (vitest) decides "course complete" from what the page already has: the signed-in learner\'s server summary or the anonymous visitor\'s local stores, plus this session\'s answers. Covered: the last lesson done with an earlier one skipped (not complete), every open lesson done, theory-only lessons (complete when opened, 0143), a cohort learner\'s scheduled lessons (excluded until open). Per-lesson completion stays lesson_completion()\'s (0143); nothing here redefines it.',
+      'When a lesson completes the course, the completion card reads "Course complete" with the two progress numbers (lessons N of N, average over completed lessons), never blended into one. The course page shows the same state in its hero.',
+      'The completion card\'s "Next lesson" targets the first open lesson that is not complete (pickContinueLesson, lib/continueLesson.ts), not the next ordinal from getLessonNav: a learner who skipped lesson 2 and finished lesson 8 is sent to lesson 2, not told "Back to course".',
+      'The course-complete state offers the next published, listed course (lib/publicCatalogue.ts; nothing when there is none) and a share link whose og:image is a course-complete card built on app/(english)/courses/ogImageCard.tsx. Whether the score appears on the share card is recorded in docs/decisions (default: no score).',
+      'Every new state measured at 360px (npm run viewport360, scrollWidth/innerWidth printed); npm run budget before and after on the free lesson and the course page, each within its limit; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'From the 2026-11-02 project review. Lesson chrome is English (0080 Decision 5); the course page follows the EN/RU choice.',
+  },
+  {
+    key: 'PLAY-019',
+    title: 'Resume a half-done lesson',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 3120,
+    dependsOn: [],
+    goal:
+      'docs/decisions/0143 counts an exercise as answered once it was answered in any attempt, but the player counts only ' +
+      'the current visit (sessionProgress, lib/lessonPlayer/session.ts). A learner who answered 5 of 10 exercises, left and ' +
+      'came back reads "10 exercises left" in the strip and the completion card, while the course page says "5 of 10 ' +
+      'exercises". Make the player agree with the course page.',
+    acceptance: [
+      'A pure function in lib/lessonPlayer/ (vitest) returns the exercises the learner has already answered in this lesson: signed in, from the server by the same rule as lesson_completion() (0143); anonymous, from the local attempt store (attemptStore.ts). Covered: no earlier attempt, some answered, all answered, a republished lesson whose exercise changed (0143 Decision 3).',
+      'The progress strip and the completion card count that set: the strip opens at 5/10, and the card turns to "Lesson complete" once the other 5 are answered in this visit.',
+      'An exercise answered before shows a muted "Answered before" mark. Its inputs stay empty and answering it again works as today: answers are not restored, so 0088\'s option B stays declined. A decision file revisits 0088 for the answered set and says which score the completion card shows; it is never lower than the learner\'s best ("Display the best score, always", docs/handoff.md).',
+      'Measured at 360px with a half-done lesson, signed in and anonymous (scrollWidth/innerWidth printed); npm run budget on the free lesson before and after, within its limit; a docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'From the 2026-11-02 project review. Assumption, not measured: in-app browsers (Instagram, Telegram) drop the page ' +
+      'when the learner switches apps, which would make a half-done lesson common.',
+  },
+  {
+    key: 'PROG-009',
+    title: '/my: an "Up next" card',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3130,
+    dependsOn: [],
+    goal:
+      '/my stacks up to eight sections in a fixed order (app/(english)/my/page.tsx:113-250), so an unread teacher reply or ' +
+      'homework due tomorrow can sit below the calendar. Lead the page with the few things the learner should do now.',
+    acceptance: [
+      'A pure ranking in lib/ (vitest) over data /my already reads: an unread teacher reply, then the undone homework with the soonest due date, then the Continue lesson (PROG-003), then a call in the next 7 days. At most 3 rows; nothing when there is nothing to do. Ties and homework with no due date covered.',
+      'The card sits at the top of /my in the paper look (existing surfaceClasses and tokens), EN/RU by the saved choice with no toggle. No new read: the page\'s Promise.all keeps its count.',
+      'Measured at 360px with no items, each kind alone, all kinds, and in RU (scrollWidth/innerWidth printed); npm run budget /my before and after, within its limit; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'TCH-017',
+    title: 'Studio inbox: homework due and done',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 3140,
+    dependsOn: [],
+    goal:
+      'The inbox (app/(studio)/studio/page.tsx:202-295) lists cohort recordings, questions, drafts and calls. A seat teacher ' +
+      'with self-paced courses and homework sees only questions there, though the page says "across every course you ' +
+      'edit". Assigning and then checking homework is the teacher\'s core loop (0141).',
+    acceptance: [
+      'The inbox gains a "Homework" section: assignments due in the next 7 days or past due with at least one recipient not done (course · lesson, "k of n not done", the due label, a link to the assignment on /studio/homework), and assignments everyone finished in the last 7 days. Built from teacher_homework_list and teacher_homework_progress (lib/homework/homeworkServer.ts); the grouping is a pure function in lib/studio/inbox.ts under vitest. If a needed field is missing from those RPCs, stop and ask before writing a migration.',
+      'The "Nothing needs your attention" state and GetStarted\'s inboxHasItems count the new section. A past due date is never a destructive colour (0152). A lapsed seat still sees the section: reading is not frozen (0155).',
+      'Measured at 360px with each row kind and with none (scrollWidth/innerWidth, document and main, printed); the "homework" Studio Guide article updated in the same commit if it describes the inbox; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'TCH-018',
+    title: 'Homework results by exercise',
+    milestone: 'M4',
+    epic: 'TCH',
+    type: 'task',
+    rank: 3150,
+    dependsOn: [],
+    goal:
+      'A homework card on /studio/homework shows each student\'s Done, lessons done and best score. Per-exercise answers ' +
+      'exist only on each learner\'s page (TCH-003), so "who missed exercise 4" takes one page visit per student. Show an ' +
+      'assignment\'s results by exercise.',
+    acceptance: [
+      'An assignment gains a "Results" view: one row per linked recipient, one column per exercise of the assigned lesson (per lesson for a whole-course assignment), each cell the earned/possible of that student\'s best attempt or "—". A cell opens the student\'s answer rendered as TCH-003 renders it.',
+      'Only students linked to the teacher, by the rule 078 (linked_student_answers) applies. If a new RPC is needed, it is a migration with a supabase/verify script: a positive control beside each denial (not linked, link ended, not the teacher\'s assignment), applied locally, and to hosted only through the hosted-apply gate.',
+      'Measured at 360px: the grid in its own horizontal scroller with the student column sticky (the review queue\'s status table precedent), scrollWidth/innerWidth printed; the "homework" Studio Guide article updated; a docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'From the 2026-11-02 project review. The exposure is what TCH-003 already shows a linked teacher; the course stats\' ' +
+      '5-learner threshold (0121) is for learners who are not linked.',
+  },
+  {
+    key: 'AUTH-022',
+    title: 'Duplicate a lesson or a course in Studio',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 3160,
+    dependsOn: [],
+    goal:
+      'Studio has no way to copy a lesson or a course (grep finds none outside the importer), so a seat teacher who wants a ' +
+      'variant for another level or group rebuilds it by hand.',
+    acceptance: [
+      'Migration NNN: duplicate_lesson(p_lesson) copies the lesson\'s current draft (its published content if it has no draft) into a new draft lesson in the same course; duplicate_course(p_course) copies the course and its lessons into an unpublished, unlisted draft course with the caller as editor. Both are SECURITY DEFINER, check can_edit_course, call _studio_can_write (0155), pick a free slug, and copy no attempts, opens, runs, invites, enrolments, grants, homework or voice submissions.',
+      'Lesson images: the course delete route purges the whole <course_id>/ prefix of the lesson-images bucket (app/api/admin/courses/[id]/route.ts), so a copy that points at the original\'s objects loses them when the original is deleted. The copy gets its own objects, or another fix recorded in docs/decisions, proven by deleting the original on the local stack and loading the copy.',
+      'supabase/verify script, full protocol: a positive control beside each denial (not an editor, lapsed seat); a copied course is neither listed nor published; nothing learner-side is copied. Applied locally and re-applied once; hosted only through the hosted-apply gate.',
+      '"Duplicate" on a lesson row of the course editor and on the course editor itself, inside WriteArea (disabled on a frozen seat), landing on the copy with a toast. The Studio Guide article for the flow updated in the same commit (lib/studioGuide/articles.test.ts passes). Measured at 360px with the confirm open; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  // M5, tech debt from the 2026-11-02 project review. Nothing here changes what a learner or teacher sees,
+  // except where a card says so and records it.
+  {
+    key: 'OPS-034',
+    title: 'Remove populate-tmp.mjs from the repo root',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3200,
+    dependsOn: [],
+    goal:
+      'populate-tmp.mjs is tracked and referenced nowhere. It reads SUPABASE_SERVICE_ROLE_KEY from .env.local, creates ' +
+      'users with the hardcoded password "Test123456!" on whatever project .env.local points at (which can be hosted), ' +
+      'never cleans up, and writes to the dormant tutor tables (tutor_invites, assignments). A stray run against hosted ' +
+      'leaves real accounts with a known password.',
+    acceptance: [
+      'The file is deleted; rg "populate-tmp" over the repo prints 0 hits.',
+      'With the owner\'s go-ahead, a read-only hosted count of auth users whose email is like lc-smoke-%@example.com is in the evidence comment. Removing any found is the owner\'s call, not this card\'s.',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'SHELL-036',
+    title: 'Studio: cache getCourseAccess() and run the layout\'s reads together',
+    milestone: 'M5',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 3210,
+    dependsOn: [],
+    goal:
+      'getCourseAccess() (lib/courseAccess.ts:37) is not wrapped in cache(), and the Studio layout and 18 other Studio ' +
+      'files call it, so a Studio page load runs the profile read, then the course_editors and has_author_seat reads, ' +
+      'twice. The layout then awaits the waiting rows, the teacher threads and the write state one after another ' +
+      '(app/(studio)/studio/layout.tsx:21-43), and the inbox awaits the write state, canImportCourse() and the checklist in ' +
+      'sequence (app/(studio)/studio/page.tsx:173-178).',
+    acceptance: [
+      'getCourseAccess is wrapped in React cache(), like getStudioWriteState and canImportCourse. The layout starts its reads after the access check in one Promise.all, each keeping its fail-soft behaviour (a failed badge read hides the badge, not the page). The inbox starts the write state and canImportCourse together.',
+      'The Supabase requests one Studio navigation makes (/studio and a course editor, as an admin and as a seat holder) are counted before and after, from the local stack\'s API logs or a request counter, and both counts are printed in the evidence. Any latency gain is a hypothesis until measured.',
+      'npm run check and npm test exit 0; /studio and the course editor render unchanged at 360px (scrollWidth/innerWidth printed).',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'SHELL-037',
+    title: 'English pages: start independent reads together, one fail-soft helper',
+    milestone: 'M5',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 3220,
+    dependsOn: [],
+    goal:
+      'The lesson page awaits the lesson, nav, account, all of the learner\'s homework, the attempt summary and the voice ' +
+      'context one after another (app/(english)/courses/[courseSlug]/[lessonSlug]/page.tsx:59-128). The course page awaits ' +
+      'attempts and cohort, then Telegram, then the account, then the last-opened lesson ([courseSlug]/page.tsx:92-115). ' +
+      '/my reads the account after its eight-way Promise.all (app/(english)/my/page.tsx:87) and carries five copy-pasted ' +
+      'try/catch "courtesy" wrappers (my/page.tsx:259-324). <AccountMenu email={signedIn.email} username=… studio=… ' +
+      'unread=…> is spelled out by hand at 11 call sites.',
+    acceptance: [
+      'On the lesson page, the course page and /my, every read that does not need another read\'s result starts in the same Promise.all. Behaviour is unchanged: an anonymous visitor pays for no read they skip today, and a failed courtesy read still leaves only its own section out.',
+      'One fail-soft helper in lib/ (vitest: resolves, logs and falls back on a throw) replaces /my\'s five wrappers. AccountMenu takes the account object getSignedInAccount returns, and every call site passes it.',
+      'Server render time measured before and after on a local production build (median of 10 loads each, printed) for the free lesson anonymous and signed in, the course page and /my. npm run budget unchanged on every route (printed before and after).',
+    ],
+    notes: 'From the 2026-11-02 project review. The reel-to-lesson path is a hard requirement (docs/handoff.md, "Performance boundary").',
+  },
+  {
+    key: 'OPS-035',
+    title: 'One UUID check and one Studio RPC relay',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3230,
+    dependsOn: [],
+    goal:
+      'The UUID pattern is written out in 19 files across app/ and lib/; one copy is case-sensitive ' +
+      '(lib/courseImport/formats.ts:50, no /i) where the others are not. isId is defined three times (app/api/studio/ ' +
+      'authors, course-grants, teacher-groups), and the RPC relay with its error-to-status map twice ' +
+      '(app/api/studio/teacher-groups, app/api/studio/homework).',
+    acceptance: [
+      'lib/ids.ts exports isUuid (vitest: lower and upper case, braces, empty string, non-string) and the pattern fragment the two composed regexes need (lib/voice/recording.ts, lib/voice/analysis/staging.ts). Every copy imports it; rg for the literal pattern finds only lib/ids.ts.',
+      'The case-sensitive copy\'s callers are read first, and whether accepting upper case changes behaviour there is written in the evidence.',
+      'One relay helper for the Studio JSON routes maps an RPC refusal to its status (not_found 404, forbidden or seat_lapsed 403, else 400; a transport error 500), under vitest. Both routes use it with their responses unchanged.',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'AUTH-023',
+    title: 'Studio button and pill classes in one module',
+    milestone: 'M5',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 3240,
+    dependsOn: [],
+    goal:
+      'PRIMARY_BUTTON, SECONDARY_BUTTON and ICON_BUTTON are copied into 11 Studio files plus ' +
+      'app/(studio)/studio/costs/costsClasses.ts, and the copies have drifted: the PRIMARY_BUTTON in ' +
+      'app/(studio)/studio/learners/StudentLinksPanel.tsx:31 has no disabled: styles. Hypothesis, unverified: under a ' +
+      'frozen seat (WriteArea\'s disabled fieldset) that button does not dim like the others.',
+    acceptance: [
+      'One Studio class module (the app/(english)/surfaceClasses.ts precedent; costsClasses.ts folded in) defines each shared class once; every Studio copy imports it, and rg shows one definition of each.',
+      'StudentLinksPanel\'s button checked in a browser under a lapsed seat before and after (computed opacity or a screenshot in the evidence). If it changes visually, a docs/ui-decisions.md line records it.',
+      'Otherwise no visual change: /studio/learners, /studio/homework and /studio/authors measured at 360px (scrollWidth/innerWidth printed).',
+    ],
+    notes: 'From the 2026-11-02 project review. The English /my/settings buttons are a different set and stay out of scope.',
+  },
+  {
+    key: 'PLAY-020',
+    title: 'Lesson page clients: one props type and one frame',
+    milestone: 'M5',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 3250,
+    dependsOn: [],
+    goal:
+      'LessonPageClient and LinkedLessonPageClient list the same 12 props by hand, and the second carries "Keep the rest of ' +
+      'this file in step with LessonPageClient". They have drifted once already: LinkedLessonPageClient had no grid-paper ' +
+      'until 2026-10-24 (docs/ui-decisions.md, "Voice task: the sent take stays while recording again"). They are siblings ' +
+      'on purpose (0153 "Budget"), so share the type and the frame, not the component.',
+    acceptance: [
+      'A shared props type and a shared frame (the grid-paper wrapper, the header and the progress strip) used by both clients; no prop is listed twice.',
+      'npm run budget before and after on the free lesson and on a linked student\'s lesson, unchanged (printed); the Ask-the-teacher chunk still loads only for a linked student.',
+      'Both lesson variants measured at 360px (scrollWidth/innerWidth printed); npm test passes.',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'AUTH-024',
+    title: 'Split CourseDetailView and PracticeItemForm, one module per file',
+    milestone: 'M5',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 3260,
+    dependsOn: [],
+    goal:
+      'app/(studio)/studio/courses/[id]/CourseDetailView.tsx is 880 lines with 27 useState and four components (the ' +
+      'editor, LessonsSection, EditLessonDialog, EditorsSection). .../lessons/[lessonId]/PracticeItemForm.tsx is 934 lines ' +
+      'holding five per-type forms, while lib/items is one module per type. CLAUDE.md asks for one module per file.',
+    acceptance: [
+      'Each section of CourseDetailView and each per-type form of PracticeItemForm moves to its own file as a pure move: no behaviour, class or copy change (the diff shows moves and imports only).',
+      'The editor test project passes unchanged; npm run check exits 0.',
+      'The course editor and one form per item type measured at 360px before and after, with identical scrollWidth/innerWidth (printed).',
+    ],
+    notes: 'From the 2026-11-02 project review.',
+  },
+  {
+    key: 'OPS-036',
+    title: 'Typed Supabase client (spike)',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3270,
+    dependsOn: [],
+    goal:
+      'The app has 181 .rpc("…") call sites over 105 migration files and no generated Database type (lib/supabase/*: ' +
+      'none). RPC names and p_* parameters are unchecked strings, so a renamed parameter fails only at runtime, and results ' +
+      'are cast by hand (as Record<string, unknown>[] in 14 places).',
+    acceptance: [
+      'Types generated from the local stack (npx supabase@2.120.0 gen types typescript --local) into lib/supabase/database.types.ts; the tsc error count with Database applied to the server, browser, anon and admin clients is printed.',
+      'A decision file records the choice from that count: adopt everywhere, adopt for RPCs only, or drop; and, if adopted, how drift is caught (a check that regenerated types match the committed file).',
+      'If adopted, npm run check and npm test exit 0 with the typed clients; if dropped, only the decision file is committed.',
+    ],
+    notes: 'From the 2026-11-02 project review. Counts from rg on 2026-11-02; re-derive them when the card starts.',
   },
 ];
 

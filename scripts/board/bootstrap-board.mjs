@@ -43,7 +43,7 @@ const READY = STATUS_COLUMNS[0]; // "Ready" — first column in workflow order
 const HELP = `Usage: node scripts/board/bootstrap-board.mjs [--dry-run|--diff]
 
 Creates/updates one GitHub issue per card in backlog.mjs's CARDS, ensures the
-"board" label, the epic:*/type:* labels and the M0-M4 milestones exist, and
+"board" label, the epic:*/type:* labels and the M0-M5 milestones exist, and
 adds every card issue to the Colloquiz project board in the Ready column.
 
 Idempotent: re-running updates existing issues (matched by the "<KEY> — "
@@ -164,7 +164,9 @@ function ensureLabels(dryRun, log) {
 }
 
 function ensureMilestones(dryRun, log) {
-  const existing = ghJson(['api', 'repos/:owner/:repo/milestones', '--paginate']);
+  // state=all: the endpoint lists open milestones only by default, so a closed
+  // M0-M3 read as missing and the create call failed on its taken title (2026-11-02).
+  const existing = ghJson(['api', 'repos/:owner/:repo/milestones?state=all', '--paginate']);
   const existingTitles = new Set(existing.map((m) => m.title));
   for (const m of MILESTONES) {
     const title = MILESTONE_TITLES[m.key];

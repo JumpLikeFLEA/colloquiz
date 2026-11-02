@@ -51,6 +51,7 @@ export const MILESTONE_NUMBERS = {
   M2: 3,
   M3: 4,
   M4: 5,
+  M5: 6,
 };
 
 // `gh issue create/edit --milestone` takes the milestone TITLE, not its
@@ -61,6 +62,9 @@ export const MILESTONE_TITLES = {
   M2: 'M2 — Public surface',
   M3: 'M3 — First paid cohort',
   M4: 'M4 — Progression & polish',
+  // The live title, spelling included: bootstrap matches milestones by title
+  // and would create a second M5 for any other string.
+  M5: 'M5 — Techical debt & test runs',
 };
 
 // `gh issue list` and `gh project item-list` return at most --limit rows and
