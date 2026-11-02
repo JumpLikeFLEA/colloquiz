@@ -1,3 +1,4 @@
+import type { HomeworkView } from "../homework/homework";
 import { reviewFiltersQuery, type FinalCommentRow, type ReviewRow } from "../reviews/queue";
 
 /**
@@ -131,4 +132,61 @@ export function ageLabel(fromIso: string, now: Date): string {
   if (hours < 24) return hours === 1 ? "1 hour" : `${hours} hours`;
   const days = Math.floor(hours / 24);
   return days === 1 ? "1 day" : `${days} days`;
+}
+
+export type HomeworkAttention = {
+  id: string;
+  /** Course · lesson, or "Course · whole course". */
+  title: string;
+  dueOn: string | null;
+  /** Recipients not done. */
+  notDone: number;
+  recipients: number;
+  /** The latest recipient activity; when everyone is done, roughly when they finished. */
+  lastActivityAt: string | null;
+  href: string;
+};
+
+/**
+ * TCH-017: homework worth a look. `due`: not everyone is done and the due date is
+ * past or within `days`; past first, then soonest. `finished`: everyone is done
+ * and the latest recipient activity is within the last `days`, newest first.
+ * Who the recipients are and what "done" means come from SQL (080); the finish
+ * time is the latest `last_activity_at`, not a stored event. An assignment with
+ * no due date shows only once finished.
+ */
+export function homeworkAttention(
+  views: readonly HomeworkView[],
+  now: Date,
+  days = CALL_WINDOW_DAYS,
+): { due: HomeworkAttention[]; finished: HomeworkAttention[] } {
+  const horizon = new Date(now.getTime() + days * 86_400_000).toISOString().slice(0, 10);
+  const since = now.getTime() - days * 86_400_000;
+  const due: HomeworkAttention[] = [];
+  const finished: HomeworkAttention[] = [];
+  for (const v of views) {
+    if (v.recipients.length === 0) continue;
+    const notDone = v.recipients.length - v.doneCount;
+    const last = v.recipients.reduce<string | null>(
+      (m, r) => (r.lastActivityAt && (!m || r.lastActivityAt > m) ? r.lastActivityAt : m),
+      null,
+    );
+    const item: HomeworkAttention = {
+      id: v.id,
+      title: `${v.courseTitle} · ${v.lessonTitle ?? "whole course"}`,
+      dueOn: v.dueOn,
+      notDone,
+      recipients: v.recipients.length,
+      lastActivityAt: last,
+      href: `/studio/homework#hw-${v.id}`,
+    };
+    if (notDone > 0) {
+      if (v.dueOn && v.dueOn <= horizon) due.push(item);
+    } else if (last && Date.parse(last) >= since && Date.parse(last) <= now.getTime()) {
+      finished.push(item);
+    }
+  }
+  due.sort((a, b) => a.dueOn!.localeCompare(b.dueOn!) || a.id.localeCompare(b.id));
+  finished.sort((a, b) => b.lastActivityAt!.localeCompare(a.lastActivityAt!) || a.id.localeCompare(b.id));
+  return { due, finished };
 }

@@ -2945,3 +2945,15 @@ Appended to in the same commit as the change it records. Referenced from
   with homework, Continue and a call (EN and RU). `npm run budget` `/my`: 175.1 / 175.1 KB (limits 180,
   182). Not measured: a phone, dark mode, 1280px. Do not add a row per thread or per homework: one per
   kind is the rule (0211 Decision 1).
+- Studio inbox: Homework section (2026-11-02, TCH-017, docs/decisions/0212). `/studio` gains a "Homework"
+  section between "Unanswered questions" and "Unpublished drafts", in the inbox's link rows (the clipboard icon
+  tile): assignments due in the next 7 days or past due with someone not done (title "Course · lesson" or "Course ·
+  whole course", "Due 5 Nov" / "Was due 28 Oct" in muted text, a warning-token "k of n not done" pill), then
+  assignments everyone finished in the last 7 days ("Everyone is done · last activity N ago", no pill). Each row
+  links to `/studio/homework#hw-<id>`. The empty and failed states are the inbox's dashed box, and the page's
+  "Nothing needs your attention" and GetStarted's `inboxHasItems` count the section. Existing classes and tokens; no
+  new colours. A past due date is never destructive (0152). Measured at 360px (local stack, seeded teacher, a
+  course title with a 56-character unbroken word): `scrollWidth/innerWidth` 360/360 and `main` 360/360 with a
+  past-due row, an upcoming row and a finished row, and 360/360 and 360/360 with none. Not measured: a lapsed seat's
+  banner with the section, dark mode, a phone. Do not hide the section from a lapsed seat, and do not list
+  an undated unfinished assignment.

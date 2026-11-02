@@ -185,6 +185,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     tips: [
       "A due date is information only. Nothing locks when it passes.",
       "The list shows who has finished. Open **Students** on an assignment to see each person.",
+      "Your **Inbox** has a **Homework** section: work due in the next 7 days or past due that someone hasn't finished, and work everyone finished in the last 7 days.",
     ],
     goTo: { label: "Open Homework", path: "/studio/homework" },
     audience: "all",

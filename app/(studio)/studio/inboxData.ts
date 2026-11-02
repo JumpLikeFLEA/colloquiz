@@ -6,6 +6,8 @@ import { toFinalCommentRow, toReviewRow, type FinalCommentRow, type ReviewRow } 
 import type { InboxCall } from "@/lib/studio/inbox";
 import type { Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
+import { buildHomeworkViews, type HomeworkView } from "@/lib/homework/homework";
+import { getHomeworkProgress, getTeacherHomework } from "@/lib/homework/homeworkServer";
 
 // AUTH-012 — the inbox's reads (docs/decisions/0118). Who may see which row
 // is decided in SQL: review_queue() / review_final_comments() (062) and
@@ -97,3 +99,18 @@ export const getTeacherThreads = cache(async (): Promise<Thread[] | null> => {
     return null;
   }
 });
+
+/** The teacher's assignments with their recipients' progress, for the inbox's
+ * "Homework" section (TCH-017). Targets are not needed (recipients are the
+ * progress rows, SQL's), so none are read. Fail-soft like the threads: null on
+ * error, and the section says it could not load. Reading is open to a lapsed
+ * seat (0155). */
+export async function getHomeworkViews(): Promise<HomeworkView[] | null> {
+  try {
+    const [list, progress] = await Promise.all([getTeacherHomework(), getHomeworkProgress()]);
+    return buildHomeworkViews(list, [], progress, () => "");
+  } catch (e) {
+    console.error("Studio: homework read failed", e);
+    return null;
+  }
+}

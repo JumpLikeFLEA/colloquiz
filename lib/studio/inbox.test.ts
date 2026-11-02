@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { HomeworkView } from "../homework/homework";
 import type { FinalCommentRow, ReviewRow } from "../reviews/queue";
 import {
   ageLabel,
   finalDraftGroups,
+  homeworkAttention,
   upcomingCalls,
   voiceDraftGroups,
   waitingCount,
@@ -190,5 +192,73 @@ describe("ageLabel", () => {
     ["2026-10-12T00:00:00Z", "under an hour"],
   ])("%s -> %s", (from, label) => {
     expect(ageLabel(from, now)).toBe(label);
+  });
+});
+
+describe("homeworkAttention", () => {
+  const now = new Date("2026-11-02T12:00:00Z");
+  function hw(id: string, dueOn: string | null, done: boolean[], last: (string | null)[] = []): HomeworkView {
+    const recipients = done.map((d, i) => ({
+      studentId: `s${i}`,
+      doneLessons: d ? 1 : 0,
+      totalLessons: 1,
+      done: d,
+      bestPercent: null,
+      lastActivityAt: last[i] ?? null,
+    }));
+    return {
+      id,
+      courseId: A,
+      courseTitle: "Course A",
+      courseSlug: "a",
+      coursePublished: true,
+      lessonId: null,
+      lessonTitle: id === "l" ? "Lesson 1" : null,
+      dueOn,
+      note: null,
+      createdAt: "2026-10-01T00:00:00Z",
+      studentIds: [],
+      groupIds: [],
+      recipients,
+      doneCount: done.filter(Boolean).length,
+    };
+  }
+
+  it("lists past and next-7-days due with someone not done, past first", () => {
+    const r = homeworkAttention(
+      [hw("soon", "2026-11-05", [false, true]), hw("past", "2026-10-20", [false]), hw("far", "2026-11-20", [false])],
+      now,
+    );
+    expect(r.due.map((d) => d.id)).toEqual(["past", "soon"]);
+    expect(r.due[1]).toMatchObject({ notDone: 1, recipients: 2, href: "/studio/homework#hw-soon" });
+  });
+
+  it("includes the 7th day and today, excludes the 8th", () => {
+    const r = homeworkAttention(
+      [hw("a", "2026-11-09", [false]), hw("b", "2026-11-02", [false]), hw("c", "2026-11-10", [false])],
+      now,
+    );
+    expect(r.due.map((d) => d.id)).toEqual(["b", "a"]);
+  });
+
+  it("skips undated unfinished work and assignments without recipients", () => {
+    const r = homeworkAttention([hw("n", null, [false]), hw("e", "2026-11-03", [])], now);
+    expect(r.due).toEqual([]);
+    expect(r.finished).toEqual([]);
+  });
+
+  it("lists everyone-done work finished in the last 7 days, newest first", () => {
+    const r = homeworkAttention(
+      [
+        hw("old", null, [true], ["2026-10-20T10:00:00Z"]),
+        hw("l", "2026-10-30", [true, true], ["2026-10-31T10:00:00Z", "2026-11-01T09:00:00Z"]),
+        hw("m", null, [true], ["2026-10-29T13:00:00Z"]),
+        hw("noact", null, [true]),
+      ],
+      now,
+    );
+    expect(r.finished.map((d) => d.id)).toEqual(["l", "m"]);
+    expect(r.finished[0].title).toBe("Course A · Lesson 1");
+    expect(r.due).toEqual([]);
   });
 });

@@ -1,24 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, ChevronRight, FilePenLine, MessageSquare, Mic, type LucideIcon } from "lucide-react";
+import { CalendarClock, ChevronRight, ClipboardList, FilePenLine, MessageSquare, Mic, type LucideIcon } from "lucide-react";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import {
   ageLabel,
   CALL_WINDOW_DAYS,
   finalDraftGroups,
+  homeworkAttention,
   upcomingCalls,
   voiceDraftGroups,
   waitingGroups,
   type InboxGroup,
 } from "@/lib/studio/inbox";
 import { LocalTime, LocalTimeZone } from "@/app/(studio)/studio/courses/[id]/LocalTime";
+import { formatDueDate } from "@/lib/homework/homework";
 import { weekLabel } from "./reviews/statusLabels";
 import { threadPath, unansweredThreads } from "@/lib/messages/messages";
 import { canImportCourse } from "@/lib/courseImport/access";
 import { getStudioWriteState } from "@/lib/studioWriteState";
 import { GetStarted } from "./GetStarted";
 import { getChecklist } from "./getChecklist";
-import { getDraftRows, getEditorCalls, getTeacherThreads, getWaitingRows } from "./inboxData";
+import { getDraftRows, getEditorCalls, getHomeworkViews, getTeacherThreads, getWaitingRows } from "./inboxData";
 
 // /studio — the "Needs attention" inbox (AUTH-012, docs/decisions/0109
 // Decision 5, 0118), across every course the caller edits. Rows come from
@@ -141,11 +143,12 @@ export default async function StudioInbox() {
   const access = await getCourseAccess();
   if (!canEnterStudio(access)) notFound();
 
-  const [waitingRows, drafts, calls, threads] = await Promise.all([
+  const [waitingRows, drafts, calls, threads, homeworkViews] = await Promise.all([
     getWaitingRows(),
     getDraftRows(),
     getEditorCalls(access),
     getTeacherThreads(),
+    getHomeworkViews(),
   ]);
   // The request's clock, read once so every age and the call window agree.
   const now = new Date();
@@ -161,13 +164,20 @@ export default async function StudioInbox() {
   // the student's and the link is live. null: the read failed (see inboxData).
   const questions = threads ? unansweredThreads(threads) : null;
 
+  // Homework (TCH-017): who is a recipient and what is done come from SQL (080).
+  // null: the read failed.
+  const homework = homeworkViews ? homeworkAttention(homeworkViews, now) : null;
+
   const nothing =
     waiting.length === 0 &&
     voiceDrafts.length === 0 &&
     finalDrafts.length === 0 &&
     soon.length === 0 &&
     questions !== null &&
-    questions.length === 0;
+    questions.length === 0 &&
+    homework !== null &&
+    homework.due.length === 0 &&
+    homework.finished.length === 0;
 
   // TCH-015 (0206): the get-started card for a seat holder, until the core steps are done.
   const checklist = await getChecklist({
@@ -182,7 +192,7 @@ export default async function StudioInbox() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Needs attention</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Recordings waiting for your feedback, questions from your students, drafts you haven&apos;t published, and
+          Recordings waiting for your feedback, questions from your students, homework to check, drafts you haven&apos;t published, and
           calls coming up, across every course you edit.
         </p>
         <p className="text-xs text-muted-foreground mt-1">
@@ -234,6 +244,36 @@ export default async function StudioInbox() {
                     title={t.peerLabel}
                     detail={t.lastAt ? `Last message ${ageLabel(t.lastAt, now)} ago` : "No messages yet"}
                     pill={t.unreadCount > 0 ? `${t.unreadCount} unread` : undefined}
+                  />
+                ))}
+              </div>
+            )}
+          </Section>
+
+          <Section title="Homework" count={homework ? homework.due.length + homework.finished.length : 0}>
+            {homework === null ? (
+              <div className={EMPTY_BOX}>Couldn&apos;t load your homework. Try again in a moment.</div>
+            ) : homework.due.length === 0 && homework.finished.length === 0 ? (
+              <div className={EMPTY_BOX}>No homework due or finished this week.</div>
+            ) : (
+              <div className="space-y-2">
+                {homework.due.map((h) => (
+                  <RowLink
+                    key={h.id}
+                    href={h.href}
+                    icon={ClipboardList}
+                    title={h.title}
+                    detail={`${h.dueOn! < now.toISOString().slice(0, 10) ? "Was due" : "Due"} ${formatDueDate(h.dueOn!, "en-GB", now)}`}
+                    pill={`${h.notDone} of ${h.recipients} not done`}
+                  />
+                ))}
+                {homework.finished.map((h) => (
+                  <RowLink
+                    key={h.id}
+                    href={h.href}
+                    icon={ClipboardList}
+                    title={h.title}
+                    detail={`Everyone is done · last activity ${ageLabel(h.lastActivityAt!, now)} ago`}
                   />
                 ))}
               </div>
