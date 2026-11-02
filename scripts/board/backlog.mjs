@@ -4941,6 +4941,47 @@ export const CARDS = [
     ],
     notes: 'Proposed in #267 (PROG-008).',
   },
+  // Proposed in PLAY-019's closing comment (#268), filed by the owner 2026-11-02.
+  {
+    key: 'OPS-038',
+    title: 'Trace the free lesson\'s +2.3 KB from PLAY-019',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3175,
+    dependsOn: ['PLAY-019'],
+    goal:
+      'PLAY-019 (7951949, docs/decisions/0210 "Measured") moved /courses/future-imperfect/true-or-false from 257.0 to ' +
+      '259.3 KB of its 260 KB budget, more than the code it added would suggest, and the cause was not traced. The free ' +
+      'lesson is the reel entry point, so 0.7 KB of headroom blocks the next change to the player.',
+    acceptance: [
+      'A per-chunk comparison of npm run budget before and after 7951949 (same local stack, same env) names the chunks that grew and by how much (printed).',
+      'The cause is recorded in a decision file: re-derived from the chunks, not assumed.',
+      'The free lesson regains at least 2 KB of headroom (npm run budget printed), or the decision file says why that is not possible without a design change.',
+    ],
+    notes: 'Proposed in #268 (PLAY-019).',
+  },
+  {
+    key: 'PLAY-021',
+    title: 'Carry unchanged exercises across a republish',
+    milestone: 'M5',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 3290,
+    dependsOn: ['PLAY-019'],
+    goal:
+      'PLAY-019 counts only the played version\'s attempts (docs/decisions/0210 Decision 3): a learner cannot read superseded ' +
+      'versions (lesson_versions RLS, 041), so the player cannot tell an unchanged exercise from a changed one. After a ' +
+      'republish a half-done lesson restarts at 0 in the player while the course page still shows the older version\'s ' +
+      'progress (0143 Decision 3).',
+    acceptance: [
+      'A SECURITY DEFINER read (migration, through the hosted-apply gate) returns, for the caller and the played version, the exercises answered on an earlier version of the same lesson whose block has the same id and an identical item; never another user\'s rows, never an item\'s content.',
+      'The verify script seeds a republish with one unchanged and one changed exercise and prints the unchanged one returned and the changed one not, with a positive control beside every denial (anonymous, another user).',
+      'The player counts those exercises in the strip and marks them "Answered before"; lib/lessonPlayer/answeredBefore.ts tests cover it.',
+      'Measured at 360px with a republished half-done lesson (scrollWidth/innerWidth printed); npm run budget on the free lesson before and after, within its limit.',
+    ],
+    notes: 'Proposed in #268 (PLAY-019). Worth doing only if the partner republishes lessons learners are part-way through.',
+  },
 ];
 
 export function rankOf(key) {
