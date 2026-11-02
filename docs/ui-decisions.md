@@ -2957,3 +2957,17 @@ Appended to in the same commit as the change it records. Referenced from
   past-due row, an upcoming row and a finished row, and 360/360 and 360/360 with none. Not measured: a lapsed seat's
   banner with the section, dark mode, a phone. Do not hide the section from a lapsed seat, and do not list
   an undated unfinished assignment.
+- Homework results by exercise (2026-11-02, TCH-018, docs/decisions/0213, migration 106 applied to the
+  local stack only, not to the hosted project). Studio only. Each homework card with recipients gains an
+  outlined "Results by exercise" link (the Edit button's classes) beside Edit and Delete, to
+  `/studio/homework/[id]/results`: a "← Homework" back link, the title, the due pill and a muted line, then a
+  `rounded-2xl border bg-card` frame holding a real `<table>` in its own `overflow-x-auto` scroller, the student
+  column sticky (the review queue's status table precedent). Header: lesson titles spanning their exercises
+  (numbered titles for a whole-course assignment), then "1, 2, 3…" with the prompt as a tooltip. A cell is the
+  best attempt as `earned/possible` in a `bg-muted` pill, a link; "—" for none. The chosen cell shows
+  `bg-brand-subtle text-brand-text`, and its answer renders in a card under the grid with TCH-003's text.
+  Existing classes and tokens; no new colours. Measured at 360px (`npm run viewport360`, local stack, a
+  teacher with 3 students, 2 lessons, 3 exercises each, a 70-character unbroken student email):
+  `scrollWidth/innerWidth` 360/360 on `/studio/homework`, the results grid and the results page with an
+  answer open. Not measured: dark mode, a phone, a lapsed seat's banner. Do not show a student who is not
+  a current recipient, and do not decide "best" in the client: `homework_results()` returns it.

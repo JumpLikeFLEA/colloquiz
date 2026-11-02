@@ -12,6 +12,7 @@ import {
   type MyHomeworkRow,
   type TeacherHomework,
 } from "./homework";
+import { toResultRow, type ResultRow } from "./results";
 
 // TCH-005 — the reads behind Studio's homework pages and /my (080,
 // docs/decisions/0152). homework_assignments and homework_targets have no
@@ -56,4 +57,13 @@ export async function getMyHomework(): Promise<MyHomework[]> {
   const { data, error } = await supabase.rpc("my_homework");
   if (error) throw new Error(error.message);
   return ((data ?? []) as MyHomeworkRow[]).map(toMyHomework);
+}
+
+/** One assignment's cells: a row per current recipient and exercise (106,
+ * docs/decisions/0213). Empty for an assignment that is not the caller's. */
+export async function getHomeworkResults(assignmentId: string): Promise<ResultRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("homework_results", { p_assignment: assignmentId });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map(toResultRow);
 }

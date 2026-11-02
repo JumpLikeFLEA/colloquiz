@@ -57,7 +57,17 @@ export function HomeworkCard({
           For:{" "}
           {[...groups.map((g) => `${g} (group)`), ...direct].join(", ") || "no one: every student left or was removed"}
         </p>
-        <HomeworkActions assignmentId={h.id} title={title} dueOn={h.dueOn} note={h.note} />
+        <div className="flex flex-wrap items-center gap-2">
+          {h.recipients.length > 0 && (
+            <Link
+              href={`/studio/homework/${h.id}/results`}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+            >
+              Results by exercise
+            </Link>
+          )}
+          <HomeworkActions assignmentId={h.id} title={title} dueOn={h.dueOn} note={h.note} />
+        </div>
       </div>
 
       {h.recipients.length > 0 && (
