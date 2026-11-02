@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { LessonProgressStrip } from "./LessonProgressStrip";
 
@@ -41,6 +42,7 @@ export function LessonPageClient({
   attemptId,
   courseSlug,
   nextLesson,
+  course,
   lessonVersionId,
   isSignedIn,
   lessonPath,
@@ -56,6 +58,8 @@ export function LessonPageClient({
   attemptId: string;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
+  /** PROG-008 (docs/decisions/0209): the course, for the completion card. */
+  course?: LessonCourseContext;
   lessonVersionId: string;
   isSignedIn: boolean;
   lessonPath: string;
@@ -74,6 +78,7 @@ export function LessonPageClient({
         practiceRenderer={practiceRenderer}
         courseSlug={courseSlug}
         nextLesson={nextLesson}
+        course={course}
         lessonVersionId={lessonVersionId}
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}

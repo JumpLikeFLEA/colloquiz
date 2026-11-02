@@ -113,6 +113,16 @@ export const alliengllCopy = {
     scoreOf: "of",
     remainingSuffix: "left",
     remainingBody: "Answer every exercise and your score will appear here.",
+    // PROG-008 (docs/decisions/0209): the course-complete card. Two numbers,
+    // never blended; the share text carries no score (0209 Decision 5).
+    courseComplete: "Course complete",
+    courseLessons: "Lessons completed",
+    courseAverage: "Average score",
+    thisLesson: "This lesson",
+    nextCourse: "Next course",
+    share: "Share",
+    shareCopied: "Link copied",
+    shareText: "I finished this course on Alina Cher",
   },
 
   signupOffer: {

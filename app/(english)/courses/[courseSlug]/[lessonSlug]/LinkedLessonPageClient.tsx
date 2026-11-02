@@ -6,6 +6,7 @@ import type { PracticeRendererProps } from "@/app/components/lesson-player/Lesso
 import { AskTeacher } from "@/app/components/lesson-player/AskTeacher";
 import type { AskTeacherConfig } from "@/lib/askTeacher/options";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { LessonProgressStrip } from "./LessonProgressStrip";
 
@@ -35,6 +36,7 @@ export function LinkedLessonPageClient({
   attemptId,
   courseSlug,
   nextLesson,
+  course,
   lessonVersionId,
   isSignedIn,
   lessonPath,
@@ -50,6 +52,8 @@ export function LinkedLessonPageClient({
   attemptId: string;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
+  /** PROG-008 (docs/decisions/0209): the course, for the completion card. */
+  course?: LessonCourseContext;
   lessonVersionId: string;
   isSignedIn: boolean;
   lessonPath: string;
@@ -98,6 +102,7 @@ export function LinkedLessonPageClient({
         practiceRenderer={renderPracticeWithAsk}
         courseSlug={courseSlug}
         nextLesson={nextLesson}
+        course={course}
         lessonVersionId={lessonVersionId}
         isSignedIn={isSignedIn}
         lessonPath={lessonPath}

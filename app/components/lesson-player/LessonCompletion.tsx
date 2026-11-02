@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
@@ -8,6 +9,7 @@ import type { ReviewEntry } from "@/lib/lessonPlayer/reviewEntries";
 import type { SessionProgress } from "@/lib/lessonPlayer/session";
 import { pluralize } from "@/lib/pluralCategory";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import type { LessonCourseContext } from "@/lib/courseCompletion";
 import { OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS } from "@/app/(english)/surfaceClasses";
 import { READING_WIDTH_CLASS } from "./columnLayout";
 
@@ -21,6 +23,11 @@ const RegistrationOffer = dynamic(() => import("./RegistrationOffer").then((m) =
 /** Partial credit makes points fractional ("1.5 of 2"). The lesson page's
  * chrome is English (docs/decisions/0080 Decision 5), so the decimal is a
  * point, not the Russian comma ("1,5") this used before. */
+// PROG-008 (docs/decisions/0209): the course-aware card, loaded once the
+// lesson is complete (see that module for the budget it keeps). React.lazy
+// rather than next/dynamic, so the fallback can be this lesson's own card.
+const CourseAwareCompletion = lazy(() => import("./CourseAwareCompletion"));
+
 const pointsFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
 /**
@@ -54,6 +61,14 @@ const pointsFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }
  *
  * Score and review come from the pure functions in
  * lib/lessonPlayer/session.ts; nothing here recomputes either.
+ *
+ * PROG-008 (docs/decisions/0209): given `course` (the public lesson page
+ * only), the answered state's "Next lesson" is the first open lesson that is
+ * not complete (`courseCompletionView`, PROG-003's rule), not the next one in
+ * course order, and a lesson that finishes the course turns the card into
+ * "Course complete" with the two course numbers, the next listed course and
+ * a share link. The neutral card keeps `nextLesson` (course order): a learner
+ * who has not finished this lesson is not sent back to an earlier one.
  */
 export function LessonCompletion({
   score,
@@ -63,6 +78,7 @@ export function LessonCompletion({
   nextLesson,
   lessonPath = "",
   isSignedIn = true,
+  course,
 }: {
   score: LessonScoreResult;
   progress: SessionProgress;
@@ -79,68 +95,94 @@ export function LessonCompletion({
    * signed in. Defaults to true (no offer) so pre-ANON-004 callers — tests,
    * the demo page — see no behavior change. */
   isSignedIn?: boolean;
+  /** PROG-008 — the course around this lesson; absent outside the public lesson page. */
+  course?: LessonCourseContext;
 }) {
   const c = alliengllCopy.completion;
   const complete = progress.total > 0 && progress.answered === progress.total;
   const remaining = progress.total - progress.answered;
+
+  // 0143: a lesson with no exercises is complete once opened, and it is open.
+  const lessonDone = progress.total === 0 || (complete && score.status === "scored");
   const nextHref = nextLesson ? `/courses/${courseSlug}/${nextLesson.slug}` : null;
   // A theory-only lesson that is also the course's last has nothing to say
   // here; render no empty card.
   const showNeutral = progress.total > 0 || nextHref !== null;
 
+  // The completed lesson's card. `next` undefined draws it without a CTA (the
+  // fallback while the course-aware chunk loads, so the target never flips).
+  const answeredCard = (next: NextLessonLink | null | undefined) =>
+    score.status === "scored" ? (
+      <section className="flex flex-col items-center gap-2 rounded-3xl border-2 border-ink bg-highlight px-6 py-10 text-center text-highlight-foreground shadow-offset sm:px-10">
+        <h2 className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-card px-3 py-1 text-sm font-semibold text-foreground">
+          <Check className="size-4" aria-hidden="true" />
+          {c.title}
+        </h2>
+        <p className="pt-3 text-sm font-medium text-highlight-foreground/75">{c.scoreLabel}</p>
+        <p className="font-display text-6xl font-extrabold tracking-tight tabular-nums">{score.percent}%</p>
+        <p className="text-sm tabular-nums text-highlight-foreground/75">
+          {pointsFormat.format(score.earned)} {c.scoreOf} {pointsFormat.format(score.possible)}
+        </p>
+        {next === undefined ? null : next ? (
+          <Link href={`/courses/${courseSlug}/${next.slug}`} className={`${OFFSET_CTA_CLASS} mt-5 max-w-full text-sm`}>
+            <span className="min-w-0 text-balance">
+              {c.nextLesson}: {next.title}
+            </span>
+            <ArrowRight className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+          </Link>
+        ) : (
+          courseSlug && (
+            <Link href={`/courses/${courseSlug}`} className={`${OUTLINE_CTA_CLASS} mt-5`}>
+              {alliengllCopy.player.backToCourse}
+            </Link>
+          )
+        )}
+      </section>
+    ) : null;
+
+  const neutralCard = showNeutral && (
+      <section className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-ink/40 bg-card px-6 py-8 text-center">
+        {progress.total > 0 && (
+          <>
+            <h2 className="text-lg font-semibold text-foreground">
+              {remaining} {pluralize(remaining, "en", alliengllCopy.player.exercises)} {c.remainingSuffix}
+            </h2>
+            <p className="max-w-sm text-sm text-muted-foreground">{c.remainingBody}</p>
+          </>
+        )}
+        {nextHref && nextLesson && (
+          <Link
+            href={nextHref}
+            className="group inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <span className="min-w-0 text-balance">
+              {c.nextLesson}: {nextLesson.title}
+            </span>
+            <ArrowRight className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+          </Link>
+        )}
+      </section>
+  );
+
+  const top =
+    course && lessonDone ? (
+      <Suspense fallback={complete ? answeredCard(undefined) : neutralCard}>
+        <CourseAwareCompletion
+          course={course}
+          courseSlug={courseSlug}
+          lessonScore={complete && score.status === "scored" ? score : null}
+          renderLesson={(next) => (complete ? answeredCard(next) : neutralCard)}
+        />
+      </Suspense>
+    ) : complete && score.status === "scored" ? (
+      answeredCard(nextLesson)
+    ) : (
+      neutralCard
+    );
+
   return (
     <div className={`${READING_WIDTH_CLASS} flex flex-col gap-4`}>
-      {complete && score.status === "scored" ? (
-        <section className="flex flex-col items-center gap-2 rounded-3xl border-2 border-ink bg-highlight px-6 py-10 text-center text-highlight-foreground shadow-offset sm:px-10">
-          <h2 className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-card px-3 py-1 text-sm font-semibold text-foreground">
-            <Check className="size-4" aria-hidden="true" />
-            {c.title}
-          </h2>
-          <p className="pt-3 text-sm font-medium text-highlight-foreground/75">{c.scoreLabel}</p>
-          <p className="font-display text-6xl font-extrabold tracking-tight tabular-nums">{score.percent}%</p>
-          <p className="text-sm tabular-nums text-highlight-foreground/75">
-            {pointsFormat.format(score.earned)} {c.scoreOf} {pointsFormat.format(score.possible)}
-          </p>
-          {nextHref && nextLesson ? (
-            <Link href={nextHref} className={`${OFFSET_CTA_CLASS} mt-5 max-w-full text-sm`}>
-              <span className="min-w-0 text-balance">
-                {c.nextLesson}: {nextLesson.title}
-              </span>
-              <ArrowRight className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
-            </Link>
-          ) : (
-            courseSlug && (
-              <Link href={`/courses/${courseSlug}`} className={`${OUTLINE_CTA_CLASS} mt-5`}>
-                {alliengllCopy.player.backToCourse}
-              </Link>
-            )
-          )}
-        </section>
-      ) : (
-        showNeutral && (
-          <section className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-ink/40 bg-card px-6 py-8 text-center">
-            {progress.total > 0 && (
-              <>
-                <h2 className="text-lg font-semibold text-foreground">
-                  {remaining} {pluralize(remaining, "en", alliengllCopy.player.exercises)} {c.remainingSuffix}
-                </h2>
-                <p className="max-w-sm text-sm text-muted-foreground">{c.remainingBody}</p>
-              </>
-            )}
-            {nextHref && nextLesson && (
-              <Link
-                href={nextHref}
-                className="group inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl bg-brand-subtle px-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-colors hover:bg-brand-subtle-hover focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <span className="min-w-0 text-balance">
-                  {c.nextLesson}: {nextLesson.title}
-                </span>
-                <ArrowRight className="size-4 flex-none transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
-              </Link>
-            )}
-          </section>
-        )
-      )}
+      {top}
 
       {complete && score.status === "scored" && !isSignedIn && <RegistrationOffer lessonPath={lessonPath} />}
 
@@ -169,3 +211,4 @@ export function LessonCompletion({
     </div>
   );
 }
+

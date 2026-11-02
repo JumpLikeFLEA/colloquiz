@@ -2895,3 +2895,25 @@ Appended to in the same commit as the change it records. Referenced from
   the queue (waiting count 0), dark mode. Existing classes and tokens; no new colours. Do not append
   a grant-only or admin-only entry to the shared groups, and do not put Guide and View site back in
   the footer: three footer rows pushed Admin below the fold on an 800px phone.
+- Course complete (2026-11-02, PROG-008, docs/decisions/0209). When the lesson on screen finishes
+  the course (every listed lesson open and complete, 0143), the lesson's completion card becomes a
+  "Course complete" card in the same marker-yellow frame: a `Trophy` pill, the course title in
+  `font-display`, two ink-outlined tiles ("Lessons completed N of N", "Average score X%" over
+  completed lessons; never one blended number), a quiet "This lesson: X% (e of p)" line, the violet
+  offset "Next course: <title>" (the next listed course; absent when there is none), then "Share" and
+  "Back to course" as `OUTLINE_CTA_CLASS` buttons. The answered card's "Next lesson" is now the first
+  open lesson that is not complete (a learner who skipped lesson 2 is sent to it); the unfinished
+  lesson's dashed card keeps the next lesson in course order. The course-aware card is a lazy chunk;
+  while it loads the completed card shows without a CTA. The course page hero gains, for a signed-in
+  learner who has finished, a "Course complete" pill beside the level and a row under the CTA with
+  "Next course" (wrapping, never truncated: a nowrap label pushed the RU hero to 372px at 360) and
+  "Share"; an anonymous visitor's hero is unchanged (0179, no layout shift). Share uses the phone's
+  share sheet, else copies the link ("Link copied"). New English route `/completed/[courseSlug]`, the
+  share target: the invite page's paper frame, a yellow "Course complete" pill, the course title and
+  lead, one panel with a line and "Open the course"; the saved EN/RU choice, no toggle; its og:image is
+  the course card with a "Course complete" pill and no score. Existing classes and tokens; no new
+  colours. Measured at 360px: `scrollWidth/innerWidth` 360/360 for the card (anonymous fresh and
+  complete, signed in complete), the hero (EN, RU, signed out) and `/completed` (EN, RU); 1280/1280 for
+  the card. `npm run budget`: free lesson 256.7 / 257.0 KB of 260, course page 175.4 / 176.0 of 182,
+  `/completed` 176.0 of 183. Not measured: a phone, an in-app browser, dark mode. Do not put a score on
+  the share card or its URL, and do not import `CourseAwareCompletion` statically into the player.

@@ -25,6 +25,12 @@ type CourseStrings = {
   allFree: string;
   /** TCH-011: the label before a teacher's public name in the hero. */
   byAuthor: string;
+  /** PROG-008 (docs/decisions/0209): the hero once every lesson is complete. */
+  courseComplete: string;
+  nextCourse: string;
+  share: string;
+  shareCopied: string;
+  shareText: string;
   progressAttempted: string;
   progressAverage: string;
   progressOf: string;
@@ -83,6 +89,11 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     continuePrefix: "Продолжить: ",
     allFree: "Весь курс бесплатно",
     byAuthor: "Автор:",
+    courseComplete: "Курс пройден",
+    nextCourse: "Следующий курс",
+    share: "Поделиться",
+    shareCopied: "Ссылка скопирована",
+    shareText: "Курс пройден на Alina Cher",
     progressAttempted: "пройдено уроков",
     progressAverage: "средний результат",
     progressOf: "из",
@@ -130,6 +141,11 @@ export const courseCopy: Record<SurfaceLang, CourseStrings> = {
     continuePrefix: "Continue: ",
     allFree: "Whole course free",
     byAuthor: "By",
+    courseComplete: "Course complete",
+    nextCourse: "Next course",
+    share: "Share",
+    shareCopied: "Link copied",
+    shareText: "I finished this course on Alina Cher",
     progressAttempted: "lessons completed",
     progressAverage: "average score",
     progressOf: "of",

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Clock, Gift, ListChecks } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, Gift, ListChecks, Trophy } from "lucide-react";
+import { ShareLinkButton } from "@/app/components/ShareLinkButton";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { CefrLevel } from "@/lib/courseLevels";
 import type { CourseProgress, CourseTotals } from "@/lib/coursePageProgress";
@@ -13,6 +14,7 @@ import { LanguageToggle } from "../../LanguageToggle";
 import {
   HERO_ENTER_CLASS,
   OFFSET_CTA_CLASS,
+  OUTLINE_CTA_CLASS,
   PAPER_PILL_CLASS,
   PAPER_PILL_HIGHLIGHT_CLASS,
 } from "../../surfaceClasses";
@@ -53,6 +55,7 @@ export function CourseHero({
   cta,
   ctaSlot,
   account,
+  completed = null,
 }: {
   lang: SurfaceLang;
   title: string;
@@ -67,6 +70,10 @@ export function CourseHero({
   /** PROG-003: replaces the CTA link for an anonymous visitor (client, local stores). */
   ctaSlot?: ReactNode;
   account: ReactNode;
+  /** PROG-008 (docs/decisions/0209): set once a signed-in learner has completed
+   * every lesson. Adds the "Course complete" pill, the next listed course and
+   * a share link; the two progress numbers above already say N of N. */
+  completed?: { courseSlug: string; nextCourse: { slug: string; title: string } | null } | null;
 }) {
   const c = courseCopy[lang];
 
@@ -84,6 +91,12 @@ export function CourseHero({
           <div className="flex flex-col items-start gap-5">
             <div className={`${HERO_ENTER_CLASS} flex flex-wrap items-center gap-2`}>
               <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{level}</span>
+              {completed && (
+                <span className={PAPER_PILL_CLASS}>
+                  <Trophy className="size-3.5" aria-hidden="true" />
+                  {c.courseComplete}
+                </span>
+              )}
               {totals.allFree && (
                 <span className={PAPER_PILL_CLASS}>
                   <Gift className="size-3.5" aria-hidden="true" />
@@ -156,6 +169,28 @@ export function CourseHero({
                 totals.lessonCount > 0 && <p className="text-sm text-muted-foreground">{c.noFreeLesson}</p>
               )}
             </div>
+            {completed && (
+              <div className={`${HERO_ENTER_CLASS} delay-300 flex max-w-full flex-wrap items-center gap-3`}>
+                {completed.nextCourse && (
+                  <Link href={`/courses/${completed.nextCourse.slug}`} className={`${OUTLINE_CTA_CLASS} max-w-full`}>
+                    {/* Wraps instead of truncating: a nowrap label's width became the
+                        hero column's minimum and pushed it to 372px at 360 (RU). */}
+                    <span className="min-w-0 break-words text-balance">
+                      {c.nextCourse}: {completed.nextCourse.title}
+                    </span>
+                    <ArrowRight className="size-4 flex-none" aria-hidden="true" />
+                  </Link>
+                )}
+                <ShareLinkButton
+                  path={`/completed/${completed.courseSlug}`}
+                  title={title}
+                  text={c.shareText}
+                  label={c.share}
+                  copiedLabel={c.shareCopied}
+                  className={OUTLINE_CTA_CLASS}
+                />
+              </div>
+            )}
           </div>
 
           {coverImageUrl ? (

@@ -6,6 +6,8 @@ import { cohortAudience } from "@/lib/cohortCoursePage";
 import { getCohortView } from "@/lib/cohortView";
 import { getCourseAttemptSummary, getLastOpenedLessonSlug } from "@/lib/courseAttempts";
 import { needsLastOpened, pickContinueLesson } from "@/lib/continueLesson";
+import { isCourseComplete } from "@/lib/courseCompletion";
+import { getNextCatalogueCourse } from "@/lib/publicCatalogue";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getSignedInAccount } from "@/lib/signedInAccount";
@@ -114,6 +116,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const lastOpened =
     signedIn && needsLastOpened(course.lessons, attempts) ? await getLastOpenedLessonSlug(await createClient(), course.id) : null;
   const continueLesson = signedIn ? pickContinueLesson(course.lessons, attempts, lastOpened) : null;
+  // PROG-008 (docs/decisions/0209): the finished state, for a signed-in
+  // learner. An anonymous visitor's hero is left as it is: their progress is
+  // known only after hydration, and 0179 keeps that from moving the layout.
+  const completed =
+    signedIn && isCourseComplete(course.lessons, attempts)
+      ? { courseSlug, nextCourse: await getNextCatalogueCourse(courseSlug) }
+      : null;
   const anonLessons = signedIn
     ? []
     : course.lessons.flatMap((l) =>
@@ -142,6 +151,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         coverImageUrl={course.coverImageUrl}
         totals={totals}
         progress={progress}
+        completed={completed}
         account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           continueLesson
@@ -233,3 +243,4 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
   return anonymous ? <AnonymousProgressProvider lessons={anonLessons}>{main}</AnonymousProgressProvider> : main;
 }
+

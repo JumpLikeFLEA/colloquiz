@@ -160,7 +160,7 @@ export function lessonRowProgress(slug: string, attempts: AttemptsByLessonSlug):
 export type CourseProgress = { attempted: number; total: number; averagePercent: number | null };
 
 export function courseProgress(
-  lessons: readonly PublicCourseLesson[],
+  lessons: readonly { slug: string }[],
   attempts: AttemptsByLessonSlug,
 ): CourseProgress {
   const total = lessons.length;

@@ -192,6 +192,11 @@ const ROUTES: RouteBudget[] = [
   // throws (a FAIL, not a silent pass). budgetKB starts at the invite
   // page's and is re-derived from a real `npm run budget` run (0148).
   { path: "/join/00000000000000000000000000000000", budgetKB: 183, guardForbiddenSignatures: true },
+  // PROG-008 (docs/decisions/0209): where a course-complete share link lands.
+  // A Server Component with no client JS of its own (the layout's and
+  // next/link's only), so budgetKB starts at the invite page's, the same
+  // shape; re-derived from a real `npm run budget` run (0209 "Measured").
+  { path: "/completed/future-imperfect", budgetKB: 183, guardForbiddenSignatures: true },
   // COH-005 (docs/decisions/0115): the before/after screen, signed out (its
   // sign-in card) — the run is scripts/seed-local-fixtures.ts's cohort
   // fixture at a fixed id; without that seed the page 404s, a hard FAIL.

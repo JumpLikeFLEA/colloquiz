@@ -18,6 +18,7 @@ import { fireFunnelEvent } from "@/lib/funnelSource";
 import { bestPercentForVersion, higherPercent } from "@/lib/lessonPlayer/previousBest";
 import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
+import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import {
   FIT_WIDTH_CLASS,
@@ -112,6 +113,11 @@ export interface LessonPlayerProps {
    * them. */
   courseSlug?: string;
   nextLesson?: NextLessonLink | null;
+  /** PROG-008 (docs/decisions/0209) — the course, so the completion card can
+   * say "Course complete" and pick the next unfinished lesson. Only the public
+   * lesson page passes it; the preview, the demo and tests keep the plain
+   * "next lesson in course order" card. */
+  course?: LessonCourseContext;
   /** ANON-005 — the currently played lesson_versions.id, what a recorded
    * attempt is keyed against server-side. Defaults to "" (no recording),
    * matching pre-ANON-005 behaviour for callers (tests, the demo page, the
@@ -218,6 +224,7 @@ export function LessonPlayer({
   practiceRenderer,
   courseSlug = "",
   nextLesson = null,
+  course,
   lessonVersionId = "",
   isSignedIn = false,
   lessonPath = "",
@@ -300,6 +307,7 @@ export function LessonPlayer({
       practiceRenderer={practiceRenderer}
       courseSlug={courseSlug}
       nextLesson={nextLesson}
+      course={course}
       lessonPath={lessonPath}
       isSignedIn={isSignedIn}
       renderProgress={renderProgress}
@@ -345,6 +353,7 @@ function LessonPlayerBody({
   practiceRenderer,
   courseSlug,
   nextLesson,
+  course,
   lessonPath,
   isSignedIn,
   renderProgress,
@@ -358,6 +367,7 @@ function LessonPlayerBody({
   practiceRenderer?: (props: PracticeRendererProps) => ReactNode;
   courseSlug: string;
   nextLesson: NextLessonLink | null;
+  course?: LessonCourseContext;
   lessonPath: string;
   isSignedIn: boolean;
   renderProgress?: (progress: LessonProgress) => ReactNode;
@@ -465,6 +475,7 @@ function LessonPlayerBody({
           review={reviewEntriesForSession(document, results)}
           courseSlug={courseSlug}
           nextLesson={nextLesson}
+          course={course}
           lessonPath={lessonPath}
           isSignedIn={isSignedIn}
         />

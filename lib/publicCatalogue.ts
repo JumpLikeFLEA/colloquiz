@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { CefrLevel } from "@/lib/courseLevels";
 import type { CatalogueCourse } from "@/lib/courseCatalogue";
 import { summariseLessons, type CatalogueLessonRow } from "@/lib/catalogueSummary";
+import { nextCatalogueCourse } from "@/lib/courseCompletion";
 
 /**
  * SHELL-010 — the public catalogue read, one row per published course.
@@ -65,3 +66,16 @@ export const getPublishedCourses = cache(async (): Promise<CatalogueCourse[]> =>
     };
   });
 });
+
+/** PROG-008 (docs/decisions/0209): the listed course to offer once
+ * `courseSlug` is finished (`nextCatalogueCourse`). A failed read offers none
+ * rather than failing the page that asked. */
+export async function getNextCatalogueCourse(courseSlug: string): Promise<{ slug: string; title: string } | null> {
+  try {
+    const next = nextCatalogueCourse(await getPublishedCourses(), courseSlug);
+    return next && { slug: next.slug, title: next.title };
+  } catch (err) {
+    console.error("failed to read the catalogue for the next course", err);
+    return null;
+  }
+}

@@ -29,6 +29,11 @@ describe("footerLangForPath", () => {
     expect(footerLangForPath("/courses/future-imperfect/", saved)).toBe(saved);
   });
 
+  it.each([["ru"], ["en"]] as const)("follows the saved choice (%s) on a course-complete share page", (saved) => {
+    expect(pageLangForPath("/completed/future-imperfect", saved)).toBe(saved);
+    expect(footerLangForPath("/completed/future-imperfect", saved)).toBe(saved);
+  });
+
   it.each([["ru"], ["en"]] as const)("is always English on a lesson page, whatever was saved (%s)", (saved) => {
     expect(footerLangForPath("/courses/future-imperfect/true-or-false", saved)).toBe("en");
     expect(footerLangForPath("/courses/future-imperfect/true-or-false/", saved)).toBe("en");
@@ -79,7 +84,7 @@ describe("pageLangForPath", () => {
     expect(pageLangForPath("/courses/future-imperfect/true-or-false/", saved)).toBe("en");
   });
 
-  it.each([["/courses"], ["/courses/a/b/c"], ["/privacy"], ["/no-such-page"]])(
+  it.each([["/courses"], ["/courses/a/b/c"], ["/completed"], ["/completed/a/b"], ["/privacy"], ["/no-such-page"]])(
     "is the boundary language anywhere else (%s)",
     (path) => {
       expect(pageLangForPath(path, "en")).toBe(BOUNDARY_LANG);

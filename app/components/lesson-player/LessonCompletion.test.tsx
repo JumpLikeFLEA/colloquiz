@@ -104,3 +104,103 @@ describe("LessonCompletion — answer review (PLAY-016)", () => {
     expect(text[2]).toContain("Exercise 10");
   });
 });
+
+describe("LessonCompletion — course complete and the next lesson (PROG-008)", () => {
+  const done = { bestPercent: 80, complete: true, exercisesAnswered: 2, exercisesTotal: 2 };
+  const lessons = ["l1", "l2", "l3"].map((slug) => ({
+    slug,
+    title: `Lesson ${slug}`,
+    state: "open" as const,
+    versionId: `v-${slug}`,
+    itemCount: 2,
+  }));
+  const course = (attempts: Record<string, typeof done>, nextCourse: { slug: string; title: string } | null = null) => ({
+    title: "Future Imperfect",
+    lessonSlug: "l3",
+    lessons,
+    attempts,
+    nextCourse,
+  });
+
+  it("sends a learner who skipped a lesson back to it, not to the course", async () => {
+    render(
+      <LessonCompletion score={scored} progress={all} review={[]} courseSlug="c" nextLesson={null} course={course({ l1: done })} />,
+    );
+    const next = await screen.findByRole("link", { name: /Next lesson: Lesson l2/ });
+    expect(next.getAttribute("href")).toBe("/courses/c/l2");
+    expect(screen.queryByText(alliengllCopy.completion.courseComplete)).toBeNull();
+  });
+
+  it("reads Course complete with two numbers, the next course and a share button when the lesson finishes the course", async () => {
+    render(
+      <LessonCompletion
+        score={scored}
+        progress={all}
+        review={[]}
+        courseSlug="c"
+        nextLesson={null}
+        course={course({ l1: done, l2: done }, { slug: "other", title: "Other course" })}
+      />,
+    );
+    expect(await screen.findByText(alliengllCopy.completion.courseComplete)).toBeDefined();
+    expect(screen.getByText("3 of 3")).toBeDefined();
+    // Average over completed lessons: 80, 80 and this session's 50.
+    expect(screen.getByText("70%")).toBeDefined();
+    expect(screen.getByRole("link", { name: /Next course: Other course/ }).getAttribute("href")).toBe("/courses/other");
+    expect(screen.getByRole("button", { name: alliengllCopy.completion.share })).toBeDefined();
+    expect(screen.getByRole("link", { name: alliengllCopy.player.backToCourse }).getAttribute("href")).toBe("/courses/c");
+  });
+
+  it("offers no next course when there is none", async () => {
+    render(
+      <LessonCompletion score={scored} progress={all} review={[]} courseSlug="c" nextLesson={null} course={course({ l1: done, l2: done })} />,
+    );
+    expect(await screen.findByText(alliengllCopy.completion.courseComplete)).toBeDefined();
+    expect(screen.queryByRole("link", { name: /Next course/ })).toBeNull();
+  });
+
+  it("keeps the next lesson in course order on an unfinished lesson", async () => {
+    render(
+      <LessonCompletion
+        score={scored}
+        progress={partial}
+        review={[]}
+        courseSlug="c"
+        nextLesson={{ slug: "l4", title: "Lesson l4" }}
+        course={course({ l1: done })}
+      />,
+    );
+    expect(screen.getByRole("link", { name: /Next lesson: Lesson l4/ }).getAttribute("href")).toBe("/courses/c/l4");
+  });
+
+  it("builds an anonymous visitor's summary from the local stores", async () => {
+    const stored = ["l1", "l2"].flatMap((l) =>
+      ["a", "b"].map((blockId) => ({
+        attemptId: `${l}${blockId}`,
+        lessonVersionId: `v-${l}`,
+        blockId,
+        earned: 1,
+        possible: 1,
+        response: null,
+        recordedAt: "2026-11-02T00:00:00Z",
+      })),
+    );
+    window.localStorage.setItem("alliengll.attempts.v1", JSON.stringify({ version: 1, attempts: stored }));
+    try {
+      render(
+        <LessonCompletion
+          score={scored}
+          progress={all}
+          review={[]}
+          courseSlug="c"
+          nextLesson={null}
+          isSignedIn={false}
+          course={{ ...course({}), attempts: null }}
+        />,
+      );
+      expect(await screen.findByText(alliengllCopy.completion.courseComplete)).toBeDefined();
+    } finally {
+      window.localStorage.clear();
+    }
+  });
+});
