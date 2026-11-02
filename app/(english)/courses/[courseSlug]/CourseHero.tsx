@@ -18,6 +18,7 @@ import {
   PAPER_PILL_CLASS,
   PAPER_PILL_HIGHLIGHT_CLASS,
 } from "../../surfaceClasses";
+import { AnonymousFinished } from "./AnonymousProgress";
 import { courseCopy } from "./courseCopy";
 
 /**
@@ -56,6 +57,7 @@ export function CourseHero({
   ctaSlot,
   account,
   completed = null,
+  anonymousFinish = null,
 }: {
   lang: SurfaceLang;
   title: string;
@@ -74,8 +76,44 @@ export function CourseHero({
    * every lesson. Adds the "Course complete" pill, the next listed course and
    * a share link; the two progress numbers above already say N of N. */
   completed?: { courseSlug: string; nextCourse: { slug: string; title: string } | null } | null;
+  /** PROG-010 (docs/decisions/0215): the same finished state for an anonymous
+   * visitor on a fully open course. Its space is reserved in the server HTML
+   * and shown after hydration by `AnonymousFinished`. */
+  anonymousFinish?: { courseSlug: string; nextCourse: { slug: string; title: string } | null } | null;
 }) {
   const c = courseCopy[lang];
+  const finish = completed ?? anonymousFinish;
+
+  const completePill = (
+    <span className={PAPER_PILL_CLASS}>
+      <Trophy className="size-3.5" aria-hidden="true" />
+      {c.courseComplete}
+    </span>
+  );
+
+  const finishRow = finish && (
+    <>
+      {finish.nextCourse && (
+        <Link href={`/courses/${finish.nextCourse.slug}`} className={`${OUTLINE_CTA_CLASS} max-w-full`}>
+          {/* Wraps instead of truncating: a nowrap label's width became the
+              hero column's minimum and pushed it to 372px at 360 (RU). */}
+          <span className="min-w-0 break-words text-balance">
+            {c.nextCourse}: {finish.nextCourse.title}
+          </span>
+          <ArrowRight className="size-4 flex-none" aria-hidden="true" />
+        </Link>
+      )}
+      <ShareLinkButton
+        path={`/completed/${finish.courseSlug}`}
+        title={title}
+        text={c.shareText}
+        label={c.share}
+        copiedLabel={c.shareCopied}
+        className={OUTLINE_CTA_CLASS}
+      />
+    </>
+  );
+  const finishRowClass = `${HERO_ENTER_CLASS} delay-300 flex max-w-full flex-wrap items-center gap-3`;
 
   return (
     <section>
@@ -91,11 +129,12 @@ export function CourseHero({
           <div className="flex flex-col items-start gap-5">
             <div className={`${HERO_ENTER_CLASS} flex flex-wrap items-center gap-2`}>
               <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{level}</span>
-              {completed && (
-                <span className={PAPER_PILL_CLASS}>
-                  <Trophy className="size-3.5" aria-hidden="true" />
-                  {c.courseComplete}
-                </span>
+              {completed ? (
+                completePill
+              ) : (
+                anonymousFinish && (
+                  <AnonymousFinished className="contents">{completePill}</AnonymousFinished>
+                )
               )}
               {totals.allFree && (
                 <span className={PAPER_PILL_CLASS}>
@@ -169,27 +208,10 @@ export function CourseHero({
                 totals.lessonCount > 0 && <p className="text-sm text-muted-foreground">{c.noFreeLesson}</p>
               )}
             </div>
-            {completed && (
-              <div className={`${HERO_ENTER_CLASS} delay-300 flex max-w-full flex-wrap items-center gap-3`}>
-                {completed.nextCourse && (
-                  <Link href={`/courses/${completed.nextCourse.slug}`} className={`${OUTLINE_CTA_CLASS} max-w-full`}>
-                    {/* Wraps instead of truncating: a nowrap label's width became the
-                        hero column's minimum and pushed it to 372px at 360 (RU). */}
-                    <span className="min-w-0 break-words text-balance">
-                      {c.nextCourse}: {completed.nextCourse.title}
-                    </span>
-                    <ArrowRight className="size-4 flex-none" aria-hidden="true" />
-                  </Link>
-                )}
-                <ShareLinkButton
-                  path={`/completed/${completed.courseSlug}`}
-                  title={title}
-                  text={c.shareText}
-                  label={c.share}
-                  copiedLabel={c.shareCopied}
-                  className={OUTLINE_CTA_CLASS}
-                />
-              </div>
+            {completed ? (
+              <div className={finishRowClass}>{finishRow}</div>
+            ) : (
+              anonymousFinish && <AnonymousFinished className={finishRowClass}>{finishRow}</AnonymousFinished>
             )}
           </div>
 

@@ -2985,3 +2985,11 @@ Appended to in the same commit as the change it records. Referenced from
   this change (measured with the file stashed), from the long seeded titles; with a 64-character unbroken
   course title the h1 pushes it to 1028 (also pre-existing: the h1 has no break rule). Not measured: dark
   mode, a lapsed seat's disabled state in a browser, a phone. Do not offer Duplicate on an archived lesson.
+- Course complete for an anonymous visitor (2026-11-02, PROG-010, docs/decisions/0215). On a course whose lessons
+  are all open to a visitor, the hero's "Course complete" pill and the "Next course" / "Share" row are in the server
+  HTML, `invisible` and `inert`, and become visible after hydration once the local stores say every lesson is
+  complete (`isCourseComplete`), so the hero is the same height before and after. A visitor on such a course sees an
+  empty row under the CTA until then; courses with a sign-in, paid or scheduled lesson reserve nothing. Existing
+  classes and tokens; no new colours. Measured at 360px: `scrollWidth/innerWidth` 360/360 fresh and finished, EN and
+  RU; hero height 834/834 (EN), 854/854 (RU); layout shift identical. `npm run budget` course page 176.9 / 177.3 KB of
+  182. Not measured: a phone, dark mode. Do not make the pill or row render only after hydration.

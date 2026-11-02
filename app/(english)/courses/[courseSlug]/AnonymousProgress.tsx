@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNod
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { pickContinueLesson } from "@/lib/continueLesson";
+import { isCourseComplete } from "@/lib/courseCompletion";
 import type { AttemptsByLessonSlug } from "@/lib/coursePageProgress";
 import {
   anonAttemptSummary,
@@ -35,9 +36,9 @@ import { OFFSET_CTA_CLASS } from "../../surfaceClasses";
 
 type ProviderLesson = AnonLesson & { title: string };
 
-type Value = { summary: AttemptsByLessonSlug; pick: ProviderLesson | null };
+type Value = { summary: AttemptsByLessonSlug; pick: ProviderLesson | null; complete: boolean };
 
-const EMPTY: Value = { summary: {}, pick: null };
+const EMPTY: Value = { summary: {}, pick: null, complete: false };
 const Ctx = createContext<Value>(EMPTY);
 
 function readStore(key: string): string | null {
@@ -60,20 +61,27 @@ function subscribe(onChange: () => void): () => void {
 const getSnapshot = () => anonStoreSnapshot(readStore);
 const getServerSnapshot = () => "";
 
-/** `lessons` are the course's lessons open to this visitor, in course order. */
-export function AnonymousProgressProvider({ lessons, children }: { lessons: ProviderLesson[]; children: ReactNode }) {
+/** `lessons` are the course's lessons open to this visitor, in course order.
+ * `coversCourse` is true when they are ALL of the course's lessons: only then
+ * can the visitor have finished it (PROG-010, docs/decisions/0215). */
+export function AnonymousProgressProvider({
+  lessons,
+  coversCourse = false,
+  children,
+}: {
+  lessons: ProviderLesson[];
+  coversCourse?: boolean;
+  children: ReactNode;
+}) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const value = useMemo<Value>(() => {
     if (snapshot === "") return EMPTY;
     const { attempts, opens } = parseAnonSnapshot(snapshot);
     const summary = anonAttemptSummary(lessons, attempts, opens);
-    const pick = pickContinueLesson(
-      lessons.map((l) => ({ ...l, state: "open" as const })),
-      summary,
-      anonLastOpenedSlug(lessons, opens),
-    );
-    return { summary, pick };
-  }, [snapshot, lessons]);
+    const open = lessons.map((l) => ({ ...l, state: "open" as const }));
+    const pick = pickContinueLesson(open, summary, anonLastOpenedSlug(lessons, opens));
+    return { summary, pick, complete: coversCourse && isCourseComplete(open, summary) };
+  }, [snapshot, lessons, coversCourse]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
@@ -113,5 +121,22 @@ export function AnonymousTick({ slug }: { slug: string }) {
     >
       <Check className="size-3" strokeWidth={3} />
     </span>
+  );
+}
+
+/**
+ * PROG-010 (docs/decisions/0215) — the finished state's space is reserved, not
+ * inserted. The server renders `children` (the real "Course complete" pill, or
+ * the next-course and Share row) for an anonymous visitor on a fully open
+ * course, `invisible` and `inert`, so the hero is exactly as tall before and
+ * after hydration; once the local stores say the course is complete (decided by
+ * `isCourseComplete`, as for a signed-in learner) it becomes visible.
+ */
+export function AnonymousFinished({ children, className }: { children: ReactNode; className: string }) {
+  const { complete } = useContext(Ctx);
+  return (
+    <div className={`${className}${complete ? "" : " invisible"}`} inert={!complete}>
+      {children}
+    </div>
   );
 }

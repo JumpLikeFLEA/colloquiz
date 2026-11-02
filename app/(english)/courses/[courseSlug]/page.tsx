@@ -131,6 +131,11 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           : [],
       );
   const anonymous = anonLessons.length > 0;
+  // PROG-010 (docs/decisions/0215): an anonymous visitor can only finish a
+  // course whose lessons are ALL open to them; its finished state is reserved
+  // in the HTML and shown from the local stores after hydration.
+  const anonCoversCourse = anonymous && anonLessons.length === course.lessons.length;
+  const anonymousFinish = anonCoversCourse ? { courseSlug, nextCourse: await getNextCatalogueCourse(courseSlug) } : null;
 
   const lead = course.subtitle ?? course.description;
   const about = course.description && course.description !== lead ? course.description : null;
@@ -152,6 +157,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         totals={totals}
         progress={progress}
         completed={completed}
+        anonymousFinish={anonymousFinish}
         account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           continueLesson
@@ -241,6 +247,6 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     </main>
   );
 
-  return anonymous ? <AnonymousProgressProvider lessons={anonLessons}>{main}</AnonymousProgressProvider> : main;
+  return anonymous ? <AnonymousProgressProvider lessons={anonLessons} coversCourse={anonCoversCourse}>{main}</AnonymousProgressProvider> : main;
 }
 
