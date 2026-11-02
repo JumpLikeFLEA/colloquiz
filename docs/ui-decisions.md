@@ -2930,3 +2930,18 @@ Appended to in the same commit as the change it records. Referenced from
   `scrollWidth/innerWidth` 360/360 anonymous and signed in, 1280/1280 both. `npm run budget`: free
   lesson 257.0 / 259.3 KB of 260. Not measured: a phone, dark mode. Do not restore answers into the
   inputs without redoing 0088, and do not count another version's attempts here (0210 Decision 3).
+- "Up next" on /my (2026-11-02, PROG-009, docs/decisions/0211). `/my` opens with an "Up next"
+  section ("Что дальше" in RU, the saved choice, no toggle) above everything else: at most three
+  `PAPER_CARD_CLASS` link rows in the Homework row's shape (the yellow icon tile, a bold line over a
+  muted line, a trailing arrow). One row per kind, in this order: an unread teacher reply ("New reply
+  from <teacher>" / "New replies from your teachers", "N new", to the thread or the list), the undone
+  openable homework with the soonest due date (lesson title; "<course> · Homework from <teacher> ·
+  Due 3 Nov", or "Was due" in the same muted text), "Continue: <lesson>" for a course not yet
+  complete, and a call in the next seven days ("Call · <local time>", an `ExternalLink` row opening
+  the meeting link in a new tab). Ranking is `lib/upNext.ts`. Nothing to do: no section. When the card
+  shows the call, the "Next call" section below is left out; otherwise it shows as before. No new
+  read, classes or tokens. Measured at 360px (local stack, `scrollWidth/innerWidth`): 360/360 with no
+  items, with each kind alone, with all four kinds (EN and RU; the call drops, Next call returns), and
+  with homework, Continue and a call (EN and RU). `npm run budget` `/my`: 175.1 / 175.1 KB (limits 180,
+  182). Not measured: a phone, dark mode, 1280px. Do not add a row per thread or per homework: one per
+  kind is the rule (0211 Decision 1).

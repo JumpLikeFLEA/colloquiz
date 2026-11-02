@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, Check, ClipboardList, ExternalLink, MessageSquare, Sparkles, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Check, ClipboardList, ExternalLink, MessageSquare, Sparkles, Video } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
@@ -15,6 +15,7 @@ import { getMyHomework } from "@/lib/homework/homeworkServer";
 import { getCalendarFeedStatus, getCalendarPageData, type CalendarFeedStatus, type CalendarPageData } from "@/lib/calendar/calendarServer";
 import { unreadTotal, type Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
+import { upNext, type UpNextItem } from "@/lib/upNext";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
@@ -87,6 +88,22 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const signedIn = await getSignedInAccount();
   const hasEnrolment = home.courses.some((c) => c.enrolments.length > 0);
   const hasTeacherTie = teachers.length > 0 || threads.length > 0 || homework.length > 0;
+  // PROG-009 (docs/decisions/0211): ranked from the reads above, no read of its own.
+  const upNextItems = upNext({
+    threads,
+    homework,
+    courses: home.courses.map((c) => ({
+      courseSlug: c.course.slug,
+      courseTitle: c.course.title,
+      continueLesson: c.continueLesson,
+      completed: c.progress.attempted,
+      total: c.progress.total,
+    })),
+    call: home.nextCall,
+    now: new Date(),
+  });
+  // 0211 Decision 7: the same call is not drawn twice, one under the other.
+  const callInUpNext = upNextItems.some((i) => i.kind === "call");
 
   return (
     // The Alina Cher grid paper (PROG-007, docs/decisions/0191), as the course
@@ -110,7 +127,9 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
       </section>
 
       <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 pb-12 pt-4 sm:gap-16 sm:pb-16`}>
-        {home.nextCall && <NextCall lang={lang} call={home.nextCall} />}
+        {upNextItems.length > 0 && <UpNext lang={lang} items={upNextItems} />}
+
+        {home.nextCall && !callInUpNext && <NextCall lang={lang} call={home.nextCall} />}
 
         <section className="flex flex-col gap-6" data-my="courses">
           <SectionHeading display title={m.coursesTitle} />
@@ -450,6 +469,96 @@ function AnalysisRow({ lang, row }: { lang: SurfaceLang; row: LearnerAnalysisRow
     <div className={`${PAPER_PANEL_CLASS} flex gap-3 p-4 sm:p-5`} data-analysis-kind={row.kind}>
       {body}
     </div>
+  );
+}
+
+// PROG-009 (docs/decisions/0211): the few things to do now, at most three rows,
+// each a link in the Homework row's frame. A call opens its meeting link in a new
+// tab, as the Next call section's Join does.
+function UpNext({ lang, items }: { lang: SurfaceLang; items: readonly UpNextItem[] }) {
+  const m = myCopy[lang];
+  const locale = localeFor(lang);
+  const today = new Date();
+  return (
+    <section className="flex flex-col gap-6" data-my="up-next">
+      <SectionHeading display title={m.upNextTitle} />
+      <ul className="flex flex-col gap-3">
+        {items.map((item) => {
+          let icon: React.ReactNode;
+          let title: React.ReactNode;
+          let detail: React.ReactNode;
+          switch (item.kind) {
+            case "message":
+              icon = <MessageSquare className="size-4" aria-hidden="true" />;
+              title = item.teacherName ? m.upNextReplyFrom(item.teacherName) : m.upNextReplies;
+              detail = m.messagesNew(item.count);
+              break;
+            case "homework":
+              icon = <ClipboardList className="size-4" aria-hidden="true" />;
+              title = item.title;
+              detail = (
+                <>
+                  {item.courseTitle && <>{item.courseTitle} · </>}
+                  {m.upNextHomework(item.teacherName)}
+                  {item.dueOn && (
+                    <> · {(dueState(item.dueOn, today) === "past" ? m.homeworkWasDue : m.homeworkDue)(formatDueDate(item.dueOn, locale, today))}</>
+                  )}
+                </>
+              );
+              break;
+            case "continue":
+              icon = <BookOpen className="size-4" aria-hidden="true" />;
+              title = (
+                <>
+                  {m.continuePrefix}
+                  {item.lessonTitle}
+                </>
+              );
+              detail = item.courseTitle;
+              break;
+            case "call":
+              icon = <Video className="size-4" aria-hidden="true" />;
+              title = (
+                <>
+                  {m.upNextCall} · <LocalDateTime iso={item.startsAt} locale={locale} />
+                </>
+              );
+              detail = (
+                <>
+                  {item.courseTitle}
+                  {item.title && <> · {item.title}</>}
+                </>
+              );
+              break;
+          }
+          const body = (
+            <>
+              <span className={ICON_TILE_CLASS}>{icon}</span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className="break-words text-sm font-semibold text-foreground sm:text-base">{title}</p>
+                <p className="break-words text-xs text-muted-foreground sm:text-sm">{detail}</p>
+              </div>
+            </>
+          );
+          const rowClass = `${PAPER_CARD_CLASS} flex items-center gap-3 p-4 sm:p-5`;
+          return (
+            <li key={item.kind} data-up-next={item.kind}>
+              {item.kind === "call" ? (
+                <a href={item.href} target="_blank" rel="noopener noreferrer" className={rowClass}>
+                  {body}
+                  <ExternalLink className="size-3.5 flex-none text-brand-text" aria-hidden="true" />
+                </a>
+              ) : (
+                <Link href={item.href} className={rowClass}>
+                  {body}
+                  <ArrowRight className="size-3.5 flex-none text-brand-text" aria-hidden="true" />
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

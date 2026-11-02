@@ -64,6 +64,12 @@ type MyStrings = {
   homeworkNeedsSignIn: string;
   homeworkNeedsEntitlement: string;
   homeworkOpensOn: (date: string) => string;
+  /** The "Up next" card (PROG-009, docs/decisions/0211). */
+  upNextTitle: string;
+  upNextReplyFrom: (teacher: string) => string;
+  upNextReplies: string;
+  upNextHomework: (teacher: string) => string;
+  upNextCall: string;
 };
 
 export const myCopy: Record<SurfaceLang, MyStrings> = {
@@ -118,6 +124,11 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     homeworkNeedsSignIn: "Нужно войти в аккаунт",
     homeworkNeedsEntitlement: "Урок пока недоступен",
     homeworkOpensOn: (date) => `Откроется ${date}`,
+    upNextTitle: "Что дальше",
+    upNextReplyFrom: (teacher) => `Новый ответ: ${teacher}`,
+    upNextReplies: "Новые ответы преподавателей",
+    upNextHomework: (teacher) => `Домашнее задание от ${teacher}`,
+    upNextCall: "Созвон",
   },
   en: {
     metaTitle: "My courses",
@@ -170,5 +181,10 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     homeworkNeedsSignIn: "Sign in to open",
     homeworkNeedsEntitlement: "Not available yet",
     homeworkOpensOn: (date) => `Opens ${date}`,
+    upNextTitle: "Up next",
+    upNextReplyFrom: (teacher) => `New reply from ${teacher}`,
+    upNextReplies: "New replies from your teachers",
+    upNextHomework: (teacher) => `Homework from ${teacher}`,
+    upNextCall: "Call",
   },
 };
