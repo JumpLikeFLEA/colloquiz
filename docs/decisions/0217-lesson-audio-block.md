@@ -1,7 +1,8 @@
 # 0217 — An audio block in lessons
 
 Status: decided by the owner (bucket, 2026-11-05) and in the session that built it (the
-rest), ad hoc, not a board card. Migration 108.
+rest), ad hoc, not a board card. Migration 108, applied to hosted through the gate on
+2026-11-05.
 
 ## Context
 
@@ -87,6 +88,18 @@ asked for lessons that can carry pictures and audio.
   - `applied-practice`: 287.0 → 287.1 (limit 290).
   - Every other route: identical.
   - `/runs/…f1a1`: 180.8 of 179, over before and after.
+- Hosted (gate, 2026-11-05):
+  - Print rule: latest migration `108_lesson_audio_mime.sql`; latest `delete_my_account`
+    in 103, which 108 does not touch.
+  - Probe before: `lesson-images` with `{image/png,image/jpeg,image/webp}`, 5242880, public;
+    latest recorded migration 107 (107 rows).
+  - Applied with `db query --linked -f`, recorded with `migration repair --status applied
+    108`.
+  - Probe after: the seven types, 5242880, public; latest recorded 108 (108 rows).
+  - The verify script ran on hosted with no error. `db query` prints no notices, so a copy
+    with one wrong expectation was run too, and it failed at that assertion (`0217 FAIL:
+    expected exactly 7 types, found 7`, the copy wanting 99). The script seeds nothing; the
+    bucket still had 1 row and 7 types afterwards.
 - Not measured: dark mode, a phone, an in-app browser, Safari's native controls.
 
 ## Revisit when

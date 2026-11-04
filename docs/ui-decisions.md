@@ -2993,7 +2993,8 @@ Appended to in the same commit as the change it records. Referenced from
   classes and tokens; no new colours. Measured at 360px: `scrollWidth/innerWidth` 360/360 fresh and finished, EN and
   RU; hero height 834/834 (EN), 854/854 (RU); layout shift identical. `npm run budget` course page 176.9 / 177.3 KB of
   182. Not measured: a phone, dark mode. Do not make the pill or row render only after hydration.
-- Audio block in lessons (2026-11-05, ad hoc, docs/decisions/0217, migration 108). A theory block,
+- Audio block in lessons (2026-11-05, ad hoc, docs/decisions/0217, migration 108 applied to the
+  local stack and, through the hosted-apply gate, to hosted). A theory block,
   `audio`, played by the browser's own `<audio controls preload="none">` at the block's full width,
   inside a `<figure>` with an optional caption in the image block's caption classes (`text-xs
   text-muted-foreground`, below the player). Reading width, like image and video. No client JS, no
