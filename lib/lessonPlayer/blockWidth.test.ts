@@ -30,6 +30,7 @@ describe("lessonBlockWidth", () => {
       theory({ id: "5", kind: "theory", type: "list", ordered: false, items: [text] }),
       theory({ id: "8", kind: "theory", type: "image", url: "https://example.com/a.png", alt: "an image" }),
       theory({ id: "9", kind: "theory", type: "video", youtubeId: "dQw4w9WgXcQ" }),
+      theory({ id: "10", kind: "theory", type: "audio", url: "https://example.com/a.mp3" }),
       theory({
         id: "6",
         kind: "theory",

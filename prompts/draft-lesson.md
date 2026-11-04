@@ -211,6 +211,7 @@ callout:    { id, kind:"theory", type:"callout", variant: "tip"|"note"|"warning"
 list:       { id, kind:"theory", type:"list", ordered: boolean, items: InlineContent[] (min 1) }
 image:      { id, kind:"theory", type:"image", url: string (a real URL), alt: string (required), caption?: InlineContent }
 video:      { id, kind:"theory", type:"video", youtubeId: string (exactly 11 chars, id ONLY, never a full URL), caption?: InlineContent }
+audio:      { id, kind:"theory", type:"audio", url: string (a real URL), caption?: InlineContent }
 self_check: { id, kind:"theory", type:"self_check", prompt: InlineContent,
               response: "none"|"short"|"long", modelAnswer: InlineContent (required),
               checklist?: string[] (min 1 item if present) }
@@ -228,6 +229,12 @@ uploaded in the lesson editor (AUTH-004) if the authors prefer it.
 
 `video`: only if the PDF names a real, existing video and you were given
 its 11-character id. Never invented; decorative only (docs/handoff.md).
+
+`audio`: same rule as `image` — only with an already-hosted URL from the
+opening message, never invented. A source that calls for a recording you
+were not given gets no block and a QA note naming where it goes, so the
+authors can upload it in the lesson editor. Like video, never required to
+answer an item (docs/decisions/0217).
 
 `table`: every header cell and body cell is a non-empty InlineContent (see
 INLINE CONTENT — use `—` for a blank). A table whose first column has no

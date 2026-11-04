@@ -19,6 +19,7 @@ import {
 } from "@/lib/lessons";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
 import { InlineEditor } from "./InlineEditor";
+import { LessonAudioUploadButton } from "./LessonAudioUploadButton";
 import { LessonImageUploadButton, type UploadLessonImage } from "./LessonImageUploadButton";
 
 // One field-group per theory block type — no raw JSON is ever shown to the
@@ -280,6 +281,32 @@ export function BlockForm({
             path="youtubeId"
             placeholder="11-character id, not a URL"
           />
+          <InlineField
+            label="Caption (optional)"
+            value={block.caption ?? []}
+            onChange={(caption) => onChange({ ...block, caption: caption.length > 0 ? caption : undefined })}
+            errors={errors}
+            path="caption"
+          />
+        </div>
+      );
+
+    case "audio":
+      return (
+        <div className="space-y-3">
+          <LessonAudioUploadButton onUploaded={(url) => onChange({ ...block, url })} />
+          <TextField
+            label="Audio URL"
+            value={block.url}
+            onChange={(url) => onChange({ ...block, url })}
+            errors={errors}
+            path="url"
+            placeholder="https://… (or upload above)"
+          />
+          {block.url && (
+            // A plain player, so the author hears the clip before saving.
+            <audio controls preload="none" src={block.url} className="w-full" aria-label="Play this clip" />
+          )}
           <InlineField
             label="Caption (optional)"
             value={block.caption ?? []}

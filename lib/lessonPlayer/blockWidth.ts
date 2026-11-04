@@ -33,6 +33,7 @@ export function lessonBlockWidth(block: LessonBlock): LessonBlockWidth {
     case "list":
     case "image":
     case "video":
+    case "audio":
     case "self_check":
       return "reading";
     default: {

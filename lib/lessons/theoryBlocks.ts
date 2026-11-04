@@ -23,6 +23,7 @@ export const THEORY_BLOCK_TYPES = [
   "list",
   "image",
   "video",
+  "audio",
   "self_check",
   "table",
 ] as const;
@@ -111,6 +112,20 @@ export const VideoBlockSchema = z.strictObject({
   caption: InlineContentSchema.optional(),
 });
 
+/** A sound clip (docs/decisions/0217): a public URL into the same
+ * "lesson-images" bucket as `image`, which migration 108 lets hold MP3 and
+ * M4A, so course delete, duplicate and the orphan sweep cover it with the
+ * images (lib/lessonImages.ts). Played by the browser's own controls. Like
+ * video, it never gates anything: an item after it can be answered without
+ * playing it. `caption` is what the learner reads beside the player: the line
+ * being spoken, or what the clip is. */
+export const AudioBlockSchema = z.strictObject({
+  ...TheoryBlockBase,
+  type: z.literal("audio"),
+  url: z.string().url(),
+  caption: InlineContentSchema.optional(),
+});
+
 /** 0022 Decision 2: an unscored theory-side block for open writing / "check
  * your thinking" reveals. Never passes through `parseItem` — it is a THEORY
  * block, not a practice one, so it contributes nothing to `parseLessonDocument`'s
@@ -169,6 +184,7 @@ export const TheoryBlockSchema = z.discriminatedUnion("type", [
   ListBlockSchema,
   ImageBlockSchema,
   VideoBlockSchema,
+  AudioBlockSchema,
   SelfCheckBlockSchema,
   TableBlockSchema,
 ]);

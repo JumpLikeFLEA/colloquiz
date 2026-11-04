@@ -1,4 +1,5 @@
 import type { TheoryBlock } from "@/lib/lessons";
+import { AudioBlockView } from "./blocks/AudioBlock";
 import { CalloutBlockView } from "./blocks/CalloutBlock";
 import { ExampleBlockView } from "./blocks/ExampleBlock";
 import { HeadingBlockView } from "./blocks/HeadingBlock";
@@ -28,6 +29,8 @@ export function TheoryBlockRenderer({ block }: { block: TheoryBlock }) {
       return <ImageBlockView block={block} />;
     case "video":
       return <VideoBlockView block={block} />;
+    case "audio":
+      return <AudioBlockView block={block} />;
     case "self_check":
       return <SelfCheckBlockView block={block} />;
     case "table":

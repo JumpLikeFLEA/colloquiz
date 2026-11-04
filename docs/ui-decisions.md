@@ -2993,3 +2993,19 @@ Appended to in the same commit as the change it records. Referenced from
   classes and tokens; no new colours. Measured at 360px: `scrollWidth/innerWidth` 360/360 fresh and finished, EN and
   RU; hero height 834/834 (EN), 854/854 (RU); layout shift identical. `npm run budget` course page 176.9 / 177.3 KB of
   182. Not measured: a phone, dark mode. Do not make the pill or row render only after hydration.
+- Audio block in lessons (2026-11-05, ad hoc, docs/decisions/0217, migration 108). A theory block,
+  `audio`, played by the browser's own `<audio controls preload="none">` at the block's full width,
+  inside a `<figure>` with an optional caption in the image block's caption classes (`text-xs
+  text-muted-foreground`, below the player). Reading width, like image and video. No client JS, no
+  speed control of ours. The sign-in teaser leaves audio out (055's `lesson_teaser`). Studio's
+  lesson editor gains "Audio" in the Add block menu's Theory group, after Video. Its form is the
+  image form's shape: an outlined "Upload audio" button with "MP3 or M4A, up to 5 MB" beside it,
+  an "Audio URL" field, a native preview player once there is a URL, and "Caption (optional)". The
+  row shows the caption, "(no caption)" or "(no audio)". Existing classes and tokens; no new
+  colours. Measured (local stack): 360/360 on the lesson page anonymous (player 328 px), 1280/1280
+  (672 px); the Studio preview 360/360 with two players; the editor `document 360/360` with the
+  form open, a WAV refused and an MP3 uploaded. The editor's scroll area was `main 451/360`
+  before any audio form opened: pre-existing (see the AUTH-020 entry). `npm run budget`: free
+  lesson 259.3 / 259.4 KB of 260, every other route unchanged. Not measured: dark mode, a phone,
+  Safari's controls. Do not make the player a client component without re-running the budget,
+  and do not queue a replaced clip for deletion on save (0217 Decision 7).

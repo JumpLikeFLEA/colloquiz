@@ -43,6 +43,13 @@ describe("planImageCopies", () => {
     expect(planImageCopies(SRC, DST, [matching], null, () => "q").map((p) => p.to)).toEqual([`${DST}/q.webp`]);
   });
 
+  it("copies an audio clip too, keeping its extension (0217)", () => {
+    const audio = [{ id: "a1", kind: "theory", type: "audio", url: `${base}/${SRC}/clip.mp3` }];
+    expect(planImageCopies(SRC, DST, [audio], null, () => "s").map((p) => [p.from, p.to])).toEqual([
+      [`${SRC}/clip.mp3`, `${DST}/s.mp3`],
+    ]);
+  });
+
   it("refuses a non-uuid course id", () => {
     expect(() => planImageCopies("", DST, [], null, () => "x")).toThrow();
     expect(() => planImageCopies(SRC, "../x", [], null, () => "x")).toThrow();

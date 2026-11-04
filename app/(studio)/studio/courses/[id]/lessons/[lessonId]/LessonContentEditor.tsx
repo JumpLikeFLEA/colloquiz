@@ -11,7 +11,9 @@ import {
   LESSON_IMAGE_MAX_WIDTH_MATCHING,
   LESSON_IMAGE_MAX_WIDTH_THEORY,
   lessonImageObjectPath,
+  lessonAudioMimeType,
   lessonImagePathFromUrl,
+  validateLessonAudioFile,
   validateLessonImageFile,
 } from "@/lib/lessonImages";
 import { resizeImageToWebp } from "@/lib/imageResize";
@@ -22,6 +24,7 @@ import { BlockList } from "./BlockList";
 import { BeforeListenForProvider } from "./VoiceTaskForm";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
 import type { LessonImageKind, UploadLessonImage } from "./LessonImageUploadButton";
+import { LessonAudioUploadProvider, type UploadLessonAudio } from "./LessonAudioUploadButton";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 const LESSON_IMAGE_MAX_WIDTH: Record<LessonImageKind, number> = {
@@ -119,6 +122,25 @@ function LessonContentEditorInner({
     const previousPath = lessonImagePathFromUrl(previousUrl);
     if (previousPath) setPendingImageDeletions((paths) => [...paths, previousPath]);
     return { url: pub.publicUrl };
+  };
+
+  // docs/decisions/0217: an audio clip goes to the images' bucket as it is
+  // (no resizing), under the course folder. A replaced clip is NOT queued for
+  // deletion: save() deletes queued objects even while the published version
+  // still points at them, so the old clip stays until the course is deleted.
+  const uploadLessonAudio: UploadLessonAudio = async (file) => {
+    const reason = validateLessonAudioFile(file);
+    if (reason) return { error: reason };
+    const contentType = lessonAudioMimeType(file);
+    if (!contentType) return { error: "Lesson audio must be MP3 or M4A." };
+
+    const supabase = createClient();
+    const path = lessonImageObjectPath(courseId, contentType, crypto.randomUUID());
+    const { error: uploadError } = await supabase.storage
+      .from(LESSON_IMAGE_BUCKET)
+      .upload(path, file, { contentType, upsert: false });
+    if (uploadError) return { error: uploadError.message };
+    return { url: supabase.storage.from(LESSON_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl };
   };
 
   async function refreshVersions() {
@@ -272,7 +294,9 @@ function LessonContentEditorInner({
       )}
 
       <BeforeListenForProvider value={beforeListenFor([blocks]) ?? courseBeforeListenFor}>
-        <BlockList blocks={blocks} onChange={updateBlocks} fieldErrors={fieldErrors} onUploadImage={uploadLessonImage} />
+        <LessonAudioUploadProvider value={uploadLessonAudio}>
+          <BlockList blocks={blocks} onChange={updateBlocks} fieldErrors={fieldErrors} onUploadImage={uploadLessonImage} />
+        </LessonAudioUploadProvider>
       </BeforeListenForProvider>
 
       <VersionHistoryPanel

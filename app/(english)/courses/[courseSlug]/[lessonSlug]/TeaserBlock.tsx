@@ -50,6 +50,11 @@ export function TeaserBlock({ block }: { block: TheoryBlock }) {
       return <TeaserVideo block={block} />;
     case "self_check":
       return null;
+    // lesson_teaser (migration 055) passes on only the types it lists, and
+    // audio is not one of them, so this case is never reached: the sign-in
+    // teaser leaves audio out (docs/decisions/0217).
+    case "audio":
+      return null;
     default: {
       const exhaustive: never = block;
       throw new Error(`unhandled theory block type: ${JSON.stringify(exhaustive)}`);

@@ -165,6 +165,10 @@ is decided on M3's cohort data-model card.
   Nothing may assume a fixed lesson composition.
 - **Video is decorative in v1** — a YouTube block inside theory, never
   required to score an item. A lesson must be completable without watching it.
+  **Audio (owner, 2026-11-05, docs/decisions/0217)** is the same: a clip in a
+  theory block, played by the browser's own controls, never required to
+  answer an item. A listening question can be answered without playing it;
+  nothing locks.
 - Course → lesson. **Two levels, nothing between them.**
 
 **Launch bar: one finished course.** One exists today, two more are coming.
@@ -384,8 +388,9 @@ fixed authored sequences — the same items in the same order for every learner.
 fixing the denominator in config rather than in the authored sequence — see
 docs/decisions/0018 Decision 1.)
 
-Video and images are THEORY BLOCKS, not item types; they extend the existing
-`TheoryBlock` union.
+Video, images and audio are THEORY BLOCKS, not item types; they extend the
+existing `TheoryBlock` union (audio: docs/decisions/0217, an MP3 or M4A in the
+lesson-images bucket).
 
 `free_text` is deferred. It cannot be auto-scored; it enters as a sixth type
 implementing the same interface once LLM grading is built. If accommodating it

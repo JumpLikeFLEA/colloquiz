@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AudioBlockSchema,
   CalloutBlockSchema,
   ExampleBlockSchema,
   HeadingBlockSchema,
@@ -119,6 +120,35 @@ describe("video", () => {
   it("rejects a short or long id", () => {
     expect(VideoBlockSchema.safeParse({ ...base, youtubeId: "short" }).success).toBe(false);
     expect(VideoBlockSchema.safeParse({ ...base, youtubeId: "waytoolongforavalidid" }).success).toBe(false);
+  });
+});
+
+describe("audio", () => {
+  const base = { id: "a1", kind: "theory" as const, type: "audio" as const, url: "https://example.com/lesson-images/c1/a.mp3" };
+
+  it("accepts a clip with no caption", () => {
+    expect(AudioBlockSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("accepts a caption as inline content", () => {
+    expect(AudioBlockSchema.safeParse({ ...base, caption: [{ text: "Amy: Can I borrow your hoodie?" }] }).success).toBe(true);
+  });
+
+  it("rejects a non-URL", () => {
+    expect(AudioBlockSchema.safeParse({ ...base, url: "Lesson 1.mp3" }).success).toBe(false);
+  });
+
+  it("rejects a missing url", () => {
+    const { url: _url, ...rest } = base;
+    expect(AudioBlockSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects an unknown field, like every block", () => {
+    expect(AudioBlockSchema.safeParse({ ...base, alt: "a clip" }).success).toBe(false);
+  });
+
+  it("is a member of the theory union", () => {
+    expect(TheoryBlockSchema.safeParse(base).success).toBe(true);
   });
 });
 

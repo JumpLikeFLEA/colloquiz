@@ -83,7 +83,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     purpose: "Add lessons to a course and fill them with theory and exercises.",
     steps: [
       "Open the course and press **Add lesson**. Type a title and press **Add lesson** again.",
-      "Open the lesson. Use **Add block** to add theory (text, images, tables, video) or an exercise.",
+      "Open the lesson. Use **Add block** to add theory (text, images, audio, tables, video) or an exercise.",
       "Exercises are under the **Exercise** heading of that menu: multiple choice, true / false, put in order, match pairs, fill the gaps and more. A new exercise starts empty, and every message tells you what is missing.",
       "For a long lesson, group the blocks into chapters with **Add chapter**.",
       "Press **Save**. A saved lesson is a draft until you publish it (see **Publish**).",
@@ -91,6 +91,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     ],
     tips: [
       "Write an explanation for each wrong answer. Learners see it when they check their answer.",
+      "An **Audio** block takes an MP3 or M4A file up to 5 MB: press **Upload audio**, then add a caption if you want one, such as the line being spoken. Learners play it in the lesson; nothing depends on it.",
       "A copy is always an unpublished draft with its own images. A copied course is not listed and you are its only editor. Nothing about learners is copied: answers, access, runs, invites, homework and recordings stay with the original.",
       "A lesson is about 10 to 15 minutes. A course is 3 to 8 lessons.",
     ],

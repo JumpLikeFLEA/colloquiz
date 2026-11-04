@@ -82,6 +82,7 @@ const TYPE_LABEL: Record<TheoryBlockType, string> = {
   list: "List",
   image: "Image",
   video: "Video",
+  audio: "Audio",
   self_check: "Self-check",
   table: "Table",
 };
@@ -105,6 +106,8 @@ function defaultBlockFor(type: TheoryBlockType): TheoryBlock {
       return { id, kind: "theory", type, url: "", alt: "" };
     case "video":
       return { id, kind: "theory", type, youtubeId: "" };
+    case "audio":
+      return { id, kind: "theory", type, url: "" };
     case "self_check":
       return { id, kind: "theory", type, prompt: emptyText, response: "short", modelAnswer: emptyText };
     case "table":
@@ -146,6 +149,8 @@ function blockPreview(block: LessonBlock): string {
       return block.alt || "(no alt text)";
     case "video":
       return block.youtubeId || "(no video id)";
+    case "audio":
+      return block.caption?.map((r) => r.text).join("") || (block.url ? "(no caption)" : "(no audio)");
     case "self_check":
       return block.prompt.map((r) => r.text).join("") || "(empty)";
     case "table":
