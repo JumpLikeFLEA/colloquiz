@@ -261,13 +261,16 @@ BEGIN
   -- plus the two messaging bodies and the predicate's own wrappers, plus (087, TCH-009) the grant and the revoke, plus (096, VOICE-011)
   -- hide_voice_analysis, plus (084,
   -- COH-014) _calendar_scope_check, the one check behind the three event
-  -- writes; every OTHER function that uses an editor or teacher gate is a
+  -- writes, plus (103, CNT-018) course_import_create and course_import_commit,
+  -- plus (107, AUTH-022) duplicate_lesson and duplicate_course: 41 + 2 + 2
+  -- (listed from pg_proc on the local stack, 2026-11-05, docs/decisions/0217);
+  -- every OTHER function that uses an editor or teacher gate is a
   -- read, a learner-side path, or a reply (listed, so a new unguarded write
   -- RPC fails here).
   PERFORM pg_temp.check_eq('guarded functions (prosrc calls _studio_can_write), excluding the helpers',
     (SELECT count(*)::text FROM pg_proc
       WHERE pronamespace = 'public'::regnamespace AND prosrc LIKE '%_studio_can_write(%'
-        AND proname NOT IN ('studio_can_write', '_studio_can_write')), '41');
+        AND proname NOT IN ('studio_can_write', '_studio_can_write')), '45');
   PERFORM pg_temp.check_eq('gate users WITHOUT the guard are exactly the reads, learner paths and replies',
     (SELECT string_agg(proname, ',' ORDER BY proname) FROM pg_proc
       WHERE pronamespace = 'public'::regnamespace
