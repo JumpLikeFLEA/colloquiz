@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: settingsCopy[lang].metaTitle, robots: { index: false } };
 }
 
-const OAUTH_PROVIDERS: OAuthProvider[] = ["google", "discord", "custom:telegram"];
+const OAUTH_PROVIDERS: OAuthProvider[] = ["google", "custom:telegram"];
 
 /**
  * The learner's settings on the English surface (docs/decisions/0181): the

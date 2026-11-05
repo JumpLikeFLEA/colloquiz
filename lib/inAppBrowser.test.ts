@@ -9,16 +9,15 @@ const SAFARI_UA =
 
 describe("isOAuthProviderAvailable", () => {
   it("offers every provider in an ordinary browser, and when the UA is unknown", () => {
-    for (const provider of ["google", "discord", "custom:telegram"] as const) {
+    for (const provider of ["google", "custom:telegram"] as const) {
       expect(isOAuthProviderAvailable(provider, SAFARI_UA)).toBe(true);
       expect(isOAuthProviderAvailable(provider, null)).toBe(true);
     }
   });
 
-  it("keeps Google and Discord hidden inside both in-app browsers", () => {
+  it("keeps Google hidden inside both in-app browsers", () => {
     for (const ua of [INSTAGRAM_UA, TELEGRAM_UA]) {
       expect(isOAuthProviderAvailable("google", ua)).toBe(false);
-      expect(isOAuthProviderAvailable("discord", ua)).toBe(false);
     }
   });
 

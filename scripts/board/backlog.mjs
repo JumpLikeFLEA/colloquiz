@@ -5003,6 +5003,60 @@ export const CARDS = [
     ],
     notes: 'Proposed in #272 (AUTH-022).',
   },
+  {
+    key: 'ANON-019',
+    title: 'Remove Discord sign-in from the codebase (the owner disabled the provider in Supabase)',
+    milestone: 'M4',
+    epic: 'ANON',
+    type: 'task',
+    rank: 3296,
+    dependsOn: [],
+    goal:
+      'The owner disabled the Discord provider in the hosted Supabase project on 2026-11-05, so every Discord button the app still shows now ends in a provider error. ' +
+      'Remove Discord sign-in from every screen that offers or lists it, and from the code, copy and docs that describe it. ' +
+      'The Discord feedback webhook (lib/feedbackNotify.ts, FEEDBACK_DISCORD_WEBHOOK_URL, the webhook row in subprocessors.md) is a different thing and stays.',
+    acceptance: [
+      'Probe first. A read-only select on hosted: how many auth.identities rows have provider = discord, and how many of those users have no other identity. Print the command and ASK before running it. Both numbers go in the evidence. A user with only a Discord identity has been unable to sign in since the provider was disabled: if there is any, report the count and propose a card (for example, writing to them, or testing whether "Forgot password?" with their Discord email restores access, which is a hypothesis until tested). Do not touch those accounts in this card.',
+      'Gone from every screen: the Discord button on /login and /signup (both entries), the Discord button in the lesson’s RegistrationOffer, and the Discord row in both sign-in-method lists (ProvidersSection on /app/settings; SignInMethods and OAUTH_PROVIDERS on /my/settings). Where Google shared a two-column row with Discord, Google now takes the full width, under Telegram’s row (0139’s order stays). lib/inAppBrowser.ts still hides Telegram and Google where it did.',
+      'Gone from the code: "discord" leaves the OAuthProvider type in lib/authRedirect.ts (tsc then finds every caller), DiscordIcon leaves app/components/ProviderIcons.tsx, alliengllCopy.signupOffer.oauthDiscord goes, and comments that name Discord as a sign-in option are updated. ProviderIcons.tsx’s entry in scripts/hex-literal-baseline.json is lowered by hand to its new count (a reviewed reduction, not --update-baseline). rg -i discord over app/ and lib/ finds only the feedback webhook.',
+      'Copy: every list of providers drops Discord, in EN and RU: the sign-up consent note ("Signing up with Telegram, Google or Discord also confirms…"), the lesson’s in-app-browser note (alliengllCopy) and the /my/settings in-app-browser note (settingsCopy, both languages). Each string is printed before and after. Tests that asserted Discord (AuthScreen.test.tsx, RegistrationOffer.test.tsx, lib/authRedirect.test.ts, lib/inAppBrowser.test.ts) are updated to the new set, not deleted.',
+      'Docs: docs/setup.md, and a docs/ui-decisions.md entry. Legal: privacy-policy.md §3.1 ("your Google / Discord account") and the Discord OAuth row in subprocessors.md (the webhook row stays), each with the version bump, date and change-log entry its maintainer note requires. The legal diff is shown to the owner at the plan checkpoint, before it is committed. If OPS-029’s drafts (0201) are still unpublished, they move up one version; record that in 0201, as OPS-030 did. A decision file records the removal and the probe.',
+      'Measured at 360 and 1280, light: /login and /signup in both entries, a lesson’s RegistrationOffer, /app/settings and /my/settings; scrollWidth/innerWidth printed. `npm run check && npm test`.',
+    ],
+    notes:
+      'supabase/config.toml has no [auth.external.discord] section (only the commented list of providers), so the local stack needs no change. ' +
+      'Historical docs (docs/release/definition-of-ready-1.0.md, docs/release/handoff/*, earlier decision files) keep their mentions: they record what was true then. ' +
+      'A user with a Discord identity linked beside another method keeps it in auth.identities; the settings lists just stop showing it.',
+  },
+  {
+    key: 'VIS-006',
+    title: 'The sign-in screens in the landing’s paper look (log in, sign up, forgot password, check your email, set a new password)',
+    milestone: 'M4',
+    epic: 'VIS',
+    type: 'task',
+    rank: 3297,
+    dependsOn: ['ANON-019'],
+    goal:
+      'The sign-in screens take the landing’s look (SHELL-027, 0165): grid paper, ink outlines with the hard offset shadow, the Unbounded heading with the yellow marker, the Caveat accent. ' +
+      'A learner who arrives from the English surface (isEnglishSurfaceEntry, 0135) gets it on /login, /signup, the "Forgot password?" form and the "Check your email" view. ' +
+      '/reset-password ("Set a new password" and "Link expired") gets it for everyone, Colloquiz users included: the page cannot tell which entry a user came from, and Colloquiz now sits behind a footer link (owner, 2026-11-05). ' +
+      'This is the "Revisit when" item of 0169. Plain /login and /signup (the Colloquiz entry) stay exactly as they are.',
+    acceptance: [
+      'Scope: AuthScreen when isEnglishSurfaceEntry(redirectTo) is true, in all four views (log in, sign up, "Forgot password?", and "Check your email" after a sign-up and after a reset request), and ResetPasswordScreen in both its states, for everyone. Plain /login and /signup (the Colloquiz entry with AuthLeftPanel) and the (auth) error boundary are untouched: screenshots of plain /login at 1280 and 360, before and after, are identical. No string changes; the screens stay English (ANON-017).',
+      'One behaviour path, one frame: in AuthScreen, state, handlers, redirects, the funnel source (0085), the bfcache reset and the history.replaceState calls are not duplicated or forked, and the two looks differ only in classes and in the English wrappers. The paper frame is one new component in app/(colloquiz)/(auth)/, used by AuthScreen’s English entry and by ResetPasswordScreen. It holds the grid paper, the header, the centred card column and the wrapper classes (surface-alina, bodyFont and the two display font variables, font-sans). Field keeps today’s look by default and gets the paper look through a prop. AuthLeftPanel stays, for plain /login only. Where a class string matches one in app/(english)/surfaceClasses.ts (OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS, PAPER_PANEL_CLASS), it is imported, not copied, so the landing and the sign-in screens change together. AuthScreen.test.tsx passes with no assertion edited (ANON-019’s edits aside).',
+      'Layout: EnglishAuthPanel (the violet gradient panel) is deleted. The whole screen is the still grid paper (.grid-paper; no LivePaper, no ClickSpark). At the top is the left half of the landing header: "Alina Cher" in the display face as a link to /, and the tagline in the accent face in --brand-text, with LandingHeader’s sizes, inside LESSON_HEADER_COLUMN_CLASS with the landing’s top padding. That way the wordmark stays in the same place when a learner taps the landing’s "Log in". The header replaces the mobile-only logo chips (AuthScreen’s "Alina Cher", ResetPasswordScreen’s "Colloquiz") at every width. Below it, centred, is one form card in PAPER_PANEL_CLASS (about max-w-md, generous padding). Under the card, in log in and sign up only, ANON-017’s line "Sign in to save your progress and pick up where you left off." appears in the accent face with the Brain icon, styled like the comic panel’s note.',
+      'Inside the card. Heading: font-display, extrabold, tight tracking, with its last word on the marker (Marker from AlinaMarks): Welcome back, Create account, Reset password, Check your email, Set a new password, Link expired. The heading’s accessible text is unchanged. OAuth buttons (Telegram, Google): the OUTLINE_CTA_CLASS treatment (2px ink outline, card fill), with the same icons and the same disabled behaviour. The "or" divider: dashed lines in border-ink/40. Inputs: 2px ink outline, rounded-xl, card fill. On focus, a 3px hard offset shadow in --brand-text replaces the soft ring; its contrast against the card is printed for both themes and is at least 3:1. Sign In, Create Account, Send reset link, Update password and every "Back to sign in": OFFSET_CTA_CLASS at full width; when disabled they neither lift nor press. "Forgot password?", the Sign up / Sign in switch, "Try again", Terms and Privacy Policy use the landing’s "All courses" link style. Notice and error boxes keep their tokens. "Check your email": the gradient chip becomes a round sticker in the hero sticker’s style (bg-highlight, border-2 border-highlight-foreground, shadow-offset, rotate-6), with the Mail icon in highlight-foreground. No new colour and no hex: tokens only, and the hex-literal guard passes.',
+      '/reset-password’s "Back to sign in" goes to /login?error=recovery_expired&next=/ instead of /login?error=recovery_expired, so the sign-in screen it opens keeps the paper look. Nobody’s destination changes: / is where a sign-in without next already lands (authDest) and where the password update sends everyone (router.push("/")). A check shows /login with both params renders the expired message in the paper look.',
+      'Autofill: Chromium paints an autofilled field pale yellow (visible in the owner’s screenshot), and beside the marker that reads as a highlight. In the paper look an autofilled input keeps the card fill and the foreground text, in light and dark, and keeps its focus look. Inputs on plain /login are untouched. Checked in Edge with a saved login.',
+      'Fonts: the Unbounded 800 and Caveat 600 definitions move out of app/(english)/layout.tsx into one shared definitions file, following app/bodyFont.ts (0219 Decision 4). That layout and the paper frame both import them, and their options do not change. AuthScreen.test.tsx mocks the new module the way it mocks @/app/bodyFont. Preloads from .next/server/next-font-manifest.json, by route group, before and after, in the same table as 0219: the English routes, Studio and /app are unchanged, and only /login, /signup and /reset-password may gain Unbounded. If Unbounded reaches the preloads of any other route, stop and report with the table; do not change cssChunking (0219 Decision 6). The network log shows Caveat requested on /login?next=/ and /reset-password, and not on plain /login.',
+      'TAGLINE moves from app/(english)/landingCopy.ts to lib/alliengll/copy.ts (landingCopy’s header forbids importing it outside the landing), and LandingHeader imports it from there. It stays one string, Russian in both languages (0156 Decision 11).',
+      'Measured, light and dark, at 360 and 1280: the four AuthScreen views on the English entry, and /reset-password in both states (the form needs a session, so sign in as a local fixture learner; "Link expired" is the state without one). scrollWidth/innerWidth is 1 everywhere. At 360×640 the sign-up view scrolls, the header and "Create Account" are both reachable (0139), and the card’s offset shadow is not clipped. Screenshots are looked at in the scratchpad, not committed, and described in the evidence. `npm run budget` before and after (/login), and `npm run check && npm test`. A decision file (next free number) that closes 0169’s "Revisit when" and holds the preload table, and a docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'Known gap, not absorbed: an expired recovery link opened from the email goes through app/auth/confirm/route.ts. That route redirects to /login?error=recovery_expired without next (it skips next for "/reset-password"), so this one path still opens the plain look. Changing it is redirect code with its own route tests; propose a card if it matters. ' +
+      'The alternative to the centred card was a two-column layout (a hero-like left column beside the card); the owner can ask for it at the plan checkpoint. ' +
+      'The living paper and the sparks are left off on purpose: a form screen stays calm, and sparks would celebrate a press before the sign-in has succeeded.',
+  },
 ];
 
 export function rankOf(key) {

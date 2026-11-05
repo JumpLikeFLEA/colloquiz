@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { UserIdentity } from "@supabase/supabase-js";
 import { Check, KeyRound, Link2, Loader2, Unlink } from "lucide-react";
-import { DiscordIcon, GoogleIcon, TelegramIcon } from "@/app/components/ProviderIcons";
+import { GoogleIcon, TelegramIcon } from "@/app/components/ProviderIcons";
 import type { OAuthProvider } from "@/lib/authRedirect";
 import { identityLabel, isOnlySignInMethod } from "@/lib/signInMethods";
 import {
@@ -24,7 +24,6 @@ import type { SignInLabels } from "./settingsCopy";
 const PROVIDERS = [
   { id: "email", label: null, icon: <KeyRound size={18} className="text-muted-foreground" />, oauth: false },
   { id: "google", label: "Google", icon: <GoogleIcon size={18} />, oauth: true },
-  { id: "discord", label: "Discord", icon: <DiscordIcon size={18} />, oauth: true },
   { id: "custom:telegram", label: "Telegram", icon: <TelegramIcon size={18} />, oauth: true },
 ] as const;
 

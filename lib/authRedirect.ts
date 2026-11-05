@@ -12,7 +12,7 @@ import type { FunnelSource } from "./funnelSource";
 /** The OAuth providers this app offers. Telegram is the hosted project's
  * custom OIDC provider (docs/decisions/0098), which auth-js types as
  * `custom:${string}`. */
-export type OAuthProvider = "google" | "discord" | "custom:telegram";
+export type OAuthProvider = "google" | "custom:telegram";
 
 /** Where AuthScreen sends the user after auth. Kept relative and
  * single-slash to prevent open redirects; anything else falls back to "/". */
@@ -77,8 +77,7 @@ export function oauthCallbackUrl(origin: string, next: string, source: FunnelSou
  * is an assumption from Google's OpenID Connect docs, confirmed only once
  * a real second account sees the chooser.
  *
- * Discord is left as it was: nobody has reported it, and its `prompt`
- * values mean something different. Telegram gets nothing either: its consent
+ * Telegram gets nothing: its consent
  * page already names the Telegram account it will use (0098).
  */
 export function oauthQueryParams(provider: OAuthProvider): Record<string, string> | undefined {

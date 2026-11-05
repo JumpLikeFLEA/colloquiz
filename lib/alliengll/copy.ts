@@ -143,12 +143,11 @@ export const alliengllCopy = {
     submitting: "Creating account…",
     orDivider: "or",
     oauthGoogle: "Google",
-    oauthDiscord: "Discord",
     oauthTelegram: "Continue with Telegram",
     // ANON-012: Telegram is hidden here too until a device pass proves it
     // (docs/decisions/0098 Decision 1), so this names all three.
     inAppBrowserNotice:
-      "Telegram, Google and Discord sign-in aren’t offered in the Instagram or Telegram in-app browser. Sign up with email, or open this page in your regular browser.",
+      "Telegram and Google sign-in aren’t offered in the Instagram or Telegram in-app browser. Sign up with email, or open this page in your regular browser.",
     // The Colloquiz sign-up form's existing consent wording
     // (app/(colloquiz)/(auth)/AuthScreen.tsx), not new legal copy.
     consentPrefix: "I am 13 or over and agree to the",

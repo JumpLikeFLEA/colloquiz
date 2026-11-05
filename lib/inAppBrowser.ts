@@ -19,7 +19,7 @@ export function isInAppBrowser(userAgent: string | null | undefined): boolean {
 /**
  * ANON-012 — the providers a device pass has proven to complete sign-in
  * inside these in-app browsers. Empty: Google is known not to (above),
- * Discord was never tested, and Telegram's pass runs on production after
+ * and Telegram's pass runs on production after
  * this card ships (docs/decisions/0098 Decision 1). A provider joins this
  * list only with that pass's printed result behind it.
  */

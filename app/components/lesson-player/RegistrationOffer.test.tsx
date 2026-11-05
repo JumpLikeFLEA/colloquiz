@@ -58,7 +58,6 @@ describe("RegistrationOffer", () => {
     render(<RegistrationOffer lessonPath="/courses/c/l" />);
     fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
     expect(screen.getByText(alliengllCopy.signupOffer.oauthGoogle)).toBeDefined();
-    expect(screen.getByText(alliengllCopy.signupOffer.oauthDiscord)).toBeDefined();
     expect(screen.getByText(alliengllCopy.signupOffer.oauthTelegram)).toBeDefined();
     expect(screen.getByLabelText(alliengllCopy.signupOffer.emailLabel)).toBeDefined();
   });
@@ -84,7 +83,6 @@ describe("RegistrationOffer", () => {
     render(<RegistrationOffer lessonPath="/courses/c/l" />);
     fireEvent.click(screen.getByRole("button", { name: alliengllCopy.signupOffer.cta }));
     expect(screen.queryByText(alliengllCopy.signupOffer.oauthGoogle)).toBeNull();
-    expect(screen.queryByText(alliengllCopy.signupOffer.oauthDiscord)).toBeNull();
     // Hidden until a device pass proves it there (docs/decisions/0098 Decision 1).
     expect(screen.queryByText(alliengllCopy.signupOffer.oauthTelegram)).toBeNull();
     expect(screen.queryByText(alliengllCopy.signupOffer.orDivider)).toBeNull();

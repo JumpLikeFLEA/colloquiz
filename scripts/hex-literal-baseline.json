@@ -8,7 +8,7 @@
   "app/(colloquiz)/(main)/app/students/review/[assignmentId]/page.tsx": 5,
   "app/(english)/courses/ogImageCard.tsx": 2,
   "app/apple-icon.tsx": 1,
-  "app/components/ProviderIcons.tsx": 5,
+  "app/components/ProviderIcons.tsx": 4,
   "app/icon.tsx": 1,
   "app/opengraph-image.tsx": 2,
   "lib/categoricalColor.ts": 3,

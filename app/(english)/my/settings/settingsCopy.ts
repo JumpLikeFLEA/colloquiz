@@ -138,7 +138,7 @@ export const settingsCopy: Record<SurfaceLang, SettingsStrings> = {
       connect: "Подключить",
       disconnect: "Отключить",
       inAppNote:
-        "Во встроенном браузере Instagram или Telegram подключить Telegram, Google или Discord нельзя. Откройте эту страницу в обычном браузере.",
+        "Во встроенном браузере Instagram или Telegram подключить Telegram или Google нельзя. Откройте эту страницу в обычном браузере.",
       confirmTitle: "Отключить {provider}?",
       confirmBody:
         "Вы больше не сможете входить через {provider}. Подключить снова можно в любой момент. Ваши курсы и прогресс не изменятся.",
@@ -219,7 +219,7 @@ export const settingsCopy: Record<SurfaceLang, SettingsStrings> = {
       connect: "Connect",
       disconnect: "Disconnect",
       inAppNote:
-        "Telegram, Google and Discord can't be connected in the Instagram or Telegram in-app browser. Open this page in your regular browser.",
+        "Telegram and Google can't be connected in the Instagram or Telegram in-app browser. Open this page in your regular browser.",
       confirmTitle: "Disconnect {provider}?",
       confirmBody:
         "You'll no longer be able to sign in with {provider}. You can reconnect it later. Your courses and progress are unaffected.",

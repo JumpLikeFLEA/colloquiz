@@ -73,10 +73,6 @@ describe("oauthQueryParams", () => {
     expect(oauthQueryParams("google")).toEqual({ prompt: "select_account" });
   });
 
-  it("leaves Discord's authorize URL unchanged", () => {
-    expect(oauthQueryParams("discord")).toBeUndefined();
-  });
-
   it("leaves Telegram's authorize URL unchanged", () => {
     expect(oauthQueryParams("custom:telegram")).toBeUndefined();
   });

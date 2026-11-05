@@ -10,7 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/ProviderIcons";
+import { GoogleIcon, TelegramIcon } from "@/app/components/ProviderIcons";
 import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo, type OAuthProvider } from "@/lib/authRedirect";
 import { signInDestDependsOnRole } from "@/lib/postSignInDest";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
@@ -465,27 +465,21 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
           {mode !== "forgot" && (
             <>
               {/* Social sign-in. Telegram gets its own full-width row on top
-                  (ANON-012, docs/decisions/0139). */}
+                  (ANON-012, docs/decisions/0139), Google the full-width row under it. */}
               <div className="flex flex-col gap-3">
                 <button type="button" onClick={() => handleOAuthLogin("custom:telegram")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                   <TelegramIcon size={18} />
                   <span className="text-sm font-medium text-foreground">Continue with Telegram</span>
                 </button>
-                <div className="grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                    <GoogleIcon size={18} />
-                    <span className="text-sm font-medium text-foreground">Google</span>
-                  </button>
-                  <button type="button" onClick={() => handleOAuthLogin("discord")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                    <DiscordIcon size={18} />
-                    <span className="text-sm font-medium text-foreground">Discord</span>
-                  </button>
-                </div>
+                <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                  <GoogleIcon size={18} />
+                  <span className="text-sm font-medium text-foreground">Google</span>
+                </button>
               </div>
 
               {mode === "register" && (
                 <p className="text-xs text-muted-foreground text-center">
-                  Signing up with Telegram, Google or Discord also confirms you are 13 or over and accept our{" "}
+                  Signing up with Telegram or Google also confirms you are 13 or over and accept our{" "}
                   <Link href="/terms" target="_blank" rel="noreferrer" className="text-brand-text hover:underline">Terms</Link>{" "}
                   and{" "}
                   <Link href="/privacy" target="_blank" rel="noreferrer" className="text-brand-text hover:underline">Privacy Policy</Link>.

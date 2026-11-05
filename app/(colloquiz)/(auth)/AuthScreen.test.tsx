@@ -94,7 +94,7 @@ describe("AuthScreen — English entry (the landing header's /login?next=/)", ()
 
   it("the sign-up consent note names Telegram with the other providers", () => {
     render(<AuthScreen initialMode="register" redirectTo="/" />);
-    expect(screen.getByText(/Signing up with Telegram, Google or Discord also confirms/)).toBeDefined();
+    expect(screen.getByText(/Signing up with Telegram or Google also confirms/)).toBeDefined();
   });
 
   it("a GPC visitor sends no source by either method, and storage is not read", async () => {
