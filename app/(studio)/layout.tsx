@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "../components/ui/sonner";
 import { SITE_URL } from "@/lib/site";
+import { bodyFont } from "../bodyFont";
 import "../globals.css";
 
 // Studio's root layout (SHELL-020, docs/decisions/0109 Decisions 2 and 11),
@@ -11,15 +12,12 @@ import "../globals.css";
 // next-themes) and the Toaster the editor's actions report through. No KaTeX
 // CSS, no Vercel Analytics/Speed Insights, nothing from the Colloquiz shell.
 //
-// Fonts as in the Colloquiz root (docs/decisions/0021 for `subsets`). Geist
-// Mono is loaded with preload:false because the moved editor pages use
+// The body face is Montserrat, the English surface's (owner, 2026-11-05,
+// docs/decisions/0219), so the lesson preview reads as the learner's page.
+// Geist Mono is loaded with preload:false because the moved editor pages use
 // `font-mono` (slugs, the visitor-view path) and must render as they did;
-// it is only fetched when such an element renders.
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
+// it is only fetched when such an element renders (docs/decisions/0021 for
+// `subsets`).
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -46,7 +44,7 @@ export default function StudioRootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bodyFont.variable} ${geistMono.variable} h-full antialiased`}
     >
       {/* ThemeProvider first in <body> so its theme script runs before
           paint (see app/(colloquiz)/layout.tsx). */}

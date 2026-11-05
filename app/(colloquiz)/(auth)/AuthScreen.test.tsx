@@ -20,6 +20,10 @@ vi.mock("@/lib/supabase/client", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
+// next/font's loaders only run under Next's compiler; vitest has none.
+vi.mock("@/app/bodyFont", () => ({
+  bodyFont: { variable: "font-montserrat-test", className: "", style: {} },
+}));
 
 const SOURCE_KEY = "colloquiz_funnel_source";
 

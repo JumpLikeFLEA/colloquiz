@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { Caveat, Geist, Unbounded } from "next/font/google";
+import { Caveat, Unbounded } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
@@ -13,17 +13,13 @@ import { EnglishFooterGate } from "./EnglishFooterGate";
 import { EntryViewBeacon } from "./EntryViewBeacon";
 import { HtmlLangSync } from "./HtmlLang";
 import { landingShareText } from "./landingCopy";
+import { bodyFont } from "../bodyFont";
 import "../globals.css";
 
-// Same font, same rationale as the Colloquiz root (docs/decisions/0021):
-// `subsets: ["latin"]` costs no Cyrillic coverage — Google's css2 response
-// always includes the cyrillic @font-face block regardless of `subsets`,
-// which only controls the eager <link rel=preload>. Geist Mono is NOT loaded
-// here: nothing under this surface renders monospace text (docs/decisions/0046).
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// The body face is Montserrat (owner, 2026-11-05, docs/decisions/0219,
+// replacing Geist here), defined in app/bodyFont.ts and shared with Studio.
+// Geist Mono is NOT loaded here: nothing under this surface renders monospace
+// text (docs/decisions/0046).
 
 // Alina Cher's two display faces (SHELL-026, docs/decisions/0162, 0163), both
 // with the cyrillic subset. Unbounded 800 is the headline face and preloads
@@ -96,7 +92,7 @@ export default async function EnglishRootLayout({
     // hydration, so server and client markup necessarily disagree here —
     // same reasoning as the Colloquiz root layout. It also covers `lang`,
     // which HtmlLang.tsx may set after load.
-    <html lang={lang} suppressHydrationWarning className={`${geistSans.variable} ${unbounded.variable} ${caveat.variable} surface-alina h-full antialiased`}>
+    <html lang={lang} suppressHydrationWarning className={`${bodyFont.variable} ${unbounded.variable} ${caveat.variable} surface-alina h-full antialiased`}>
       {/* flex column + min-h-svh here (not on any page's own <main>) is the
           one sticky-footer anchor for the whole surface: the wrapper below
           grows (flex-1) to fill whatever's left of the viewport after

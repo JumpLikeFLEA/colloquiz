@@ -21,9 +21,18 @@ import "../globals.css";
 // matching, the moment Alliengll content actually renders Cyrillic text — no
 // system-font fallback occurs at any point. Coverage is PROVEN (not merely
 // inferred from this reasoning) in docs/decisions/0021.
+//
+// preload:false since the English surface and Studio moved to Montserrat
+// (docs/decisions/0219): Geist is now Colloquiz's alone, and next/font's
+// preloads follow Next's merged CSS chunks rather than the layout that uses a
+// font, so a preloaded Geist reached every English route as an unused 29 KB
+// download (measured in 0219). It still loads through its @font-face the moment
+// a Colloquiz page paints text, with next/font's size-adjusted fallback in the
+// meantime.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  preload: false,
 });
 
 // Used only on a handful of admin/quiz components (StageEditor, review

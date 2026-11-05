@@ -400,12 +400,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: var(--font-geist-sans);
+  /* Montserrat where a root layout loads it (the English surface, Studio and
+     the English sign-in panel, app/bodyFont.ts, docs/decisions/0219); Geist
+     everywhere else, i.e. Colloquiz. */
+  --font-sans: var(--font-montserrat, var(--font-geist-sans));
   --font-mono: var(--font-geist-mono);
   /* English surface only (app/(english)/layout.tsx loads them); elsewhere the
      variables are unset and these fall back to the sans stack. */
-  --font-display: var(--font-unbounded), var(--font-geist-sans);
-  --font-accent: var(--font-caveat), var(--font-geist-sans);
+  --font-display: var(--font-unbounded), var(--font-montserrat, var(--font-geist-sans));
+  --font-accent: var(--font-caveat), var(--font-montserrat, var(--font-geist-sans));
 }
 
 @layer base {

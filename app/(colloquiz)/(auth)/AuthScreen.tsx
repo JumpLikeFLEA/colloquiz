@@ -14,6 +14,7 @@ import { GoogleIcon, DiscordIcon, TelegramIcon } from "@/app/components/Provider
 import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo, type OAuthProvider } from "@/lib/authRedirect";
 import { signInDestDependsOnRole } from "@/lib/postSignInDest";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
+import { bodyFont } from "@/app/bodyFont";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -369,8 +370,11 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
     // locally. This layout is Colloquiz's, so <html> never carries
     // `surface-alina`; the class on this wrapper re-points --brand* for the
     // panel AND the form, so a violet panel never sits beside indigo buttons.
-    // A Colloquiz entry gets no class and stays indigo.
-    <div className={englishEntry ? "flex h-full surface-alina" : "flex h-full"}>
+    // A Colloquiz entry gets no class and stays indigo. The same wrapper sets
+    // the English surface's body face, Montserrat (docs/decisions/0219):
+    // `font-sans` re-reads --font-sans here, where bodyFont defines
+    // --font-montserrat. The same files the learner's lesson already loaded.
+    <div className={englishEntry ? `flex h-full surface-alina ${bodyFont.variable} font-sans` : "flex h-full"}>
       {/* Left decorative panel */}
       {englishEntry ? <EnglishAuthPanel /> : <AuthLeftPanel />}
 

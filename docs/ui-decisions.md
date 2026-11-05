@@ -3031,3 +3031,20 @@ Appended to in the same commit as the change it records. Referenced from
   0.1 KB. Not measured: a real OS clipboard paste, dark mode, a phone. Do not put the image
   back in a fixed-aspect box, and do not make the sizes percentages: they would shrink every
   image on a phone.
+- Body font Montserrat on the English surface and in Studio (2026-11-05, ad hoc,
+  docs/decisions/0219), SUPERSEDING the first entry's "Body font: Geist via next/font" for
+  everything but Colloquiz, and the SHELL-007 entry's "Geist Sans only" on the English layout.
+  The author asked for Century Gothic; it is a paid Monotype font that phones don't have, and the
+  owner chose Montserrat for every language instead (0219 Context). Body text only: Unbounded
+  headlines, Caveat accents and Studio's Geist Mono slugs are unchanged, and Colloquiz (`/app`,
+  plain `/login`) stays on Geist. Montserrat reaches the English root layout, the Studio root
+  layout, the global 404 and the English sign-in screen's wrapper (the one with `surface-alina`,
+  0169) through `app/bodyFont.ts`, and `--font-sans` reads `--font-montserrat` before Geist, so no
+  component class changed. Montserrat is wider than Geist, so paragraphs re-break and pages grow a
+  little taller; no row gained an overflow. Measured: `scrollWidth/innerWidth` 360/360 on 56 route
+  × state rows (English surface signed out EN/RU/dark and signed in EN/RU, sign-in pages, Studio
+  as a teacher and an admin, `/app`), 1280/1280 on the same 56. The lesson editor's pre-existing
+  inner overflow went 476 → 495/360. `npm run budget`: unchanged except `/login` 286.9 → 287.1 KB.
+  Not measured: a gaps lesson, dialogs, a phone, Safari. Do not add a second next/font definition
+  of Montserrat (it emits the files under other URLs), and do not preload Geist again: the merged
+  CSS chunk puts its preload on every English route (0219 Decision 6).

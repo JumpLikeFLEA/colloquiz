@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
 import Link from "next/link";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { bodyFont } from "./bodyFont";
 import "./globals.css";
 
 /**
@@ -30,11 +30,11 @@ export const metadata: Metadata = {
   description: alliengllCopy.notFound.body,
 };
 
-const geistSans = Geist({ subsets: ["latin"] });
-
+// The English surface's body face (docs/decisions/0219): an unmatched URL is
+// most likely a stray link into that surface.
 export default function GlobalNotFound() {
   return (
-    <html lang="ru" className={`${geistSans.className} h-full antialiased`}>
+    <html lang="ru" className={`${bodyFont.variable} h-full antialiased`}>
       <body className="h-full flex items-center justify-center bg-background px-6 py-16">
         <div className="max-w-md w-full text-center flex flex-col items-center gap-5">
           <div className="flex flex-col gap-2">
