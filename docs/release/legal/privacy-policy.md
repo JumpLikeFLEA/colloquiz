@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.9 · Last updated 2026-10-24
+Version 1.10 · Last updated 2026-11-05
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -71,7 +71,7 @@ recording (section 12) is not such a decision; section 12 says why.
 
 | Data | Where it comes from | Why |
 | --- | --- | --- |
-| Email address | Sign-up, or your Google / Discord account if you use those | Account identity, sign-in, password reset, service email |
+| Email address | Sign-up, or your Google account if you use it | Account identity, sign-in, password reset, service email |
 | Password | Sign-up (stored only as a salted hash by our authentication provider — we never see it) | Sign-in |
 | Display name / full name | Optional, Settings › Account | Shown to you; your public name appears on leaderboards and to members of groups you join |
 | City | Optional, Settings › Account | Shown on your own profile only |
@@ -479,6 +479,7 @@ effect. Version 1.7 added voice recordings in every course and the AI feedback i
 section 12. Version 1.8 corrected what Anthropic receives for a final recording, and what AssemblyAI
 keeps, where it keeps it, and why it does not train on recordings. Version 1.9 added
 importing a course from a file, for authors who have the permission (sections 3 to 7, 9 and 12).
+Version 1.10 removed Discord sign-in, which is no longer offered (section 3.1).
 
 ---
 

@@ -30,7 +30,7 @@ re-apply.
 
 ### Configure auth
 
-Email/password, Google OAuth and Discord OAuth are supported. The social providers and the
+Email/password, Google OAuth and Telegram sign-in are supported (Discord was removed, docs/decisions/0221). The social providers and the
 email-confirmation / password-recovery templates are configured in the Supabase dashboard
 (Authentication → Providers / Email Templates); point the confirmation link at
 `/auth/confirm`. Both OAuth providers return to `/auth/callback`, so add that URL (plus the

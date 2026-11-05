@@ -3064,3 +3064,10 @@ Appended to in the same commit as the change it records. Referenced from
   lesson 257.8 / 258.0 KB of 260, applied-practice 285.5 / 285.7 of 290, every other route
   identical. Not measured: dark mode, a phone, Safari. Do not store `collapsed: false`, and do
   not hide the table with client state: `<details>` needs no JS.
+- Discord sign-in removed (2026-11-05, ANON-019, docs/decisions/0221). The owner disabled the
+  provider in Supabase. The Discord button is gone from `/login` and `/signup` (both entries) and
+  the lesson's registration offer, and the Discord row from both sign-in-method lists. Where Google
+  shared a two-column row with Discord it now takes the full width under Telegram (0139's order
+  stays); in the registration offer it is a full-width button. The consent note and the in-app
+  browser notes name Telegram and Google only. Existing classes and tokens; no new colours. Do not
+  re-add the button without re-enabling the provider in Supabase.
