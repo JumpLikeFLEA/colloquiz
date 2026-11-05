@@ -154,8 +154,10 @@ function blockPreview(block: LessonBlock): string {
       return block.caption?.map((r) => r.text).join("") || (block.url ? "(no caption)" : "(no audio)");
     case "self_check":
       return block.prompt.map((r) => r.text).join("") || "(empty)";
-    case "table":
-      return block.caption?.map((r) => r.text).join("") || `${block.rows.length} row(s)`;
+    case "table": {
+      const summary = block.caption?.map((r) => r.text).join("") || `${block.rows.length} row(s)`;
+      return block.collapsed ? `${summary} · hidden` : summary;
+    }
   }
 }
 

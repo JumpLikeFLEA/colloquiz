@@ -186,6 +186,11 @@ export const TableBlockSchema = z
     header: z.array(InlineContentSchema).min(1),
     rows: z.array(z.array(InlineContentSchema)).min(1),
     caption: InlineContentSchema.optional(),
+    /** Hidden until the learner opens it (docs/decisions/0220): an audio
+     * script the learner should listen to before reading. Absent means open,
+     * so a table saved before 0220 renders as it did. The editor removes the
+     * key rather than storing `false`. */
+    collapsed: z.boolean().optional(),
   })
   .superRefine((table, ctx) => {
     table.rows.forEach((row, index) => {

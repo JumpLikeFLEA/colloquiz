@@ -359,6 +359,19 @@ export function BlockForm({
     case "table":
       return (
         <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Switch
+                checked={block.collapsed === true}
+                onCheckedChange={(on) => onChange({ ...block, collapsed: on ? true : undefined })}
+              />
+              Hidden until the learner opens it
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Learners see &ldquo;Show the text&rdquo; and open the table when they want, for an audio script
+              they should hear before they read.
+            </p>
+          </div>
           <div className="space-y-2">
             <label className={labelClass}>Header</label>
             {block.header.map((cell, c) => (

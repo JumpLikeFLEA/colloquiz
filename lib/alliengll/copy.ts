@@ -100,6 +100,9 @@ export const alliengllCopy = {
     selfCheckPlaceholder: "Your answer",
     selfCheckModelAnswerLabel: "Model answer",
     selfCheckShowModelAnswer: "Show model answer",
+    /** A table the author hid until opened (docs/decisions/0220). */
+    tableShow: "Show the text",
+    tableHide: "Hide the text",
     videoTitle: "Lesson video",
     videoPlayAriaLabel: "Play video",
     videoClickToPlay: "Click to play video",

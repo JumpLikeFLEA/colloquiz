@@ -249,6 +249,19 @@ describe("table", () => {
     expect(TableBlockSchema.safeParse({ ...base, caption: text }).success).toBe(true);
   });
 
+  it("accepts `collapsed` (docs/decisions/0220), and a table without it still parses", () => {
+    const hidden = TableBlockSchema.safeParse({ ...base, collapsed: true });
+    expect(hidden.success).toBe(true);
+    if (hidden.success) expect(hidden.data.collapsed).toBe(true);
+    const plain = TableBlockSchema.safeParse(base);
+    expect(plain.success).toBe(true);
+    if (plain.success) expect(plain.data.collapsed).toBeUndefined();
+  });
+
+  it("rejects a non-boolean `collapsed`", () => {
+    expect(TableBlockSchema.safeParse({ ...base, collapsed: "yes" }).success).toBe(false);
+  });
+
   it("rejects a row with a different column count than the header, naming the row", () => {
     const result = TableBlockSchema.safeParse({ ...base, rows: [[text], [text, [{ text: "ok" }]]] });
     expect(result.success).toBe(false);

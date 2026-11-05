@@ -93,6 +93,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "Write an explanation for each wrong answer. Learners see it when they check their answer.",
       "An **Image** block shows the picture at its own shape, uncropped. Press **Upload image**, or click the image box and paste a picture with Ctrl+V (⌘V on a Mac). Then choose its **Size**: Small, Medium, Large or Full width.",
       "An **Audio** block takes an MP3 or M4A file up to 5 MB: press **Upload audio**, then add a caption if you want one, such as the line being spoken. Learners play it in the lesson; nothing depends on it.",
+      "A **Table** can be **Hidden until the learner opens it**. Learners see **Show the text** and open it when they want: use it for an audio script, so they listen before they read.",
       "A copy is always an unpublished draft with its own images. A copied course is not listed and you are its only editor. Nothing about learners is copied: answers, access, runs, invites, homework and recordings stay with the original.",
       "A lesson is about 10 to 15 minutes. A course is 3 to 8 lessons.",
     ],

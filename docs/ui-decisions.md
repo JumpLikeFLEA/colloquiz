@@ -3048,3 +3048,19 @@ Appended to in the same commit as the change it records. Referenced from
   Not measured: a gaps lesson, dialogs, a phone, Safari. Do not add a second next/font definition
   of Montserrat (it emits the files under other URLs), and do not preload Geist again: the merged
   CSS chunk puts its preload on every English route (0219 Decision 6).
+- A table can be hidden until opened (2026-11-05, ad hoc, docs/decisions/0220). A table block
+  with "Hidden until the learner opens it" switched on (`collapsed`) sits closed in a native
+  `<details>`: a `min-h-11` row in `text-brand-text` (the voice feedback's summary classes, the
+  brand focus ring) with the results page's rotating `▼` and "Show the text", "Hide the text"
+  once open; the table and its caption appear under it, unchanged. Closed again on every load.
+  The sign-in teaser and the Studio preview show it the same way. A table without the switch
+  renders exactly as before. Studio's table form opens with the switch (the list form's
+  "Ordered" pattern) and one muted line; the block row says "· hidden". Fixed English lesson
+  chrome. Existing classes and tokens; no new colours, no lucide icon. Measured (local stack, a
+  scratch course, deleted): 360/360 on the lesson and the sign-in teaser (`npm run viewport360
+  --expect="Show the text"`), 360/360 and 1280/1280 closed and open in Edge, Enter and Space
+  toggle it; the preview 360/360; the editor document 360/360 with the form open (its `main`
+  470/360 from the header row, the same with this change stashed). `npm run budget`: free
+  lesson 257.8 / 258.0 KB of 260, applied-practice 285.5 / 285.7 of 290, every other route
+  identical. Not measured: dark mode, a phone, Safari. Do not store `collapsed: false`, and do
+  not hide the table with client state: `<details>` needs no JS.
