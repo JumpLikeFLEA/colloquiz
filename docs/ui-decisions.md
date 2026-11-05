@@ -3071,3 +3071,19 @@ Appended to in the same commit as the change it records. Referenced from
   stays); in the registration offer it is a full-width button. The consent note and the in-app
   browser notes name Telegram and Google only. Existing classes and tokens; no new colours. Do not
   re-add the button without re-enabling the provider in Supabase.
+- Sign-in screens in the landing's paper look (2026-11-05, VIS-006, docs/decisions/0222), SUPERSEDING
+  the violet gradient `EnglishAuthPanel` of 0135 and 0169 (the violet, the English copy and the
+  `next`-based entry stand). An English entry (`/login` or `/signup` with a `next` outside `/app`) and
+  `/reset-password` for everyone render in `PaperAuthFrame`: grid paper, the landing header's "Alina Cher"
+  (link to `/`) and tagline at its place and size, one `PAPER_PANEL_CLASS` card (`max-w-md`). Headings are
+  `font-display` with the last word on the marker; Telegram and Google are `OUTLINE_CTA_CLASS`; Sign In,
+  Create Account, Send reset link, Update password and the full-width "Back to sign in" are
+  `OFFSET_CTA_CLASS` (disabled: no lift, no press); links use the landing's "All courses" style
+  (`PAPER_LINK_CLASS`); inputs have a 2px ink outline and a 3px offset focus shadow in `--brand-text`
+  (6.65:1 light, 6.90:1 dark), and an autofilled input keeps the card fill. "Check your email" has a round
+  yellow tilted sticker. Under the card, in log in and sign up, ANON-017's line in the accent face with the
+  Brain icon. Plain `/login` and `/signup` are untouched (form-panel DOM byte-identical). No new tokens or
+  hex literals. Measured at 360 and 1280, light and dark: `scrollWidth/innerWidth` equal, 28 of 28 cells.
+  Not measured: autofill with a real saved login, a phone. Do not put `EnglishAuthPanel` back, do not fork
+  `AuthScreen`'s behaviour for the paper look, and do not import `lib/alliengll/copy.ts` into a client
+  component for the tagline (use `tagline.ts`).

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
-import { landingCopy, TAGLINE } from "./landingCopy";
+import { TAGLINE } from "@/lib/alliengll/tagline";
+import { landingCopy } from "./landingCopy";
 import { LanguageToggle } from "./LanguageToggle";
 
 /**

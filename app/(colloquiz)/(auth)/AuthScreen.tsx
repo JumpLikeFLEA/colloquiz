@@ -14,7 +14,11 @@ import { GoogleIcon, TelegramIcon } from "@/app/components/ProviderIcons";
 import { authDest, isEnglishSurfaceEntry, oauthCallbackUrl, oauthQueryParams, signupEmailRedirectTo, type OAuthProvider } from "@/lib/authRedirect";
 import { signInDestDependsOnRole } from "@/lib/postSignInDest";
 import { getCurrentFunnelSource } from "@/lib/funnelSource";
-import { bodyFont } from "@/app/bodyFont";
+import { PAPER_LINK_CLASS, PAPER_LINK_INLINE_CLASS, PAPER_PANEL_CLASS } from "@/app/(english)/surfaceClasses";
+import {
+  PAPER_AUTH_CARD_CLASS, PAPER_OAUTH_BUTTON_CLASS, PAPER_PRIMARY_BUTTON_CLASS,
+  PaperAuthFrame, PaperHeading, PaperMailSticker,
+} from "./PaperAuthFrame";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -24,6 +28,8 @@ interface FieldProps {
   placeholder: string;
   icon: React.ReactNode;
   dark?: boolean;
+  // VIS-006: the paper look of the English sign-in screens. Off by default.
+  paper?: boolean;
   value: string;
   onChange: (v: string) => void;
   id?: string;
@@ -33,18 +39,20 @@ interface FieldProps {
   autoComplete?: string;
 }
 
-export function Field({ label, type = "text", placeholder, icon, dark, value, onChange, id, name, required, minLength, autoComplete }: FieldProps) {
+export function Field({ label, type = "text", placeholder, icon, dark, paper, value, onChange, id, name, required, minLength, autoComplete }: FieldProps) {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (show ? "text" : "password") : type;
 
-  const baseInput = dark
+  const baseInput = paper
+    ? "paper-input"
+    : dark
     ? "bg-white/10 border-white/15 text-white placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
     : "bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-brand";
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className={`text-sm font-medium ${dark ? "text-white/80" : "text-foreground"}`}>{label}</label>
+      <label htmlFor={id} className={`text-sm font-medium ${dark && !paper ? "text-white/80" : "text-foreground"}`}>{label}</label>
       <div className="relative">
         <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${dark ? "text-white/40" : "text-muted-foreground"}`}>
           {icon}
@@ -59,7 +67,7 @@ export function Field({ label, type = "text", placeholder, icon, dark, value, on
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
-          className={`w-full pl-10 ${isPassword ? "pr-10" : "pr-4"} py-3 rounded-xl border transition-all outline-none focus:ring-2 ${dark ? "focus:ring-white/20" : "focus:ring-brand/20"} ${baseInput}`}
+          className={`w-full pl-10 ${isPassword ? "pr-10" : "pr-4"} py-3 rounded-xl ${paper ? "placeholder:text-muted-foreground" : `border transition-all outline-none focus:ring-2 ${dark ? "focus:ring-white/20" : "focus:ring-brand/20"}`} ${baseInput}`}
         />
         {isPassword && (
           <button
@@ -93,35 +101,6 @@ const FLOAT_SUBJECTS = [
   { icon: Landmark,   label: "History",     bottom: "6%", left: "30%", delay: 2.4 },
   { icon: Brain,      label: "Psychology",  top: "6%", left: "40%", delay: 2.8 },
 ];
-
-// ANON-017: the panel a learner arriving from the English surface sees, in
-// place of the quiz-app panel. English, fixed (lesson chrome is English;
-// the owner chose this over following the EN/RU cookie, so /login reads no
-// cookie). Same gradient shell and tokens as AuthLeftPanel.
-function EnglishAuthPanel() {
-  return (
-    <div className="hidden lg:flex w-[40%] shrink-0 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-brand-deep via-brand to-brand-accent">
-      <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="dots-en" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="1.5" fill="white" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#dots-en)" />
-      </svg>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-      <div className="relative z-10 flex flex-col items-center text-center gap-6 px-12">
-        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur border border-white/30 shadow-xl">
-          <GraduationCap size={32} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-3xl text-white leading-tight">Alina Cher</h2>
-          <p className="text-white/60 mt-3 text-sm leading-relaxed">Sign in to save your progress<br />and pick up where you left off.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function AuthLeftPanel() {
   return (
@@ -365,18 +344,302 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
     }
   }
 
+  // VIS-006 (docs/decisions/0222): an English entry takes the landing's paper
+  // look. Everything above (state, handlers, redirects) is shared; the two
+  // looks differ only in the classes below and in the wrapper they render in.
+  const paper = englishEntry;
+  const primaryButton = paper
+    ? PAPER_PRIMARY_BUTTON_CLASS
+    : "flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white transition-colors cursor-pointer shadow-lg shadow-brand/25 disabled:opacity-60 disabled:cursor-not-allowed";
+  const oauthButton = paper
+    ? PAPER_OAUTH_BUTTON_CLASS
+    : "flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed";
+  const forgotButton = paper
+    ? `${PAPER_LINK_CLASS} cursor-pointer self-end -mt-2`
+    : "text-sm text-brand-text hover:underline self-end -mt-2 cursor-pointer";
+  const textButton = paper
+    ? `${PAPER_LINK_INLINE_CLASS} cursor-pointer`
+    : "text-brand-text font-medium hover:underline cursor-pointer";
+  const legalLink = paper ? PAPER_LINK_INLINE_CLASS : "text-brand-text font-medium hover:underline";
+  const dividerLine = paper ? "flex-1 border-t-2 border-dashed border-ink/40" : "flex-1 h-px bg-border";
+  const heading = (text: string) =>
+    paper ? <PaperHeading text={text} /> : <h1 className="text-foreground">{text}</h1>;
+
+  const content = emailSent ? (
+    <>
+      {paper ? (
+        <PaperMailSticker />
+      ) : (
+        /* Decorative gradient chip, exempt for the same reason as the logo. */
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-brand-accent">
+          <Mail size={28} className="text-white" />
+        </div>
+      )}
+
+      <div>
+        {heading("Check your email")}
+        <p className="text-muted-foreground mt-1.5 text-sm">
+          {mode === "forgot" ? (
+            <>
+              We sent a password reset link to{" "}
+              <span className="font-medium text-foreground">{emailSent}</span>.
+              Click it to choose a new password.
+            </>
+          ) : (
+            <>
+              We sent a confirmation link to{" "}
+              <span className="font-medium text-foreground">{emailSent}</span>.
+              Click it to activate your account.
+            </>
+          )}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          setEmailSent(null);
+          setMode("login");
+          setForm({ email: "", password: "", name: "", confirmPassword: "", city: "" });
+          setError(null);
+          window.history.replaceState(null, "", "/login");
+        }}
+        className={primaryButton}
+      >
+        <span>Back to sign in</span>
+      </button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Wrong email?{" "}
+        <button type="button" onClick={() => setEmailSent(null)} className={textButton}>
+          Try again
+        </button>
+      </p>
+    </>
+  ) : (
+    <>
+      <div>
+        {heading(mode === "login" ? "Welcome back" : mode === "register" ? "Create account" : "Reset password")}
+        <p className="text-muted-foreground mt-1.5 text-sm">
+          {mode === "login"
+            ? "Sign in to continue your learning journey"
+            : mode === "register"
+            ? "Start mastering new subjects today"
+            : "Enter your email and we'll send you a reset link"}
+        </p>
+      </div>
+
+      {mode !== "forgot" && (
+        <>
+          {/* Social sign-in. Telegram gets its own full-width row on top
+              (ANON-012, docs/decisions/0139), Google the full-width row under it. */}
+          <div className="flex flex-col gap-3">
+            <button type="button" onClick={() => handleOAuthLogin("custom:telegram")} disabled={loading || oauthLoading !== null} className={oauthButton}>
+              <TelegramIcon size={18} />
+              <span className="text-sm font-medium text-foreground">Continue with Telegram</span>
+            </button>
+            <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className={oauthButton}>
+              <GoogleIcon size={18} />
+              <span className="text-sm font-medium text-foreground">Google</span>
+            </button>
+          </div>
+
+          {mode === "register" && (
+            <p className="text-xs text-muted-foreground text-center">
+              Signing up with Telegram or Google also confirms you are 13 or over and accept our{" "}
+              <Link href="/terms" target="_blank" rel="noreferrer" className={paper ? legalLink : "text-brand-text hover:underline"}>Terms</Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank" rel="noreferrer" className={paper ? legalLink : "text-brand-text hover:underline"}>Privacy Policy</Link>.
+            </p>
+          )}
+
+          <div className="flex items-center gap-3">
+            <div className={dividerLine} />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className={dividerLine} />
+          </div>
+        </>
+      )}
+
+      <form onSubmit={handleSubmit} className="contents">
+      <div className="flex flex-col gap-4">
+        <AnimatePresence initial={false}>
+          {mode === "register" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Field paper={paper} label="Full Name" placeholder="Alex Johnson" icon={<User size={16} />}
+                id="name" name="name" required autoComplete="name"
+                value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <Field paper={paper} label="Email" type="email" placeholder="you@example.com" icon={<Mail size={16} />}
+          id="email" name="email" required autoComplete="email"
+          value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} />
+        <AnimatePresence initial={false}>
+          {mode === "register" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Field paper={paper} label="City" placeholder="New York" icon={<MapPin size={16} />}
+                id="city" name="city" required autoComplete="address-level2"
+                value={form.city} onChange={v => setForm(f => ({ ...f, city: v }))} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence initial={false}>
+          {mode !== "forgot" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Field paper={paper} label="Password" type="password" placeholder="" icon={<Lock size={16} />}
+                id="password" name="password" required
+                minLength={mode === "register" ? 8 : undefined}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                value={form.password} onChange={v => setForm(f => ({ ...f, password: v }))} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence initial={false}>
+          {mode === "register" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Field paper={paper} label="Confirm Password" type="password" placeholder="" icon={<Lock size={16} />}
+                id="confirmPassword" name="confirmPassword" required autoComplete="new-password"
+                value={form.confirmPassword} onChange={v => setForm(f => ({ ...f, confirmPassword: v }))} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {mode === "register" && (
+          <motion.label
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+              required
+              className="mt-0.5 h-4 w-4 shrink-0 accent-brand cursor-pointer"
+            />
+            <span>
+              I am 13 or over and agree to the{" "}
+              <Link href="/terms" target="_blank" rel="noreferrer" className={legalLink}>Terms of Service</Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank" rel="noreferrer" className={legalLink}>Privacy Policy</Link>.
+            </span>
+          </motion.label>
+        )}
+      </AnimatePresence>
+
+      {mode === "login" && (
+        <button
+          type="button"
+          onClick={() => { setMode("forgot"); setError(null); }}
+          className={forgotButton}
+        >
+          Forgot password?
+        </button>
+      )}
+
+      {initialNotice && !error && (
+        <p className="text-xs text-success bg-success-subtle border border-success-border rounded-lg px-3 py-2">
+          {initialNotice}
+        </p>
+      )}
+
+      {error && (
+        <p className="text-xs text-destructive-text bg-destructive-subtle border border-destructive-border rounded-lg px-3 py-2">
+          {error}
+        </p>
+      )}
+
+      <button type="submit" disabled={loading || oauthLoading !== null} className={primaryButton}>
+        <span>
+          {loading
+            ? (mode === "login" ? "Signing in…" : mode === "register" ? "Creating account…" : "Sending…")
+            : (mode === "login" ? "Sign In" : mode === "register" ? "Create Account" : "Send reset link")}
+        </span>
+        <ArrowRight size={16} />
+      </button>
+      </form>
+
+      {mode === "forgot" ? (
+        <p className="text-center text-sm text-muted-foreground">
+          Remember your password?{" "}
+          <button
+            type="button"
+            onClick={() => { setMode("login"); setError(null); }}
+            className={textButton}
+          >
+            Back to sign in
+          </button>
+        </p>
+      ) : (
+        <p className="text-center text-sm text-muted-foreground">
+          {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+          <button type="button" onClick={handleToggle} className={textButton}>
+            {mode === "login" ? "Sign up" : "Sign in"}
+          </button>
+        </p>
+      )}
+    </>
+  );
+
+  if (paper) {
+    return (
+      <PaperAuthFrame
+        footnote={
+          !emailSent && mode !== "forgot" ? (
+            <p className="mt-5 flex items-start gap-2 font-accent text-lg leading-tight text-foreground sm:text-xl">
+              <Brain className="mt-0.5 size-5 flex-none text-brand-text" aria-hidden="true" />
+              Sign in to save your progress and pick up where you left off.
+            </p>
+          ) : null
+        }
+      >
+        <motion.div
+          key={emailSent ? "email-sent" : mode}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.25 }}
+          className={`${PAPER_PANEL_CLASS} ${PAPER_AUTH_CARD_CLASS}`}
+        >
+          {content}
+        </motion.div>
+      </PaperAuthFrame>
+    );
+  }
+
   return (
-    // SHELL-029 (docs/decisions/0169): an English entry wears the violet
-    // locally. This layout is Colloquiz's, so <html> never carries
-    // `surface-alina`; the class on this wrapper re-points --brand* for the
-    // panel AND the form, so a violet panel never sits beside indigo buttons.
-    // A Colloquiz entry gets no class and stays indigo. The same wrapper sets
-    // the English surface's body face, Montserrat (docs/decisions/0219):
-    // `font-sans` re-reads --font-sans here, where bodyFont defines
-    // --font-montserrat. The same files the learner's lesson already loaded.
-    <div className={englishEntry ? `flex h-full surface-alina ${bodyFont.variable} font-sans` : "flex h-full"}>
+    <div className="flex h-full">
       {/* Left decorative panel */}
-      {englishEntry ? <EnglishAuthPanel /> : <AuthLeftPanel />}
+      <AuthLeftPanel />
 
       {/* Right form panel. Centred by the column's my-auto, not items-center:
           auto margins drop to 0 when the sign-up form is taller than the
@@ -397,252 +660,10 @@ export function AuthScreen({ initialMode, initialError, initialNotice, redirectT
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-brand-accent">
               <GraduationCap size={16} className="text-white" />
             </div>
-            <span className="font-semibold text-foreground">{englishEntry ? "Alina Cher" : "Colloquiz"}</span>
+            <span className="font-semibold text-foreground">Colloquiz</span>
           </div>
 
-          {emailSent ? (
-            <>
-              {/* Decorative gradient chip, exempt for the same reason as the logo. */}
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-brand-accent">
-                <Mail size={28} className="text-white" />
-              </div>
-
-              <div>
-                <h1 className="text-foreground">Check your email</h1>
-                <p className="text-muted-foreground mt-1.5 text-sm">
-                  {mode === "forgot" ? (
-                    <>
-                      We sent a password reset link to{" "}
-                      <span className="font-medium text-foreground">{emailSent}</span>.
-                      Click it to choose a new password.
-                    </>
-                  ) : (
-                    <>
-                      We sent a confirmation link to{" "}
-                      <span className="font-medium text-foreground">{emailSent}</span>.
-                      Click it to activate your account.
-                    </>
-                  )}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailSent(null);
-                  setMode("login");
-                  setForm({ email: "", password: "", name: "", confirmPassword: "", city: "" });
-                  setError(null);
-                  window.history.replaceState(null, "", "/login");
-                }}
-                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white transition-colors cursor-pointer shadow-lg shadow-brand/25"
-              >
-                <span>Back to sign in</span>
-              </button>
-
-              <p className="text-center text-sm text-muted-foreground">
-                Wrong email?{" "}
-                <button type="button" onClick={() => setEmailSent(null)} className="text-brand-text font-medium hover:underline cursor-pointer">
-                  Try again
-                </button>
-              </p>
-            </>
-          ) : (
-            <>
-          <div>
-            <h1 className="text-foreground">
-              {mode === "login" ? "Welcome back" : mode === "register" ? "Create account" : "Reset password"}
-            </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm">
-              {mode === "login"
-                ? "Sign in to continue your learning journey"
-                : mode === "register"
-                ? "Start mastering new subjects today"
-                : "Enter your email and we'll send you a reset link"}
-            </p>
-          </div>
-
-          {mode !== "forgot" && (
-            <>
-              {/* Social sign-in. Telegram gets its own full-width row on top
-                  (ANON-012, docs/decisions/0139), Google the full-width row under it. */}
-              <div className="flex flex-col gap-3">
-                <button type="button" onClick={() => handleOAuthLogin("custom:telegram")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                  <TelegramIcon size={18} />
-                  <span className="text-sm font-medium text-foreground">Continue with Telegram</span>
-                </button>
-                <button type="button" onClick={() => handleOAuthLogin("google")} disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                  <GoogleIcon size={18} />
-                  <span className="text-sm font-medium text-foreground">Google</span>
-                </button>
-              </div>
-
-              {mode === "register" && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Signing up with Telegram or Google also confirms you are 13 or over and accept our{" "}
-                  <Link href="/terms" target="_blank" rel="noreferrer" className="text-brand-text hover:underline">Terms</Link>{" "}
-                  and{" "}
-                  <Link href="/privacy" target="_blank" rel="noreferrer" className="text-brand-text hover:underline">Privacy Policy</Link>.
-                </p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground">or</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-            </>
-          )}
-
-          <form onSubmit={handleSubmit} className="contents">
-          <div className="flex flex-col gap-4">
-            <AnimatePresence initial={false}>
-              {mode === "register" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <Field label="Full Name" placeholder="Alex Johnson" icon={<User size={16} />}
-                    id="name" name="name" required autoComplete="name"
-                    value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <Field label="Email" type="email" placeholder="you@example.com" icon={<Mail size={16} />}
-              id="email" name="email" required autoComplete="email"
-              value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} />
-            <AnimatePresence initial={false}>
-              {mode === "register" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <Field label="City" placeholder="New York" icon={<MapPin size={16} />}
-                    id="city" name="city" required autoComplete="address-level2"
-                    value={form.city} onChange={v => setForm(f => ({ ...f, city: v }))} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <AnimatePresence initial={false}>
-              {mode !== "forgot" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <Field label="Password" type="password" placeholder="" icon={<Lock size={16} />}
-                    id="password" name="password" required
-                    minLength={mode === "register" ? 8 : undefined}
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    value={form.password} onChange={v => setForm(f => ({ ...f, password: v }))} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <AnimatePresence initial={false}>
-              {mode === "register" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <Field label="Confirm Password" type="password" placeholder="" icon={<Lock size={16} />}
-                    id="confirmPassword" name="confirmPassword" required autoComplete="new-password"
-                    value={form.confirmPassword} onChange={v => setForm(f => ({ ...f, confirmPassword: v }))} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <AnimatePresence initial={false}>
-            {mode === "register" && (
-              <motion.label
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={agreed}
-                  onChange={e => setAgreed(e.target.checked)}
-                  required
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-brand cursor-pointer"
-                />
-                <span>
-                  I am 13 or over and agree to the{" "}
-                  <Link href="/terms" target="_blank" rel="noreferrer" className="text-brand-text font-medium hover:underline">Terms of Service</Link>{" "}
-                  and{" "}
-                  <Link href="/privacy" target="_blank" rel="noreferrer" className="text-brand-text font-medium hover:underline">Privacy Policy</Link>.
-                </span>
-              </motion.label>
-            )}
-          </AnimatePresence>
-
-          {mode === "login" && (
-            <button
-              type="button"
-              onClick={() => { setMode("forgot"); setError(null); }}
-              className="text-sm text-brand-text hover:underline self-end -mt-2 cursor-pointer"
-            >
-              Forgot password?
-            </button>
-          )}
-
-          {initialNotice && !error && (
-            <p className="text-xs text-success bg-success-subtle border border-success-border rounded-lg px-3 py-2">
-              {initialNotice}
-            </p>
-          )}
-
-          {error && (
-            <p className="text-xs text-destructive-text bg-destructive-subtle border border-destructive-border rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <button type="submit" disabled={loading || oauthLoading !== null} className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white transition-colors cursor-pointer shadow-lg shadow-brand/25 disabled:opacity-60 disabled:cursor-not-allowed">
-            <span>
-              {loading
-                ? (mode === "login" ? "Signing in…" : mode === "register" ? "Creating account…" : "Sending…")
-                : (mode === "login" ? "Sign In" : mode === "register" ? "Create Account" : "Send reset link")}
-            </span>
-            <ArrowRight size={16} />
-          </button>
-          </form>
-
-          {mode === "forgot" ? (
-            <p className="text-center text-sm text-muted-foreground">
-              Remember your password?{" "}
-              <button
-                type="button"
-                onClick={() => { setMode("login"); setError(null); }}
-                className="text-brand-text font-medium hover:underline cursor-pointer"
-              >
-                Back to sign in
-              </button>
-            </p>
-          ) : (
-            <p className="text-center text-sm text-muted-foreground">
-              {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-              <button type="button" onClick={handleToggle} className="text-brand-text font-medium hover:underline cursor-pointer">
-                {mode === "login" ? "Sign up" : "Sign in"}
-              </button>
-            </p>
-          )}
-            </>
-          )}
-
+          {content}
         </motion.div>
       </div>
     </div>

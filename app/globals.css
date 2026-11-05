@@ -565,3 +565,33 @@ html[data-paper-live] .grid-paper[data-landing-paper] {
   padding-inline: 0.15em;
   border-radius: 0.15em;
 }
+
+/* Sign-in screens in the paper look (VIS-006, docs/decisions/0222): a 2px ink
+   outline and, on focus, a 3px hard offset shadow in --brand-text in place of
+   the soft ring. Chromium paints an autofilled field pale yellow, which beside
+   the marker reads as a highlight; the inset shadow repaints it in the card
+   fill (a background cannot be overridden on :-webkit-autofill) and the text
+   colour follows the foreground token. The focus shadow is repeated in the
+   autofill rules because they replace box-shadow. */
+.paper-input {
+  border: 2px solid var(--ink);
+  background-color: var(--card);
+  color: var(--foreground);
+  outline: none;
+}
+.paper-input:focus {
+  box-shadow: 3px 3px 0 0 var(--brand-text);
+}
+.paper-input:-webkit-autofill,
+.paper-input:-webkit-autofill:hover {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--card) inset;
+}
+.paper-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow:
+    0 0 0 1000px var(--card) inset,
+    3px 3px 0 0 var(--brand-text);
+}

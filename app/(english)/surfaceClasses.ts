@@ -50,3 +50,11 @@ export const PAPER_EMPTY_BOX_CLASS = "rounded-2xl border-2 border-dashed border-
  * fill. */
 export const OUTLINE_CTA_CLASS =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-ink bg-card px-5 py-3 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-paper";
+
+/** Running-text link on the paper ground: the landing's "All courses" style
+ * without the tap-target box, for links inside a sentence (VIS-006). */
+export const PAPER_LINK_INLINE_CLASS =
+  "font-semibold text-brand-text underline decoration-2 underline-offset-4 outline-none hover:decoration-brand focus-visible:ring-2 focus-visible:ring-brand";
+
+/** The landing's "All courses" link: the inline style in a 44px tap target. */
+export const PAPER_LINK_CLASS = `inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-base ${PAPER_LINK_INLINE_CLASS}`;

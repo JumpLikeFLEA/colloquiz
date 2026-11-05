@@ -21,12 +21,6 @@
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import type { PluralForms } from "@/lib/pluralCategory";
 
-/**
- * The brand tagline, "английский с умом" (docs/decisions/0156 Decision 11).
- * Russian in both locales, as in the owner's English mockup.
- */
-export const TAGLINE = "английский с умом";
-
 /** Alina's public profiles (docs/decisions/0156 Decision 14). */
 export const SOCIAL_LINKS = {
   instagram: "https://www.instagram.com/alliengll/",

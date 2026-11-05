@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { Caveat, Unbounded } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { alliengllCopy } from "@/lib/alliengll/copy";
@@ -14,6 +13,7 @@ import { EntryViewBeacon } from "./EntryViewBeacon";
 import { HtmlLangSync } from "./HtmlLang";
 import { landingShareText } from "./landingCopy";
 import { bodyFont } from "../bodyFont";
+import { caveat, unbounded } from "../displayFonts";
 import "../globals.css";
 
 // The body face is Montserrat (owner, 2026-11-05, docs/decisions/0219,
@@ -21,26 +21,8 @@ import "../globals.css";
 // Geist Mono is NOT loaded here: nothing under this surface renders monospace
 // text (docs/decisions/0046).
 
-// Alina Cher's two display faces (SHELL-026, docs/decisions/0162, 0163), both
-// with the cyrillic subset. Unbounded 800 is the headline face and preloads
-// (it is above the fold on the landing). Caveat 600 is the handwritten accent,
-// ~97 KB for both subsets, so it is NOT preloaded: it loads when a page first
-// paints text in it. Weights are pinned so next/font requests one instance,
-// not the whole variable axis.
-const unbounded = Unbounded({
-  variable: "--font-unbounded",
-  subsets: ["latin", "cyrillic"],
-  weight: "800",
-  display: "swap",
-});
-
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin", "cyrillic"],
-  weight: "600",
-  display: "swap",
-  preload: false,
-});
+// Alina Cher's two display faces, Unbounded and Caveat, are defined in
+// app/displayFonts.ts and shared with the sign-in screens (VIS-006).
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

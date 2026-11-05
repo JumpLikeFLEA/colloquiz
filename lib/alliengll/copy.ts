@@ -22,6 +22,10 @@
  * ./errorCopy.ts.
  */
 
+// The brand tagline lives in ./tagline.ts so a client component can import it
+// without shipping this whole object (docs/decisions/0222 Decision 4).
+export { TAGLINE } from "./tagline";
+
 export const alliengllCopy = {
   // The English surface's external name (owner, 2026-10-17, docs/decisions/
   // 0161, superseding 0137's "Alliengll"): the `%s · Alina Cher` title

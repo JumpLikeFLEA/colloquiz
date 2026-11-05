@@ -15,7 +15,7 @@ import { landingCopy } from "./landingCopy";
 import { LivePaper } from "./LivePaper";
 import { SectionHeading } from "./SectionHeading";
 import { SparkCta } from "./SparkCta";
-import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS } from "./surfaceClasses";
+import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS, PAPER_LINK_CLASS } from "./surfaceClasses";
 
 /**
  * Landing page body, as a Client Component: holds the EN/RU toggle state
@@ -110,7 +110,7 @@ export function LandingContent({
                 {/* A plain <a>, not Link: see LandingHeader's "Courses". */}
                 <a
                   href="#catalogue"
-                  className="inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-base font-semibold text-brand-text underline decoration-2 underline-offset-4 outline-none hover:decoration-brand focus-visible:ring-2 focus-visible:ring-brand"
+                  className={PAPER_LINK_CLASS}
                 >
                   {t.catalogueLink}
                   <ArrowRight className="size-4" aria-hidden="true" />
