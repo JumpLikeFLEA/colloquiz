@@ -103,6 +103,48 @@ describe("image", () => {
     const result = ImageBlockSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
+
+  // docs/decisions/0218: a block saved before sizes and dimensions existed
+  // must still parse, through the union every stored lesson goes through.
+  it("accepts a block saved before 0218 (no width, height or size)", () => {
+    const result = TheoryBlockSchema.safeParse(base);
+    expect(result.success).toBe(true);
+    if (result.success && result.data.type === "image") {
+      expect(result.data.width).toBeUndefined();
+      expect(result.data.size).toBeUndefined();
+    }
+  });
+
+  it("accepts width, height and each size", () => {
+    for (const size of ["small", "medium", "large"] as const) {
+      const result = TheoryBlockSchema.safeParse({ ...base, width: 1600, height: 900, size });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("rejects width without height, and height without width, naming the missing one", () => {
+    const noHeight = ImageBlockSchema.safeParse({ ...base, width: 1600 });
+    expect(noHeight.success).toBe(false);
+    if (!noHeight.success) expect(noHeight.error.issues[0].path).toEqual(["height"]);
+    const noWidth = ImageBlockSchema.safeParse({ ...base, height: 900 });
+    expect(noWidth.success).toBe(false);
+    if (!noWidth.success) expect(noWidth.error.issues[0].path).toEqual(["width"]);
+  });
+
+  it("rejects a zero, negative or fractional dimension", () => {
+    expect(ImageBlockSchema.safeParse({ ...base, width: 0, height: 900 }).success).toBe(false);
+    expect(ImageBlockSchema.safeParse({ ...base, width: -1, height: 900 }).success).toBe(false);
+    expect(ImageBlockSchema.safeParse({ ...base, width: 1600.5, height: 900 }).success).toBe(false);
+  });
+
+  it("rejects an unknown size, and \"full\" (full width is the absent size)", () => {
+    expect(ImageBlockSchema.safeParse({ ...base, size: "huge" }).success).toBe(false);
+    expect(ImageBlockSchema.safeParse({ ...base, size: "full" }).success).toBe(false);
+  });
+
+  it("still rejects an unknown key", () => {
+    expect(ImageBlockSchema.safeParse({ ...base, aspect: "16:9" }).success).toBe(false);
+  });
 });
 
 describe("video", () => {

@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Loader2, Upload } from "lucide-react";
-import { LESSON_IMAGE_ACCEPT, LESSON_IMAGE_LIMITS_HINT, validateLessonImageFile } from "@/lib/lessonImages";
+import { LESSON_IMAGE_ACCEPT, LESSON_IMAGE_LIMITS_HINT } from "@/lib/lessonImages";
+import { useLessonImageUpload, type UploadedImageSize } from "./useLessonImageUpload";
 
 // AUTH-004 — the upload half of "the avatar-upload precedent," reused by both
 // the theory image block (BlockForm.tsx) and the image-matching element
@@ -12,7 +13,8 @@ import { LESSON_IMAGE_ACCEPT, LESSON_IMAGE_LIMITS_HINT, validateLessonImageFile 
 // this component only ever sees the first two.
 //
 // `onUpload` does the actual upload + old-object bookkeeping; this component
-// owns only the picker UI and its busy/error state.
+// owns only the picker UI. Its busy/error state is useLessonImageUpload's,
+// shared with the image form's paste box (docs/decisions/0218).
 //
 // `kind` (INFRA-002) tells the shared uploadLessonImage in
 // LessonContentEditor.tsx which max width to resize to before upload — a
@@ -22,11 +24,14 @@ import { LESSON_IMAGE_ACCEPT, LESSON_IMAGE_LIMITS_HINT, validateLessonImageFile 
 
 export type LessonImageKind = "theory" | "matching";
 
+/** `width`/`height` are the uploaded image's pixel size, when the upload
+ * knows it (the resize does): the theory image block stores them
+ * (docs/decisions/0218). */
 export type UploadLessonImage = (
   file: File,
   previousUrl: string | undefined,
   kind: LessonImageKind,
-) => Promise<{ url: string } | { error: string }>;
+) => Promise<{ url: string; width?: number; height?: number } | { error: string }>;
 
 export function LessonImageUploadButton({
   currentUrl,
@@ -36,29 +41,11 @@ export function LessonImageUploadButton({
 }: {
   currentUrl: string | undefined;
   kind: LessonImageKind;
-  onUploaded: (url: string) => void;
+  onUploaded: (url: string, size?: UploadedImageSize) => void;
   onUpload: UploadLessonImage;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleFile(file: File) {
-    setError(null);
-    const reason = validateLessonImageFile(file);
-    if (reason) {
-      setError(reason);
-      return;
-    }
-    setBusy(true);
-    const result = await onUpload(file, currentUrl, kind);
-    setBusy(false);
-    if ("error" in result) {
-      setError(result.error);
-      return;
-    }
-    onUploaded(result.url);
-  }
+  const { busy, error, handleFile } = useLessonImageUpload({ currentUrl, kind, onUploaded, onUpload });
 
   return (
     <div className="space-y-1">

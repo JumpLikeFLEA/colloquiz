@@ -3010,3 +3010,24 @@ Appended to in the same commit as the change it records. Referenced from
   lesson 259.3 / 259.4 KB of 260, every other route unchanged. Not measured: dark mode, a phone,
   Safari's controls. Do not make the player a client component without re-running the budget,
   and do not queue a replaced clip for deletion on save (0217 Decision 7).
+- Lesson images at their own shape, with a size (2026-11-05, ad hoc, docs/decisions/0218),
+  SUPERSEDING the fixed `aspect-video` box with `bg-muted`, border and rounding that every
+  theory image sat in (`object-contain`, so wide images got grey bands above and below and
+  tall ones at the sides). The image now shows as uploaded, `w-full h-auto`, with no box,
+  background, border or rounding, centred, at most as wide as its Size: Small 256 px, Medium
+  384, Large 512, Full width (the reading column, the default and the absent `size`). On a
+  360px phone Medium to Full fill the column. The block stores the image's pixel size, so the
+  browser reserves its height before it loads; a block saved before this has none and shows
+  at its own shape once loaded. Studio's image form (`ImageBlockForm.tsx`) opens with a
+  dashed `border-border` box, `focus:border-brand`, that shows the image at its size and takes
+  a pasted image (click, then Ctrl+V; a paste with an image file anywhere in the form uploads
+  it like the Upload button), then Upload image, a Size Select with a muted line, Image URL,
+  Alt text and Caption. Existing classes and tokens; no new colours. Measured (local stack):
+  the lesson 360/360 and 1280/1280, sizes 256 / 384 / 672 at 1280, height before load equal
+  to after for every image with a size; the editor document 360/360 with the form open, filled
+  and empty (Studio's `main` 464/360 from the header's History/Save buttons, pre-existing, see
+  the AUTH-020 entry). `npm run budget`: free lesson 259.4 / 257.8 KB of 260 (a chunk merge,
+  re-derived in 0218), applied-practice 287.1 / 285.5 of 290, every other route within
+  0.1 KB. Not measured: a real OS clipboard paste, dark mode, a phone. Do not put the image
+  back in a fixed-aspect box, and do not make the sizes percentages: they would shrink every
+  image on a phone.

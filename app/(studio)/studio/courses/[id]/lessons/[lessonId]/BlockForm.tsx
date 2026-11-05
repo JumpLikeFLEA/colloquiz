@@ -20,7 +20,6 @@ import {
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
 import { InlineEditor } from "./InlineEditor";
 import { LessonAudioUploadButton } from "./LessonAudioUploadButton";
-import { LessonImageUploadButton, type UploadLessonImage } from "./LessonImageUploadButton";
 
 // One field-group per theory block type — no raw JSON is ever shown to the
 // author (AUTH-002 acceptance). Every block is a z.strictObject
@@ -92,16 +91,17 @@ export function InlineField({
   );
 }
 
+/** Every theory type but `image`, whose form is ImageBlockForm.tsx
+ * (docs/decisions/0218): BlockList picks it, so this file and that one don't
+ * import each other. */
 export function BlockForm({
   block,
   onChange,
   errors,
-  onUploadImage,
 }: {
   block: TheoryBlock;
   onChange: (next: TheoryBlock) => void;
   errors?: BlockFieldErrors;
-  onUploadImage: UploadLessonImage;
 }) {
   switch (block.type) {
     case "heading":
@@ -232,41 +232,6 @@ export function BlockForm({
               Add item
             </button>
           </div>
-        </div>
-      );
-
-    case "image":
-      return (
-        <div className="space-y-3">
-          <LessonImageUploadButton
-            currentUrl={block.url || undefined}
-            kind="theory"
-            onUploaded={(url) => onChange({ ...block, url })}
-            onUpload={onUploadImage}
-          />
-          <TextField
-            label="Image URL"
-            value={block.url}
-            onChange={(url) => onChange({ ...block, url })}
-            errors={errors}
-            path="url"
-            placeholder="https://… (or upload above)"
-          />
-          <TextField
-            label="Alt text"
-            value={block.alt}
-            onChange={(alt) => onChange({ ...block, alt })}
-            errors={errors}
-            path="alt"
-            placeholder="Describes the image for a screen reader"
-          />
-          <InlineField
-            label="Caption (optional)"
-            value={block.caption ?? []}
-            onChange={(caption) => onChange({ ...block, caption: caption.length > 0 ? caption : undefined })}
-            errors={errors}
-            path="caption"
-          />
         </div>
       );
 

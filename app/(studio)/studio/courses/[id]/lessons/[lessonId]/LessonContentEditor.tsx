@@ -121,7 +121,8 @@ function LessonContentEditorInner({
     const { data: pub } = supabase.storage.from(LESSON_IMAGE_BUCKET).getPublicUrl(path);
     const previousPath = lessonImagePathFromUrl(previousUrl);
     if (previousPath) setPendingImageDeletions((paths) => [...paths, previousPath]);
-    return { url: pub.publicUrl };
+    // The resized file's own size: what the theory image block stores (0218).
+    return { url: pub.publicUrl, width: resized.width, height: resized.height };
   };
 
   // docs/decisions/0217: an audio clip goes to the images' bucket as it is

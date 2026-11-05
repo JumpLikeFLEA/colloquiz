@@ -81,23 +81,46 @@ export const ListBlockSchema = z.strictObject({
   items: z.array(InlineContentSchema).min(1),
 });
 
-export const ImageBlockSchema = z.strictObject({
-  ...TheoryBlockBase,
-  type: z.literal("image"),
-  /** A public URL into the "lesson-images" bucket (migration 041) — that
-   * bucket is public specifically so a free-sample image loads for an
-   * anonymous visitor, so storing the resolved URL (not a bare object path)
-   * needs no extra resolution step at render time. Not restricted to that
-   * bucket's hostname here: doing so would hard-code an environment (local
-   * vs. hosted Supabase URL differ), which is exactly the kind of
-   * environment-specific literal this module must not carry. */
-  url: z.string().url(),
-  /** Required, not optional: an image with no alt text is inaccessible, and
-   * unlike a caption (learner-facing, optional) alt text has no good
-   * default. */
-  alt: authoredString(),
-  caption: InlineContentSchema.optional(),
-});
+/** How wide an image shows (docs/decisions/0218): a maximum width, never
+ * wider than the column. Absent means the full column, so a block saved
+ * before sizes existed keeps its width. */
+export const IMAGE_SIZES = ["small", "medium", "large"] as const;
+export type ImageSize = (typeof IMAGE_SIZES)[number];
+
+export const ImageBlockSchema = z
+  .strictObject({
+    ...TheoryBlockBase,
+    type: z.literal("image"),
+    /** A public URL into the "lesson-images" bucket (migration 041) — that
+     * bucket is public specifically so a free-sample image loads for an
+     * anonymous visitor, so storing the resolved URL (not a bare object path)
+     * needs no extra resolution step at render time. Not restricted to that
+     * bucket's hostname here: doing so would hard-code an environment (local
+     * vs. hosted Supabase URL differ), which is exactly the kind of
+     * environment-specific literal this module must not carry. */
+    url: z.string().url(),
+    /** Required, not optional: an image with no alt text is inaccessible, and
+     * unlike a caption (learner-facing, optional) alt text has no good
+     * default. */
+    alt: authoredString(),
+    caption: InlineContentSchema.optional(),
+    /** The image's own pixel size, recorded by the editor (docs/decisions/
+     * 0218) so the player reserves the right height before the image loads
+     * and shows it at its own shape. Optional: a block saved before 0218 has
+     * neither, and still renders at its own shape once it loads. */
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional(),
+    size: z.enum(IMAGE_SIZES).optional(),
+  })
+  .superRefine((image, ctx) => {
+    if ((image.width === undefined) !== (image.height === undefined)) {
+      ctx.addIssue({
+        code: "custom",
+        path: [image.width === undefined ? "width" : "height"],
+        message: "width and height go together: give both or neither",
+      });
+    }
+  });
 
 /** YouTube's video id format: 11 characters, URL-safe base64 alphabet. This
  * is deliberately narrower than "looks like a URL" — see CNT-003's

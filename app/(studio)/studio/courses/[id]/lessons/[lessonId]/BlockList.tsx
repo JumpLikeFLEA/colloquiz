@@ -60,6 +60,7 @@ import {
   type HeadingBlock,
 } from "@/lib/studio/chapters";
 import { BlockForm } from "./BlockForm";
+import { ImageBlockForm } from "./ImageBlockForm";
 import { PracticeItemForm } from "./PracticeItemForm";
 import { VoiceTaskForm } from "./VoiceTaskForm";
 import type { UploadLessonImage } from "./LessonImageUploadButton";
@@ -310,7 +311,6 @@ export function BlockList({
                   onChange={(next) => onChange(blocks.map((b) => (b.id === heading.id ? next : b)))}
                   blockErrors={fieldErrors.get(heading.id)}
                   hasErrors={fieldErrors.has(heading.id)}
-                  onUploadImage={onUploadImage}
                 />
                 {!isCollapsed && (
                   <>
@@ -486,7 +486,6 @@ function ChapterHeader({
   onChange,
   blockErrors,
   hasErrors,
-  onUploadImage,
 }: {
   heading: HeadingBlock;
   blockCount: number;
@@ -501,7 +500,6 @@ function ChapterHeader({
   onChange: (next: LessonBlock) => void;
   blockErrors: ReturnType<LessonFieldErrorMap["get"]>;
   hasErrors: boolean;
-  onUploadImage: UploadLessonImage;
 }) {
   const { setNodeRef, transform, transition } = useSortable({
     id: heading.id,
@@ -559,7 +557,7 @@ function ChapterHeader({
       </div>
       {expanded && (
         <div className="px-4 pb-4 pt-1 border-t border-border bg-card">
-          <BlockForm block={heading} onChange={onChange} errors={blockErrors} onUploadImage={onUploadImage} />
+          <BlockForm block={heading} onChange={onChange} errors={blockErrors} />
           {blockErrors?.get("")?.map((m, i) => (
             <p key={i} className="text-xs text-destructive-text mt-2">
               {m}
@@ -656,8 +654,10 @@ function BlockRow({
             />
           ) : block.kind === "task" ? (
             <VoiceTaskForm block={block} onChange={onChange} errors={blockErrors} />
+          ) : block.type === "image" ? (
+            <ImageBlockForm block={block} onChange={onChange} errors={blockErrors} onUploadImage={onUploadImage} />
           ) : (
-            <BlockForm block={block} onChange={onChange} errors={blockErrors} onUploadImage={onUploadImage} />
+            <BlockForm block={block} onChange={onChange} errors={blockErrors} />
           )}
           {blockErrors?.get("")?.map((m, i) => (
             <p key={i} className="text-xs text-destructive-text mt-2">
