@@ -153,9 +153,9 @@ function CourseDetailViewInner({
     <div className="space-y-10">
       <DuplicateDialog target={duplicating} onClose={() => setDuplicating(null)} />
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{course.title}</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">{course.slug}</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground break-words">{course.title}</h1>
+          <p className="text-xs text-muted-foreground mt-1 font-mono break-all">{course.slug}</p>
           {/* AUTH-014: lesson funnel and per-exercise averages (0121). */}
           <Link
             href={`/studio/courses/${course.id}/stats`}

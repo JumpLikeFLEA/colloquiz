@@ -3087,3 +3087,13 @@ Appended to in the same commit as the change it records. Referenced from
   Not measured: autofill with a real saved login, a phone. Do not put `EnglishAuthPanel` back, do not fork
   `AuthScreen`'s behaviour for the paper look, and do not import `lib/alliengll/copy.ts` into a client
   component for the tagline (use `tagline.ts`).
+- Course editor header breaks long words (2026-11-06, SHELL-038, AUTH-022's finding in #272). The
+  `h1` takes `break-words` and the slug line `break-all`, and the text column gains `min-w-0`, so a
+  title or slug with no break point wraps inside the column and the Publish / Unpublish button stays
+  in the page. Classes only; existing tokens. Measured at 360px (local stack, an editor, a draft course
+  with a 64-character unbroken title, `scrollWidth/innerWidth`, document and the page's own `main`):
+  before `360/360` and `main 1341/360`; after `360/360` and `main 360/360`; with a 64-character unbroken
+  lesson title as well, `360/360` and `main 360/360`, so AUTH-022's 389/360 was not reproduced on this
+  fixture (its source, long lesson-row titles, is truncated by `truncate` on the row). Not measured:
+  Stats and Duplicate wrapping at a narrower width, dark mode. Do not remove `min-w-0` from the column:
+  without it the flex child keeps its content width.
