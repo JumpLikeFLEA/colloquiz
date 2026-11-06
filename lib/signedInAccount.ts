@@ -34,8 +34,10 @@ import { getUnreadMessageCount } from "@/lib/messages/messagesServer";
  * marks a thread read BEFORE it first calls this, because cache() would
  * otherwise keep the pre-read count for the rest of the request.
  */
+export type SignedInAccount = { email: string | null; username: string | null; isEditor: boolean; unreadMessages: number };
+
 export const getSignedInAccount = cache(
-  async (): Promise<{ email: string | null; username: string | null; isEditor: boolean; unreadMessages: number } | null> => {
+  async (): Promise<SignedInAccount | null> => {
     const supabase = await createClient();
     const user = await authUserFrom(supabase);
     if (!user) return null;

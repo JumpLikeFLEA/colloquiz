@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AccountMenu } from "./AccountMenu";
 
+const account = (props: { email: string | null; username?: string | null; isEditor?: boolean; unreadMessages?: number }) => ({
+  username: null,
+  isEditor: false,
+  unreadMessages: 0,
+  ...props,
+});
 const render = (props: { email: string | null; username?: string | null }) =>
-  renderToStaticMarkup(<AccountMenu {...props} lang="en" next="/" studio={false} />);
+  renderToStaticMarkup(<AccountMenu account={account(props)} lang="en" next="/" />);
 
 describe("AccountMenu (SHELL-024)", () => {
   it("names a Telegram account by its username: first letter on the chip, @name in the card", () => {
@@ -29,7 +35,7 @@ describe("AccountMenu (SHELL-024)", () => {
 
 describe("AccountMenu Settings link (docs/decisions/0181)", () => {
   const menu = (lang: "en" | "ru", studio: boolean) =>
-    renderToStaticMarkup(<AccountMenu email="gleb@example.com" lang={lang} next="/" studio={studio} />);
+    renderToStaticMarkup(<AccountMenu account={account({ email: "gleb@example.com", isEditor: studio })} lang={lang} next="/" />);
 
   it("links every signed-in user to /my/settings, never to /app/settings", () => {
     const html = menu("en", false);

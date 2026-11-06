@@ -7,6 +7,7 @@ import { ArrowRight, BookOpen, Check, ClipboardList, ExternalLink, MessageSquare
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
+import { failSoft } from "@/lib/failSoft";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import type { MyTeacher } from "@/lib/teacherLinks";
 import { getMyTeachers } from "@/lib/teacherLinksServer";
@@ -71,21 +72,27 @@ const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted p
  */
 export default async function MyPage({ searchParams }: { searchParams: Promise<{ month?: string | string[] }> }) {
   const { month: rawMonth } = await searchParams;
-  const [home, teachers, threads, homework, calendar, feed, telegramLinked, analyses] = await Promise.all([
+  // Every read below starts together (SHELL-037); only the learner home and the
+  // teachers are strict. The rest are courtesies, left out of the page on a
+  // failure (threads 079, homework 080, calendar 085, feed 086, a transient
+  // error): /my renders without that section. /studio/calendar and
+  // /my/messages read strictly.
+  const month = typeof rawMonth === "string" ? rawMonth : undefined;
+  const [home, teachers, threads, homework, calendar, feed, telegramLinked, analyses, signedIn] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
-    getStudentThreads(),
-    getStudentHomework(),
-    getStudentCalendar(typeof rawMonth === "string" ? rawMonth : undefined),
-    getStudentFeedStatus(),
+    failSoft("/my: message_threads failed", () => getThreads("student"), [] as Thread[]),
+    failSoft("/my: my_homework failed", () => getMyHomework(), [] as MyHomework[]),
+    failSoft("/my: my_calendar failed", () => getCalendarPageData("learner", month), null as CalendarPageData | null),
+    failSoft("/my: calendar_feed_status failed", () => getCalendarFeedStatus(), null as CalendarFeedStatus | null),
     getMyTelegramLinked(),
-    getStudentAnalyses(),
+    failSoft("/my: voice analyses failed", getStudentAnalyses, [] as LearnerAnalysisRow[]),
+    getSignedInAccount(),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
 
   const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
   const m = myCopy[lang];
-  const signedIn = await getSignedInAccount();
   const hasEnrolment = home.courses.some((c) => c.enrolments.length > 0);
   const hasTeacherTie = teachers.length > 0 || threads.length > 0 || homework.length > 0;
   // PROG-009 (docs/decisions/0211): ranked from the reads above, no read of its own.
@@ -116,7 +123,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             back={{ href: "/#catalogue", label: m.backToCatalogue }}
             // Sign-out from here returns to `/`: `/my` itself would only
             // bounce a signed-out visitor to the sign-in page.
-            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={signedIn && <AccountMenu account={signedIn} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
@@ -272,29 +279,6 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   );
 }
 
-// The calendar is a courtesy on the learner home, like Messages: if its read
-// fails (085 not yet applied, a transient error) the section is left out and
-// the rest of /my renders. /studio/calendar reads strictly.
-async function getStudentCalendar(rawMonth: string | undefined): Promise<CalendarPageData | null> {
-  try {
-    return await getCalendarPageData("learner", rawMonth);
-  } catch (e) {
-    console.error("/my: my_calendar failed", e);
-    return null;
-  }
-}
-
-// The feed panel is a courtesy too (086): without the migration the status read
-// fails and the panel is left out; the calendar above it does not depend on it.
-async function getStudentFeedStatus(): Promise<CalendarFeedStatus | null> {
-  try {
-    return await getCalendarFeedStatus();
-  } catch (e) {
-    console.error("/my: calendar_feed_status failed", e);
-    return null;
-  }
-}
-
 function formatFeedDate(iso: string, lang: SurfaceLang): string {
   return new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "en-GB", {
     day: "numeric",
@@ -304,42 +288,12 @@ function formatFeedDate(iso: string, lang: SurfaceLang): string {
   }).format(new Date(iso));
 }
 
-// The Messages row is a courtesy on the learner home: if the read fails (079
-// not yet applied, a transient error) the row is left out and the page, which
-// does not depend on it, still renders. /my/messages itself reads strictly.
-async function getStudentThreads(): Promise<Thread[]> {
-  try {
-    return await getThreads("student");
-  } catch (e) {
-    console.error("/my: message_threads failed", e);
-    return [];
-  }
-}
-
-// Like the Messages row, the Homework section is a courtesy: if the read fails
-// (080 not yet applied, a transient error) the section is left out and the page
-// still renders.
-async function getStudentHomework(): Promise<MyHomework[]> {
-  try {
-    return await getMyHomework();
-  } catch (e) {
-    console.error("/my: my_homework failed", e);
-    return [];
-  }
-}
-
-// Like the Messages row, the AI feedback list is a courtesy: if its read fails
-// the section is left out and the page still renders. The list reads under the
-// learner's own session and returns nothing while the mode is `off`.
+// The AI feedback list reads under the learner's own session and returns
+// nothing while the mode is `off`.
 async function getStudentAnalyses(): Promise<LearnerAnalysisRow[]> {
-  try {
-    const supabase = await createClient();
-    const user = await authUserFrom(supabase);
-    return user ? await getLearnerAnalyses(supabase, user.id) : [];
-  } catch (e) {
-    console.error("/my: voice analyses failed", e);
-    return [];
-  }
+  const supabase = await createClient();
+  const user = await authUserFrom(supabase);
+  return user ? await getLearnerAnalyses(supabase, user.id) : [];
 }
 
 function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {

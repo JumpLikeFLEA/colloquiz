@@ -55,7 +55,7 @@ export default async function MyMessagesPage() {
           <BandTopBar
            
             back={{ href: "/my", label: m.backToMy }}
-            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={<AccountMenu account={signedIn} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>

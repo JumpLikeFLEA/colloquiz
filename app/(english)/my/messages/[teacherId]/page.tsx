@@ -66,7 +66,7 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
             back={{ href: "/my/messages", label: m.backToList }}
             account={
               signedIn && (
-                <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />
+                <AccountMenu account={signedIn} lang={lang} next="/" />
               )
             }
           />

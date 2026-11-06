@@ -86,7 +86,15 @@ export async function generateMetadata({
 
 export default async function CoursePage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;
-  const course = await getPublicCourse(courseSlug);
+  // SHELL-037: the course, the account and the saved language need nothing from
+  // each other. SHELL-019 (docs/decisions/0086): the account chip, in the saved
+  // language. The cost: a request for a course that does not exist now also reads
+  // the account before its 404.
+  const [course, signedIn, cookieStore] = await Promise.all([
+    getPublicCourse(courseSlug),
+    getSignedInAccount(),
+    cookies(),
+  ]);
 
   if (course.state === "not_found") notFound();
 
@@ -97,32 +105,14 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   ]);
   const audience = cohort ? cohortAudience(cohort.enrolments, course.lessons) : null;
   const enrolled = audience?.kind === "extended" || audience?.kind === "basic";
-  // COH-010: reminders are offered to an enrolee; null (a failed read) leaves the panel out.
-  const telegramLinked = enrolled ? await getMyTelegramLinked() : null;
   const progress = courseProgress(course.lessons, attempts);
   const totals = courseTotals(course.lessons);
   // CNT-014: the CTA, its label, the pill and the per-row badges all render
   // from course_lesson_states (docs/decisions/0102), never a column read.
   const firstOpen = firstOpenLesson(course.lessons);
-  const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
+  const lang = parseSurfaceLang(cookieStore.get(SURFACE_LANG_COOKIE)?.value);
   const c = courseCopy[lang];
-  // SHELL-019 (docs/decisions/0086): the account chip, in the saved language.
-  const signedIn = await getSignedInAccount();
 
-  // PROG-003 (docs/decisions/0179): "Continue". A signed-in learner's target is
-  // decided here from the server's summary; an anonymous visitor's is decided
-  // in the browser from the local stores (AnonymousProgress.tsx), which only
-  // covers lessons SQL already opened to them.
-  const lastOpened =
-    signedIn && needsLastOpened(course.lessons, attempts) ? await getLastOpenedLessonSlug(await createClient(), course.id) : null;
-  const continueLesson = signedIn ? pickContinueLesson(course.lessons, attempts, lastOpened) : null;
-  // PROG-008 (docs/decisions/0209): the finished state, for a signed-in
-  // learner. An anonymous visitor's hero is left as it is: their progress is
-  // known only after hydration, and 0179 keeps that from moving the layout.
-  const completed =
-    signedIn && isCourseComplete(course.lessons, attempts)
-      ? { courseSlug, nextCourse: await getNextCatalogueCourse(courseSlug) }
-      : null;
   const anonLessons = signedIn
     ? []
     : course.lessons.flatMap((l) =>
@@ -135,7 +125,29 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   // course whose lessons are ALL open to them; its finished state is reserved
   // in the HTML and shown from the local stores after hydration.
   const anonCoversCourse = anonymous && anonLessons.length === course.lessons.length;
-  const anonymousFinish = anonCoversCourse ? { courseSlug, nextCourse: await getNextCatalogueCourse(courseSlug) } : null;
+  // PROG-008 (docs/decisions/0209): the finished state, for a signed-in
+  // learner. An anonymous visitor's hero is left as it is: their progress is
+  // known only after hydration, and 0179 keeps that from moving the layout.
+  const signedInComplete = signedIn !== null && isCourseComplete(course.lessons, attempts);
+
+  // SHELL-037: what is left depends on the reads above and not on each other, so
+  // it starts together; each is made only for who needs it.
+  // - COH-010: reminders are offered to an enrolee; null (a failed read) leaves
+  //   the panel out.
+  // - PROG-003 (docs/decisions/0179): "Continue". A signed-in learner's target is
+  //   decided here from the server's summary; an anonymous visitor's is decided
+  //   in the browser from the local stores (AnonymousProgress.tsx), which only
+  //   covers lessons SQL already opened to them.
+  // - The next course, for a signed-in learner who finished and for the
+  //   anonymous finish row.
+  const [telegramLinked, lastOpened, nextCourse] = await Promise.all([
+    enrolled ? getMyTelegramLinked() : null,
+    signedIn && needsLastOpened(course.lessons, attempts) ? getLastOpenedLessonSlug(await createClient(), course.id) : null,
+    signedInComplete || anonCoversCourse ? getNextCatalogueCourse(courseSlug) : null,
+  ]);
+  const continueLesson = signedIn ? pickContinueLesson(course.lessons, attempts, lastOpened) : null;
+  const completed = signedInComplete ? { courseSlug, nextCourse } : null;
+  const anonymousFinish = anonCoversCourse ? { courseSlug, nextCourse } : null;
 
   const lead = course.subtitle ?? course.description;
   const about = course.description && course.description !== lead ? course.description : null;
@@ -158,7 +170,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         progress={progress}
         completed={completed}
         anonymousFinish={anonymousFinish}
-        account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next={`/courses/${courseSlug}`} />}
+        account={signedIn && <AccountMenu account={signedIn} lang={lang} next={`/courses/${courseSlug}`} />}
         cta={
           continueLesson
             ? { href: `/courses/${courseSlug}/${continueLesson.slug}`, label: `${c.continuePrefix}${continueLesson.title}` }

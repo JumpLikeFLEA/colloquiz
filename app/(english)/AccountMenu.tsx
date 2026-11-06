@@ -1,6 +1,7 @@
 import { BookOpen, LogOut, MessageSquare, PenTool, Settings, UserRound } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { accountInitial } from "@/lib/accountInitial";
+import type { SignedInAccount } from "@/lib/signedInAccount";
 import { accountCopy } from "./accountCopy";
 
 /**
@@ -50,22 +51,20 @@ import { accountCopy } from "./accountCopy";
  * has to be readable over the gradient and over the page content alike.
  */
 export function AccountMenu({
-  email,
-  username = null,
+  account,
   lang,
   next,
-  studio,
-  unread = 0,
 }: {
-  email: string | null;
-  /** Telegram username (no "@") for an account with no email (SHELL-024). */
-  username?: string | null;
+  /**
+   * What getSignedInAccount returns (SHELL-037): `email`; `username`, the
+   * Telegram username (no "@") for an account with no email (SHELL-024);
+   * `isEditor`, which shows the Studio link; `unreadMessages`, 0 shows nothing.
+   */
+  account: SignedInAccount;
   lang: SurfaceLang;
   next: string;
-  studio: boolean;
-  /** Unread teacher replies; 0 shows nothing. */
-  unread?: number;
 }) {
+  const { email, username, isEditor: studio, unreadMessages: unread } = account;
   const a = accountCopy[lang];
   // An email account shows its email; an account with none shows its Telegram
   // username as "@name" (SHELL-024); with neither, the generic icon and copy.

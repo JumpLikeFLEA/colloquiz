@@ -76,7 +76,7 @@ export default async function MySettingsPage() {
             back={{ href: "/my", label: s.backToMy }}
             // Sign-out from here returns to `/`: `/my/settings` would only
             // bounce a signed-out visitor to the sign-in page.
-            account={<AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang={lang} next="/" />}
+            account={<AccountMenu account={signedIn} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{s.eyebrow}</span>

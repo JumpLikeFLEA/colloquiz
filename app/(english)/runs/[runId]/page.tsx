@@ -85,7 +85,7 @@ export default async function FinalScreenPage({ params }: { params: Promise<{ ru
           <BandTopBar
            
             back={{ href: `/courses/${screen.courseSlug}`, label: finalCopy.backToCourse }}
-            account={signedIn && <AccountMenu email={signedIn.email} username={signedIn.username} studio={signedIn.isEditor} unread={signedIn.unreadMessages} lang="en" next={here} />}
+            account={signedIn && <AccountMenu account={signedIn} lang="en" next={here} />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{finalCopy.eyebrow}</span>
