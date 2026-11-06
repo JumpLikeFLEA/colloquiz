@@ -18,6 +18,7 @@ import { joinPath, type JoinLinkState, type LinkedStudent } from "@/lib/teacherL
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../studioClasses";
 
 // TCH-001 (docs/decisions/0148) — the teacher's student link and the
 // students linked through it or through a run invite. Composed from the
@@ -25,10 +26,6 @@ import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 // no new tokens. Who is a teacher, whether a token resolves and who may
 // remove a student are all decided in SQL (076); this only relays.
 
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors";
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors";
 const SOURCE_LABEL: Record<LinkedStudent["source"], string> = {
   join_link: "Student link",
   run_invite: "Run invite",

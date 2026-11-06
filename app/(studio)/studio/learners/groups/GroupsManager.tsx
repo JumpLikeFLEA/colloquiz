@@ -8,14 +8,13 @@ import { Plus, Users } from "lucide-react";
 import { GROUP_EXPORT_NOTE, GROUP_NAME_MAX, type TeacherGroup } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { PRIMARY_BUTTON } from "../../studioClasses";
 
 // TCH-002 (docs/decisions/0149) — the teacher's groups: a create field and
 // one row per group, linking to its page. Composed from the student-link
 // panel's classes; no new tokens. Who may create a group, and the name rules,
 // are decided in SQL (077); this relays and shows the message.
 
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 function GroupsManagerInner({ groups }: { groups: TeacherGroup[] }) {
   const router = useRouter();

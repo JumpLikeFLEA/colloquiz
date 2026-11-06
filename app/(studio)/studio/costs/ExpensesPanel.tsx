@@ -22,7 +22,7 @@ import { formatDay, formatUsd } from "@/lib/costs/format";
 import { NOTE_MAX, REFERENCE_MAX, VENDOR_MAX } from "@/lib/costs/input";
 import { CATEGORY_LABELS, EXPENSE_CATEGORIES, PROVIDER_LABELS, type Expense, type ExpenseCategory } from "@/lib/costs/types";
 import type { UsageProvider } from "@/lib/costs/usageEvent";
-import { CARD, ERROR_BOX, ICON_BUTTON, INPUT, LABEL, PILL, PRIMARY_BUTTON, SECONDARY_BUTTON } from "./costsClasses";
+import { CARD, ERROR_BOX, ICON_BUTTON_SQUARE, INPUT, LABEL, PILL, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../studioClasses";
 
 // OPS-032 (docs/decisions/0207) — the month's bills and credit top-ups, with
 // add, edit and delete. Whether a write is allowed is the RPCs' call (105);
@@ -125,12 +125,12 @@ export function ExpensesPanel({ expenses, defaultDay }: { expenses: Expense[]; d
               </div>
               <span className="shrink-0 text-sm font-semibold text-foreground tabular-nums pt-0.5">{formatUsd(e.amountUsd)}</span>
               <div className="flex shrink-0">
-                <button type="button" className={ICON_BUTTON} aria-label={`Edit ${e.vendor}`} onClick={() => setEditing(draftOf(e, defaultDay))}>
+                <button type="button" className={ICON_BUTTON_SQUARE} aria-label={`Edit ${e.vendor}`} onClick={() => setEditing(draftOf(e, defaultDay))}>
                   <Pencil className="size-4" aria-hidden />
                 </button>
                 <button
                   type="button"
-                  className={`${ICON_BUTTON} hover:text-destructive-text`}
+                  className={`${ICON_BUTTON_SQUARE} hover:text-destructive-text`}
                   aria-label={`Delete ${e.vendor}`}
                   onClick={() => setDeleting(e)}
                 >

@@ -17,16 +17,13 @@ import {
 import { GROUP_EXPORT_NOTE, GROUP_NAME_MAX } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../../studioClasses";
 
 // TCH-002 (docs/decisions/0149) — one group: rename, delete, its members
 // with Remove, and the linked students who are not in it yet with Add.
 // Composed from the student-link panel's classes and AlertDialog confirms;
 // no new tokens. "Linked" is decided in SQL (add_teacher_group_members).
 
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 export type GroupPerson = { userId: string; label: string };
 

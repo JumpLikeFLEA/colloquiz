@@ -22,7 +22,7 @@ import { formatDay } from "@/lib/costs/format";
 import { LIMIT_NOTE_MAX } from "@/lib/costs/input";
 import type { ResourceRow } from "@/lib/costs/resources";
 import { LIMIT_UNITS, type LimitUnit, type ResourceLimit } from "@/lib/costs/types";
-import { CARD, ERROR_BOX, ICON_BUTTON, INPUT, LABEL, PILL, PRIMARY_BUTTON, SECONDARY_BUTTON } from "./costsClasses";
+import { CARD, ERROR_BOX, ICON_BUTTON_SQUARE, INPUT, LABEL, PILL, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../studioClasses";
 
 // OPS-032 (docs/decisions/0207) — plan limits the app cannot read, each with
 // a measurement (database, Storage) or the admin's last reading and its date.
@@ -109,7 +109,7 @@ export function LimitsPanel({ rows }: { rows: ResourceRow[] }) {
                 <div className="flex shrink-0">
                   <button
                     type="button"
-                    className={ICON_BUTTON}
+                    className={ICON_BUTTON_SQUARE}
                     aria-label={`Edit ${limit.provider} ${limit.metric}`}
                     onClick={() => setEditing(draftOf(limit))}
                   >
@@ -117,7 +117,7 @@ export function LimitsPanel({ rows }: { rows: ResourceRow[] }) {
                   </button>
                   <button
                     type="button"
-                    className={`${ICON_BUTTON} hover:text-destructive-text`}
+                    className={`${ICON_BUTTON_SQUARE} hover:text-destructive-text`}
                     aria-label={`Delete ${limit.provider} ${limit.metric}`}
                     onClick={() => setDeleting(limit)}
                   >

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FileDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { formatMonth } from "@/lib/costs/format";
-import { CARD, LABEL, PRIMARY_BUTTON } from "./costsClasses";
+import { CARD, LABEL, PRIMARY_BUTTON } from "../studioClasses";
 
 // OPS-033 (docs/decisions/0207 Decision 8) — the sponsor report: a PDF of the
 // expenses and the usage estimate for a run of months. The link is a plain

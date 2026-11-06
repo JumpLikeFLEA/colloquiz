@@ -20,6 +20,7 @@ import { buildEventPayload, EVENT_TITLE_MAX, type CalendarEvent } from "@/lib/ca
 import { toLocalDateTime } from "@/lib/cohortSchedule";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { ICON_BUTTON } from "./studioClasses";
 
 // COH-014 (docs/decisions/0158) — the dated events of one run or one group:
 // add, edit, delete. Mounted on the runs page (one per run card) and on the
@@ -31,8 +32,6 @@ import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 
 export type EventScope = { kind: "run"; runId: string } | { kind: "group"; groupId: string };
 
-const ICON_BUTTON =
-  "cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50";
 const INPUT = "px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none";
 
 function EventDialog({

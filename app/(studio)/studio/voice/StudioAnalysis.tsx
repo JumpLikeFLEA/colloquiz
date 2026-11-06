@@ -20,6 +20,7 @@ import { STATE_LABEL, STATE_PILL, canHide, studioAnalysisState } from "@/lib/voi
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { SECONDARY_BUTTON_TALL } from "../studioClasses";
 
 // VOICE-015 (docs/decisions/0190). One take's AI analysis as the author sees it: the learner's own
 // renderer (AnalysisResult, VOICE-014), read-only, with the state, and "Hide" for a finished one.
@@ -39,8 +40,6 @@ export type StudioAnalysisData = {
   baseline: { transcript: string; result: unknown } | null;
 };
 
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex min-h-11 items-center justify-center gap-1.5 px-4 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 function AiLabel() {
   return (
@@ -71,7 +70,7 @@ function HideAnalysis({ submissionId }: { submissionId: string }) {
 
   return (
     <WriteArea>
-      <button type="button" onClick={() => setOpen(true)} disabled={busy} className={SECONDARY_BUTTON}>
+      <button type="button" onClick={() => setOpen(true)} disabled={busy} className={SECONDARY_BUTTON_TALL}>
         Hide this analysis
       </button>
       <AlertDialog open={open} onOpenChange={setOpen}>

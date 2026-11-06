@@ -11,6 +11,7 @@ import { HOMEWORK_NOTE_MAX, type AssignableCourse } from "@/lib/homework/homewor
 import { GROUP_EXPORT_NOTE } from "@/lib/teacherGroups";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../studioClasses";
 
 // TCH-005 (docs/decisions/0152) — assign a lesson or a whole course to linked
 // students and/or groups, with an optional due date and note. Used from the
@@ -21,10 +22,6 @@ import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 
 const INPUT_CLASS = "px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none";
 const WHOLE_COURSE = "whole";
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 export type AssignPerson = { userId: string; label: string };
 export type AssignGroup = { id: string; name: string };

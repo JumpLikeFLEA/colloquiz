@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { HOMEWORK_NOTE_MAX } from "@/lib/homework/homework";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../studioClasses";
 
 // TCH-005 (docs/decisions/0152) — edit the due date and note of one
 // assignment, or delete it. Only those two fields change (update_homework,
@@ -27,10 +28,6 @@ import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 // fields; no new tokens.
 
 const INPUT_CLASS = "px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none";
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 function HomeworkActionsInner({
   assignmentId,

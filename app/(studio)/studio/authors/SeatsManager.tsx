@@ -39,6 +39,7 @@ import { Switch } from "@/app/components/ui/switch";
 import { DateField } from "@/app/components/DateField";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../studioClasses";
 
 // TCH-007 (docs/decisions/0154) — the admin's seat list: one card per seat,
 // an add form, and edit / extend / freeze / house-seat actions. Composed from
@@ -46,10 +47,6 @@ import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 // colours. Whether a seat is active, and every refusal, is decided in SQL
 // (082); this shows `is_active` and relays the message.
 
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 const INPUT = "w-full min-w-0 px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground";
 const PILL = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium";
 

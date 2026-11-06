@@ -17,14 +17,13 @@ import {
 import { postJson } from "./postJson";
 import { LocalTime } from "./LocalTime";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { SECONDARY_BUTTON } from "../../studioClasses";
 
 // TCH-009 (docs/decisions/0164) — the students this teacher has opened this
 // course for, with Close access. Granting happens on a student's page (the
 // teacher picks a person, then the course); this is the per-course view of the
 // same rows. Composed from the group page's rows and AlertDialog confirm.
 
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 export type GranteeView = { studentId: string; label: string; grantedAt: string };
 

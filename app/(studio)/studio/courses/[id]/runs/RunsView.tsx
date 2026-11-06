@@ -29,6 +29,7 @@ import { RunDialog } from "./RunDialog";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 import { CalendarEventsSection } from "@/app/(studio)/studio/CalendarEvents";
 import { eventsForRun, type CalendarEvent } from "@/lib/calendarEvents";
+import { ICON_BUTTON } from "../../../studioClasses";
 
 // AUTH-010 — the runs page. Composed from the course editor's own classes
 // (section cards, row lists, icon buttons, status pills, AlertDialog
@@ -76,8 +77,6 @@ type Confirm =
 // COH-007: the tier is binary, so "change" is always "switch to the other".
 const OTHER_TIER: Record<InviteTier, InviteTier> = { basic: "extended", extended: "basic" };
 
-const ICON_BUTTON =
-  "cursor-pointer disabled:cursor-not-allowed shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50";
 
 function RunsViewInner({
   courseId,

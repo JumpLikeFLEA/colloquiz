@@ -17,6 +17,7 @@ import { grantAction, grantStateNote, type GrantableCourse } from "@/lib/courseG
 import { postJson } from "@/app/(studio)/studio/courses/[id]/postJson";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../studioClasses";
 
 // TCH-009 (docs/decisions/0164) — open or close a self-paced course for this
 // linked student. One row per course the teacher edits; the state and the
@@ -24,10 +25,6 @@ import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
 // anything the button should not have offered. Composed from the group page's
 // button classes, row frame and AlertDialog confirm; no new tokens.
 
-const SECONDARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-const PRIMARY_BUTTON =
-  "cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 function CourseAccessInner({
   studentId,

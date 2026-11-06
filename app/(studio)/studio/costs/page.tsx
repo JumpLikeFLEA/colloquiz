@@ -11,7 +11,7 @@ import { getExpenses, getLedgerStart, getLimits, getResourceUsage, getUsage } fr
 import { summarizePeriod } from "@/lib/costs/summary";
 import { CATEGORY_LABELS, FEATURE_LABELS, PROVIDER_LABELS } from "@/lib/costs/types";
 import { pluralize } from "@/lib/format";
-import { CARD, PILL } from "./costsClasses";
+import { CARD, PILL } from "../studioClasses";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { LimitsPanel } from "./LimitsPanel";
 import { SponsorReportCard } from "./SponsorReportCard";
