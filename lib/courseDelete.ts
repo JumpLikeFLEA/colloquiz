@@ -1,3 +1,4 @@
+import { UUID_RE } from "./ids";
 /**
  * Deleting a draft course (AUTH-018, docs/decisions/0125 Decision 8, 0129).
  * Pure: the blocker copy the course editor shows, and the path rule the
@@ -49,7 +50,6 @@ export function courseDeleteBlockedMessage(blockers: readonly string[]): string 
     : "This course can't be deleted.";
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * The lesson-images object paths to remove for a deleted course, from a

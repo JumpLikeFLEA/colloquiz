@@ -8,6 +8,7 @@
 // migration and fails if the two disagree (the 0034 guard pattern).
 
 import { VOICE_MAX_SECONDS } from "../lessons/taskBlocks";
+import { UUID_PATTERN } from "../ids";
 
 /** The project's first PRIVATE bucket: no public URL, playback through
  * signed URLs only. */
@@ -54,10 +55,9 @@ export const VOICE_WORST_CASE_BITS_PER_SECOND = 128_000;
 /** Bytes of the longest take at the worst-case bitrate; must fit the bucket. */
 export const VOICE_WORST_CASE_BYTES = (VOICE_MAX_SECONDS * VOICE_WORST_CASE_BITS_PER_SECOND) / 8;
 
-const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const EXTENSIONS = Object.values(VOICE_EXTENSION).join("|");
 /** {course}/{user}/{submission}.{ext}, all ids lower-case UUIDs. */
-export const VOICE_OBJECT_NAME_PATTERN = new RegExp(`^(${UUID})/(${UUID})/(${UUID})\\.(${EXTENSIONS})$`);
+export const VOICE_OBJECT_NAME_PATTERN = new RegExp(`^(${UUID_PATTERN})/(${UUID_PATTERN})/(${UUID_PATTERN})\\.(${EXTENSIONS})$`);
 
 export function isVoiceMimeType(value: string): value is VoiceMimeType {
   return (VOICE_MIME_TYPES as readonly string[]).includes(value);

@@ -8,12 +8,12 @@
 // without pulling in the server Supabase client.
 
 import { SEAT_LAPSED_MESSAGE } from "../studioWriteLock";
+import { isUuid } from "../ids";
+export const isHomeworkId = isUuid;
 
 /** Note limit; 080 enforces the same bound in a CHECK. */
 export const HOMEWORK_NOTE_MAX = 500;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const isHomeworkId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 
 function num(v: unknown): number {
   return typeof v === "number" ? v : Number(v ?? 0);

@@ -2,6 +2,8 @@ import { parseAttachment, type Attachment } from "../askTeacher/snapshot";
 import { FeedbackContentSchema, feedbackTextLength, type FeedbackContent } from "../feedback/content";
 import { SEAT_LAPSED_MESSAGE } from "../studioWriteLock";
 import { MESSAGE_MAX_CHARS } from "./limits";
+import { UUID_RE } from "../ids";
+export const PEER_ID_PATTERN = UUID_RE;
 
 // TCH-004 — messages between a linked student and their teacher (migration
 // 079, docs/decisions/0151). Pure: the shapes 079's functions return, the
@@ -15,7 +17,6 @@ import { MESSAGE_MAX_CHARS } from "./limits";
 export { MESSAGE_MAX_CHARS } from "./limits";
 
 /** A conversation peer's id in a URL (a profile uuid). */
-export const PEER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ThreadRole = "student" | "teacher";
 

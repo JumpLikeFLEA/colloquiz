@@ -2,9 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { grantErrorMessage } from "@/lib/courseGrants";
+import { isUuid } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 
 /**
  * TCH-009 (docs/decisions/0164) — a teacher opens or closes a self-paced course
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  if ((body.action !== "grant" && body.action !== "revoke") || !isId(body.courseId) || !isId(body.studentId)) {
+  if ((body.action !== "grant" && body.action !== "revoke") || !isUuid(body.courseId) || !isUuid(body.studentId)) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 

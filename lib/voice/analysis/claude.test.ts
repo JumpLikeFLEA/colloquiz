@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createClaudeAnalyser, DEFAULT_VOICE_ANALYSIS_MODEL, voiceAnalysisModel } from "./claude";
 import { AnalysisStepError } from "./errors";
+import { UUID_PATTERN } from "../../ids";
 
 const ANALYSIS = {
   summary: "You spoke clearly.",
@@ -84,7 +85,7 @@ describe("createClaudeAnalyser", () => {
     await createClaudeAnalyser({ apiKey: "k", fetchFn }).analyse(input);
     const wire = JSON.stringify(requests[0].body);
     expect(wire).not.toMatch(/user_id|metadata/);
-    expect(wire).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
+    expect(wire).not.toMatch(new RegExp(UUID_PATTERN));
   });
 
   it("returns the parsed analysis, the model that answered and the token usage", async () => {

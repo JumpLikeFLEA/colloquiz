@@ -2,9 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SEAT_ERRORS } from "@/lib/authorSeats";
+import { isUuid } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 const isoOrNull = (v: unknown): string | null | undefined => {
   if (v === null || v === undefined || v === "") return null;
   if (typeof v !== "string") return undefined;
@@ -64,28 +63,28 @@ export async function POST(request: NextRequest) {
     }
     case "update": {
       const name = str(body.publicName);
-      if (!isId(body.userId) || name === null) return bad();
+      if (!isUuid(body.userId) || name === null) return bad();
       call = supabase.rpc("update_author_seat", { p_user: body.userId, p_public_name: name, p_notes: str(body.notes) });
       break;
     }
     case "expiry": {
       const expiresAt = isoOrNull(body.expiresAt);
-      if (!isId(body.userId) || expiresAt === undefined) return bad();
+      if (!isUuid(body.userId) || expiresAt === undefined) return bad();
       call = supabase.rpc("set_author_seat_expiry", { p_user: body.userId, p_expires_at: expiresAt });
       break;
     }
     case "freeze": {
-      if (!isId(body.userId)) return bad();
+      if (!isUuid(body.userId)) return bad();
       call = supabase.rpc("freeze_author_seat", { p_user: body.userId });
       break;
     }
     case "kind": {
-      if (!isId(body.userId) || (body.kind !== "house" && body.kind !== "teacher")) return bad();
+      if (!isUuid(body.userId) || (body.kind !== "house" && body.kind !== "teacher")) return bad();
       call = supabase.rpc("set_author_seat_kind", { p_user: body.userId, p_kind: body.kind });
       break;
     }
     case "import": {
-      if (!isId(body.userId) || typeof body.on !== "boolean") return bad();
+      if (!isUuid(body.userId) || typeof body.on !== "boolean") return bad();
       call = supabase.rpc("set_author_seat_import", { p_user: body.userId, p_on: body.on });
       break;
     }

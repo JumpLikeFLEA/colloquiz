@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SEAT_LAPSED_MESSAGE } from "@/lib/studioWriteLock";
+import { UUID_RE } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * TCH-001 (docs/decisions/0148) — Studio's two link actions as JSON:
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ token: r.token }, { headers: { "Cache-Control": "no-store" } });
   }
 
-  if (body.action === "remove" && typeof body.linkId === "string" && UUID.test(body.linkId)) {
+  if (body.action === "remove" && typeof body.linkId === "string" && UUID_RE.test(body.linkId)) {
     const { data, error } = await supabase.rpc("end_teacher_link", { p_link_id: body.linkId });
     if (error) return NextResponse.json({ error: "Could not remove the student." }, { status: 500 });
     if (!(data as { ok?: boolean })?.ok) return NextResponse.json({ error: "That link is already gone." }, { status: 404 });

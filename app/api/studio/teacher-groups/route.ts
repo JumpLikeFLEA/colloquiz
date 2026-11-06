@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { relayRpc, type RpcAnswer } from "@/lib/studio/rpcRelay";
 import { groupErrorMessage, normalizeGroupName } from "@/lib/teacherGroups";
+import { isUuid } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 
 /**
  * TCH-002 (docs/decisions/0149) — Studio's group actions as JSON:
@@ -30,15 +30,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const relay = async (call: PromiseLike<{ data: unknown; error: { message: string } | null }>) => {
-    const { data, error } = await call;
-    if (error) return { failure: NextResponse.json({ error: "Something went wrong." }, { status: 500 }) };
-    const r = (data ?? {}) as { ok?: boolean; error?: string } & Record<string, unknown>;
-    if (!r.ok) {
-      const status = r.error === "not_found" ? 404 : r.error === "forbidden" || r.error === "seat_lapsed" ? 403 : 400;
-      return { failure: NextResponse.json({ error: groupErrorMessage(r.error) }, { status }) };
-    }
-    return { result: r };
+  const relay = async (call: PromiseLike<RpcAnswer>) => {
+    const out = await relayRpc(call, groupErrorMessage);
+    return out.failure
+      ? { failure: NextResponse.json({ error: out.failure.error }, { status: out.failure.status }) }
+      : { result: out.result };
   };
 
   if (body.action === "create" || body.action === "rename") {
@@ -48,21 +44,21 @@ export async function POST(request: NextRequest) {
       const out = await relay(supabase.rpc("create_teacher_group", { p_name: name }));
       return out.failure ?? NextResponse.json({ id: out.result.id });
     }
-    if (!isId(body.groupId)) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    if (!isUuid(body.groupId)) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
     const out = await relay(supabase.rpc("rename_teacher_group", { p_group: body.groupId, p_name: name }));
     return out.failure ?? NextResponse.json({ ok: true });
   }
 
-  if (body.action === "delete" && isId(body.groupId)) {
+  if (body.action === "delete" && isUuid(body.groupId)) {
     const out = await relay(supabase.rpc("delete_teacher_group", { p_group: body.groupId }));
     return out.failure ?? NextResponse.json({ ok: true });
   }
 
   if (
     body.action === "add" &&
-    isId(body.groupId) &&
+    isUuid(body.groupId) &&
     Array.isArray(body.studentIds) &&
-    body.studentIds.every(isId)
+    body.studentIds.every(isUuid)
   ) {
     const out = await relay(
       supabase.rpc("add_teacher_group_members", { p_group: body.groupId, p_students: body.studentIds }),
@@ -70,7 +66,7 @@ export async function POST(request: NextRequest) {
     return out.failure ?? NextResponse.json({ added: out.result.added ?? 0 });
   }
 
-  if (body.action === "remove" && isId(body.groupId) && isId(body.studentId)) {
+  if (body.action === "remove" && isUuid(body.groupId) && isUuid(body.studentId)) {
     const out = await relay(
       supabase.rpc("remove_teacher_group_member", { p_group: body.groupId, p_student: body.studentId }),
     );

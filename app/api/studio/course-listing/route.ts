@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { LISTING_ERRORS } from "@/lib/listedCourses";
+import { UUID_RE } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * TCH-010 (docs/decisions/0171) — { courseId, listed } -> { ok }.
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  if (typeof body.courseId !== "string" || !UUID.test(body.courseId) || typeof body.listed !== "boolean") {
+  if (typeof body.courseId !== "string" || !UUID_RE.test(body.courseId) || typeof body.listed !== "boolean") {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 

@@ -14,6 +14,7 @@ import { AssignHomeworkButton } from "../../../homework/AssignHomework";
 import { loadAssignContext, loadHomeworkViews } from "../../../homework/data";
 import { HomeworkSummary } from "../../../homework/HomeworkSummary";
 import { GroupDetail } from "./GroupDetail";
+import { UUID_RE } from "@/lib/ids";
 
 // /studio/learners/groups/[groupId] — one group (TCH-002, docs/decisions/
 // 0149). A group that is not the caller's is not in teacher_groups_list(),
@@ -21,14 +22,13 @@ import { GroupDetail } from "./GroupDetail";
 
 export const metadata = { title: "Group" };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function GroupPage({ params }: { params: Promise<{ groupId: string }> }) {
   const access = await getCourseAccess();
   if (!canEnterStudio(access)) notFound();
 
   const { groupId } = await params;
-  if (!UUID.test(groupId)) notFound();
+  if (!UUID_RE.test(groupId)) notFound();
   const id = groupId.toLowerCase();
 
   const [groups, memberRows, students, assignCtx, homework, events] = await Promise.all([

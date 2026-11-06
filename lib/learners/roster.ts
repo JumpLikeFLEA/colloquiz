@@ -1,3 +1,4 @@
+import { UUID_RE } from "../ids";
 /**
  * The Studio learners page (AUTH-011, docs/decisions/0116). Rows come from
  * learner_roster() (migration 063), which decides who may see which
@@ -36,7 +37,6 @@ export type RosterRow = {
 /** `group` is a teacher group id (TCH-002, migration 077): the page turns it into a member set. */
 export type LearnerFilters = { course: string | null; run: string | null; group: string | null };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
@@ -48,9 +48,9 @@ export function parseLearnerFilters(params: Record<string, string | string[] | u
   const run = first(params.run);
   const group = first(params.group);
   return {
-    course: course && UUID.test(course) ? course.toLowerCase() : null,
-    run: run && UUID.test(run) ? run.toLowerCase() : null,
-    group: group && UUID.test(group) ? group.toLowerCase() : null,
+    course: course && UUID_RE.test(course) ? course.toLowerCase() : null,
+    run: run && UUID_RE.test(run) ? run.toLowerCase() : null,
+    group: group && UUID_RE.test(group) ? group.toLowerCase() : null,
   };
 }
 

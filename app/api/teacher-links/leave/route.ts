@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { UUID_RE } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * TCH-001 (docs/decisions/0148) — "Leave" on /my, a plain form POST after a
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.redirect(`${origin}/login?${new URLSearchParams({ next: "/my" }).toString()}`, 303);
   }
-  if (UUID.test(linkId)) {
+  if (UUID_RE.test(linkId)) {
     const { error } = await supabase.rpc("end_teacher_link", { p_link_id: linkId });
     if (error) console.error("end_teacher_link failed", error.message);
   }

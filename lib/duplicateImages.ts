@@ -9,8 +9,8 @@
  */
 
 import { extractLessonImageUrls, lessonImagePathFromUrl } from "./lessonImages";
+import { UUID_RE } from "./ids";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ImageCopy = { url: string; from: string; to: string; newUrl: string };
 

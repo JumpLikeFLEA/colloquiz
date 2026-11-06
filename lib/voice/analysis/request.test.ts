@@ -6,6 +6,7 @@ import {
   promptSafeText,
   promptVersionLabel,
 } from "./request";
+import { UUID_PATTERN } from "../../ids";
 
 describe("promptSafeText", () => {
   it("takes the angle brackets out so speech cannot close a tag", () => {
@@ -130,7 +131,7 @@ describe("buildUserMessage", () => {
 
   it("carries no user id, name or email: it has nowhere to take one from", () => {
     const msg = buildUserMessage({ ...base, kind: "first" });
-    expect(msg).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
+    expect(msg).not.toMatch(new RegExp(UUID_PATTERN));
     expect(msg).not.toMatch(/@/);
   });
 });

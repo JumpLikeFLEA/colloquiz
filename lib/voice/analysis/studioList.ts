@@ -1,3 +1,4 @@
+import { UUID_RE } from "../../ids";
 /**
  * The author's list of analysed takes (VOICE-015, docs/decisions/0190). Pure: the URL filters, the
  * state words and the shape of a list row. Who may see which row is decided in SQL (096's editor
@@ -8,7 +9,6 @@ export const VOICE_LIST_PAGE_SIZE = 25;
 
 export type VoiceListFilters = { course: string | null; page: number };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
@@ -20,7 +20,7 @@ export function parseVoiceListFilters(params: Record<string, string | string[] |
   const page = first(params.page);
   const n = page && /^\d{1,6}$/.test(page) ? Number(page) : 1;
   return {
-    course: course && UUID.test(course) ? course.toLowerCase() : null,
+    course: course && UUID_RE.test(course) ? course.toLowerCase() : null,
     page: n >= 1 ? n : 1,
   };
 }

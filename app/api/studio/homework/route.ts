@@ -1,6 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { relayRpc, type RpcAnswer } from "@/lib/studio/rpcRelay";
 import { pingForHomework } from "@/lib/telegram/homeworkPings";
 import { HOMEWORK_NOTE_MAX, homeworkErrorMessage, isHomeworkId, parseAssignInput, parseDueDate } from "@/lib/homework/homework";
 
@@ -31,15 +32,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const relay = async (call: PromiseLike<{ data: unknown; error: { message: string } | null }>) => {
-    const { data, error } = await call;
-    if (error) return { failure: NextResponse.json({ error: "Something went wrong." }, { status: 500 }) };
-    const r = (data ?? {}) as { ok?: boolean; error?: string } & Record<string, unknown>;
-    if (!r.ok) {
-      const status = r.error === "not_found" ? 404 : r.error === "forbidden" || r.error === "seat_lapsed" ? 403 : 400;
-      return { failure: NextResponse.json({ error: homeworkErrorMessage(r.error) }, { status }) };
-    }
-    return { result: r };
+  const relay = async (call: PromiseLike<RpcAnswer>) => {
+    const out = await relayRpc(call, homeworkErrorMessage);
+    return out.failure
+      ? { failure: NextResponse.json({ error: out.failure.error }, { status: out.failure.status }) }
+      : { result: out.result };
   };
 
   if (body.action === "assign") {

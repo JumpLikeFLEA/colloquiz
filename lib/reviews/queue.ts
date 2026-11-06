@@ -1,4 +1,5 @@
 import type { FeedbackContent } from "@/lib/feedback/content";
+import { UUID_RE } from "../ids";
 
 /**
  * The Studio review queue (VOICE-006, docs/decisions/0114). Rows come from
@@ -71,7 +72,6 @@ export type ReviewFilters = {
   status: StatusFilter;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
@@ -87,8 +87,8 @@ export function parseReviewFilters(params: Record<string, string | string[] | un
   const status = first(params.status);
   const week = weekRaw && /^\d{1,2}$/.test(weekRaw) ? Number(weekRaw) : null;
   return {
-    course: course && UUID.test(course) ? course.toLowerCase() : null,
-    run: run && UUID.test(run) ? run.toLowerCase() : null,
+    course: course && UUID_RE.test(course) ? course.toLowerCase() : null,
+    run: run && UUID_RE.test(run) ? run.toLowerCase() : null,
     week: week !== null && week >= 1 && week <= 52 ? week : null,
     status: (STATUS_FILTERS as readonly string[]).includes(status ?? "")
       ? (status as StatusFilter)

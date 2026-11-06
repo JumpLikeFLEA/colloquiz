@@ -1,4 +1,5 @@
 import { EXPENSE_CATEGORIES, LIMIT_UNITS, type Expense, type ResourceLimit } from "./types";
+import { UUID_RE } from "../ids";
 
 /**
  * The shape checks for the costs editor's writes (OPS-032), before the RPCs (105) check
@@ -14,7 +15,6 @@ export const LIMIT_NOTE_MAX = 500;
 type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const isDay = (v: unknown): v is string => typeof v === "string" && DAY.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`));
 const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -30,7 +30,7 @@ function amount(v: unknown): number | null | undefined {
 export type ExpenseInput = Omit<Expense, "id"> & { id: string | null };
 
 export function parseExpenseInput(body: Record<string, unknown>): Parsed<ExpenseInput> {
-  const id = body.id === null || body.id === undefined ? null : typeof body.id === "string" && UUID.test(body.id) ? body.id : undefined;
+  const id = body.id === null || body.id === undefined ? null : typeof body.id === "string" && UUID_RE.test(body.id) ? body.id : undefined;
   if (id === undefined) return { ok: false, error: "Invalid request." };
   if (!isDay(body.incurredOn)) return { ok: false, error: "Choose the date of the expense." };
   const vendor = text(body.vendor);
@@ -74,7 +74,7 @@ export function parseExpenseInput(body: Record<string, unknown>): Parsed<Expense
 export type LimitInput = Omit<ResourceLimit, "id"> & { id: string | null };
 
 export function parseLimitInput(body: Record<string, unknown>): Parsed<LimitInput> {
-  const id = body.id === null || body.id === undefined ? null : typeof body.id === "string" && UUID.test(body.id) ? body.id : undefined;
+  const id = body.id === null || body.id === undefined ? null : typeof body.id === "string" && UUID_RE.test(body.id) ? body.id : undefined;
   if (id === undefined) return { ok: false, error: "Invalid request." };
   const provider = text(body.provider);
   const metric = text(body.metric);

@@ -1,3 +1,4 @@
+import { UUID_RE } from "../ids";
 /**
  * What a course import accepts (CNT-018, docs/decisions/0203 Decision 2): PDF, DOCX, Markdown
  * and plain text, up to 32 MB. The same table is the bucket's allow-list (migration 103), so
@@ -47,7 +48,6 @@ export const COURSE_IMPORT_ACCEPT = COURSE_IMPORT_FORMATS.flatMap((f) => COURSE_
 /** The sentence the upload form states before the picker opens. */
 export const COURSE_IMPORT_LIMITS_TEXT = "PDF, DOCX, Markdown or plain text, up to 32 MB.";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** `<user id>/<random id>.<ext>`: the first segment is what the bucket's policy checks. */
 export function importObjectName(userId: string, randomId: string, format: CourseImportFormat): string {

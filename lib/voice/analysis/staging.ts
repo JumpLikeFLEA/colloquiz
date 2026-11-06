@@ -8,7 +8,8 @@
  * the copy once the transcript is stored. The provider is never told whose it is.
  */
 
-const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+import { UUID_PATTERN } from "../../ids";
+
 const EXTENSION = /\.(webm|ogg|m4a)$/;
 
 /** `<uuid>/<uuid>.<ext>` with the extension of the take. Random parts are passed in, so a test can see them. */
@@ -18,7 +19,7 @@ export function stagedObjectName(takeObjectName: string, randomA: string, random
 }
 
 export function namesNoUser(stagedName: string, userId: string, courseId: string): boolean {
-  return !stagedName.includes(userId) && !stagedName.includes(courseId) && new RegExp(`^${UUID}/${UUID}\.(webm|ogg|m4a)$`).test(stagedName);
+  return !stagedName.includes(userId) && !stagedName.includes(courseId) && new RegExp(`^${UUID_PATTERN}/${UUID_PATTERN}\.(webm|ogg|m4a)$`).test(stagedName);
 }
 
 /**

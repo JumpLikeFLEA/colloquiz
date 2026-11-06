@@ -1,4 +1,5 @@
 import type { FeedbackContent } from "@/lib/feedback/content";
+import { UUID_RE } from "../ids";
 
 /**
  * The Studio learner page (AUTH-013, docs/decisions/0119). Rows come from
@@ -53,11 +54,10 @@ export type RecordingRow = {
   feedbackPublishedAt: string | null;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The route's [userId] → a UUID, or null (the page 404s). */
 export function parseLearnerId(raw: string): string | null {
-  return UUID.test(raw) ? raw.toLowerCase() : null;
+  return UUID_RE.test(raw) ? raw.toLowerCase() : null;
 }
 
 function num(v: unknown): number {

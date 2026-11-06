@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseExpenseInput, parseLimitInput } from "@/lib/costs/input";
+import { UUID_RE } from "@/lib/ids";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * OPS-032 (docs/decisions/0207) — the costs editor's writes as JSON:
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
     case "expense-delete":
     case "limit-delete": {
-      if (typeof body.id !== "string" || !UUID.test(body.id)) {
+      if (typeof body.id !== "string" || !UUID_RE.test(body.id)) {
         return NextResponse.json({ error: "Invalid request." }, { status: 400 });
       }
       call = supabase.rpc(body.action === "expense-delete" ? "admin_expense_delete" : "admin_limit_delete", { p_id: body.id });

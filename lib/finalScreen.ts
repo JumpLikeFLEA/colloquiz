@@ -2,6 +2,7 @@ import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
 import { beforeAfterView, type BeforeAfterView, type EnrolmentTake, type ReadableLesson } from "@/lib/voice/beforeAfter";
+import { UUID_RE } from "./ids";
 
 /**
  * COH-005 (docs/decisions/0115) — the before/after screen's read, for one
@@ -43,7 +44,6 @@ export type FinalScreen =
       playback: Record<string, string>;
     } & FinalScreenRun);
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getFinalScreen(runId: string): Promise<FinalScreen> {
   // A malformed id would be a cast error in PostgREST; to the visitor it is
