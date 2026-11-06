@@ -5057,6 +5057,26 @@ export const CARDS = [
       'The alternative to the centred card was a two-column layout (a hero-like left column beside the card); the owner can ask for it at the plan checkpoint. ' +
       'The living paper and the sparks are left off on purpose: a form screen stays calm, and sparks would celebrate a press before the sign-in has succeeded.',
   },
+  // Proposed in OPS-035's closing comment (#276), filed by the owner 2026-11-06.
+  {
+    key: 'OPS-039',
+    title: 'staging.ts namesNoUser: the dot before the extension matches any character',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3298,
+    dependsOn: [],
+    goal:
+      'lib/voice/analysis/staging.ts namesNoUser builds its check with new RegExp over a template literal that ends in a single backslash, a dot and (webm|ogg|m4a). ' +
+      'Inside a template literal a single backslash before a dot is just a dot, so the pattern "." matches any character. ' +
+      'namesNoUser therefore accepts a staged name such as "<uuid>/<uuid>Xwebm". Found while OPS-035 moved the UUID pattern; left unchanged there so that card stayed a pure move.',
+    acceptance: [
+      'Reproduce first: a vitest case that fails today, with a staged name whose separator before the extension is not a dot, printed red.',
+      'The dot is escaped (a doubled backslash in the template literal, or String.raw), the case passes, and every existing staging test still passes.',
+      'Read the callers of namesNoUser and say in the evidence whether any real staged name (stagedObjectName always writes a dot) was ever rejected or accepted wrongly: the bug only ever loosens the check.',
+    ],
+    notes: 'Proposed in #276 (OPS-035). Small: no migration, no UI.',
+  },
 ];
 
 export function rankOf(key) {
