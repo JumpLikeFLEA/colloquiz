@@ -1,15 +1,12 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
+import { practiceRenderer } from "@/app/components/lesson-player";
 import type { PracticeRendererProps } from "@/app/components/lesson-player/LessonPlayer";
 import { AskTeacher } from "@/app/components/lesson-player/AskTeacher";
 import type { AskTeacherConfig } from "@/lib/askTeacher/options";
-import type { NextLessonLink } from "@/lib/publicLesson";
-import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
-import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
-import { LessonProgressStrip } from "./LessonProgressStrip";
+import { LessonFrame, type LessonPageProps } from "./LessonFrame";
 
 /**
  * TCH-006 (docs/decisions/0153) — LessonPageClient for a signed-in student who
@@ -28,43 +25,15 @@ import { LessonProgressStrip } from "./LessonProgressStrip";
  *    is how this component learns the latest response per block;
  *  - a voice task's link is drawn by the voice block's own chunk through
  *    `voiceTasks.renderAsk`.
- * Keep the rest of this file in step with LessonPageClient.
+ * The props type and the page frame are shared with LessonPageClient through
+ * LessonFrame.tsx (PLAY-020); only the two hooks above differ.
  */
 export function LinkedLessonPageClient({
-  header,
-  backLink,
-  document,
-  attemptId,
-  courseSlug,
-  nextLesson,
-  course,
-  lessonVersionId,
-  isSignedIn,
-  lessonPath,
-  previousBestPercent,
-  earlierAttempts,
-  voiceTasks,
-  lessonTitle,
   askTeacher,
-}: {
-  header: ReactNode;
-  backLink: ReactNode;
-  document: unknown[];
-  lessonTitle: string;
-  attemptId: string;
-  courseSlug: string;
-  nextLesson: NextLessonLink | null;
-  /** PROG-008 (docs/decisions/0209): the course, for the completion card. */
-  course?: LessonCourseContext;
-  lessonVersionId: string;
-  isSignedIn: boolean;
-  lessonPath: string;
-  previousBestPercent: number | null;
-  /** PLAY-019 (docs/decisions/0210) — this version's earlier attempts (signed in). */
-  earlierAttempts?: EarlierAttempt[];
-  voiceTasks?: VoiceTasksContext;
-  askTeacher: AskTeacherConfig;
-}) {
+  voiceTasks,
+  ...page
+}: LessonPageProps & { askTeacher: AskTeacherConfig }) {
+  const { document } = page;
   // The latest checked response per block. State, because the link's dialog
   // reads it when it opens (a new answer must reach the link).
   const [responses, setResponses] = useState<Record<string, unknown>>({});
@@ -96,25 +65,5 @@ export function LinkedLessonPageClient({
     [voiceTasks, askTeacher, document],
   );
 
-  return (
-    <div className="grid-paper flex-1 pb-8">
-      {header}
-      <LessonPlayer
-        document={document}
-        lessonTitle={lessonTitle}
-        attemptId={attemptId}
-        practiceRenderer={renderPracticeWithAsk}
-        courseSlug={courseSlug}
-        nextLesson={nextLesson}
-        course={course}
-        lessonVersionId={lessonVersionId}
-        isSignedIn={isSignedIn}
-        lessonPath={lessonPath}
-        previousBestPercent={previousBestPercent}
-        earlierAttempts={earlierAttempts}
-        voiceTasks={voice}
-        renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
-      />
-    </div>
-  );
+  return <LessonFrame {...page} voiceTasks={voice} practiceRenderer={renderPracticeWithAsk} />;
 }
