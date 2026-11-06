@@ -38,6 +38,7 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
+import { deflateSync } from "zlib";
 import { join } from "path";
 import { countPracticeBlocks, parseLessonDocument } from "../lib/lessons";
 
@@ -199,8 +200,63 @@ async function upsertLessons(courseId: string, lessons: LessonFixture[]): Promis
   }
 }
 
+// OPS-037: the cover URLs below pointed at an object this script never uploaded, so the
+// storage API answered 404 with a JSON body and Satori (share cards) could not decode it
+// ("Unsupported image type: unknown"). A real, tiny PNG is uploaded under that name.
+function crc32(buf: Buffer): number {
+  let c = ~0;
+  for (const b of buf) {
+    c ^= b;
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+  }
+  return ~c >>> 0;
+}
+function pngChunk(type: string, data: Buffer): Buffer {
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length);
+  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(body));
+  return Buffer.concat([len, body, crc]);
+}
+// Three horizontal bands (violet, yellow, white), so a drawn cover is distinguishable from the
+// share card's own gradient fallback.
+function bandedPng(w: number, h: number): Buffer {
+  const bands: [number, number, number][] = [
+    [91, 63, 217],
+    [255, 214, 10],
+    [255, 255, 255],
+  ];
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // truecolour RGB
+  const raw = Buffer.concat(
+    Array.from({ length: h }, (_, y) => {
+      const [r, g, b] = bands[Math.floor((y * bands.length) / h)];
+      return Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: w }, () => [r, g, b]).flat())]);
+    }),
+  );
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", deflateSync(raw)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+async function uploadFixtureCover() {
+  const up = await supabase.storage
+    .from("lesson-images")
+    .upload("fixture-cover.png", bandedPng(160, 90), { contentType: "image/png", upsert: true });
+  if (up.error) throw new Error(`fixture cover upload failed: ${up.error.message}`);
+  console.log("Cover: lesson-images/fixture-cover.png (160x90 PNG)");
+}
+
 async function main() {
   console.log(`Seeding PLAY-006 fixtures against ${url} ...`);
+  await uploadFixtureCover();
 
   const signedInId = await upsertUser(USERS.signedIn);
   const entitledId = await upsertUser(USERS.entitled);
