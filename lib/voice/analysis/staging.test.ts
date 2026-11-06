@@ -24,6 +24,13 @@ describe("stagedObjectName", () => {
     expect(namesNoUser(`${COURSE}/${USER}/${TAKE}.webm`, USER, COURSE)).toBe(false);
   });
 
+  it("needs a literal dot before the extension (OPS-039)", () => {
+    for (const sep of ["X", "_", "-", "/"]) {
+      expect(namesNoUser(`${R1}/${R2}${sep}webm`, USER, COURSE)).toBe(false);
+    }
+    expect(namesNoUser(`${R1}/${R2}.webm`, USER, COURSE)).toBe(true);
+  });
+
   it("falls back to .webm for a name with no known extension", () => {
     expect(stagedObjectName("whatever", R1, R2)).toBe(`${R1}/${R2}.webm`);
   });

@@ -19,7 +19,7 @@ export function stagedObjectName(takeObjectName: string, randomA: string, random
 }
 
 export function namesNoUser(stagedName: string, userId: string, courseId: string): boolean {
-  return !stagedName.includes(userId) && !stagedName.includes(courseId) && new RegExp(`^${UUID_PATTERN}/${UUID_PATTERN}\.(webm|ogg|m4a)$`).test(stagedName);
+  return !stagedName.includes(userId) && !stagedName.includes(courseId) && new RegExp(`^${UUID_PATTERN}/${UUID_PATTERN}\\.(webm|ogg|m4a)$`).test(stagedName);
 }
 
 /**
