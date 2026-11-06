@@ -21,26 +21,30 @@ export default async function StudioLayout({ children }: { children: React.React
   const access = await getCourseAccess();
   if (!canEnterStudio(access)) notFound();
 
-  // The Inbox badge (AUTH-012, docs/decisions/0118): the same cached
-  // review_queue call the inbox lists, so the two can't disagree. A failed
-  // read hides the badge rather than taking every Studio page down with it;
-  // the inbox page itself still throws on the same error.
-  let waiting: number | null = null;
-  try {
-    waiting = waitingCount(await getWaitingRows());
-  } catch (e) {
-    console.error("Studio badge: review_queue failed", e);
-  }
-
-  // The Messages badge (TCH-004, docs/decisions/0151 Decision 7): unanswered
-  // threads from the same cached read the inbox lists. null hides it.
-  const threads = await getTeacherThreads();
+  // The three reads are independent, so they start together (SHELL-036). Each keeps its own
+  // failure mode: a failed badge read hides the badge rather than taking every Studio page
+  // down with it (the inbox page itself still throws on the same error); a failed write
+  // state throws, as before.
+  //
+  // The Inbox badge (AUTH-012, docs/decisions/0118): the same cached review_queue call the
+  // inbox lists, so the two can't disagree.
+  // The Messages badge (TCH-004, docs/decisions/0151 Decision 7): unanswered threads from the
+  // same cached read the inbox lists. null hides it.
+  // TCH-008 (docs/decisions/0155): a lapsed seat reads but does not write. The database
+  // refuses every write itself; this only tells the page so, once, and hands the same answer
+  // to the controls that would otherwise fail.
+  const [waiting, threads, writeState] = await Promise.all([
+    getWaitingRows().then(
+      (rows) => waitingCount(rows),
+      (e: unknown) => {
+        console.error("Studio badge: review_queue failed", e);
+        return null;
+      },
+    ),
+    getTeacherThreads(),
+    getStudioWriteState(),
+  ]);
   const unanswered = threads ? unansweredThreads(threads).length : null;
-
-  // TCH-008 (docs/decisions/0155): a lapsed seat reads but does not write. The
-  // database refuses every write itself; this only tells the page so, once,
-  // and hands the same answer to the controls that would otherwise fail.
-  const writeState = await getStudioWriteState();
   const banner = writeBanner(writeState);
 
   return (

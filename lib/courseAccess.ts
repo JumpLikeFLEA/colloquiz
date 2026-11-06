@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/queries";
 
@@ -34,7 +35,8 @@ export function canEnterStudio(access: CourseAccess): boolean {
   return access.isAdmin || access.editableCourseIds.length > 0 || access.hasSeat;
 }
 
-export async function getCourseAccess(): Promise<CourseAccess> {
+/** Cached per request (SHELL-036): the Studio layout and every Studio page ask, and each ask used to repeat the profile, editor and seat reads. */
+export const getCourseAccess = cache(async (): Promise<CourseAccess> => {
   const supabase = await createClient();
   const user = await getUser();
   if (!user) return { isAdmin: false, editableCourseIds: [], hasSeat: false };
@@ -57,7 +59,7 @@ export async function getCourseAccess(): Promise<CourseAccess> {
     editableCourseIds: (editorRows ?? []).map((r) => r.course_id),
     hasSeat: seat.data === true,
   };
-}
+});
 
 /** Per-course gate for the detail/lesson/preview pages, called via the RPC
  * so the decision is made by `can_edit_course` itself, not re-derived from

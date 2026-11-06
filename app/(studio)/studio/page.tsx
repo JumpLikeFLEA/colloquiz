@@ -180,12 +180,8 @@ export default async function StudioInbox() {
     homework.finished.length === 0;
 
   // TCH-015 (0206): the get-started card for a seat holder, until the core steps are done.
-  const checklist = await getChecklist({
-    access,
-    writeState: await getStudioWriteState(),
-    canImport: await canImportCourse(),
-    inboxHasItems: !nothing,
-  });
+  const [writeState, canImport] = await Promise.all([getStudioWriteState(), canImportCourse()]);
+  const checklist = await getChecklist({ access, writeState, canImport, inboxHasItems: !nothing });
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
