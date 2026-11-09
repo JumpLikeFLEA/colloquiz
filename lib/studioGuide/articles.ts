@@ -203,7 +203,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     purpose: "Ask learners to record themselves speaking, inside a lesson.",
     steps: [
       "Open the lesson in the editor, press **Add block** and choose **Voice task** (below the exercises).",
-      "Type the prompt: what the learner should say.",
+      "Type the prompt: what the learner should say. Press Enter to start a new line, for example to put two situations on lines of their own.",
       "Set the length limit. If this task is the second recording of a pair, use **Before / after comparison** to say which one it is.",
       "Optionally fill **Expressions to listen for (optional)**: one expression per line. Learners see them as chips to try to use, and the AI feedback marks the ones they said.",
       "Press **Save**, then publish the lesson (see **Publish**).",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InlineContentSchema, InlineRunSchema } from "./inline";
+import { InlineContentSchema, InlineRunSchema, MultilineInlineContentSchema } from "./inline";
 
 describe("InlineRunSchema", () => {
   it("accepts plain text with no marks", () => {
@@ -66,5 +66,24 @@ describe("InlineContentSchema", () => {
   it("rejects an empty array — no content to render", () => {
     const result = InlineContentSchema.safeParse([]);
     expect(result.success).toBe(false);
+  });
+});
+
+describe("MultilineInlineContentSchema", () => {
+  it("accepts a line break that InlineContentSchema rejects", () => {
+    const value = [{ text: "line one\nline two", marks: ["emphasis"] }];
+    expect(MultilineInlineContentSchema.safeParse(value).success).toBe(true);
+    expect(InlineContentSchema.safeParse(value).success).toBe(false);
+  });
+
+  it("keeps the run rules: marks, empty text, mark_a with mark_b", () => {
+    expect(MultilineInlineContentSchema.safeParse([{ text: "" }]).success).toBe(false);
+    expect(MultilineInlineContentSchema.safeParse([{ text: "x", marks: ["mark_a", "mark_b"] }]).success).toBe(false);
+    expect(MultilineInlineContentSchema.safeParse([{ text: "x", extra: 1 }]).success).toBe(false);
+    expect(MultilineInlineContentSchema.safeParse([]).success).toBe(false);
+  });
+
+  it("rejects a tab", () => {
+    expect(MultilineInlineContentSchema.safeParse([{ text: "a\tb" }]).success).toBe(false);
   });
 });

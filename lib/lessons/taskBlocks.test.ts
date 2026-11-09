@@ -130,6 +130,48 @@ describe("voice task listenFor (AUTH-020)", () => {
   });
 });
 
+describe("voice task prompt line breaks (docs/decisions/0224)", () => {
+  const twoSituations = [
+    { text: "Situation 1.", marks: ["emphasis"] },
+    { text: " You're at work.\n" },
+    { text: "Situation 2.", marks: ["emphasis"] },
+    { text: " A friend wants your umbrella." },
+  ];
+
+  it("accepts a newline inside a run and keeps it", () => {
+    const result = parseLessonDocument([voiceBlock("v1", { prompt: twoSituations })]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.document[0]).toMatchObject({ prompt: twoSituations });
+  });
+
+  it("stores CRLF and a lone CR as LF", () => {
+    const result = parseLessonDocument([voiceBlock("v1", { prompt: [{ text: "One\r\nTwo\rThree" }] })]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.document[0]).toMatchObject({ prompt: [{ text: "One\nTwo\nThree" }] });
+  });
+
+  it.each([
+    ["a tab", "One\tTwo"],
+    ["another control character", "One\u0007Two"],
+  ])("still rejects %s in the prompt", (_label, text) => {
+    const result = parseLessonDocument([voiceBlock("v1", { prompt: [{ text }] })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.map((e) => e.field).join(" ")).toContain("prompt");
+  });
+
+  it("leaves a theory block's text single-line", () => {
+    const prose = { id: "p1", kind: "theory", type: "prose", text: [{ text: "One\nTwo" }] };
+    expect(parseLessonDocument([prose]).ok).toBe(false);
+  });
+
+  it("round-trips through serializeLessonDocument unchanged", () => {
+    const first = parseLessonDocument([voiceBlock("v1", { prompt: twoSituations })]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(parseLessonDocument(serializeLessonDocument(first.document))).toEqual(first);
+  });
+});
+
 describe("a voice task leaves count, score and completion alone", () => {
   const withVoice = parseLessonDocument([proseBlock("p1"), voiceBlock("v1"), selectionBlock("q1"), voiceBlock("v2")]);
   const withoutVoice = parseLessonDocument([proseBlock("p1"), selectionBlock("q1")]);

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseLessonDocument, type VoiceTaskBlock } from "@/lib/lessons";
 import { mapParseErrorsToFieldErrors } from "@/lib/lessonEditorErrors";
+import { InlineField } from "./BlockForm";
 import { BeforeListenForProvider, VoiceTaskForm } from "./VoiceTaskForm";
 
 // AUTH-020: the voice task's "Expressions to listen for" field, one per line
@@ -114,5 +115,25 @@ describe("VoiceTaskForm — expressions to listen for", () => {
     expect(screen.getByText("Each expression can be listed once.")).toBeTruthy();
     // The over-length line's message sits under the field too.
     expect(screen.getAllByText(/60/).length).toBeGreaterThan(1);
+  });
+});
+
+describe("VoiceTaskForm — prompt line breaks (docs/decisions/0224)", () => {
+  it("edits each prompt run in a textarea and keeps a typed line break", () => {
+    render(<Harness initial={base} />);
+    const run = screen.getByDisplayValue("Tell us about your week.");
+    expect(run.tagName).toBe("TEXTAREA");
+    fireEvent.change(run, { target: { value: "Situation 1.\nSituation 2." } });
+    expect(latest.prompt).toEqual([{ text: "Situation 1.\nSituation 2." }]);
+    expect(parseLessonDocument([latest]).ok).toBe(true);
+    expect(screen.getByText("Press Enter to start a new line.")).toBeTruthy();
+  });
+
+  it("leaves a theory block's inline field a single-line input", () => {
+    const { container } = render(
+      <InlineField label="Text" value={[{ text: "Cats are animals." }]} onChange={() => {}} path="text" />,
+    );
+    expect(container.querySelector("input")).toBeTruthy();
+    expect(container.querySelector("textarea")).toBeNull();
   });
 });

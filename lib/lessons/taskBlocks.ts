@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { InlineContentSchema } from "./inline";
+import { MultilineInlineContentSchema } from "./inline";
 
 /**
  * Task blocks — the third block kind beside theory and practice (VOICE-003,
@@ -57,8 +57,10 @@ export const VoiceTaskBlockSchema = z.strictObject({
   kind: z.literal("task"),
   type: z.literal("voice"),
   /** What the learner is asked to say. Inline content, like a theory
-   * block's text, so the partner can emphasise a phrase. */
-  prompt: InlineContentSchema,
+   * block's text, so the partner can emphasise a phrase. A run may hold line
+   * breaks, so two situations in one task can sit on lines of their own
+   * (docs/decisions/0224). */
+  prompt: MultilineInlineContentSchema,
   maxSeconds: z.number().int().min(VOICE_MIN_SECONDS).max(VOICE_MAX_SECONDS),
   compare: z.enum(VOICE_COMPARE_SLOTS).optional(),
   listenFor: ListenForSchema.optional(),

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
-import { InlineContentSchema } from "@/lib/lessons/inline";
+import { MultilineInlineContentSchema } from "@/lib/lessons/inline";
 import { inlinePlainText } from "@/lib/lessons/plainText";
 import {
   filterOptions,
@@ -75,7 +75,7 @@ export default async function ReviewsPage({
     listed.map(async (r) => {
       const name = r.submissionId ? objectNames.get(r.submissionId) : undefined;
       const signed = name ? await signVoicePlaybackUrl(supabase, name) : null;
-      const prompt = InlineContentSchema.safeParse(r.blockPrompt);
+      const prompt = MultilineInlineContentSchema.safeParse(r.blockPrompt);
       return {
         ...r,
         promptText: prompt.success ? inlinePlainText(prompt.data) : "",

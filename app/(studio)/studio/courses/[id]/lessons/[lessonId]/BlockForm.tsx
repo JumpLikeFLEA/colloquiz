@@ -75,6 +75,8 @@ export function InlineField({
   errors,
   path,
   placeholder,
+  multiline,
+  hint,
 }: {
   label: string;
   value: InlineContent;
@@ -82,11 +84,20 @@ export function InlineField({
   errors?: BlockFieldErrors;
   path: string;
   placeholder?: string;
+  multiline?: boolean;
+  hint?: string;
 }) {
   return (
     <div className="space-y-1">
       <label className={labelClass}>{label}</label>
-      <InlineEditor value={value} onChange={onChange} fieldErrors={errorsFor(errors, path)} placeholder={placeholder} />
+      <InlineEditor
+        value={value}
+        onChange={onChange}
+        fieldErrors={errorsFor(errors, path)}
+        placeholder={placeholder}
+        multiline={multiline}
+      />
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

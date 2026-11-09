@@ -57,7 +57,7 @@ export function AttachmentCard({
       {view.prompt === "" ? (
         <p className="mt-2 text-muted-foreground">{labels.exerciseUnreadable}</p>
       ) : (
-        <p className="mt-2 break-words font-medium">{view.prompt}</p>
+        <p className="mt-2 whitespace-pre-line break-words font-medium">{view.prompt}</p>
       )}
       {view.lines.length > 0 && (
         <ul className="mt-1 list-disc space-y-0.5 break-words pl-5 text-muted-foreground">

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
-import { InlineContentSchema } from "@/lib/lessons/inline";
+import { MultilineInlineContentSchema } from "@/lib/lessons/inline";
 import { inlinePlainText } from "@/lib/lessons/plainText";
 import { toRosterRow } from "@/lib/learners/roster";
 import {
@@ -125,7 +125,7 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
     takeRows.map(async (r) => {
       const name = objectNames.get(r.submissionId);
       const signed = name ? await signVoicePlaybackUrl(supabase, name) : null;
-      const prompt = InlineContentSchema.safeParse(r.blockPrompt);
+      const prompt = MultilineInlineContentSchema.safeParse(r.blockPrompt);
       items.set(r.submissionId, {
         ...r,
         promptText: prompt.success ? inlinePlainText(prompt.data) : "",

@@ -34,7 +34,8 @@ export function VoiceTaskBlockView({ block, context }: { block: VoiceTaskBlock; 
         <Mic className="size-3.5" aria-hidden="true" />
         {voiceCopy.label}
       </p>
-      <p className={PROMPT_TEXT_CLASS}>
+      {/* pre-line: the prompt may hold line breaks (docs/decisions/0224). */}
+      <p className={`whitespace-pre-line ${PROMPT_TEXT_CLASS}`}>
         <InlineContentView content={block.prompt} />
       </p>
       <p className="mt-1 text-xs text-muted-foreground">

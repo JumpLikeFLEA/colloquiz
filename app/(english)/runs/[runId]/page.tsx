@@ -115,7 +115,7 @@ export default async function FinalScreenPage({ params }: { params: Promise<{ ru
             <div className={`flex flex-col gap-2 ${READING_WIDTH_CLASS}`}>
               <p className="text-sm text-muted-foreground">{finalCopy.intro}</p>
               {prompt && (
-                <p className="text-base font-semibold text-foreground">
+                <p className="whitespace-pre-line text-base font-semibold text-foreground">
                   <InlineContentView content={prompt} />
                 </p>
               )}

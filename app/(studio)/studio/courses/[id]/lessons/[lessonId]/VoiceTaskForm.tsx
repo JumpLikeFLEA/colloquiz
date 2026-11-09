@@ -93,6 +93,8 @@ export function VoiceTaskForm({
         onChange={(prompt) => onChange({ ...block, prompt })}
         errors={errors}
         path="prompt"
+        multiline
+        hint="Press Enter to start a new line."
       />
       <div className="space-y-1">
         <label className={labelClass}>

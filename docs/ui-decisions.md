@@ -3097,3 +3097,26 @@ Appended to in the same commit as the change it records. Referenced from
   fixture (its source, long lesson-row titles, is truncated by `truncate` on the row). Not measured:
   Stats and Duplicate wrapping at a narrower width, dark mode. Do not remove `min-w-0` from the column:
   without it the flex child keeps its content width.
+- Voice task prompt takes line breaks (2026-11-09, ad hoc, docs/decisions/0224). On the lesson page,
+  the Studio preview, the before/after screen and the ask-the-teacher attachment card, a voice task's
+  prompt is drawn with `whitespace-pre-line`. A `\n` in a run is a line break, two make a blank line,
+  and the space after a break is dropped, so a line starts flush. In Studio's lesson editor, each run of
+  the voice prompt is a textarea (the input's classes, `resize-none field-sizing-content`) that grows
+  with its text. Its mark buttons and its remove button are centred on the first line (`items-start`,
+  `pt-1` / `mt-1.5`). A muted `text-xs` line under the field reads "Press Enter to start a new line."
+  Every other inline field keeps its single-line input. Existing classes and tokens; no new colours.
+  Measured on the local stack, with the fixture's Before task given the owner's two-situation prompt.
+  - `npm run viewport360 --expect="Situation 2."`: `scrollWidth/innerWidth` 360/360 on the lesson and
+    `/runs` (enrolled learner), and on `/studio/reviews`, the preview and the learner page (editor).
+  - In Edge, "Situation 2." and "Record both…" start at x 0 on lines of their own: on the lesson,
+    `/runs` and `/studio/reviews`, at 360 and at 1280.
+  - The editor with the form open: document 360/360 and 1280/1280; both buttons centred at 17 of the
+    textarea's 34px. Enter followed by typing appended "\nThird line" and the box grew (294 → 314px
+    at 360). Studio's `main` was 466/360 at page load, before the form opened (pre-existing, see the
+    AUTH-020 entry).
+  - `npm run budget` before and after: identical on all 16 routes. `/runs/…f1a1` is 180.8 KB of 179
+    both times, over before this change; no budget route has a voice task.
+
+  Not measured: the attachment card in a browser, dark mode, a phone. Do not put the voice prompt back
+  in single-line inputs, and do not read a voice prompt with `InlineContentSchema`: a multi-line
+  prompt fails that parse and shows nothing.

@@ -27,19 +27,23 @@ import { authoredString } from "../authoredString";
 export const INLINE_MARKS = ["emphasis", "english", "mark_a", "mark_b"] as const;
 export type InlineMark = (typeof INLINE_MARKS)[number];
 
-export const InlineRunSchema = z.strictObject({
-  text: authoredString(),
-  marks: z
-    .array(z.enum(INLINE_MARKS))
-    .max(INLINE_MARKS.length)
-    .optional()
-    .refine((marks) => !marks || new Set(marks).size === marks.length, {
-      message: "marks must not repeat",
-    })
-    .refine((marks) => !marks || !(marks.includes("mark_a") && marks.includes("mark_b")), {
-      message: "mark_a and mark_b are contrasting categories and cannot both apply to the same run",
-    }),
-});
+function inlineRunSchema(opts?: { allowNewlines?: boolean }) {
+  return z.strictObject({
+    text: authoredString(1, opts),
+    marks: z
+      .array(z.enum(INLINE_MARKS))
+      .max(INLINE_MARKS.length)
+      .optional()
+      .refine((marks) => !marks || new Set(marks).size === marks.length, {
+        message: "marks must not repeat",
+      })
+      .refine((marks) => !marks || !(marks.includes("mark_a") && marks.includes("mark_b")), {
+        message: "mark_a and mark_b are contrasting categories and cannot both apply to the same run",
+      }),
+  });
+}
+
+export const InlineRunSchema = inlineRunSchema();
 
 export type InlineRun = z.infer<typeof InlineRunSchema>;
 
@@ -47,3 +51,9 @@ export type InlineRun = z.infer<typeof InlineRunSchema>;
 export const InlineContentSchema = z.array(InlineRunSchema).min(1);
 
 export type InlineContent = z.infer<typeof InlineContentSchema>;
+
+/** The same runs, where a run's text may also hold line breaks (`\n`; CR/CRLF
+ * stored as LF, tabs still refused). Only the voice task's prompt takes it
+ * (docs/decisions/0224): a renderer of such a field draws it with
+ * `whitespace-pre-line`. Same TypeScript type as `InlineContent`. */
+export const MultilineInlineContentSchema = z.array(inlineRunSchema({ allowNewlines: true })).min(1);

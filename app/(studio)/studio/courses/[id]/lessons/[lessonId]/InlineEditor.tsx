@@ -26,20 +26,29 @@ const MARK_TITLE: Record<InlineMark, string> = {
   mark_b: "Highlight B",
 };
 
+const RUN_INPUT_CLASS =
+  "flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none";
+
 function emptyRun() {
   return { text: "" };
 }
 
+/** `multiline`: each run is a growing textarea, so Enter starts a new line.
+ * Only for a field whose schema takes line breaks (MultilineInlineContentSchema:
+ * the voice task's prompt, docs/decisions/0224); everywhere else a newline
+ * would fail on save. */
 export function InlineEditor({
   value,
   onChange,
   fieldErrors,
   placeholder,
+  multiline = false,
 }: {
   value: InlineContent;
   onChange: (next: InlineContent) => void;
   fieldErrors?: string[];
   placeholder?: string;
+  multiline?: boolean;
 }) {
   const runs: InlineContent = value.length > 0 ? value : [emptyRun()];
 
@@ -77,14 +86,26 @@ export function InlineEditor({
   return (
     <div className="space-y-1.5">
       {runs.map((run, index) => (
-        <div key={index} className="flex items-center gap-1.5">
-          <input
-            value={run.text}
-            onChange={(e) => updateText(index, e.target.value)}
-            placeholder={index === 0 ? placeholder : "…"}
-            className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
-          />
-          <div className="flex items-center gap-0.5 shrink-0">
+        <div key={index} className={`flex gap-1.5 ${multiline ? "items-start" : "items-center"}`}>
+          {multiline ? (
+            // field-sizing-content grows the box with its text where supported;
+            // `rows` is the fallback, one row per line.
+            <textarea
+              value={run.text}
+              onChange={(e) => updateText(index, e.target.value)}
+              placeholder={index === 0 ? placeholder : "…"}
+              rows={run.text.split("\n").length}
+              className={`${RUN_INPUT_CLASS} resize-none field-sizing-content`}
+            />
+          ) : (
+            <input
+              value={run.text}
+              onChange={(e) => updateText(index, e.target.value)}
+              placeholder={index === 0 ? placeholder : "…"}
+              className={RUN_INPUT_CLASS}
+            />
+          )}
+          <div className={`flex items-center gap-0.5 shrink-0 ${multiline ? "pt-1" : ""}`}>
             {INLINE_MARKS.map((mark) => {
               const active = (run.marks ?? []).includes(mark);
               return (
@@ -110,7 +131,9 @@ export function InlineEditor({
             onClick={() => removeRun(index)}
             disabled={runs.length <= 1}
             aria-label="Remove run"
-            className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 shrink-0 p-1 text-muted-foreground hover:text-foreground"
+            className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 shrink-0 p-1 text-muted-foreground hover:text-foreground ${
+              multiline ? "mt-1.5" : ""
+            }`}
           >
             <X size={14} />
           </button>
