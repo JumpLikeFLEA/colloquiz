@@ -107,7 +107,8 @@ One Next.js app, one Supabase project, one account per person.
 at `/studio`. It holds:
 
 - course editing, moved from `/app/admin/courses`;
-- the voice review queue;
+- the voice review queue, and written answers beside it (planned, docs/decisions/0225: "Reviews", with
+  tabs Recordings | Written answers | AI feedback);
 - the learners roster;
 - an inbox of what needs attention;
 - for admins, a Costs page (`/studio/costs`, docs/decisions/0207): usage from a durable ledger, bills and limits typed in by hand.
@@ -408,6 +409,19 @@ cohort course the partner's written feedback continues alongside it. The
 analysis is still never scored and still outside the lesson score and
 completion. Planned, M4.
 
+**Writing tasks (owner, 2026-11-10, docs/decisions/0225; planned, M4,
+WRITE-001..005)** are a second task type beside voice: a prompt and a free
+text answer, never scored, outside the lesson score and completion like a
+voice task. The author ticks whether answers go to a teacher. If ticked, a
+cohort enrolee's answer goes to the course's authors, and a student linked
+to a teacher who edits the course or assigned the lesson sends it to that
+teacher. That teacher writes feedback, and the answer locks once the
+feedback is published. Everyone else practises, and the draft stays in the
+browser. This reverses 0109 Decision 6. A writing task is not `free_text`,
+which stays deferred. A later AI check on writing, by the learner's
+subscription, is planned but not designed. No plan or tier exists yet;
+0225 Decision 13 records where it attaches.
+
 Per-type scoring and normalisation decisions are settled in
 `docs/decisions/0008`–`0015`. Read those before changing any scoring
 behaviour.
@@ -529,7 +543,9 @@ sales of evergreen courses are wanted.
   thesis".
 - LLM grading of free writing. (Not to be confused with the automatic AI
   analysis of voice takes, which is planned: 0156. That analysis is
-  feedback and is never scored.)
+  feedback and is never scored. A teacher's written feedback on a
+  writing task (0225) is not grading either; an AI check on writing is
+  a later owner decision, 0225 Decision 13.)
 - XP, leaderboards or achievements for English courses — English gets its own
   progression, separate from Colloquiz XP.
 - Full interface translation.

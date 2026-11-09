@@ -57,6 +57,11 @@ export const EPICS = [
   { key: 'COH', title: 'Cohort courses', desc: 'Runs, weekly unlocks, enrolment by invite, tiers, calls, the final screen.' },
   { key: 'VOICE', title: 'Voice tasks', desc: 'The voice block, recording, submissions, the partner\'s feedback and review queue.' },
   { key: 'TCH', title: 'Teachers', desc: 'Seats, student links, groups, messages, homework (docs/decisions/0141).' },
+  {
+    key: 'WRITE',
+    title: 'Writing tasks',
+    desc: 'The writing block, sent answers, the teacher\'s feedback and review (docs/decisions/0225).',
+  },
 ];
 
 export const CARDS = [
@@ -5076,6 +5081,113 @@ export const CARDS = [
       'Read the callers of namesNoUser and say in the evidence whether any real staged name (stagedObjectName always writes a dot) was ever rejected or accepted wrongly: the bug only ever loosens the check.',
     ],
     notes: 'Proposed in #276 (OPS-035). Small: no migration, no UI.',
+  },
+  // Writing tasks, decided by the owner 2026-11-10 (docs/decisions/0225).
+  {
+    key: 'WRITE-001',
+    title: 'Writing task block: editor and practice mode',
+    milestone: 'M4',
+    epic: 'WRITE',
+    type: 'task',
+    rank: 3300,
+    dependsOn: [],
+    goal:
+      'An author adds a writing task to a lesson: a prompt and a free text answer where Enter starts a new line, with a tick ' +
+      'for whether answers go to the teacher (docs/decisions/0225 Decisions 5 and 6). This card builds the block, the editor ' +
+      'and the learner\'s practice mode, with the draft kept in the browser (0225 Decision 3). Sending is WRITE-002. No migration.',
+    acceptance: [
+      'lib/lessons/taskBlocks.ts gains WritingTaskBlockSchema, a strict { id, kind: "task", type: "writing", prompt: MultilineInlineContentSchema, sendToTeacher: boolean } with sendToTeacher required and no default, added to TaskBlockSchema and TASK_BLOCK_TYPES; WRITING_ANSWER_MAX_CHARS = 4000 is exported. Tests: sendToTeacher missing is refused, an extra field is refused, a prompt with line breaks parses; lib/lessons/plainText.ts renders it.',
+      'Every place that assumed a task is a voice task narrows on type, found by tsc and by rg for kind === "task" and \'task\' in app/ and lib/: at least LessonPlayer.tsx (task switch), BlockList.tsx (label, preview, form), the publish route\'s before/after check, and the lesson page\'s hasVoiceTask, which must not load the voice context for a lesson whose only task is a writing task. The list of sites is in the evidence.',
+      'Studio\'s lesson editor: "Writing task" in the Add block menu beside "Voice task"; WritingTaskForm with the multiline prompt (InlineField, "Press Enter to start a new line.") and a "Send answers to the teacher" switch with one muted line saying who receives them (0225 Decision 1) and that until sending is built learners practise. The block row reads the friendly label and the prompt. A round trip through parseLessonDocument is tested. The Studio Guide gains a "Writing tasks" article in the same commit (lib/studioGuide/articles.test.ts passes).',
+      'Lesson player: a writing-task card in PRACTICE_CARD_CLASS with a "Writing task" pill (not "Exercise N of M", not counted in the strip, the score or completion; tests pin it), the prompt in whitespace-pre-line, a textarea that grows with its text, maxLength 4000 and an N / 4000 counter, and "Practice: your answer stays on this device." Strings in lib/alliengll/writingCopy.ts (English lesson chrome), not copy.ts. The card is a next/dynamic chunk loaded only by a lesson that has a writing task.',
+      'The draft is kept in localStorage per lesson and block (key named in the decision file), read after mount so the server HTML is unchanged, written debounced and on pagehide, every access in try/catch, falling back to memory when storage throws or is blocked (vitest: a throwing backend, a blocked property, a corrupt value). The Studio preview keeps it in memory only. Checked in a browser: a reload keeps the text, and the network log shows no request carrying it.',
+      'Seed fixtures gain a lesson with a ticked and an unticked writing task. Measured at 360px (scrollWidth/innerWidth printed): the editor with the form open, the player card empty and with a 4000-character draft, and the Studio preview. npm run budget before and after on the free lesson (258.0 of 260 KB when this card was written) and applied-practice, within their limits; if the loader stub tips the free lesson over, one lazy task chunk for both task types (0225 "Revisit when"). A docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'self_check stays the importer\'s mapping for open writing in a PDF (0225 Decision 6). No "Ask the teacher" link on the ' +
+      'writing card (Decision 11). Design notes for the whole epic are in 0225.',
+  },
+  {
+    key: 'WRITE-002',
+    title: 'Send a written answer: storage, send and lock (migration)',
+    milestone: 'M4',
+    epic: 'WRITE',
+    type: 'task',
+    rank: 3310,
+    dependsOn: ['WRITE-001'],
+    goal:
+      'On a ticked writing task, a cohort enrolee sends the answer to the course\'s authors and a linked student to their ' +
+      'teacher; everyone else practises (docs/decisions/0225 Decisions 1, 7 and 8). The learner may edit and resend until the ' +
+      'teacher publishes feedback, then the answer locks (Decision 2). The feedback shows under the answer on the lesson.',
+    acceptance: [
+      'Print rule first: the latest migration and the latest delete_my_account body (rg -l "FUNCTION delete_my_account" supabase/migrations | sort | tail -1), printed. Migration NNN creates writing_submissions (one current answer per (enrolment, lesson, block), and per (user, lesson, block) where enrolment is NULL; body CHECK char_length <= 4000 and a non-whitespace character) and writing_feedback (the voice_feedback shape, body checked by _feedback_content_valid, publish one-way). RLS on, REVOKE ALL, SELECT for authenticated: the owner reads their own answers and only published feedback; teachers have no table policy.',
+      'One function decides the route, _writing_route(user, lesson): the lesson open for the caller, the enrolment that opens it first (cohort), else no route for an enrolee whose enrolment does not open it, else linked when a live link satisfies _ask_teacher_allowed. One predicate decides who reads and answers, _writing_can_review: can_edit_course on the cohort route, _teacher_readable_lessons at read time on the linked route, no seat-freeze clause. The page\'s read (writing_task_state) and submit_writing_answer both call _writing_route.',
+      'submit_writing_answer(lesson, block, body) checks, in order: signed in; a published version whose block is type writing with sendToTeacher true; the body; the lesson open; a route; then locks the slot and returns locked when feedback is published, else updates in place (same id, a draft feedback stays attached) or inserts. save_writing_feedback refuses a caller _writing_can_review rejects with the same code as an unknown id. writing_review_queue(course, status) returns waiting / draft / answered rows the caller may review, with learner_contact_label. course_delete_blockers gains written_answers; delete_my_account (re-emitted from its latest body, the diff printed) deletes both tables.',
+      'supabase/verify script, full protocol, a positive control beside every denial: grants; each error code and the 4000/4001 boundary; the cohort route, the linked route through an edited course, a course assignment and a single-lesson assignment (another lesson refused), a frozen teacher with and without a conversation, an enrolee also linked (files as cohort), an enrolee whose week has not opened, a revoked enrolment; resend keeps the id and the draft, published feedback locks; a republish with the tick off refuses new sends; the reviewer sees the answer before another teacher is shown to see 0; an ended link removes it from the queue and refuses saving; a lapsed seat can still save; account deletion removes both routes; the blocker list. _writing_can_review is added to supabase/verify/083\'s list. Applied locally and re-applied once; the new script and every earlier script for a re-emitted function or touched table print PASS.',
+      'The lesson page reads writing_task_state only for a signed-in visitor on a lesson with a ticked task, in the existing Promise.all, failing soft to practice mode. /api/writing/submissions validates and normalises the body (CRLF to LF, trim, the cap; vitest) and maps each refusal to a status. The card\'s states: Send, Sending, "Sent. Waiting for feedback.", unsent changes with Send again, locked with the feedback in the learner\'s bg-brand-subtle box (FeedbackContentView), refused falling back to practice, and retry; a successful send clears the draft. Component tests for each state.',
+      'Measured at 360px in each send state (scrollWidth/innerWidth printed); npm run budget before and after on both lesson routes, within limits; a docs/ui-decisions.md entry. Hosted only through the hosted-apply gate, and only after WRITE-004\'s privacy revision is published (0225 Decision 14).',
+    ],
+    notes:
+      'The app code may ship before the migration reaches hosted: every writing read fails soft. The future AI check attaches ' +
+      'to submit_writing_answer\'s JSONB response and a writing_analyses table (0225 Decision 13); none of it is built here.',
+  },
+  {
+    key: 'WRITE-003',
+    title: 'Studio Reviews: a Written answers tab, the inbox and the badge',
+    milestone: 'M4',
+    epic: 'WRITE',
+    type: 'task',
+    rank: 3320,
+    dependsOn: ['WRITE-002'],
+    goal:
+      'A teacher reads the written answers sent to them and writes feedback in Studio. The "Recordings" nav entry becomes ' +
+      '"Reviews" with tabs Recordings | Written answers | AI feedback, and the inbox and the badge count both kinds ' +
+      '(docs/decisions/0225 Decision 4, superseding the nav label in 0208).',
+    acceptance: [
+      'RecordingsTabs becomes a three-tab Reviews strip on /studio/reviews, /studio/writing and /studio/voice; the nav entry reads "Reviews", stays active on all three, links to the voice queue while a recording waits, else to written answers while one waits, else to AI feedback, and its badge sums both waiting counts. The choice is one pure function under vitest, including a failed (null) count.',
+      '/studio/writing: Course and Status filters (URL-driven, the review queue\'s filter row), then one card per answer from writing_review_queue: the learner, course · lesson (and run on the cohort route), the sent and edited times, the prompt, the answer as text (whitespace-pre-wrap, break-words, never HTML), an "Edited after your draft" note where it applies, and the existing FeedbackEditor posting to a new feedback route. A failed read shows a message, not an error page.',
+      'The inbox\'s "Waiting for feedback" gains written-answer rows (per course, linking to the filtered tab) from one cached read shared with the badge, failing soft. A lapsed seat can still answer (0155 Decision 5).',
+      'The Studio Guide\'s reviews article updated (lib/studioGuide/articles.test.ts passes). Measured at 360px: the tabs, /studio/writing empty and with waiting, draft and answered cards, the sidebar open with the badge, and the inbox with writing rows (scrollWidth/innerWidth and main printed). A docs/ui-decisions.md entry that supersedes the Recordings line of 0208\'s.',
+    ],
+    notes: 'Writing drafts in the inbox\'s "Unpublished drafts" are a separate proposal in 0225.',
+  },
+  {
+    key: 'WRITE-004',
+    title: 'Privacy revision for written answers',
+    milestone: 'M4',
+    epic: 'WRITE',
+    type: 'task',
+    rank: 3330,
+    dependsOn: ['WRITE-001'],
+    goal:
+      'A written answer sent to a teacher, and the teacher\'s feedback on it, are a new data category, which docs/decisions/0095 ' +
+      'counts as material, and a practice draft now stays in the browser. The privacy policy says so before migration ' +
+      'WRITE-002 is applied to hosted (0225 Decision 14).',
+    acceptance: [
+      'privacy-policy.md: a written-answers row in the data table; the browser draft beside the existing on-device lines; the legal basis for the cohort and the teacher-link routes; the teacher section (a linked teacher reads answers sent to them until the link ends); export and erasure; a retention row (until the account is closed, then deleted outright); the version bump, date and change-log entry its maintainer note requires. subprocessors.md unchanged unless a provider is added (none is).',
+      'The legal diff is shown to the owner at the plan checkpoint, before it is committed (the ANON-019 precedent). If earlier legal drafts are still unpublished, the version numbers move as 0201 records.',
+      'Whether the change needs an in-app notice under 0095 is written in the evidence; adding one is the owner\'s call.',
+    ],
+    notes: 'Docs only. The owner publishes by pushing; the hosted apply of WRITE-002\'s migration waits for that.',
+  },
+  {
+    key: 'WRITE-005',
+    title: 'Written answers on /my and in the account export',
+    milestone: 'M4',
+    epic: 'WRITE',
+    type: 'task',
+    rank: 3340,
+    dependsOn: ['WRITE-002', 'WRITE-004'],
+    goal:
+      'A learner finds a teacher\'s feedback on a written answer in /my\'s Feedback section, beside voice feedback, and the ' +
+      'account export includes their written answers (0225 Decisions 10 and 14).',
+    acceptance: [
+      '/my\'s Feedback lists published writing feedback with the course · lesson, the local date and an "Open lesson" link, newest first with the voice items, through the existing fail-soft helper; EN and RU strings with the saved choice. lib/learnerHome.ts tests cover the new kind.',
+      'The account export gains a written-answers section: each answer, where it was sent (cohort or teacher, never the teacher\'s private data), and only published feedback (lib/accountExport.ts under vitest).',
+      'Pushed only after the migration is applied to hosted: the export route fails as a whole on one failed read (app/api/account/export/route.ts). The push order is stated in the evidence.',
+      'Measured at 360px: /my with a writing feedback card, EN and RU (scrollWidth/innerWidth printed); npm run budget on /my before and after, within its limit.',
+    ],
+    notes: 'A Telegram ping when writing feedback is published is a separate proposal in 0225 (COH-011 knows voice and final only).',
   },
 ];
 
