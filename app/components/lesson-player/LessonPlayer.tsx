@@ -21,6 +21,7 @@ import { lessonBlockWidth } from "@/lib/lessonPlayer/blockWidth";
 import type { NextLessonLink } from "@/lib/publicLesson";
 import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
+import type { WritingTasksContext } from "@/lib/writing/state";
 import {
   FIT_WIDTH_CLASS,
   HEADING_WIDTH_CLASS,
@@ -162,6 +163,8 @@ export interface LessonPlayerProps {
    * lesson page passes it when the lesson has a voice task; the admin
    * preview, the demo and tests pass nothing and get the placeholder. */
   voiceTasks?: VoiceTasksContext;
+  /** WRITE-002 (docs/decisions/0225) — what the page read for the ticked writing tasks (signed in). */
+  writingTasks?: WritingTasksContext;
 }
 
 const NEVER_CHANGES = () => () => {};
@@ -245,6 +248,7 @@ export function LessonPlayer({
   previousBestPercent = null,
   earlierAttempts = NO_ATTEMPTS,
   voiceTasks,
+  writingTasks,
   lessonTitle,
 }: LessonPlayerProps) {
   const parsed = useMemo(() => parseLessonDocument(document), [document]);
@@ -335,6 +339,7 @@ export function LessonPlayer({
       renderProgress={renderProgress}
       previousBest={previousBest}
       voiceTasks={voiceTasks}
+      writingTasks={writingTasks}
     />
   );
 }
@@ -382,6 +387,7 @@ function LessonPlayerBody({
   renderProgress,
   previousBest,
   voiceTasks,
+  writingTasks,
 }: {
   document: LessonDocument;
   results: LessonSessionResults;
@@ -397,6 +403,8 @@ function LessonPlayerBody({
   renderProgress?: (progress: LessonProgress) => ReactNode;
   previousBest: number | null;
   voiceTasks?: VoiceTasksContext;
+  /** WRITE-002 (docs/decisions/0225) — what the page read for the ticked writing tasks (signed in). */
+  writingTasks?: WritingTasksContext;
 }) {
   // Recomputed from `results` on every score, never accumulated by hand —
   // see lib/lessonPlayer/session.ts for why these stay pure functions over
@@ -489,7 +497,7 @@ function LessonPlayerBody({
                 return (
                   <div key={block.id} className={widthClass}>
                     {block.type === "writing" ? (
-                      <WritingTaskBlockView block={block} lessonPath={lessonPath} />
+                      <WritingTaskBlockView block={block} lessonPath={lessonPath} context={writingTasks} />
                     ) : (
                       <VoiceTaskBlockView block={block} context={voiceTasks} />
                     )}

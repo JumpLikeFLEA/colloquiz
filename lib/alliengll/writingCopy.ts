@@ -1,9 +1,9 @@
 /**
- * The writing task's strings (WRITE-001, docs/decisions/0225). English, like
- * the rest of the lesson chrome (docs/decisions/0080 Decision 5). Kept out of
- * lib/alliengll/copy.ts for the voice task's reason: this module ships only
- * in the writing card's own chunk, which a lesson without a writing task
- * never downloads.
+ * The writing task's strings (WRITE-001, WRITE-002, docs/decisions/0225).
+ * English, like the rest of the lesson chrome (docs/decisions/0080
+ * Decision 5). Kept out of lib/alliengll/copy.ts for the voice task's reason:
+ * this module ships only in the writing card's own chunk, which a lesson
+ * without a writing task never downloads.
  */
 export const writingCopy = {
   label: "Writing task",
@@ -11,4 +11,17 @@ export const writingCopy = {
   placeholder: "Write your answer here…",
   practiceNote: "Practice: your answer stays on this device.",
   counter: (n: number, max: number) => `${n} / ${max}`,
+  // WRITE-002: sending.
+  sendNoteCohort: "Your answer goes to the authors of this course. You can edit it and send again until you get feedback.",
+  sendNoteLinked: "Your answer goes to your teacher. You can edit it and send again until you get feedback.",
+  send: "Send",
+  sending: "Sending…",
+  sendAgain: "Send again",
+  retry: "Try again",
+  sentWaiting: "Sent. Waiting for feedback.",
+  unsent: "You have changes that are not sent yet.",
+  sendError: "Couldn't send your answer. Check your connection and try again.",
+  refused: "Sending isn't available for this task right now. Your answer stays on this device.",
+  feedbackHeading: "Feedback",
+  locked: "You got feedback, so this answer can't be changed.",
 } as const;

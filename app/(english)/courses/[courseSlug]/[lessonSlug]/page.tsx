@@ -10,6 +10,7 @@ import { getCourseAttemptSummary, getLessonVersionAttempts } from "@/lib/courseA
 import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 import { bestScoreForLesson, lessonNav, type AttemptsByLessonSlug } from "@/lib/coursePageProgress";
 import { getVoiceTasksContext } from "@/lib/voiceTaskContext";
+import { getWritingTasksContext } from "@/lib/writingTaskContext";
 import { getAskTeacherOptions } from "@/lib/askTeacher/askTeacherServer";
 import { homeworkForLesson, homeworkPillText } from "@/lib/homework/homework";
 import { getMyHomework } from "@/lib/homework/homeworkServer";
@@ -133,7 +134,7 @@ export default async function LessonPage({
   // - docs/decisions/0088: the same "Best" the course page shows for this
   //   lesson; a failed read shows no note rather than failing the lesson.
   // - PROG-008: the next catalogue course, for the completion card.
-  const [homework, ask, earlierAttempts, summary, nextCourse, voiceTasks] = await Promise.all([
+  const [homework, ask, earlierAttempts, summary, nextCourse, voiceTasks, writingTasks] = await Promise.all([
     signedIn ? getHomeworkPill(lesson.courseId, lessonSlug) : null,
     signedIn ? getAskTeacherOptions(lesson.lessonId) : null,
     signedIn
@@ -144,6 +145,8 @@ export default async function LessonPage({
       : null,
     getNextCatalogueCourse(courseSlug),
     hasVoiceTask ? getVoiceTasksContext(lesson.lessonId, lesson.courseId, lesson.state === "ok") : undefined,
+    // WRITE-002 (docs/decisions/0225): only a signed-in visitor on a lesson with a ticked writing task.
+    signedIn ? getWritingTasksContext(lesson.lessonId, lesson.document) : undefined,
   ]);
   const band = bandFor(homework);
   const previousBestPercent = summary ? bestScoreForLesson(lessonSlug, summary) : null;
@@ -183,6 +186,7 @@ export default async function LessonPage({
     previousBestPercent,
     earlierAttempts,
     voiceTasks,
+    writingTasks,
     course: courseContext,
   };
 

@@ -6,6 +6,7 @@ import type { PracticeRendererProps } from "@/app/components/lesson-player/Lesso
 import type { NextLessonLink } from "@/lib/publicLesson";
 import type { LessonCourseContext } from "@/lib/courseCompletion";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
+import type { WritingTasksContext } from "@/lib/writing/state";
 import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 import { LessonProgressStrip } from "./LessonProgressStrip";
 
@@ -36,6 +37,8 @@ export type LessonPageProps = {
   earlierAttempts?: EarlierAttempt[];
   /** VOICE-005 — set when the lesson has a voice task (docs/decisions/0111). */
   voiceTasks?: VoiceTasksContext;
+  /** WRITE-002 — the ticked writing tasks' state for a signed-in learner. */
+  writingTasks?: WritingTasksContext;
 };
 
 /**

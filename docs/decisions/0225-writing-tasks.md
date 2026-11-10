@@ -165,7 +165,11 @@ the design pass behind the cards, and each card may revise one with evidence.
 - **WRITE-001** (#289) — the writing task block: editor and practice mode. No
   migration.
 - **WRITE-002** (#290) — sending a written answer: storage, send and lock. Migration
-  109.
+  109 (built; applied to the local stack only, `supabase/verify/109_writing_submissions.sql`
+  prints PASS). `_writing_route` returns `not_open` as well as `cohort`, `linked` and `none`, so
+  the RPC can answer `lesson_not_open` and `no_route` separately; `writing_task_state` maps both
+  to practice. A linked answer is readable by any teacher `_teacher_readable_lessons` lets read
+  that lesson, not by one named teacher.
 - **WRITE-003** (#291) — Studio Reviews: the Written answers tab, the inbox and the
   badge.
 - **WRITE-004** (#292) — the privacy revision for written answers.

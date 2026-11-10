@@ -3144,3 +3144,29 @@ Appended to in the same commit as the change it records. Referenced from
   287.5 / 287.6 of 290, every other route within 0.1 KB (`/runs/…f1a1` 180.8 of 179 both times, as before).
   Not measured: dark mode, a phone, Safari, a lesson with a writing task in the budget list.
   Do not number or count a writing task, and do not upload a practice draft.
+- Writing task: sending an answer (2026-11-10, WRITE-002, docs/decisions/0225, migration 109 applied to the
+  local stack only, not to the hosted project). The WRITE-001 card gains send states for a signed-in learner whose
+  lesson page found a route (`writing_task_state`: cohort or linked). A visitor, an unrouted learner, an unticked task
+  and a failed read keep the practice card unchanged.
+  - Below the textarea, the muted line says where the answer goes ("…goes to the authors of this course" / "…goes to
+    your teacher. You can edit it and send again until you get feedback."), replacing the practice note.
+  - Under it, an `aria-live` status area: a `SUBMIT_BUTTON_CLASS` "Send" (disabled while empty), "Sending…", then
+    "Sent. Waiting for feedback." in `text-sm font-medium` with no button. Editing a sent answer shows a muted "You have
+    changes that are not sent yet." and "Send again"; editing back to the sent text returns to "Sent…". A failed send
+    shows the card's `destructive-subtle` line (the voice recorder's) and "Try again"; the text and draft are kept.
+  - Once feedback is published the textarea is replaced by the answer in a bordered `whitespace-pre-wrap break-words`
+    box, the feedback in the voice task's `bg-brand-subtle` box (`FeedbackContentView`, headed "Feedback") and a muted
+    "You got feedback, so this answer can't be changed."
+  - A refusal that says the page's read is stale (`no_route`, `lesson_not_open`, `not_sent_to_teacher`, `locked`, …)
+    drops the card to practice with a muted `bg-muted` line, "Sending isn't available for this task right now. Your
+    answer stays on this device.", and keeps the text.
+  - The browser draft is cleared by a successful send. Existing classes and tokens; no new colours.
+  Measured at 360px (local stack, Edge, a student linked to a teacher who edits the course, a 150-character unbroken
+  word typed; `scrollWidth/innerWidth`): 360/360 in send/empty, send with long text, sending, sent, unsent changes +
+  Send again, error + Try again, refused (practice fallback), sent earlier (reload) and locked with feedback. The
+  locked state first measured 950/360 (an unbroken word in the feedback box); `break-words` on the box fixed it.
+  Not measured: a cohort enrolee in a browser (same component; the route is covered by `supabase/verify/109`), dark
+  mode, a phone. `npm run budget`, before and after (local stack): true-or-false 259.9 / 259.9 KB of 260,
+  applied-practice 287.6 / 287.7 of 290, `/` 191.9 / 191.9 of 202; no budget route has a writing task, and
+  `/runs/…f1a1` reads 180.8 KB of 179 both times. Do not offer Send without a route from `writing_task_state`, and do
+  not keep the textarea editable after feedback is published: the database refuses the resend.
