@@ -171,7 +171,14 @@ the design pass behind the cards, and each card may revise one with evidence.
   to practice. A linked answer is readable by any teacher `_teacher_readable_lessons` lets read
   that lesson, not by one named teacher.
 - **WRITE-003** (#291) — Studio Reviews: the Written answers tab, the inbox and the
-  badge.
+  badge (built). Choices made unattended: the tabs are Recordings | Written answers |
+  AI feedback (the first was "Teacher review"); the nav entry opens recordings while one
+  waits, else written answers while one waits, else AI feedback (`reviewsNav`, under
+  vitest); a failed (null) count counts as nothing waiting there and the badge sums what is
+  known, hidden only when both reads failed, so one failing read never hides the other's
+  work; the nav badge and the inbox share one cached `writing_review_queue('waiting')`
+  call that fails soft; the inbox row is per course (the queue has no week), linking to the
+  tab filtered to that course. No Telegram ping (Decision 12).
 - **WRITE-004** (#292) — the privacy revision for written answers.
 - **WRITE-005** (#293) — written answers on `/my` and in the account export.
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, ChevronRight, ClipboardList, FilePenLine, MessageSquare, Mic, type LucideIcon } from "lucide-react";
+import { CalendarClock, ChevronRight, ClipboardList, FilePenLine, MessageSquare, Mic, PenLine, type LucideIcon } from "lucide-react";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import {
   ageLabel,
@@ -20,7 +20,8 @@ import { canImportCourse } from "@/lib/courseImport/access";
 import { getStudioWriteState } from "@/lib/studioWriteState";
 import { GetStarted } from "./GetStarted";
 import { getChecklist } from "./getChecklist";
-import { getDraftRows, getEditorCalls, getHomeworkViews, getTeacherThreads, getWaitingRows } from "./inboxData";
+import { writingWaitingGroups } from "@/lib/writing/review";
+import { getDraftRows, getEditorCalls, getHomeworkViews, getTeacherThreads, getWaitingRows, getWritingWaiting } from "./inboxData";
 
 // /studio — the "Needs attention" inbox (AUTH-012, docs/decisions/0109
 // Decision 5, 0118), across every course the caller edits. Rows come from
@@ -143,8 +144,9 @@ export default async function StudioInbox() {
   const access = await getCourseAccess();
   if (!canEnterStudio(access)) notFound();
 
-  const [waitingRows, drafts, calls, threads, homeworkViews] = await Promise.all([
+  const [waitingRows, writingRows, drafts, calls, threads, homeworkViews] = await Promise.all([
     getWaitingRows(),
+    getWritingWaiting(),
     getDraftRows(),
     getEditorCalls(access),
     getTeacherThreads(),
@@ -154,7 +156,10 @@ export default async function StudioInbox() {
   const now = new Date();
 
   const waiting = waitingGroups(waitingRows);
-  const waitingTotal = waiting.reduce((n, g) => n + g.count, 0);
+  // WRITE-003: written answers waiting, per course, from the nav badge's cached read. null: the read failed.
+  const writingWaiting = writingRows ? writingWaitingGroups(writingRows) : null;
+  const waitingTotal =
+    waiting.reduce((n, g) => n + g.count, 0) + (writingWaiting?.reduce((n, g) => n + g.count, 0) ?? 0);
   const voiceDrafts = voiceDraftGroups(drafts.voice);
   const finalDrafts = finalDraftGroups(drafts.final);
   const draftTotal = [...voiceDrafts, ...finalDrafts].reduce((n, g) => n + g.count, 0);
@@ -170,6 +175,8 @@ export default async function StudioInbox() {
 
   const nothing =
     waiting.length === 0 &&
+    writingWaiting !== null &&
+    writingWaiting.length === 0 &&
     voiceDrafts.length === 0 &&
     finalDrafts.length === 0 &&
     soon.length === 0 &&
@@ -188,7 +195,7 @@ export default async function StudioInbox() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Needs attention</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Recordings waiting for your feedback, questions from your students, homework to check, drafts you haven&apos;t published, and
+          Recordings and written answers waiting for your feedback, questions from your students, homework to check, drafts you haven&apos;t published, and
           calls coming up, across every course you edit.
         </p>
         <p className="text-xs text-muted-foreground mt-1">
@@ -206,8 +213,10 @@ export default async function StudioInbox() {
       ) : (
         <>
           <Section title="Waiting for feedback" count={waitingTotal}>
-            {waiting.length === 0 ? (
-              <div className={EMPTY_BOX}>No recordings waiting for feedback.</div>
+            {waiting.length === 0 && (writingWaiting?.length ?? 0) === 0 ? (
+              <div className={EMPTY_BOX}>
+                {writingWaiting === null ? "No recordings waiting for feedback." : "Nothing waiting for feedback."}
+              </div>
             ) : (
               <div className="space-y-2">
                 {waiting.map((g) => (
@@ -221,7 +230,20 @@ export default async function StudioInbox() {
                     now={now}
                   />
                 ))}
+                {(writingWaiting ?? []).map((g) => (
+                  <RowLink
+                    key={g.href}
+                    href={g.href}
+                    icon={PenLine}
+                    title={g.courseTitle}
+                    detail={`Oldest sent ${ageLabel(g.oldestAt, now)} ago`}
+                    pill={plural(g.count, "written answer", "written answers")}
+                  />
+                ))}
               </div>
+            )}
+            {writingWaiting === null && (
+              <p className="text-xs text-muted-foreground">Couldn&apos;t load written answers. Try again in a moment.</p>
             )}
           </Section>
 

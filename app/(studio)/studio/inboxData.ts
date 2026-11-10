@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listAuthoredCourses } from "@/lib/courseAuthoring";
 import type { CourseAccess } from "@/lib/courseAccess";
 import { toFinalCommentRow, toReviewRow, type FinalCommentRow, type ReviewRow } from "@/lib/reviews/queue";
+import { toWritingReviewRow, type WritingReviewRow } from "@/lib/writing/review";
 import type { InboxCall } from "@/lib/studio/inbox";
 import type { Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
@@ -21,6 +22,23 @@ export const getWaitingRows = cache(async (): Promise<ReviewRow[]> => {
   const { data, error } = await supabase.rpc("review_queue", { p_status: "waiting" });
   if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[]).map(toReviewRow);
+});
+
+/** Written answers waiting for feedback that the caller may review (WRITE-003, writing_review_queue, migration 109), for
+ * the nav badge (layout.tsx) and the inbox (page.tsx): one cached call, so the two can't disagree.
+ * Fail-soft: null on error, because every Studio page's nav sits on it and 109 may not be applied
+ * yet. The inbox says it could not load them rather than showing an empty list. A lapsed seat
+ * still reads and answers (0155 Decision 5). */
+export const getWritingWaiting = cache(async (): Promise<WritingReviewRow[] | null> => {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("writing_review_queue", { p_status: "waiting" });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as Record<string, unknown>[]).map(toWritingReviewRow);
+  } catch (e) {
+    console.error("Studio: writing_review_queue failed", e);
+    return null;
+  }
 });
 
 export async function getDraftRows(): Promise<{ voice: ReviewRow[]; final: FinalCommentRow[] }> {

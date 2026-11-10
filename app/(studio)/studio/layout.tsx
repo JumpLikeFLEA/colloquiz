@@ -5,7 +5,8 @@ import { waitingCount } from "@/lib/studio/inbox";
 import { unansweredThreads } from "@/lib/messages/messages";
 import { getStudioWriteState } from "@/lib/studioWriteState";
 import { writeBanner, writeLockFor } from "@/lib/studioWriteLock";
-import { getTeacherThreads, getWaitingRows } from "./inboxData";
+import { writingWaitingCount } from "@/lib/writing/review";
+import { getTeacherThreads, getWaitingRows, getWritingWaiting } from "./inboxData";
 import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { StudioSidebar, StudioTopbar } from "./StudioSidebar";
 import { WriteLockProvider } from "./StudioWriteLock";
@@ -33,7 +34,7 @@ export default async function StudioLayout({ children }: { children: React.React
   // TCH-008 (docs/decisions/0155): a lapsed seat reads but does not write. The database
   // refuses every write itself; this only tells the page so, once, and hands the same answer
   // to the controls that would otherwise fail.
-  const [waiting, threads, writeState] = await Promise.all([
+  const [waiting, writing, threads, writeState] = await Promise.all([
     getWaitingRows().then(
       (rows) => waitingCount(rows),
       (e: unknown) => {
@@ -41,6 +42,9 @@ export default async function StudioLayout({ children }: { children: React.React
         return null;
       },
     ),
+    // WRITE-003: waiting written answers, from the same cached read the inbox lists. Fails soft
+    // (migration 109 may not be applied yet): null counts as nothing waiting there.
+    getWritingWaiting().then((rows) => (rows ? writingWaitingCount(rows) : null)),
     getTeacherThreads(),
     getStudioWriteState(),
   ]);
@@ -49,7 +53,7 @@ export default async function StudioLayout({ children }: { children: React.React
 
   return (
     <SidebarProvider>
-      <StudioSidebar isAdmin={access.isAdmin} waitingCount={waiting} unansweredCount={unanswered} />
+      <StudioSidebar isAdmin={access.isAdmin} waitingCount={waiting} writingCount={writing} unansweredCount={unanswered} />
       {/* min-w-0: same reason as the Colloquiz (main) layout — a flex item
           otherwise refuses to shrink below its widest unbreakable content. */}
       <div className="flex min-w-0 min-h-svh flex-1 flex-col">

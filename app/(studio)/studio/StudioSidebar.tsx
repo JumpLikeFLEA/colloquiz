@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, CalendarDays, ClipboardList, ExternalLink, Inbox, LayoutGrid, Library, LogOut, MessageSquare, MessageSquareText, PenTool, Shield, UserCog, Users, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { reviewsNav } from "@/lib/writing/review";
 import {
   Sidebar,
   SidebarContent,
@@ -149,33 +150,37 @@ function NavSection({
 export function StudioSidebar({
   isAdmin,
   waitingCount,
+  writingCount,
   unansweredCount,
 }: {
   isAdmin: boolean;
-  /** review_queue's waiting takes (AUTH-012); null hides the badge. */
+  /** review_queue's waiting takes (AUTH-012); null: that read failed. */
   waitingCount: number | null;
+  /** writing_review_queue's waiting answers (WRITE-003); null: that read failed. */
+  writingCount: number | null;
   /** Threads whose last message is the student's (TCH-004); null hides it. */
   unansweredCount: number | null;
 }) {
   const pathname = usePathname();
 
-  // Recordings is the review queue and the AI feedback list under one entry
-  // (0208 Decision 2). It opens the queue while something waits for feedback,
-  // else the AI list, which covers every course, self-paced ones too.
+  // Reviews is the recordings queue, the written answers and the AI feedback list under one
+  // entry (0225 Decision 4, superseding 0208 Decision 2's label). Where it opens and what its
+  // badge sums is lib/writing/review.ts `reviewsNav`.
+  const reviews = reviewsNav(waitingCount, writingCount);
   const contentItems: NavItem[] = [
     // Imports live on the Courses page (0208 Decision 3).
     { label: "Courses", href: "/studio/courses", icon: Library, match: ["/studio/imports"] },
     {
-      label: "Recordings",
-      href: waitingCount != null && waitingCount > 0 ? "/studio/reviews" : "/studio/voice",
+      label: "Reviews",
+      href: reviews.href,
       icon: MessageSquareText,
-      match: ["/studio/reviews", "/studio/voice"],
+      match: ["/studio/reviews", "/studio/writing", "/studio/voice"],
     },
   ];
 
   // Each count sits on the entry where the work is done (0208 Decision 5).
   const badgeFor: BadgeFor = (href) => {
-    if (href === "/studio/reviews" || href === "/studio/voice") return { count: waitingCount, label: "waiting for feedback" };
+    if (href === reviews.href) return { count: reviews.badge, label: "waiting for feedback" };
     if (href === "/studio/messages") return { count: unansweredCount, label: "unanswered" };
     return null;
   };

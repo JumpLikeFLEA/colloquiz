@@ -3170,3 +3170,26 @@ Appended to in the same commit as the change it records. Referenced from
   applied-practice 287.6 / 287.7 of 290, `/` 191.9 / 191.9 of 202; no budget route has a writing task, and
   `/runs/…f1a1` reads 180.8 KB of 179 both times. Do not offer Send without a route from `writing_task_state`, and do
   not keep the textarea editable after feedback is published: the database refuses the resend.
+- Studio Reviews: Written answers tab (2026-11-10, WRITE-003, docs/decisions/0225 Decision 4), SUPERSEDING
+  0208 Decision 2's "Recordings" nav entry and its two-tab strip (the pages stand). The entry is now
+  "Reviews", active on `/studio/reviews`, `/studio/writing` and `/studio/voice`, and every one of those
+  pages opens with `ReviewsTabs` ("Recordings" | "Written answers" | "AI feedback", the old strip's pill
+  classes; the first tab was "Teacher review", and the queue's `h1` and title now say "Recordings"). The
+  entry opens recordings while one waits, else written answers while one waits, else AI feedback; its badge
+  sums both waiting counts (`reviewsNav`, `lib/writing/review.ts`).
+  - `/studio/writing`: the recordings queue's filter row (Course, Status; two columns at 360px, URL-driven),
+    then one `rounded-2xl border bg-card` card per answer in the recording card's frame: the learner, a status
+    pill (the queue's Waiting / Draft / Answered tokens), a muted Cohort / Linked student pill, course · run ·
+    lesson, sent (and edited) times, the task, the answer as `whitespace-pre-wrap break-words` text, a
+    `bg-warning-subtle text-warning` "Edited after your draft" note where the learner changed the answer
+    after a saved draft, and the `FeedbackEditor`. A failed read is a dashed box, not an error page.
+  - The inbox's "Waiting for feedback" gains one row per course ("N written answers", the `PenLine` tile,
+    linking to the tab filtered to that course and Waiting); a failed read adds a muted line under the list.
+  Existing classes and tokens; no new colours. Measured at 360px (local stack, an admin, 4 seeded answers:
+  waiting with a 150-character unbroken word, waiting multi-line, draft edited later, answered):
+  `scrollWidth/innerWidth` 360/360 and `main` 360/360 on `/studio/writing` (to review, all, answered, no
+  match), `/studio/reviews` and `/studio` with the writing rows; the sidebar open (288px) with the badge
+  and "Reviews" active, document 360/360; 1280/1280 and `main` 1024/1024 on the same. Publishing from the tab
+  moved the card out of the queue and the badge 4 to 3. Not measured: dark mode, a phone, a lapsed seat's
+  banner on the tab, the badge with a failed read. Do not count a null read as zero in the badge when the
+  other read succeeded, and do not show the answer as HTML.
