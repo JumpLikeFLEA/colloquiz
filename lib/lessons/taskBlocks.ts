@@ -9,13 +9,14 @@ import { MultilineInlineContentSchema } from "./inline";
  * and is not counted by `countPracticeBlocks` — the lesson score, the item
  * count and "completion = every lesson attempted" are untouched by it.
  *
- * `voice` is the only task type today. The `type` discriminator is kept so a
- * second human-reviewed task does not need a new `kind`.
+ * `voice` and `writing` (WRITE-001, docs/decisions/0225) are the task types.
+ * The `type` discriminator is how a further human-reviewed task avoids a new
+ * `kind`.
  *
  * Strict, like every theory block: an unrecognized field is a parse error.
  */
 
-export const TASK_BLOCK_TYPES = ["voice"] as const;
+export const TASK_BLOCK_TYPES = ["voice", "writing"] as const;
 export type TaskBlockType = (typeof TASK_BLOCK_TYPES)[number];
 
 /** Which end of a cohort course this recording belongs to, for the
@@ -66,9 +67,26 @@ export const VoiceTaskBlockSchema = z.strictObject({
   listenFor: ListenForSchema.optional(),
 });
 
-export const TaskBlockSchema = z.discriminatedUnion("type", [VoiceTaskBlockSchema]);
+/** The most characters a written answer may hold (docs/decisions/0225
+ * Decision 9: about 650 words, below the feedback's 5,000). The learner's
+ * textarea and, from WRITE-002, a CHECK in the database enforce it. */
+export const WRITING_ANSWER_MAX_CHARS = 4000;
+
+/** A writing task (WRITE-001, docs/decisions/0225 Decision 5): a prompt and a
+ * free text answer, never scored. `sendToTeacher` is required with no default,
+ * so the author's choice is frozen into the data. */
+export const WritingTaskBlockSchema = z.strictObject({
+  id: z.string().min(1),
+  kind: z.literal("task"),
+  type: z.literal("writing"),
+  prompt: MultilineInlineContentSchema,
+  sendToTeacher: z.boolean(),
+});
+
+export const TaskBlockSchema = z.discriminatedUnion("type", [VoiceTaskBlockSchema, WritingTaskBlockSchema]);
 
 export type VoiceTaskBlock = z.infer<typeof VoiceTaskBlockSchema>;
+export type WritingTaskBlock = z.infer<typeof WritingTaskBlockSchema>;
 export type TaskBlock = z.infer<typeof TaskBlockSchema>;
 
 /** "3 min", "45 s", "2 min 30 s" — a voice task's limit as the learner and

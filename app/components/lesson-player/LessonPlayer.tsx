@@ -45,6 +45,12 @@ const VoiceTaskBlockView = dynamic(() => import("./blocks/VoiceTaskBlock").then(
   loading: () => <div className={`${PRACTICE_CARD_CLASS} h-40 animate-pulse`} />,
 });
 
+// WRITE-001 (docs/decisions/0225): the writing card is its own chunk, loaded
+// only by a lesson that has a writing task.
+const WritingTaskBlockView = dynamic(() => import("./blocks/WritingTaskBlock").then((m) => m.WritingTaskBlockView), {
+  loading: () => <div className={`${PRACTICE_CARD_CLASS} h-48 animate-pulse`} />,
+});
+
 /** `heading` gets its own wrapper class (centred, not just reading-width) —
  * see `HEADING_WIDTH_CLASS`'s doc comment for why this lives here rather
  * than inside `HeadingBlockView`. Every other width comes straight off
@@ -482,7 +488,11 @@ function LessonPlayerBody({
               case "task":
                 return (
                   <div key={block.id} className={widthClass}>
-                    <VoiceTaskBlockView block={block} context={voiceTasks} />
+                    {block.type === "writing" ? (
+                      <WritingTaskBlockView block={block} lessonPath={lessonPath} />
+                    ) : (
+                      <VoiceTaskBlockView block={block} context={voiceTasks} />
+                    )}
                   </div>
                 );
               case "theory":

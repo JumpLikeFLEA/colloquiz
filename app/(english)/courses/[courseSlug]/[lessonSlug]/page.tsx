@@ -117,7 +117,8 @@ export default async function LessonPage({
   // VOICE-005 (docs/decisions/0111) — read only when the lesson has a voice
   // task, so every other lesson pays nothing for it.
   const hasVoiceTask = lesson.document.some(
-    (block) => typeof block === "object" && block !== null && (block as { kind?: unknown }).kind === "task",
+    (block) => typeof block === "object" && block !== null && (block as { kind?: unknown }).kind === "task" &&
+      (block as { type?: unknown }).type === "voice",
   );
 
   // SHELL-037: everything the playable lesson needs beyond the lesson itself,

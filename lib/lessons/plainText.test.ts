@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inlinePlainText, voiceTaskPlainText } from "./plainText";
+import { inlinePlainText, voiceTaskPlainText, writingTaskPlainText } from "./plainText";
 
 describe("voiceTaskPlainText", () => {
   it("renders a before task with its limit and its prompt, marks dropped", () => {
@@ -51,5 +51,17 @@ describe("voiceTaskPlainText", () => {
 describe("inlinePlainText", () => {
   it("joins runs without separators", () => {
     expect(inlinePlainText([{ text: "a" }, { text: "b", marks: ["mark_a"] }])).toBe("ab");
+  });
+});
+
+describe("writingTaskPlainText", () => {
+  it("renders a sent task and a practice task, line breaks kept", () => {
+    const prompt = [{ text: "Situation 1.\nSituation 2.", marks: ["emphasis" as const] }];
+    expect(writingTaskPlainText({ id: "w1", kind: "task", type: "writing", prompt, sendToTeacher: true })).toBe(
+      "Writing task (answers go to the teacher)\nSituation 1.\nSituation 2.",
+    );
+    expect(writingTaskPlainText({ id: "w2", kind: "task", type: "writing", prompt, sendToTeacher: false })).toBe(
+      "Writing task (practice)\nSituation 1.\nSituation 2.",
+    );
   });
 });

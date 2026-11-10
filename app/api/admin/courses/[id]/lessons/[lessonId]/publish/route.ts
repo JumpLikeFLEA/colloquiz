@@ -70,7 +70,7 @@ export async function POST(
     // voice task per course, checked against the other lessons' PUBLISHED
     // versions. Only read when this version has a compare slot at all, so
     // an ordinary lesson's publish costs no extra query.
-    const hasCompareSlot = parsed.document.some((b) => b.kind === "task" && b.compare !== undefined);
+    const hasCompareSlot = parsed.document.some((b) => b.kind === "task" && b.type === "voice" && b.compare !== undefined);
     if (hasCompareSlot) {
       const others = await otherPublishedLessons(supabase, lessonId);
       const conflicts = voiceCompareConflicts(lessonId, parsed.document, others);

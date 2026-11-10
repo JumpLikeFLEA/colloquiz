@@ -1,5 +1,5 @@
 import type { InlineContent } from "./inline";
-import { formatVoiceDuration, type VoiceTaskBlock } from "./taskBlocks";
+import { formatVoiceDuration, type VoiceTaskBlock, type WritingTaskBlock } from "./taskBlocks";
 
 /**
  * Plain-text renderings of lesson blocks, for the content export
@@ -23,4 +23,13 @@ export function voiceTaskPlainText(block: VoiceTaskBlock): string {
   const slot = block.compare ? ` (${block.compare})` : "";
   const listenFor = block.listenFor?.length ? `\nListen for: ${block.listenFor.join("; ")}` : "";
   return `Voice task${slot} — up to ${formatVoiceDuration(block.maxSeconds)}\n${inlinePlainText(block.prompt)}${listenFor}`;
+}
+
+/**
+ *   Writing task (answers go to the teacher)
+ *   Describe your last holiday.
+ */
+export function writingTaskPlainText(block: WritingTaskBlock): string {
+  const note = block.sendToTeacher ? " (answers go to the teacher)" : " (practice)";
+  return `Writing task${note}\n${inlinePlainText(block.prompt)}`;
 }

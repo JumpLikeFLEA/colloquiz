@@ -1,7 +1,7 @@
 # 0225 — Writing tasks: a written answer the teacher can read and answer
 
-Status: decided by the owner in a planning session on 2026-11-10. Nothing is
-built yet. The work is split into M4 cards WRITE-001..005
+Status: decided by the owner in a planning session on 2026-11-10. WRITE-001
+(the block, editor and practice mode) is built; the rest is not. The work is split into M4 cards WRITE-001..005
 (`scripts/board/backlog.mjs`).
 
 ## Context
@@ -63,6 +63,12 @@ the design pass behind the cards, and each card may revise one with evidence.
 3. **Practice answers** are kept as a draft in the browser (localStorage), so a
    reload does not lose a long story. They are never uploaded.
    - Rejected: kept on screen only; saved to the account.
+   - **Key (WRITE-001):** `alliengll.writing.draft.v1:<lesson path>:<block id>`,
+     value `{"v":1,"text":"…"}`, capped at 4,000 characters. The lesson path, not
+     the version id, so a republished lesson keeps its drafts. `lib/writing/draftStore.ts`.
+     Read after mount, written 500 ms after the last keystroke and on `pagehide`;
+     any storage failure falls back to memory. The Studio preview passes no lesson
+     path and so keeps nothing.
 4. **Studio.** The "Recordings" nav entry (0208) becomes "Reviews", with tabs
    Recordings | Written answers | AI feedback. The inbox's "Waiting for feedback"
    and the nav badge count both recordings and written answers.

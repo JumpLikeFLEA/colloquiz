@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ItemScoreResult } from "../items";
 import { explanationsForSession, scoreSession, sessionProgress } from "../lessonPlayer/session";
 import { countPracticeBlocks, parseLessonDocument, serializeLessonDocument } from "./parseLessonDocument";
-import { formatVoiceDuration } from "./taskBlocks";
+import { WRITING_ANSWER_MAX_CHARS, formatVoiceDuration } from "./taskBlocks";
 
 function voiceBlock(id: string, extra: Record<string, unknown> = {}) {
   return { id, kind: "task", type: "voice", prompt: [{ text: "Tell us about your week." }], maxSeconds: 180, ...extra };
@@ -217,5 +217,48 @@ describe("formatVoiceDuration", () => {
     [600, "10 min"],
   ])("%i s reads as %s", (seconds, expected) => {
     expect(formatVoiceDuration(seconds)).toBe(expected);
+  });
+});
+
+function writingBlock(id: string, extra: Record<string, unknown> = {}) {
+  return { id, kind: "task", type: "writing", prompt: [{ text: "Describe your last holiday." }], sendToTeacher: true, ...extra };
+}
+
+describe("parseLessonDocument — writing task blocks (WRITE-001)", () => {
+  it("parses a ticked and an unticked writing task and round-trips them", () => {
+    const doc = [proseBlock("p1"), writingBlock("w1"), writingBlock("w2", { sendToTeacher: false })];
+    const result = parseLessonDocument(doc);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document[1]).toEqual(writingBlock("w1"));
+    expect(result.document[2]).toMatchObject({ sendToTeacher: false });
+    const again = parseLessonDocument(JSON.parse(JSON.stringify(serializeLessonDocument(result.document))));
+    expect(again).toEqual(result);
+  });
+
+  it("refuses a task with sendToTeacher missing", () => {
+    const result = parseLessonDocument([writingBlock("w1", { sendToTeacher: undefined })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(JSON.stringify(result.errors)).toContain("sendToTeacher");
+  });
+
+  it("refuses a non-boolean sendToTeacher and an extra field", () => {
+    expect(parseLessonDocument([writingBlock("w1", { sendToTeacher: "yes" })]).ok).toBe(false);
+    expect(parseLessonDocument([writingBlock("w1", { maxSeconds: 180 })]).ok).toBe(false);
+  });
+
+  it("accepts a prompt with line breaks", () => {
+    const result = parseLessonDocument([writingBlock("w1", { prompt: [{ text: "Situation 1.\n\nSituation 2." }] })]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("does not count a writing task as an exercise", () => {
+    const result = parseLessonDocument([writingBlock("w1"), selectionBlock("q1")]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(countPracticeBlocks(result.document)).toBe(1);
+  });
+
+  it("exports the answer cap", () => {
+    expect(WRITING_ANSWER_MAX_CHARS).toBe(4000);
   });
 });

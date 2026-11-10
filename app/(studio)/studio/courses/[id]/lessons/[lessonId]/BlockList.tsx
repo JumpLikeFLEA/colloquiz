@@ -44,6 +44,7 @@ import {
   type TheoryBlock,
   type TheoryBlockType,
   type VoiceTaskBlock,
+  type WritingTaskBlock,
 } from "@/lib/lessons";
 import type { LessonBlock } from "@/lib/lessons";
 import type { LessonFieldErrorMap } from "@/lib/lessonEditorErrors";
@@ -63,6 +64,7 @@ import { BlockForm } from "./BlockForm";
 import { ImageBlockForm } from "./ImageBlockForm";
 import { PracticeItemForm } from "./PracticeItemForm";
 import { VoiceTaskForm } from "./VoiceTaskForm";
+import { WritingTaskForm } from "./WritingTaskForm";
 import type { UploadLessonImage } from "./LessonImageUploadButton";
 
 // The block-list half of AUTH-002: add, edit, delete and reorder every block
@@ -124,11 +126,20 @@ function defaultVoiceTask(): VoiceTaskBlock {
   return { id: crypto.randomUUID(), kind: "task", type: "voice", prompt: [{ text: "" }], maxSeconds: VOICE_DEFAULT_SECONDS };
 }
 
+const WRITING_TASK_LABEL = "Writing task";
+
+/** WRITE-001: a new writing task. `sendToTeacher` starts off, so a new task
+ * is practice until the author ticks it. */
+function defaultWritingTask(): WritingTaskBlock {
+  return { id: crypto.randomUUID(), kind: "task", type: "writing", prompt: [{ text: "" }], sendToTeacher: false };
+}
+
 function blockTypeLabel(block: LessonBlock): string {
   switch (block.kind) {
     case "practice":
       return exerciseLabel(block.item);
     case "task":
+      if (block.type === "writing") return block.sendToTeacher ? `${WRITING_TASK_LABEL} · sent` : WRITING_TASK_LABEL;
       return block.compare ? `${VOICE_TASK_LABEL} · ${block.compare}` : VOICE_TASK_LABEL;
     case "theory":
       return TYPE_LABEL[block.type];
@@ -413,6 +424,7 @@ function AddBlockMenu({ onAdd }: { onAdd: (block: LessonBlock) => void }) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => onAdd(defaultVoiceTask())}>{VOICE_TASK_LABEL}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onAdd(defaultWritingTask())}>{WRITING_TASK_LABEL}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -655,7 +667,11 @@ function BlockRow({
               onUploadImage={onUploadImage}
             />
           ) : block.kind === "task" ? (
-            <VoiceTaskForm block={block} onChange={onChange} errors={blockErrors} />
+            block.type === "writing" ? (
+              <WritingTaskForm block={block} onChange={onChange} errors={blockErrors} />
+            ) : (
+              <VoiceTaskForm block={block} onChange={onChange} errors={blockErrors} />
+            )
           ) : block.type === "image" ? (
             <ImageBlockForm block={block} onChange={onChange} errors={blockErrors} onUploadImage={onUploadImage} />
           ) : (

@@ -217,6 +217,24 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     audience: "all",
   },
   {
+    slug: "writing-tasks",
+    title: "Writing tasks",
+    purpose: "Ask learners to write an answer to a prompt, inside a lesson.",
+    steps: [
+      "Open the lesson in the editor, press **Add block** and choose **Writing task** (below **Voice task**).",
+      "Type the prompt: what the learner should write about. Press Enter to start a new line.",
+      "Switch **Send answers to the teacher** on if you want to read the answers, or leave it off for practice only.",
+      "Press **Save**, then publish the lesson (see **Publish**).",
+    ],
+    tips: [
+      "A writing task is never scored and does not count toward the lesson's exercises.",
+      "Answers can be up to 4,000 characters, about 650 words.",
+      "For now every learner practises: the text stays on their device. Sending answers to a teacher is not built yet, so the switch changes nothing a learner sees.",
+    ],
+    goTo: { label: "Open your courses", path: "/studio/courses" },
+    audience: "all",
+  },
+  {
     slug: "reviews-and-ai-feedback",
     title: "Teacher review and AI feedback",
     purpose: "Answer cohort recordings in writing, and see or hide the AI feedback learners get.",

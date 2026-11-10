@@ -356,6 +356,33 @@ async function main() {
       document: SIGNIN_DOCUMENT,
       archived: false,
     },
+    {
+      // WRITE-001 (docs/decisions/0225): one ticked and one unticked writing
+      // task, for the practice-mode measurements.
+      slug: "writing-lesson",
+      title: "Writing lesson",
+      description: "A ticked and an unticked writing task.",
+      accessLevel: "anyone",
+      ordinal: 7,
+      document: [
+        VALID_DOCUMENT[0],
+        {
+          id: "w-sent",
+          kind: "task",
+          type: "writing",
+          prompt: [{ text: "Situation 1. Describe your last holiday.\nSituation 2. Describe your home town." }],
+          sendToTeacher: true,
+        },
+        {
+          id: "w-practice",
+          kind: "task",
+          type: "writing",
+          prompt: [{ text: "Tell a short story." }],
+          sendToTeacher: false,
+        },
+      ],
+      archived: false,
+    },
   ];
 
   await upsertLessons(courseId, lessons);

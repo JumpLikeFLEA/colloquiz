@@ -96,6 +96,7 @@ describe("articles", () => {
       "your-student-link",
       "homework",
       "voice-tasks",
+      "writing-tasks",
       "reviews-and-ai-feedback",
       "groups",
       "messages-and-telegram",

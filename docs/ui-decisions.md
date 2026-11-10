@@ -3120,3 +3120,27 @@ Appended to in the same commit as the change it records. Referenced from
   Not measured: the attachment card in a browser, dark mode, a phone. Do not put the voice prompt back
   in single-line inputs, and do not read a voice prompt with `InlineContentSchema`: a multi-line
   prompt fails that parse and shows nothing.
+- Writing task: editor and practice mode (2026-11-10, WRITE-001, docs/decisions/0225). A new task
+  block, `type: "writing"`, beside the voice task.
+  - Studio: "Writing task" in the Add block menu below "Voice task". Its form is the voice form's
+    shape: the multiline prompt (`InlineField`, "Press Enter to start a new line.") and a
+    `ui/switch` "Send answers to the teacher" with one muted line saying who receives them and that,
+    until sending is built (WRITE-002), every learner practises. A new task starts with the switch off.
+    The block row reads "Writing task" or "Writing task · sent" over the prompt.
+  - Lesson page: a `PRACTICE_CARD_CLASS` card with a `bg-brand-subtle` "Writing task" pill (`PenLine`),
+    the prompt in `whitespace-pre-line`, a textarea that grows with its text (`field-sizing: content`,
+    `min-h-28`, `maxLength` 4000, the 2px `border-border` look with a `border-brand` focus), and under
+    it "Practice: your answer stays on this device." beside an `N / 4000` counter. No "Exercise N of M",
+    not in the strip, the score or completion; no Check button. Strings in `lib/alliengll/writingCopy.ts`
+    (English lesson chrome). The card is a `next/dynamic` chunk; the draft is in localStorage per lesson
+    path and block (key in 0225 Decision 3), read after mount.
+  - Existing classes and tokens; no new colours.
+  Measured (local stack, Edge, `scrollWidth/innerWidth`): 360/360 and 1280/1280 on the lesson with two
+  empty cards, with a 4,000-character draft (counter "4000 / 4000"; typing 4,100 stops at 4,000) and after
+  a reload, which restored the 4,000 characters; the second card stayed empty. The network log carried 0
+  requests with the draft. Studio editor document 360/360 with the form open (its `main` 489/360, the same
+  pre-existing overflow as the AUTH-020 entry); the preview 360/360 with `main` 360/360 and no
+  localStorage key written. `npm run budget` free lesson 259.8 / 259.9 KB of 260, applied-practice
+  287.5 / 287.6 of 290, every other route within 0.1 KB (`/runs/…f1a1` 180.8 of 179 both times, as before).
+  Not measured: dark mode, a phone, Safari, a lesson with a writing task in the budget list.
+  Do not number or count a writing task, and do not upload a practice draft.
