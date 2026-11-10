@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { ACHIEVEMENTS } from "@/lib/achievements";
-import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type TelegramLinkExportRow, type VoiceAnalysisExportRow, type VoiceSubmissionRow } from "@/lib/accountExport";
+import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type TelegramLinkExportRow, type VoiceAnalysisExportRow, type VoiceSubmissionRow, type WritingSubmissionRow } from "@/lib/accountExport";
 import { VOICE_BUCKET } from "@/lib/voice/recording";
 
 /**
@@ -65,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -152,11 +152,20 @@ export async function GET() {
         supabase.rpc("my_telegram_link"),
         // VOICE-016: the caller's own transcripts and AI analyses, withdrawn ones too (098).
         supabase.rpc("my_voice_analyses_export"),
+        // WRITE-005: own written answers, and only PUBLISHED feedback (109's policies). Strict like
+        // every other section, so this ships only once 109 is on hosted (0225 Decision 14).
+        supabase
+          .from("writing_submissions")
+          .select(
+            "id, lesson_id, block_id, lesson_version_id, enrolment_id, body, submitted_at, updated_at, lessons(slug, title), courses(slug, title), writing_feedback(body, published_at, updated_at)",
+          )
+          .eq("user_id", user.id)
+          .order("submitted_at", { ascending: false }),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
@@ -198,6 +207,7 @@ export async function GET() {
         voiceSubmissions: voiceRows,
         voiceAudio,
         finalComments: finalCommentsRes.data ?? [],
+        writingSubmissions: (writingRes.data ?? []) as unknown as WritingSubmissionRow[],
         teacherLinks: teacherLinksRes.data ?? [],
         teacherGroups: teacherGroupsRes.data ?? [],
         conversations: conversationsRes.data ?? [],

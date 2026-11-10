@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 16;
+export const EXPORT_FORMAT_VERSION = 17;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -27,6 +27,7 @@ export const EXPORT_CONTENTS = [
   "Invites you claimed — the name and contact the course author wrote on your invite",
   "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
   "Voice transcripts and AI feedback — the text of what you said in each recording and the automatic feedback made from it, including any feedback an author withdrew",
+  "Written answers — each answer you sent for feedback, whether it went to a course's authors or to a teacher, and the published written feedback",
   "Final comments — the author's published closing comment for each course run you joined",
   "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
   "Teacher groups — the names of the private groups a linked teacher has put you in",
@@ -116,6 +117,26 @@ export type VoiceSubmissionRow = {
   /** Embedded `voice_feedback(body, published_at, updated_at)`. RLS returns
    * a learner only PUBLISHED feedback, so a draft never reaches the export. */
   voice_feedback: unknown;
+};
+
+/** WRITE-005 (docs/decisions/0225 Decision 10): one of the reader's own `writing_submissions` (109). */
+export type WritingSubmissionRow = {
+  id: string;
+  lesson_id: string;
+  block_id: string;
+  lesson_version_id: string;
+  /** Set for a cohort enrolee's answer; null for a linked student's. */
+  enrolment_id: string | null;
+  body: string;
+  submitted_at: string;
+  updated_at: string;
+  /** Embedded `lessons(slug, title)`. */
+  lessons: unknown;
+  /** Embedded `courses(slug, title)`. */
+  courses: unknown;
+  /** Embedded `writing_feedback(body, published_at, updated_at)`. RLS returns a learner only
+   * PUBLISHED feedback, so a draft never reaches the export. */
+  writing_feedback: unknown;
 };
 
 export type FinalCommentRow = {
@@ -232,6 +253,7 @@ export type ExportSources = {
   /** Submission id -> the take's audio, base64. Absent for a removed take. */
   voiceAudio: Readonly<Record<string, string>>;
   finalComments: FinalCommentRow[];
+  writingSubmissions: WritingSubmissionRow[];
   teacherLinks: TeacherLinkRow[];
   teacherGroups: GroupMembershipRow[];
   conversations: ConversationExportRow[];
@@ -389,6 +411,12 @@ export function buildExportPayload(
       finished_at: row.finished_at,
     })),
 
+    // WRITE-005 (docs/decisions/0225 Decisions 10 and 14): every written answer this reader
+    // sent, the route it took ("cohort": the course's authors; "teacher": a linked teacher)
+    // and the teacher's PUBLISHED feedback. The teacher is not named: the route is all the
+    // reader's record needs, and a teacher's own data is not the reader's.
+    written_answers: src.writingSubmissions.map(exportWrittenAnswer),
+
     // COH-008 (docs/decisions/0112): the author's final comment per run
     // enrolment, published only. RLS returns a learner only published rows,
     // but an editor of the course also reads drafts (061), so a learner who
@@ -526,6 +554,31 @@ function exportFinalComment(row: FinalCommentRow) {
     content: row.body ?? null,
     published_at: row.published_at,
     updated_at: row.updated_at,
+  };
+}
+
+function exportWrittenAnswer(row: WritingSubmissionRow) {
+  const lesson = firstEmbedded<{ slug?: string; title?: string }>(row.lessons);
+  const course = firstEmbedded<{ slug?: string; title?: string }>(row.courses);
+  const feedback = firstEmbedded<{ body?: unknown; published_at?: string | null; updated_at?: string }>(
+    row.writing_feedback,
+  );
+  return {
+    submission_id: row.id,
+    course_slug: course?.slug ?? null,
+    course_title: course?.title ?? null,
+    lesson_slug: lesson?.slug ?? null,
+    lesson_title: lesson?.title ?? null,
+    block_id: row.block_id,
+    lesson_version_id: row.lesson_version_id,
+    sent_to: row.enrolment_id ? "cohort" : "teacher",
+    answer: row.body,
+    submitted_at: row.submitted_at,
+    updated_at: row.updated_at,
+    feedback:
+      feedback && feedback.published_at
+        ? { content: feedback.body ?? null, published_at: feedback.published_at, updated_at: feedback.updated_at ?? null }
+        : null,
   };
 }
 

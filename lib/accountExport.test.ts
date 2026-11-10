@@ -27,6 +27,7 @@ const baseSources = {
   calendarFeed: null,
   telegramLink: null,
   voiceAnalyses: [],
+  writingSubmissions: [],
 };
 
 describe("buildExportPayload — lesson_attempts (ANON-003)", () => {
@@ -431,7 +432,7 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
   });
 
   it("is format version 15", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(16);
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(17);
   });
 });
 
@@ -702,5 +703,66 @@ describe("buildExportPayload — voice_analyses (VOICE-016)", () => {
     const leaky = { ...row, usage: { tokens: 1 }, failure: "boom", hidden_by: "teacher-1", send_id: "s" };
     const json = JSON.stringify(buildExportPayload({ ...baseSources, voiceAnalyses: [leaky] }, []).voice_analyses);
     expect(json).not.toMatch(/usage|boom|teacher-1|send_id|hidden_by/);
+  });
+});
+
+describe("written_answers (WRITE-005)", () => {
+  const row = {
+    id: "w1",
+    lesson_id: "l1",
+    block_id: "b1",
+    lesson_version_id: "v1",
+    enrolment_id: "e1" as string | null,
+    body: "My story.\nSecond line.",
+    submitted_at: "2026-11-10T10:00:00.000Z",
+    updated_at: "2026-11-10T11:00:00.000Z",
+    lessons: { slug: "week-one", title: "Week one" },
+    courses: { slug: "coh", title: "Cohort" },
+    writing_feedback: null as unknown,
+  };
+
+  it("is an empty list for a reader with none", () => {
+    expect(buildExportPayload(baseSources, []).written_answers).toEqual([]);
+  });
+
+  it("carries the answer, its route and no feedback when none is published", () => {
+    const [out] = buildExportPayload({ ...baseSources, writingSubmissions: [row] }, []).written_answers;
+    expect(out).toEqual({
+      submission_id: "w1",
+      course_slug: "coh",
+      course_title: "Cohort",
+      lesson_slug: "week-one",
+      lesson_title: "Week one",
+      block_id: "b1",
+      lesson_version_id: "v1",
+      sent_to: "cohort",
+      answer: "My story.\nSecond line.",
+      submitted_at: "2026-11-10T10:00:00.000Z",
+      updated_at: "2026-11-10T11:00:00.000Z",
+      feedback: null,
+    });
+  });
+
+  it("says teacher for a linked answer, and exports published feedback only", () => {
+    const published = { body: { paragraphs: [] }, published_at: "2026-11-11T09:00:00.000Z", updated_at: "2026-11-11T09:00:00.000Z" };
+    const [a, b] = buildExportPayload(
+      {
+        ...baseSources,
+        writingSubmissions: [
+          { ...row, enrolment_id: null, writing_feedback: [published] },
+          { ...row, id: "w2", writing_feedback: { body: { paragraphs: [] }, published_at: null, updated_at: "x" } },
+        ],
+      },
+      [],
+    ).written_answers;
+    expect(a.sent_to).toBe("teacher");
+    expect(a.feedback).toEqual({ content: published.body, published_at: published.published_at, updated_at: published.updated_at });
+    expect(b.feedback).toBeNull();
+  });
+
+  it("never names the teacher or exports the enrolment id", () => {
+    const leaky = { ...row, enrolment_id: "e-secret", teacher_id: "t-9" };
+    const json = JSON.stringify(buildExportPayload({ ...baseSources, writingSubmissions: [leaky] }, []).written_answers);
+    expect(json).not.toMatch(/teacher_id|t-9|e-secret|enrolment/);
   });
 });

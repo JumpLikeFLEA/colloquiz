@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { feedbackItems, listedCourses, nextCall, type FeedbackRow, type HomeCall, type HomeCourse, type HomeEnrolment } from "./learnerHome";
+import { feedbackItems, feedbackKey, listedCourses, nextCall, type FeedbackRow, type HomeCall, type HomeCourse, type HomeEnrolment } from "./learnerHome";
 
 const course = (id: string, format: HomeCourse["format"] = "self_paced"): HomeCourse => ({
   id,
@@ -117,8 +117,34 @@ describe("feedbackItems", () => {
       voice("v2", "2026-11-12T10:00:00Z"),
     ];
     const items = feedbackItems(rows, () => {});
-    expect(items.map((i) => (i.kind === "voice" ? i.submissionId : i.runId))).toEqual(["r1", "v2", "v1"]);
+    expect(items.map(feedbackKey)).toEqual(["final:r1", "voice:v2", "voice:v1"]);
     expect(items[0].body).toEqual(body("final"));
+  });
+
+  it("lists writing feedback among voice and final, newest first, and keys it apart from voice", () => {
+    const writing = (submissionId: string, publishedAt: string): FeedbackRow => ({
+      kind: "writing",
+      submissionId,
+      courseSlug: "s",
+      courseTitle: "S",
+      lessonSlug: "l",
+      lessonTitle: "L",
+      publishedAt,
+      body: body("w"),
+    });
+    const items = feedbackItems(
+      [voice("same", "2026-11-05T10:00:00Z"), writing("same", "2026-11-09T10:00:00Z"), writing("w2", "2026-11-01T10:00:00Z")],
+      () => {},
+    );
+    expect(items.map((i) => `${i.kind}:${"submissionId" in i ? i.submissionId : ""}`)).toEqual(["writing:same", "voice:same", "writing:w2"]);
+    expect(new Set(items.map(feedbackKey)).size).toBe(3);
+  });
+
+  it("drops and reports a writing body that doesn't parse", () => {
+    const onInvalid = vi.fn();
+    const bad: FeedbackRow = { kind: "writing", submissionId: "wb", courseSlug: null, courseTitle: null, lessonSlug: null, lessonTitle: null, publishedAt: "2026-11-09T10:00:00Z", body: { nope: 1 } };
+    expect(feedbackItems([bad], onInvalid)).toEqual([]);
+    expect(onInvalid).toHaveBeenCalledWith("writing:wb");
   });
 
   it("drops and reports a body that doesn't parse, never renders it raw", () => {

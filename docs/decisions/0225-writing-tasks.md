@@ -180,7 +180,7 @@ the design pass behind the cards, and each card may revise one with evidence.
   call that fails soft; the inbox row is per course (the queue has no week), linking to the
   tab filtered to that course. No Telegram ping (Decision 12).
 - **WRITE-004** (#292) — the privacy revision for written answers.
-- **WRITE-005** (#293) — written answers on `/my` and in the account export.
+- **WRITE-005** (#293) — written answers on `/my` and in the account export (built). Choices made unattended: `/my`'s Feedback gains a `writing` kind beside `voice` and `final` (`lib/learnerHome.ts`; key `writing:<submission id>`, so it cannot collide with a voice take's), read in `getLearnerHome` through `failSoft` so a database without migration 109 still renders the other feedback; the export gains `written_answers` (format version 17) read strictly from `writing_submissions` under the owner's RLS, each with `sent_to` (`cohort` when the row has an enrolment, else `teacher`), no teacher name and no enrolment id, and published feedback only. **Push order:** the export route fails whole on one failed read, so push only after 109 is on hosted (Decision 14). No migration. No Telegram ping (Decision 12).
 
 Proposed but not on the board:
 

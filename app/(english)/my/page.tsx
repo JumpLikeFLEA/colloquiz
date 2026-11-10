@@ -621,12 +621,12 @@ function CourseRow({ lang, card }: { lang: SurfaceLang; card: HomeCourseCard }) 
 function FeedbackCard({ lang, item }: { lang: SurfaceLang; item: FeedbackItem }) {
   const m = myCopy[lang];
   const link =
-    item.kind === "voice"
+    item.kind !== "final"
       ? item.courseSlug && item.lessonSlug
         ? { href: `/courses/${item.courseSlug}/${item.lessonSlug}`, label: m.openLesson }
         : null
       : { href: `/runs/${item.runId}`, label: m.openBeforeAfter };
-  const where = [item.courseTitle, item.kind === "voice" ? item.lessonTitle : null].filter(Boolean).join(" · ");
+  const where = [item.courseTitle, item.kind !== "final" ? item.lessonTitle : null].filter(Boolean).join(" · ");
 
   return (
     <article
@@ -635,7 +635,7 @@ function FeedbackCard({ lang, item }: { lang: SurfaceLang; item: FeedbackItem })
     >
       <div className="flex flex-col gap-0.5">
         <p className="text-sm font-semibold text-foreground sm:text-base">
-          {item.kind === "voice" ? m.voiceFeedback : m.finalComment}
+          {item.kind === "voice" ? m.voiceFeedback : item.kind === "writing" ? m.writingFeedback : m.finalComment}
         </p>
         <p className="text-xs text-muted-foreground sm:text-sm">
           {where && <>{where} · </>}

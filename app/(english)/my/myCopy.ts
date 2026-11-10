@@ -29,6 +29,7 @@ type MyStrings = {
   feedbackTitle: string;
   feedbackEmpty: string;
   voiceFeedback: string;
+  writingFeedback: string;
   finalComment: string;
   openLesson: string;
   openBeforeAfter: string;
@@ -93,6 +94,7 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     feedbackTitle: "Отзывы",
     feedbackEmpty: "Отзывов пока нет. Они появятся здесь, когда преподаватель ответит на ваши записи.",
     voiceFeedback: "Отзыв на запись",
+    writingFeedback: "Отзыв на письменный ответ",
     finalComment: "Итоговый комментарий",
     openLesson: "Открыть урок",
     openBeforeAfter: "До и после",
@@ -150,6 +152,7 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     feedbackTitle: "Feedback",
     feedbackEmpty: "No feedback yet. It appears here when your teacher answers your recordings.",
     voiceFeedback: "Feedback on your recording",
+    writingFeedback: "Feedback on your written answer",
     finalComment: "Final comment",
     openLesson: "Open lesson",
     openBeforeAfter: "Before and after",

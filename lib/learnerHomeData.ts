@@ -1,5 +1,6 @@
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { failSoft } from "@/lib/failSoft";
 import { getPublicCourse } from "@/lib/coursePage";
 import { getLastOpenedLessonSlug } from "@/lib/courseAttempts";
 import { needsLastOpened, pickContinueLesson } from "@/lib/continueLesson";
@@ -30,6 +31,7 @@ import {
  *   - getPublicCourse (lib/coursePage.ts): each listed course's published
  *     lessons with their SQL states (055 course_lesson_states);
  *   - course_calls (058), only for courses with an extended enrolment;
+ *   - writing_submissions + writing_feedback "owner reads published" (109), fail-soft;
  *   - voice_submissions + voice_feedback "owner reads published" (060),
  *     and run_final_comments "owner reads published" (061).
  *
@@ -70,6 +72,13 @@ type VoiceRow = {
   voice_feedback: { body: unknown; published_at: string | null } | null;
 };
 
+type WritingRow = {
+  id: string;
+  lessons: { slug: string; title: string } | null;
+  courses: CourseRef;
+  writing_feedback: { body: unknown; published_at: string | null } | null;
+};
+
 type FinalRow = { run_id: string; body: unknown; published_at: string | null; courses: CourseRef };
 
 /** Null when nobody is signed in; the page redirects to sign-in then. */
@@ -93,7 +102,7 @@ export async function getLearnerHome(now: Date): Promise<LearnerHome | null> {
     format: c.format === "cohort" ? "cohort" : "self_paced",
   }));
 
-  const [summaries, enrolmentsRes, grantsRes, voiceRes, finalRes] = await Promise.all([
+  const [summaries, enrolmentsRes, grantsRes, voiceRes, finalRes, writingRows] = await Promise.all([
     Promise.all(
       published.map(async (c) => {
         const { data, error } = await supabase.rpc("get_course_attempt_summary", { p_course_id: c.id });
@@ -117,6 +126,21 @@ export async function getLearnerHome(now: Date): Promise<LearnerHome | null> {
       .select("run_id, body, published_at, courses(slug, title)")
       .eq("user_id", user.id)
       .not("published_at", "is", null),
+    // WRITE-005 (0225 Decision 14): a courtesy read, left out when it fails (migration 109 not
+    // yet on this database, a transient error), so /my still renders its other feedback.
+    failSoft(
+      "/my: writing_feedback failed",
+      async () => {
+        const { data, error } = await supabase
+          .from("writing_submissions")
+          .select("id, lessons(slug, title), courses(slug, title), writing_feedback!inner(body, published_at)")
+          .eq("user_id", user.id)
+          .not("writing_feedback.published_at", "is", null);
+        if (error) throw new Error(error.message);
+        return (data ?? []) as unknown as WritingRow[];
+      },
+      [] as WritingRow[],
+    ),
   ]);
   if (enrolmentsRes.error) throw new Error(enrolmentsRes.error.message);
   if (grantsRes.error) throw new Error(grantsRes.error.message);
@@ -190,6 +214,20 @@ export async function getLearnerHome(now: Date): Promise<LearnerHome | null> {
           lessonTitle: r.lessons?.title ?? null,
           publishedAt: r.voice_feedback!.published_at!,
           body: r.voice_feedback!.body,
+        }),
+      ),
+    ...writingRows
+      .filter((r) => r.writing_feedback?.published_at)
+      .map(
+        (r): FeedbackRow => ({
+          kind: "writing",
+          submissionId: r.id,
+          courseSlug: r.courses?.slug ?? null,
+          courseTitle: r.courses?.title ?? null,
+          lessonSlug: r.lessons?.slug ?? null,
+          lessonTitle: r.lessons?.title ?? null,
+          publishedAt: r.writing_feedback!.published_at!,
+          body: r.writing_feedback!.body,
         }),
       ),
     ...((finalRes.data ?? []) as unknown as FinalRow[])

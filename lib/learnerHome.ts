@@ -92,7 +92,9 @@ type FeedbackBase = {
 };
 
 /** Raw rows: a published `voice_feedback` on one of the learner's own
- * takes, or a published `run_final_comments` row of their own. */
+ * takes, a published `writing_feedback` on one of their own written answers
+ * (WRITE-005, docs/decisions/0225 Decision 10), or a published
+ * `run_final_comments` row of their own. */
 export type FeedbackRow =
   | (FeedbackBase & {
       kind: "voice";
@@ -102,14 +104,23 @@ export type FeedbackRow =
       lessonTitle: string | null;
       body: unknown;
     })
+  | (FeedbackBase & {
+      kind: "writing";
+      submissionId: string;
+      lessonSlug: string | null;
+      lessonTitle: string | null;
+      body: unknown;
+    })
   | (FeedbackBase & { kind: "final"; runId: string; body: unknown });
 
 export type FeedbackItem =
   | (Omit<Extract<FeedbackRow, { kind: "voice" }>, "body"> & { body: FeedbackContent })
+  | (Omit<Extract<FeedbackRow, { kind: "writing" }>, "body"> & { body: FeedbackContent })
   | (Omit<Extract<FeedbackRow, { kind: "final" }>, "body"> & { body: FeedbackContent });
 
 export function feedbackKey(item: FeedbackRow | FeedbackItem): string {
-  return item.kind === "voice" ? `voice:${item.submissionId}` : `final:${item.runId}`;
+  if (item.kind === "final") return `final:${item.runId}`;
+  return `${item.kind}:${item.submissionId}`;
 }
 
 /**
