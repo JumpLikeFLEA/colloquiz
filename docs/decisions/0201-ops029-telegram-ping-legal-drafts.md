@@ -4,6 +4,7 @@ Status: DRAFTS ONLY. Nothing under `docs/release/legal/` is changed by this card
 reviews and publishes (card acceptance 3). Decided unattended under `--no-approval`; the
 drafts are proposals, the owner can overturn any of them.
 
+Renumbered 2026-11-10: WRITE-004 (0225) takes privacy 1.11 (written answers). Apply these drafts as privacy 1.12 and subprocessors 1.8 instead, merged by hand into the text 1.11 leaves.
 Renumbered again 2026-11-05: ANON-019 (0221) publishes privacy 1.10 and subprocessors 1.7 (Discord removed) first.
 Renumbered 2026-10-24: OPS-030 publishes privacy 1.9 and subprocessors 1.6 first (0205).
 Apply these drafts as privacy 1.11 and subprocessors 1.8. Both cards change §3.2, §4, §5,
