@@ -65,6 +65,7 @@ export const MILESTONE_TITLES = {
   // The live title, spelling included: bootstrap matches milestones by title
   // and would create a second M5 for any other string.
   M5: 'M5 — Techical debt & test runs',
+  M6: 'M6 — Separation from Colloquiz',
 };
 
 // `gh issue list` and `gh project item-list` return at most --limit rows and

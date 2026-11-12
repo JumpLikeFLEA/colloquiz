@@ -34,6 +34,13 @@ export const MILESTONES = [
     title: 'Technical debt & test runs',
     goal: 'Code that is slow, duplicated or unsafe gets fixed without changing what learners or teachers see.',
   },
+  {
+    key: 'M6',
+    title: 'Separation from Colloquiz',
+    goal:
+      'Colloquiz is closed and the English product runs on its own domain, repo, Supabase project and Vercel ' +
+      'project, with every account, lesson, recording and entitlement intact.',
+  },
 ];
 
 export const EPICS = [
@@ -61,6 +68,13 @@ export const EPICS = [
     key: 'WRITE',
     title: 'Writing tasks',
     desc: 'The writing block, sent answers, the teacher\'s feedback and review (docs/decisions/0225).',
+  },
+  {
+    key: 'MIG',
+    title: 'Separation & migration',
+    desc:
+      'Closing Colloquiz in place, then moving the English product to its own organisation, domain, repo, ' +
+      'Supabase project and Vercel project.',
   },
 ];
 
@@ -5188,6 +5202,478 @@ export const CARDS = [
       'Measured at 360px: /my with a writing feedback card, EN and RU (scrollWidth/innerWidth printed); npm run budget on /my before and after, within its limit.',
     ],
     notes: 'A Telegram ping when writing feedback is published is a separate proposal in 0225 (COH-011 knows voice and final only).',
+  },
+
+  // ---------------------------------------------------------------- MIG ---
+  // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
+  // starts it only if the English product goes well. MIG-001..003 are worth
+  // doing now; everything else waits behind MIG-004, which the owner parks in
+  // Hold. Conventions for every card here are in 0226 ("Conventions"): counts
+  // are printed, a comparison over zero objects is a FAIL, hosted writes go
+  // through the hosted-apply gate, English-route cards print npm run budget
+  // before and after, secrets are never printed. An owner's gate is a card's
+  // first acceptance line, because the board cannot block on it.
+  {
+    key: 'MIG-001',
+    title: 'Ops inventory: everything that lives outside the repo',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4000,
+    dependsOn: [],
+    goal:
+      'A clone of the repo plus a copy of the database does not carry the settings that make production work ' +
+      '(docs/decisions/0226 facts 10 and 13). They are written down by name, so the new home can be checked against ' +
+      'them (MIG-019).',
+    acceptance: [
+      'A new docs/ops/inventory.md lists every setting a clone of the repo plus a copy of the database would not carry. Supabase: auth providers (including custom:telegram and its client id, which keeps a Telegram user\'s identity, 0098), URL configuration, SMTP, email templates, rate limits, password and sign-up settings, bucket settings (public flag, size limit, MIME list), extensions, cron.job rows, the realtime publication, API settings, plan and region. Vercel: environment variable NAMES per environment, region, crons, Analytics and Speed Insights, domains, plan. BotFather, Google Cloud, Resend, Porkbun DNS, AssemblyAI, Anthropic, the Discord feedback webhook (Discord sign-in is gone, 0221), the GitHub project board.',
+      'Each line states how it was read: a printed read-only probe (db query --linked, the Management API, vercel env ls), or "owner read from the dashboard on <date>" (checklist step Z4). No secret value appears: a Management API response that carries secrets (provider secrets, the SMTP password) is filtered to named non-secret keys before it is printed, never printed raw.',
+      'Every email template in use is committed under supabase/templates/ with its config.toml entry, so the local stack uses it, and is shown to match hosted: printed where an API reads it, owner-attested with a date where none does.',
+      'Environment names are reconciled against rg -o "process\\.env\\.[A-Z0-9_]+" app lib scripts proxy.ts next.config.ts | sort -u, printed; each name is marked production / local-only / quiz-only.',
+    ],
+    notes: 'Docs and template files only. This file is the input to MIG-019.',
+  },
+  {
+    key: 'MIG-002',
+    title: 'Product name, origin and contact address come from one module; a guard freezes new literals',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4010,
+    dependsOn: [],
+    goal:
+      'Stage 2 changes the name, the domain and the contact address, which today are literals in several places ' +
+      '(docs/decisions/0226 fact 17). One module carries them and a guard stops new literals, so the later change is ' +
+      'configuration (MIG-014).',
+    acceptance: [
+      'lib/site.ts keeps SITE_NAME ("Colloquiz") with its value and its readers (the Colloquiz pages, the root metadata) until Stage 1 removes them, and gains a separate export for the English product\'s name, valued "Alina Cher" today (still a working name, 0226 settled input 6). That export replaces the literals in lib/alliengll/copy.ts, app/(english)/landingCopy.ts and app/api/calendar/[file]/route.ts, and feeds the ICS PRODID (lib/calendar/ics.ts:123). The origin and the contact address are exported from the same module and read from there by English, Studio and shared code (routes, Telegram texts, calendar, OG images).',
+      'lib/site.ts stays dependency-free, since client code on / may import it (the copy.ts lesson, 0079): its imports printed, and npm run budget on / printed before and after.',
+      'scripts/check-brand-literals.mjs, run by npm run check, fails when a file under app/(english), app/(studio), app/components or lib gains a literal Colloquiz or colloquiz.app. It works like check-hex-literals.mjs: a recorded per-file baseline that may only shrink. Quiz-only files and Studio\'s "Colloquiz admin" link are baselined, not migrated.',
+      'Allow-list, each entry with a comment saying why: the ICS UID suffix @colloquiz.app (lib/calendar/ics.ts:77, assumed decision C), the legal Markdown files, test fixtures. PRODID is not on it.',
+      'Printed: the literal count before and after for the English and Studio trees; the guard failing on a deliberately added literal (positive control), then passing once it is removed.',
+      'No visible change, shown on both surfaces: the rendered <title> of / and of one /app page, before and after, printed; npm run viewport360 on / and one lesson.',
+    ],
+    notes:
+      'PRODID names the program that wrote the file; its text changes from Colloquiz to the English name, which nobody ' +
+      'sees, and event identity is the UID, which stays (0226 fact 17).',
+  },
+  {
+    key: 'MIG-003',
+    title: 'A backup that has been restored once',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4020,
+    dependsOn: [],
+    goal:
+      'The project is on the Free plan with no managed backups, and storage objects are in no database backup on any ' +
+      'plan (docs/decisions/0226 facts 11 and 18). Destructive Stage 1 work needs a backup that has been restored at ' +
+      'least once.',
+    acceptance: [
+      'scripts/backup/ holds a documented, re-runnable procedure: a full dump of the hosted database (roles, schema, data, following Supabase\'s current documentation, re-read at write time) and a download of every object in every bucket. Read-only against hosted.',
+      'Restored into the local stack, which wipes its fixtures (stated before the run). Printed, per table for every table in public, auth.users and auth.identities: rows in the dump (counted from the dump itself, one snapshot) vs rows restored. Any difference is a FAIL; so is a table list of length zero. A count queried live on hosted is not the reference: writes between the dump and the query (funnel_events, lesson_opens) would give a false FAIL or invite a tolerance.',
+      'Printed, per bucket: object count and total bytes in the listing taken before the download vs downloaded. Objects added during the download are reported separately, not compared.',
+      'Printed: elapsed time per step, and the size of the backup.',
+      'docs/ops/backup.md states where a backup may live, that it is encrypted, and when it must be destroyed (it holds personal data; assumed decision F). The owner chooses the location (checklist step Z5). The restored local copy is destroyed after the check, and the evidence says so.',
+    ],
+    notes: 'Reused by MIG-010, MIG-011 and MIG-016.',
+  },
+  {
+    key: 'MIG-004',
+    title: 'Go, and the fresh audit',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'decision',
+    rank: 4030,
+    dependsOn: [],
+    goal:
+      'The owner starts M6 only if the English product goes well. This card records the go and re-audits the repo and ' +
+      'hosted as they stand that day. No later card starts on the strength of docs/decisions/0226 alone.',
+    acceptance: [
+      'Owner\'s gate: the owner\'s go, with its date. Until then the card stays in Hold.',
+      'Every route, route handler, lib module, component, script, skill, npm dependency, env name, doc and content file classified quiz / English / shared, with counts from printed output. app/api/admin/courses/** and the /app/admin/courses -> /studio 308 are English (0109 Decision 3).',
+      'Every table, view, function, trigger, policy, cron job, bucket and profiles column classified the same way, from a read-only hosted probe; for each shared function, which quiz objects its latest body touches (delete_my_account, the export, handle_new_user at least; print rule).',
+      'Features in the Colloquiz area used by English learners or authors, named one by one and each marked dies / moves: tutoring, assignments, groups, notifications, feedback, admin pages, and the profile fields name, city and picture (0181 Decision 2 keeps them off the English surface). If the profile fields move, this card proposes the card that moves them.',
+      'Stored addresses: every text and jsonb column probed read-only for the hosted project host and for colloquiz.app, by table and column, with each table\'s total beside it; the three columns measured on 2026-11-12 (0226 fact 12) re-measured.',
+      'Storage: shown that no policy and no code reads storage.objects.owner or owner_id (the policies seen so far key on the path, storage.foldername: 022:63, 041:500), since a copy through the API does not keep them.',
+      'Each of 0226\'s facts 9 to 18 and assumed decisions A to G: still true, or what changed.',
+      'Output: a decision file, the list of differences from 0226, and an amended card list for MIG-005 to MIG-025 for the owner to approve.',
+    ],
+    notes: 'The owner parks this card in Hold by hand; next-card.mjs never picks a Hold card.',
+  },
+  {
+    key: 'MIG-005',
+    title: 'Which accounts are quiz-only, how they are erased, and how the closure is announced (owner settles)',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'decision',
+    rank: 4040,
+    dependsOn: ['MIG-004'],
+    goal:
+      'Accounts with no English activity are notified, then erased at closure (docs/decisions/0226 settled input 5). ' +
+      'What counts as English activity, how an account is erased and in which order relative to the schema drop, and ' +
+      'the notice are the owner\'s to decide.',
+    acceptance: [
+      '"English activity" defined as a list of tables and conditions (lesson attempts, entitlements and enrolments, teacher links, seats, course editing, voice and writing submissions, messages, whatever MIG-004 found). One SQL query returns the quiz-only accounts.',
+      'The query run on the local stack against seeded accounts of each kind (quiz-only, English-only, mixed, admin, one active after the notice) prints the expected class for each (positive control). Run read-only on hosted, it prints the quiz-only count, the kept count and count(auth.users), with quiz-only + kept = total. A quiz-only count printed alone is not evidence.',
+      'Edge cases, each with a stated answer: admins, the bench account, test accounts, unconfirmed sign-ups, accounts created during the notice period, an account that is quiz-only on the day of the notice but opens a lesson before closing day (kept: the list is re-run on closing day).',
+      'Erasure options with evidence, for the owner to choose. (A) One erasure body that takes a user id: delete_my_account becomes a call of it for auth.uid(), and the closure gets an owner-only entry point (one body, two entry points). (B) The reverse order: drop the quiz schema first (MIG-011), then hard-delete accounts that have no row left in any remaining table, so the database itself checks "quiz-only" and owns_groups goes with the groups table; says what happens to shared rows a quiz-only user wrote (feedback, notifications). Ruled out: minting sessions with the JWT secret. If B is chosen, the dependencies of MIG-010 and MIG-011 are reversed in backlog.mjs.',
+      'Scale: the profile count printed that day (21 on 2026-11-12), and tooling proposed in proportion. The account-deletion protocol is not reduced.',
+      'The notice: wording in English and Russian, the channels (in-app, email sent by the owner by hand, Telegram for linked users), the period (at least 14 days, Terms §10), and the export a quiz user gets.',
+      'Output: a decision file, the query, and the legal text delta for MIG-007.',
+    ],
+  },
+  {
+    key: 'MIG-006',
+    title: 'Sign-in and legal pages leave the Colloquiz route group',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4050,
+    dependsOn: ['MIG-004'],
+    goal:
+      'Sign-in, sign-up, password reset and the legal pages live in app/(colloquiz) (docs/decisions/0226 fact 14) and ' +
+      'must outlive Colloquiz. They move with their URLs unchanged.',
+    acceptance: [
+      'Sign-in, sign-up, password reset and the legal pages live outside app/(colloquiz), with their URLs unchanged. Post-sign-in destinations and proxy.ts no longer send anyone to /app.',
+      'Printed: the route table from next build before and after (moved routes identical); rg "\\(colloquiz\\)" over app/(english), app/(studio), app/components and lib, its non-zero count before the move beside no match after; npm run budget before and after.',
+      'Sign-in by email, Google and Telegram demonstrated on the local stack, plus the return-to-lesson path (ANON-016\'s protocol rows re-run).',
+      'Every moved page measured at 360px (npm run viewport360), and a docs/ui-decisions.md entry if anything visible changes.',
+    ],
+    notes:
+      'Narrowed in 0226: the profile fields (name, city, picture) are not this card. If MIG-004 rules that they move, ' +
+      'MIG-004 proposes that card; this one does not grow.',
+  },
+  {
+    key: 'MIG-007',
+    title: 'Closure notice in the app, and the legal revision that announces it',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4060,
+    dependsOn: ['MIG-005'],
+    goal:
+      'Quiz users are told the closing date at least 14 days ahead (Terms §10), in the app, with a way to take their ' +
+      'data, and the legal text says what MIG-005 decided.',
+    acceptance: [
+      'A notice on the Colloquiz pages with the closing date and a link to the data export, in the wording MIG-005 decided. Measured at 360px.',
+      'Terms and Privacy revised as MIG-005 decided, version bumped (0083, 0095 Decision 4), current_terms_version() re-emitted in a migration through the hosted-apply gate; scripts/check-terms-version.mjs passes.',
+      'The legal diff is shown to the owner at the plan checkpoint, before it is committed (the ANON-019 precedent).',
+      'The notice period starts when the notice is live, not at the push: a printed request to a production Colloquiz page showing the notice text and date, with its timestamp.',
+    ],
+    notes: 'The email is the owner\'s step (checklist C5).',
+  },
+  {
+    key: 'MIG-008',
+    title: 'Quiz routes and route handlers removed; /app redirects',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4070,
+    dependsOn: ['MIG-006', 'MIG-007'],
+    goal: 'Once the notice period is over, the quiz product\'s pages and route handlers are deleted and /app redirects.',
+    acceptance: [
+      'Owner\'s gate: the owner\'s word that MIG-007\'s notice period is over. The card stops here until it is given.',
+      'Every quiz page and quiz route handler MIG-004 listed as "dies" is deleted. /app/** redirects to the page MIG-004 chose. app/api/admin/courses/** and the /app/admin/courses -> /studio 308 survive (0109 Decision 3), shown in the route table.',
+      'Account deletion still works for a learner who owns a Colloquiz group with other members: until MIG-011 drops groups, delete_my_account can answer owns_groups, and the English settings page links that refusal to /app/groups/<id> (0181). Shown working on the local stack, or MIG-004 has ordered the group drop first.',
+      'Printed: the git diff --stat summary line; the next build route table before and after; npm run check && npm test; npm run budget before and after (no English route grows); a request to three old /app URLs showing the redirect.',
+      'No English or Studio test is deleted: the list of deleted test files is printed and each is quiz-only by MIG-004\'s classification.',
+    ],
+  },
+  {
+    key: 'MIG-009',
+    title: 'Quiz-only modules, scripts, skills, content and dependencies removed',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4080,
+    dependsOn: ['MIG-008'],
+    goal: 'Nothing quiz-only is left in the repo, and the question bank, which is the owner\'s content, is kept outside it.',
+    acceptance: [
+      'FIRST: the question bank exported to a file outside the repo\'s tracked tree (approved questions with subject, subtopic, difficulty, options, answer, explanation); the exported count printed against a hosted read-only count, both non-zero. It is the owner\'s content and holds no personal data (checklist C10).',
+      'Quiz-only lib/ modules, scripts, .claude skills, data/, authored/ question files and docs deleted or rewritten. Each npm dependency removed is shown to have zero imports by an rg printed after the code removal, beside the same rg printed before it with a non-zero count.',
+      'docs/architecture.md, README.md, docs/setup.md, CLAUDE.md and docs/handoff.md describe one product. Deltas to handoff.md and CLAUDE.md are shown to the owner before commit.',
+      'Printed: npm run check && npm test; next build; the env names now unused (checklist C13).',
+    ],
+  },
+  {
+    key: 'MIG-010',
+    title: 'Quiz-only accounts erased',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4090,
+    dependsOn: ['MIG-003', 'MIG-005', 'MIG-008'],
+    goal: 'Accounts with no English activity are erased at closure, by the method and in the order MIG-005 decided.',
+    acceptance: [
+      'Owner\'s gate: the owner\'s word on the list MIG-005\'s query prints that day. Nothing is erased before it.',
+      'The erasure goes through the path MIG-005 decided (one erasure body with two entry points, or the hard delete after MIG-011). No session is minted with the JWT secret.',
+      'Full protocol on the local stack with seeded accounts: quiz-only, English-only, mixed, admin, one that became active after the notice. Only the quiz-only one is gone; every other row count is unchanged (printed before and after); its avatar object is gone from the bucket (listed before and after).',
+      'On hosted: a fresh backup first (MIG-003); MIG-005\'s query re-run that day; the list shown to the owner; then counts of profiles, of auth.users and of avatar objects before and after, printed.',
+    ],
+    notes:
+      'Destructive. Never under --no-approval. The order relative to MIG-011 may reverse if MIG-005 chooses the hard ' +
+      'delete after the schema drop; dependsOn changes only then.',
+  },
+  {
+    key: 'MIG-011',
+    title: 'Migrations: quiz tables, functions, policies, columns and cron jobs dropped',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4100,
+    dependsOn: ['MIG-003', 'MIG-009', 'MIG-010'],
+    goal: 'The database holds no quiz object, and every English and shared object is untouched.',
+    acceptance: [
+      'Owner\'s gate: the owner\'s word, per destructive file, before each hosted apply (hosted-apply gate item 4).',
+      'One migration per coherent group, each with a verify script. Functions that touched quiz objects are re-emitted from their latest bodies (print rule), not from memory. Column GRANTs on profiles are re-stated for the columns that remain (CLAUDE.md, standing rules).',
+      'Local: db reset from zero passes; every earlier verify script for a re-emitted function or a remaining table prints PASS; account export and deletion get the full protocol again.',
+      'Printed before and after, local and hosted: the list of tables, functions, policies, triggers, cron.job rows and publication tables. After: no object MIG-004 classified quiz remains, and every object classified English or shared is still there (count equality, non-zero).',
+      'Hosted apply after a fresh backup (MIG-003), one file at a time.',
+    ],
+    notes: 'Destructive. May come before MIG-010 if MIG-005 chooses the hard delete after the schema drop.',
+  },
+  {
+    key: 'MIG-012',
+    title: 'Stage 1 exit',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4110,
+    dependsOn: ['MIG-011'],
+    goal:
+      'The site runs English-only on colloquiz.app, the legal text describes only that, and a reference schema exists ' +
+      'for Stage 2.',
+    acceptance: [
+      'Owner\'s gate: 14 days have passed since MIG-011 reached hosted, and the owner states that nothing was rolled back (checklist C14). The card closes only then.',
+      'Printed: the route table, the hosted object inventory, npm run budget, bucket object counts (orphaned avatars swept with counts before and after, or the bucket handled as MIG-004 ruled for profile pictures), env names in use.',
+      'Privacy Policy and Subprocessors no longer describe quiz data or the quiz-drafting row; version bump per 0083; whether notice is needed under 0095 is written in the evidence. The legal diff is shown to the owner before commit.',
+      'A schema dump of hosted is stored as the reference for Stage 2.',
+    ],
+  },
+  {
+    key: 'MIG-013',
+    title: 'Stage 2 design (owner settles)',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'decision',
+    rank: 4120,
+    dependsOn: ['MIG-012'],
+    goal:
+      'How the English-only app moves to NEW-ORG and NEW-DOMAIN. The options may be drafted earlier; the decision ' +
+      'waits for Stage 1\'s exit.',
+    acceptance: [
+      'The repo: transfer and rename (assumed decision E) or a new repo with the history pushed; what each does to issue numbers, to Closes #n references, to project board #2 (user-owned today) and to scripts/board/config.mjs.',
+      'The database path: Supabase\'s documented dump and restore, re-read that day; how migration history is carried; what a dump does not carry (triggers on auth.users, storage policies, cron.job, the publication, extensions, grants); what the storage copy method does to storage.objects.owner.',
+      'The Google OAuth client: keep it, or a new one under NEW-ORG, with the test that proves an existing Google user lands on the same account.',
+      'Anonymous learners: accept the loss with a sign-in nudge during the notice period, or a hand-over page on the old domain; the cost of each.',
+      'Calendar feeds subscribed on colloquiz.app: whether the calendar clients learners use follow the redirect (unverified; tested in MIG-020), and what is done if one does not.',
+      'The freeze: assumed decision G confirmed or changed, and the mechanism picked for MIG-015 (default_transaction_read_only on the API roles is a candidate, unverified). Assumed decisions A, B, C, D and F confirmed or changed.',
+      'Where rehearsals run, given the free-project limit (checklist Z7).',
+      'Restated, not options: fact 9 (the same bot moves; the provider stays custom:telegram with the same client id); the old project\'s JWT secret is not carried, and since session cookies belong to a domain, everyone signs in again on NEW-DOMAIN whatever the secret is, recorded with Supabase\'s "Migrating auth users between projects" page as the source, re-read that day.',
+      'Output: a decision file; final name, domain and operator recorded if the owner has them by then.',
+    ],
+  },
+  {
+    key: 'MIG-014',
+    title: 'One build runs on either domain by configuration alone',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4130,
+    dependsOn: ['MIG-002', 'MIG-013'],
+    goal: 'The same commit serves colloquiz.app or NEW-DOMAIN under NEW-NAME, chosen by configuration, with nothing else changed.',
+    acceptance: [
+      'Name, origin, contact address, the Supabase host (CSP, image hosts in next.config.ts), OG images, Telegram message links, email templates and the package name are driven by configuration or by one constant.',
+      'Printed: two builds of the same commit with the old values compare equal after normalising the build id and hashed asset names (the control); then a build with the old values whose rendered /, a lesson page and a Telegram message fixture equal, under the same normalisation, those from before the change.',
+      'Printed: a build with NEW-NAME and NEW-DOMAIN values, in whose output rg -i "colloquiz" over the English routes finds only the allow-listed UID constant, beside the non-zero count over the old-value build.',
+      'npm run budget unchanged.',
+    ],
+  },
+  {
+    key: 'MIG-015',
+    title: 'Maintenance switch and write freeze',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4140,
+    dependsOn: ['MIG-013'],
+    goal:
+      'Moving day is a short announced freeze (assumed decision A). During it the whole site shows the maintenance ' +
+      'page, anonymous lessons included (assumed decision G, confirmed or changed by MIG-013), and nothing writes.',
+    acceptance: [
+      'One switch puts the site into maintenance, by the mechanism MIG-013 picked: a short page in English and Russian on every route (anonymous lessons included, unless MIG-013 changed G), every write path refused, every cron route a no-op.',
+      'The freeze proven at the database, under the full protocol (the switch touches every write path): with the switch on, a write sent straight to PostgREST with a real session token is refused, and so is a storage upload; printed next to the same two requests succeeding with the switch off (positive control).',
+      'A lesson tab already open when the freeze starts has its writes refused and shows a readable message; shown on the local stack.',
+      'What happens to a sign-up that slips through the owner\'s dashboard step (checklist D4) is stated.',
+    ],
+  },
+  {
+    key: 'MIG-016',
+    title: 'Move tooling: copy the database, the accounts and the files; rewrite stored addresses',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4150,
+    dependsOn: ['MIG-003', 'MIG-013'],
+    goal:
+      'Re-runnable tooling that copies the source project into a target unchanged, except for stored addresses that ' +
+      'name the source host, which are rewritten in the target.',
+    acceptance: [
+      'scripts/migrate/, each step re-runnable and resumable: (1) dump from the source; (2) reset the target, then restore; (3) re-create what a dump does not carry (MIG-013\'s list), from the migrations, idempotently; (4) copy every object of every bucket with its path, content type and cache settings unchanged, with a delta mode for a second pass; (5) rewrite stored addresses that contain the source project host (and the old domain where MIG-004 found any), idempotently; (6) carry the migration history so the CLI sees the target as up to date.',
+      'The target has no default: it is passed explicitly on every run, and the reset refuses when it is absent or equals the source ref. Both refusals printed. The source is only ever read.',
+      'Step 5 covers at least lesson_versions.document, courses.cover_image_url and profiles.avatar_url (measured 2026-11-12: the project host in 37 of 74, 2 of 8 and 1 of 21 rows), plus every column MIG-004 adds. It runs in the TARGET only; no source row is ever updated. Every version of a lesson is rewritten alike.',
+      'Stated with evidence: whether any stored key, hash or version comparison is derived from a lesson document (the import keys of 0023, PLAY-021\'s carry-over, publish_lesson), and shown that the rewrite leaves each one valid.',
+      'After the rewrite, lib/lessonImages still resolves a stored address to its object path on the new host: a vitest case with a second, non-source host, so deferred deletion (0037) and lesson duplication keep working.',
+      'Demonstrated local to local first, never with .env.local: its own env file, with no TELEGRAM_BOT_TOKEN, ANTHROPIC_API_KEY or ASSEMBLYAI_API_KEY and pointing only at the local stack, its NAMES printed. Printed: a second run of every step changing nothing. No key is printed.',
+    ],
+  },
+  {
+    key: 'MIG-017',
+    title: 'Parity report: one command that proves source and target are the same',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4160,
+    dependsOn: ['MIG-016'],
+    goal: '"Did everything arrive" is answered by one printed report, class by class, that fails on any difference.',
+    acceptance: [
+      'One command compares source and target and prints a table with a count per class and PASS or FAIL: tables, columns, types, defaults, constraints, indexes, sequences; functions (signature, SECURITY DEFINER, search_path, body hash) and triggers, including those on auth.users; RLS flags and policies in public and storage; grants, including column grants on profiles; extensions, cron.job, publication tables, bucket settings; row counts for every table in public, auth.users and auth.identities; per bucket, object count, total bytes and a checksum for a sample of at least 20 objects (all of them if fewer).',
+      'A class with zero objects on both sides is a FAIL unless the report declares it expected-empty, with a reason and a control. The leftover-address class (rows still containing the source host or the old domain, outside the allow-list) must be zero; its control is the count before the rewrite, printed beside it (at least 40 by the 2026-11-12 probe).',
+      'Positive control, printed: one deliberate difference in a scratch target (a dropped policy, a changed grant, a deleted row, a missing object) makes the report FAIL and name it.',
+    ],
+  },
+  {
+    key: 'MIG-018',
+    title: 'Rehearsal 1 on the local stack, timed',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4170,
+    dependsOn: ['MIG-016', 'MIG-017'],
+    goal: 'A full production copy moves into the local stack and the app works on it, and the move is timed.',
+    acceptance: [
+      'Never run with .env.local: the rehearsal\'s own env file has no TELEGRAM_BOT_TOKEN, ANTHROPIC_API_KEY or ASSEMBLYAI_API_KEY and points only at the local stack. The NAMES in that file, printed, are the first evidence line.',
+      'A full production copy moved into the local stack with MIG-016; the parity report prints PASS; the app, built with the new-domain values from MIG-014, runs against it.',
+      'Smoke suite, each step with its printed result: sign-in by email; an anonymous free lesson; a signed-in lesson attempt; an existing lesson image and an existing voice recording load; a Studio edit and publish; an invite claim; the account export; every cron route answering with the secret and refusing without it.',
+      'Printed: elapsed time per move step, and from it the first estimate of the freeze window.',
+      'The local copy of production data is destroyed at the end; the evidence says so.',
+    ],
+  },
+  {
+    key: 'MIG-019',
+    title: 'The new home matches the inventory, and cannot act on its own yet',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4180,
+    dependsOn: ['MIG-001', 'MIG-014'],
+    goal:
+      'The new Supabase and Vercel projects under NEW-ORG are set up like the old ones, minus quiz-only settings, and ' +
+      'cannot send messages or run jobs until moving day.',
+    acceptance: [
+      'Owner\'s gate: the owner\'s checklist steps H4 to H21 are done.',
+      'The new Supabase project\'s region and Postgres major version equal the source\'s, printed side by side. Every inventory line from MIG-001 is compared with the new home: printed where an API or CLI reads it, owner-attested with a date where none does.',
+      'The new project\'s Telegram provider is named exactly custom:telegram: 0098\'s probe (the authorize URL, redirect not followed) run against the new project prints the same client_id as against the old one. The secret is never printed.',
+      'The new Vercel project\'s environment NAMES equal the inventory\'s production list minus quiz-only names, minus TELEGRAM_BOT_TOKEN and CRON_SECRET, which are added on moving day. Printed proof that those two are absent and that VOICE_ANALYSIS_MODE and COURSE_IMPORT_MODE are off (0226 fact 13).',
+      'A deployment on NEW-DOMAIN serves the landing against the empty project.',
+      'If MIG-013 moved the repo: scripts/board/config.mjs points at the new owner, repo and project, and board-status.mjs prints the same cards as before the move.',
+    ],
+  },
+  {
+    key: 'MIG-020',
+    title: 'Rehearsal 2: hosted dress rehearsal with a copy of production',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4190,
+    dependsOn: ['MIG-018', 'MIG-019'],
+    goal: 'The whole move runs into the new home from the live source, and real people sign in to the same accounts.',
+    acceptance: [
+      'The whole move runs from the live source (read-only, no freeze) into the new project. Parity report PASS, counts as of the dump.',
+      'On NEW-DOMAIN, with the owner and the partner (checklist R3 to R6): sign-in by email, Google and Telegram, each landing on the SAME user id as in the source (ids printed side by side). The Telegram case is the proof of fact 9; a new user id there stops the card.',
+      'An existing lesson image and an existing recording load from the new storage; a Studio edit; an export; a calendar feed, including a subscription to a test address that redirects to the new feed, followed in at least one real calendar client (MIG-013).',
+      'Shown by construction that the rehearsal sent nothing: the new project\'s env names printed without TELEGRAM_BOT_TOKEN and CRON_SECRET and with VOICE_ANALYSIS_MODE and COURSE_IMPORT_MODE off, and a cron route refusing a request, printed.',
+      'The target reset and the move re-run; the report prints PASS again. Elapsed times printed for both runs.',
+    ],
+  },
+  {
+    key: 'MIG-021',
+    title: 'Moving-day runbook and rollback, written from the rehearsals',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4200,
+    dependsOn: ['MIG-015', 'MIG-020'],
+    goal: 'Moving day follows a written, timed runbook with a rollback, approved by the owner.',
+    acceptance: [
+      'docs/release/cutover-runbook.md: numbered steps, each with who does it (owner or session, using the checklist\'s D codes), the expected printed output and a time budget taken from MIG-020\'s timings.',
+      'Go and no-go criteria; the point of no return (the domain switch, D10); rollback before it (maintenance off on the old site, nothing lost); after it, fix forward, with the paused source kept 30 days.',
+      'The smoke suite for the new domain; the redirect check list; the announcement texts in English and Russian.',
+      'The owner approves it (checklist R9).',
+    ],
+  },
+  {
+    key: 'MIG-022',
+    title: 'Legal revision for the new name, domain and operator',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4210,
+    dependsOn: ['MIG-013', 'MIG-014'],
+    goal: 'Terms, Privacy and Subprocessors name the new product, domain, contact address and operator before moving day.',
+    acceptance: [
+      'Owner\'s gate: the new name, domain and operator are decided (0226 settled input 7: the operator is decided before this card and nowhere else).',
+      'Terms, Privacy and Subprocessors carry the new name, domain, contact address and operator; the successor clause (Terms §12) is used if the operator changes. Version bump, current_terms_version() re-emitted through the hosted-apply gate.',
+      'The diff is shown to the owner before commit. The notice period before moving day is stated (at least 14 days, Terms §10), counted from a printed request showing the revised text live; whether an in-app notice is needed under 0095 is written in the evidence.',
+    ],
+    notes: 'The email is the owner\'s step (checklist R10).',
+  },
+  {
+    key: 'MIG-023',
+    title: 'Moving day',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4220,
+    dependsOn: ['MIG-021', 'MIG-022'],
+    goal: 'The English product moves to NEW-DOMAIN and the new projects, following the runbook.',
+    acceptance: [
+      'Owner\'s gate: the owner\'s go (checklist D1), and MIG-022\'s notice period over.',
+      'The runbook executed with the owner. Printed: the freeze proof; the parity report PASS; the smoke suite on NEW-DOMAIN; getWebhookInfo showing the new address; ten old URLs each answering with a permanent redirect to the same path on NEW-DOMAIN; the first cron run on the new project; the first real sign-in after the switch.',
+      'Any FAIL before the point of no return ends the attempt with the rollback step and a report. Nothing is patched on the spot.',
+    ],
+  },
+  {
+    key: 'MIG-024',
+    title: 'The old home is switched off',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4230,
+    dependsOn: ['MIG-023'],
+    goal: 'Nothing of the old home can act or holds data beyond 30 days, and the repo describes one product on one domain.',
+    acceptance: [
+      'By day 7: old redirect addresses removed from Google and BotFather; every secret that lived in the old Vercel project replaced (owner, checklist F5 and F6), and the webhook re-set after the bot token changes.',
+      'By day 30: the old Supabase project deleted and the old Vercel project removed (owner, F8 and F9); move-day dump files destroyed.',
+      'The repo describes one product on one domain: CLAUDE.md, handoff.md, README.md, docs/setup.md, the verify skill, .env.example. The "Latest applied" line is re-derived against the new project.',
+      'Printed: rg -i "colloquiz" over tracked files, with every remaining hit explained (history, the UID constant, the redirect).',
+    ],
+  },
+  {
+    key: 'MIG-025',
+    title: 'Migration history squashed to a baseline (optional)',
+    milestone: 'M6',
+    epic: 'MIG',
+    type: 'task',
+    rank: 4240,
+    dependsOn: ['MIG-024'],
+    goal: 'One baseline migration replaces the numbered history. Tidying only.',
+    acceptance: [
+      'Owner\'s gate: the owner wants the history squashed (otherwise the card is dropped), and gives the word before the hosted history is repaired.',
+      'One baseline migration replaces the numbered history. db reset from the baseline produces a schema the parity report (MIG-017) calls identical to hosted.',
+    ],
+    notes: 'Drop the card if the owner prefers the full history.',
   },
 ];
 
