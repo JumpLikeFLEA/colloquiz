@@ -65,3 +65,6 @@ instruction_external_LLM.txt
 /.claude/settings.local.json
 
 /public
+
+# Desktop app copies of prompts and plans
+/Claude outputs/
