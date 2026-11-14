@@ -43,6 +43,29 @@ export function earlierAnswers(
 }
 
 /**
+ * PLAY-021 (docs/decisions/0228) — the rows of `carried_lesson_answers()`
+ * (migration 110): the learner's best attempt on an earlier version's block
+ * that the played version carries unchanged. The function has already checked
+ * that the block is unchanged, so each row counts as an attempt on the played
+ * version. `earlierAnswers` then still keeps only the played document's
+ * exercises and picks the best per block against this version's own attempts.
+ * Rows with an unreadable score are dropped.
+ */
+export function carriedAttempts(
+  rows: readonly { block_id: unknown; earned: unknown; possible: unknown }[],
+  playedVersionId: string,
+): EarlierAttempt[] {
+  const out: EarlierAttempt[] = [];
+  for (const r of rows) {
+    const earned = Number(r.earned);
+    const possible = Number(r.possible);
+    if (typeof r.block_id !== "string" || !Number.isFinite(earned) || !Number.isFinite(possible)) continue;
+    out.push({ lessonVersionId: playedVersionId, blockId: r.block_id, earned, possible });
+  }
+  return out;
+}
+
+/**
  * This visit's results with the earlier answers folded in, best per block, in
  * the shape `sessionProgress` and `scoreSession` already take. An earlier
  * answer carries no sub-results: nothing renders them, and the answer review

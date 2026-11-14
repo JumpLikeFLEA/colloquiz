@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { attemptsFromSummaryRows, type AttemptsByLessonSlug } from "@/lib/coursePageProgress";
-import type { EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
+import { carriedAttempts, type EarlierAttempt } from "@/lib/lessonPlayer/answeredBefore";
 
 /**
  * ANON-005 — the course page's real replacement for the `{}` placeholder
@@ -65,17 +65,26 @@ export async function getLessonVersionAttempts(lessonVersionId: string): Promise
   const user = await authUserFrom(supabase);
   if (!user) return [];
 
-  const { data, error } = await supabase
-    .from("lesson_attempts")
-    .select("block_id, earned, possible")
-    .eq("user_id", user.id)
-    .eq("lesson_version_id", lessonVersionId);
-  if (error) throw new Error(error.message);
+  // PLAY-021 (docs/decisions/0228): beside this version's own rows, the
+  // exercises answered on an earlier version that this one carries unchanged
+  // (`carried_lesson_answers`, migration 110). That read fails soft on its
+  // own, so a missing function (110 not applied) keeps PLAY-019's figures.
+  const [own, carried] = await Promise.all([
+    supabase
+      .from("lesson_attempts")
+      .select("block_id, earned, possible")
+      .eq("user_id", user.id)
+      .eq("lesson_version_id", lessonVersionId),
+    supabase.rpc("carried_lesson_answers", { p_lesson_version_id: lessonVersionId }),
+  ]);
+  if (own.error) throw new Error(own.error.message);
+  if (carried.error) console.error("failed to read carried lesson answers:", carried.error.message);
 
-  return (data ?? []).map((r) => ({
+  const current: EarlierAttempt[] = (own.data ?? []).map((r) => ({
     lessonVersionId,
     blockId: r.block_id as string,
     earned: Number(r.earned),
     possible: Number(r.possible),
   }));
+  return carried.error ? current : [...current, ...carriedAttempts(carried.data ?? [], lessonVersionId)];
 }

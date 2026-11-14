@@ -27,7 +27,7 @@ for the answered SET only.
    read; a failed read counts nothing. Everyone: the local attempt store as it
    was at page load (the 0088 read-once pattern, now caching the attempts
    rather than a percentage), joined with the server rows. No migration.
-3. **No carry-over across a republish.** After a republish the player counts the
+3. **No carry-over across a republish.** (Amended by 0228: for a signed-in learner, exercises unchanged across the republish now carry over, through `carried_lesson_answers`, migration 110.) After a republish the player counts the
    new version only. Telling an unchanged exercise from a changed one would mean
    reading superseded versions' documents, which a learner cannot do
    (`lesson_versions: published content read`, 041), so it would need a new

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseLessonDocument } from "../lessons/parseLessonDocument";
 import type { ItemScoreResult } from "../items";
-import { earlierAnswers, withEarlierAnswers, type EarlierAttempt } from "./answeredBefore";
+import { carriedAttempts, earlierAnswers, withEarlierAnswers, type EarlierAttempt } from "./answeredBefore";
 import { scoreSession, sessionProgress } from "./session";
 
 function selectionBlock(id: string) {
@@ -98,5 +98,37 @@ describe("withEarlierAnswers", () => {
     const now: ItemScoreResult = { earned: 2, possible: 2, subResults: [] };
     const merged = withEarlierAnswers({ q1: now }, earlierAnswers(doc, V1, [attempt("q1", 1, 2)]));
     expect(merged.q1).toBe(now);
+  });
+});
+
+describe("carriedAttempts (PLAY-021)", () => {
+  // v1 had q1..q3; v2 kept q1 and q2 unchanged and changed q3 into q3b.
+  // carried_lesson_answers (110) returns only the unchanged blocks; numerics
+  // arrive from PostgREST as numbers or strings.
+  const rows = [
+    { block_id: "q1", earned: 1, possible: 1 },
+    { block_id: "q2", earned: "1", possible: "2" },
+  ];
+
+  it("counts the unchanged exercises answered on the earlier version, marked as answered before", () => {
+    const v2 = lesson("q1", "q2", "q3b");
+    const earlier = earlierAnswers(v2, V2, carriedAttempts(rows, V2));
+    expect(earlier).toEqual({ q1: { earned: 1, possible: 1 }, q2: { earned: 1, possible: 2 } });
+    expect(sessionProgress(v2, withEarlierAnswers({}, earlier))).toEqual({ answered: 2, total: 3 });
+  });
+
+  it("drops a carried row for a block the played document does not hold as an exercise", () => {
+    const v2 = lesson("q1", "q3b");
+    expect(Object.keys(earlierAnswers(v2, V2, carriedAttempts(rows, V2)))).toEqual(["q1"]);
+  });
+
+  it("keeps the better of a carried answer and one already made on the played version", () => {
+    const v2 = lesson("q1", "q2");
+    const earlier = earlierAnswers(v2, V2, [attempt("q2", 2, 2, V2), attempt("q1", 0, 1, V2), ...carriedAttempts(rows, V2)]);
+    expect(earlier).toEqual({ q1: { earned: 1, possible: 1 }, q2: { earned: 2, possible: 2 } });
+  });
+
+  it("drops unreadable rows", () => {
+    expect(carriedAttempts([{ block_id: null, earned: 1, possible: 1 }, { block_id: "q1", earned: "x", possible: 1 }], V2)).toEqual([]);
   });
 });
