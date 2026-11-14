@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# MIG-001: Supabase email templates are byte-identical to hosted; keep LF on every checkout.
+supabase/templates/*.html text eol=lf
