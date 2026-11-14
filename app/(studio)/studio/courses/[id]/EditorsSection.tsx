@@ -3,33 +3,59 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { UserMinus, UserPlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import type { AuthoredCourseDetail } from "@/lib/courseAuthoring";
 import { postJson } from "./postJson";
 
+/** An author-seat holder offered in the Add editor picker (082's author_seats_list). */
+export type AuthorOption = { userId: string; publicName: string; contact: string };
+
+// The picker's value for "type an email instead".
+const OTHER = "__other__";
+
 export function EditorsSection({
   courseId,
   editors,
+  authors,
   onChanged,
 }: {
   courseId: string;
   editors: AuthoredCourseDetail["editors"];
+  /** Seat holders; null when the list could not be read. */
+  authors: AuthorOption[] | null;
   onChanged: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [email, setEmail] = useState("");
+  // grant_course_editor (029) looks accounts up by email, so a picked author
+  // just fills the email. A Telegram-only seat's contact is "@username" (073)
+  // and can't be granted that way: it is listed, disabled.
+  const editorIds = new Set(editors.map((e) => e.userId));
+  const candidates = (authors ?? []).filter((a) => !editorIds.has(a.userId));
+  const [picked, setPicked] = useState<string>(OTHER);
+  const pickedAuthor = candidates.find((a) => a.userId === picked) ?? null;
+  const target = pickedAuthor ? pickedAuthor.contact : email;
+
+  function openChange(open: boolean) {
+    setAdding(open);
+    if (!open) {
+      setEmail("");
+      setPicked(OTHER);
+      setError(null);
+    }
+  }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   async function grant() {
-    if (!email.trim()) return;
+    if (!target.trim()) return;
     setSaving(true);
     setError(null);
     try {
-      await postJson(`/api/admin/courses/${courseId}/editors`, { email });
-      setAdding(false);
-      setEmail("");
+      await postJson(`/api/admin/courses/${courseId}/editors`, { email: target });
+      openChange(false);
       onChanged();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add editor.");
@@ -85,20 +111,53 @@ export function EditorsSection({
         </div>
       )}
 
-      <Dialog open={adding} onOpenChange={setAdding}>
+      <Dialog open={adding} onOpenChange={openChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add editor</DialogTitle>
-            <DialogDescription>They must already have a Colloquiz account.</DialogDescription>
+            <DialogDescription>Pick an author, or type the email of someone with an account.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              type="email"
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
-            />
+            {candidates.length > 0 && (
+              <Select
+                value={picked}
+                onValueChange={(v) => {
+                  setPicked(v);
+                  setError(null);
+                }}
+              >
+                <SelectTrigger className="w-full" aria-label="Author">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidates.map((a) => {
+                    const hasEmail = a.contact.includes("@") && !a.contact.startsWith("@");
+                    return (
+                      <SelectItem key={a.userId} value={a.userId} disabled={!hasEmail}>
+                        <span className="truncate">
+                          {a.publicName || a.contact}
+                          <span className="text-muted-foreground">
+                            {" · "}
+                            {hasEmail ? a.contact : `${a.contact || "no contact"} (no email)`}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                  <SelectItem value={OTHER}>Someone else (type email)</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            {!pickedAuthor && (
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                type="email"
+                aria-label="Email"
+                className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none"
+              />
+            )}
             {error && (
               <div className="px-3 py-2 rounded-lg bg-destructive-subtle border border-destructive-border text-sm text-destructive-text">
                 {error}
@@ -107,14 +166,14 @@ export function EditorsSection({
           </div>
           <DialogFooter>
             <button
-              onClick={() => setAdding(false)}
+              onClick={() => openChange(false)}
               className="cursor-pointer px-3 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={grant}
-              disabled={saving || !email.trim()}
+              disabled={saving || !target.trim()}
               className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {saving ? "Adding…" : "Add"}

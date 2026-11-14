@@ -15,6 +15,7 @@ import { CourseDetailView } from "./CourseDetailView";
 import { CourseGrantees } from "./CourseGrantees";
 import { ListedSwitch } from "./ListedSwitch";
 import { getCourseListing } from "@/lib/listedCoursesServer";
+import { getAuthorSeats } from "@/lib/authorSeatsServer";
 
 // Gated on can_edit_course(id) — admin or this course's delegated editor
 // (AUTH-007, docs/decisions/0041, reopening 0025 Decision 1). See
@@ -47,7 +48,9 @@ export default async function AdminCourseDetailPage({
     getGranteesSection(id),
   ]);
   if (!detail) notFound();
-  const listing = isAdmin ? await getListingSection(id) : null;
+  const [listing, authors] = isAdmin
+    ? await Promise.all([getListingSection(id), getAuthorOptions()])
+    : [null, null];
   // Display only (AUTH-010): which notice and locks to show. The RPCs
   // re-check the same condition themselves (docs/decisions/0106 Decision 2).
   const now = new Date();
@@ -55,7 +58,7 @@ export default async function AdminCourseDetailPage({
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} deleteBlockers={deleteBlockers} />
+      <CourseDetailView detail={detail} isAdmin={isAdmin} runs={runSummary} deleteBlockers={deleteBlockers} authors={authors} />
       {listing && (
         <section className="mt-8 space-y-2 rounded-2xl border border-border bg-card p-4">
           <h2 className="text-lg font-semibold text-foreground">Catalogue</h2>
@@ -141,6 +144,18 @@ async function getListingSection(courseId: string) {
     return (await getCourseListing()).find((c) => c.courseId === courseId) ?? null;
   } catch (e) {
     console.error("course editor: catalogue listing:", e);
+    return null;
+  }
+}
+
+// The Add editor picker's list: every author seat (082). Admin only, like the
+// Editors section itself; null when the read fails, so the dialog falls back
+// to the typed email.
+async function getAuthorOptions() {
+  try {
+    return (await getAuthorSeats()).map((s) => ({ userId: s.userId, publicName: s.publicName, contact: s.contact }));
+  } catch (e) {
+    console.error("course editor: author seats:", e);
     return null;
   }
 }

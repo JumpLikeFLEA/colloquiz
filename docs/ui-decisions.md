@@ -3194,3 +3194,16 @@ Appended to in the same commit as the change it records. Referenced from
   banner on the tab, the badge with a failed read. Do not count a null read as zero in the badge when the
   other read succeeded, and do not show the answer as HTML.
 - Written-answer feedback on /my (2026-11-10, WRITE-005, docs/decisions/0225 Decision 10). `/my`'s Feedback section lists a teacher's published feedback on a written answer in the voice feedback card's frame, newest first among the voice and final items: the title "Feedback on your written answer" ("Отзыв на письменный ответ" in RU, the saved choice), course · lesson · local date, the text in the `bg-brand-subtle` feedback box and "Open lesson". Existing classes and tokens; no new colours. Measured at 360px (local stack, one seeded published feedback with a bold run; no long unbroken word tried): `scrollWidth/innerWidth` 360/360 in EN and RU. `npm run budget` `/my`: 175.2 / 175.2 KB (limits 180, 182). Not measured: dark mode, a phone. Do not show a draft: only published feedback is read.
+- Add editor: pick an author (2026-11-14, ad hoc, docs/decisions/0227). The course editor's "Add
+  editor" dialog (admin only) gains a `ui/select` "Author" above the email field: one item per
+  author-seat holder not already editing the course ("Public name · contact", the contact muted),
+  then "Someone else (type email)", the default. Picking an author hides the email field and
+  grants by that seat's email through the same route; "Someone else" shows the field as before. A
+  seat with no email contact is listed disabled with "(no email)". No seat holder left, or a failed
+  read: the select is absent. The description reads "Pick an author, or type the email of someone
+  with an account." Existing classes and tokens; no new colours. Measured (local stack, Edge, an
+  admin, two seats, one with a 56-character email): `scrollWidth/innerWidth` 360/360 with the
+  dialog open, the list open and the unknown-email error showing; 1280/1280 with the list open.
+  Picking a seat added it to Editors and dropped it from the list; a typed unknown email still
+  shows "No account found with that email." Not measured: dark mode, a disabled "(no email)"
+  item in a browser. Do not grant by user id from the client without a by-id RPC.

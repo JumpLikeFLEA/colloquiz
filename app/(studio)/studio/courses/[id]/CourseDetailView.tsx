@@ -18,7 +18,7 @@ import { DeleteCourseSection } from "./DeleteCourseSection";
 import { DuplicateDialog, type DuplicateTarget } from "./DuplicateDialog";
 import { postJson } from "./postJson";
 import { WriteArea } from "@/app/(studio)/studio/StudioWriteLock";
-import { EditorsSection } from "./EditorsSection";
+import { EditorsSection, type AuthorOption } from "./EditorsSection";
 import { LessonsSection } from "./LessonsSection";
 
 function CourseDetailViewInner({
@@ -26,11 +26,14 @@ function CourseDetailViewInner({
   isAdmin,
   runs,
   deleteBlockers,
+  authors,
 }: {
   detail: AuthoredCourseDetail;
   isAdmin: boolean;
   runs: CourseRunSummary;
   deleteBlockers: string[] | null;
+  /** Seat holders for the Add editor picker; admin only, null when not loaded. */
+  authors?: AuthorOption[] | null;
 }) {
   const router = useRouter();
   const { course, lessons, editors } = detail;
@@ -251,7 +254,7 @@ function CourseDetailViewInner({
         onChanged={() => router.refresh()}
       />
 
-      {isAdmin && <EditorsSection courseId={course.id} editors={editors} onChanged={() => router.refresh()} />}
+      {isAdmin && <EditorsSection courseId={course.id} editors={editors} authors={authors ?? null} onChanged={() => router.refresh()} />}
 
       {deleteBlockers && (
         <DeleteCourseSection courseId={course.id} courseTitle={course.title} blockers={deleteBlockers} />
