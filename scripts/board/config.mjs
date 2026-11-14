@@ -52,6 +52,7 @@ export const MILESTONE_NUMBERS = {
   M3: 4,
   M4: 5,
   M5: 6,
+  M6: 7,
 };
 
 // `gh issue create/edit --milestone` takes the milestone TITLE, not its
