@@ -100,6 +100,11 @@ reached through a toggle, and is not what a first-time visitor sees.
 
 One Next.js app, one Supabase project, one account per person.
 
+**Planned (owner, 2026-11-12, docs/decisions/0226):** if the English product
+goes well, Colloquiz closes and the English product moves to its own domain and
+organisation. Until MIG-004 is decided, everything in this file stands as
+written.
+
 `/` is the English landing. Colloquiz lives under `/app` (SHELL-001, decision
 0005), so the English surface owns the clean URLs.
 

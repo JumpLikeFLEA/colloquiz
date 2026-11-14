@@ -322,9 +322,11 @@ keeps its milestone active, and Hold cards don't count toward the "5 or
 more cards in Verify" stop (docs/decisions/0090).
 
 Milestones: **M0** item engine · **M1** content & authoring · **M2** public
-surface · **M3** monetisation · **M4** progression & polish.
-Issue keys are epic-prefixed: `ITEM-`, `CNT-`, `AUTH-`, `SHELL-`, `ANON-`,
-`PAY-`, `PROG-`, `OPS-`.
+surface · **M3** first paid cohort · **M4** progression & polish · **M5**
+technical debt & test runs · **M6** separation from Colloquiz.
+Issue keys are epic-prefixed: `ITEM-`, `CNT-`, `AUTH-`, `PLAY-`, `SHELL-`,
+`ANON-`, `PAY-`, `PROG-`, `OPS-`, `INFRA-`, `VIS-`, `COH-`, `VOICE-`, `TCH-`,
+`WRITE-`, `MIG-`.
 
 Three invocations:
 
