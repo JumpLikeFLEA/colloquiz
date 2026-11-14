@@ -252,9 +252,17 @@ otp_expiry = 3600
 # is the email-confirmation handler) so a local run exercises the same
 # cross-browser-safe token_hash/verifyOtp path as production, not GoTrue's own
 # default ConfirmationURL/PKCE-code redirect. See docs/decisions/0068.
+#
+# MIG-001 (docs/ops/inventory.md): both templates the hosted project customises
+# are committed here byte-for-byte from the Management API's auth config, and
+# the subjects match hosted. Every other hosted template is Supabase's default.
 [auth.email.template.confirmation]
-subject = "Confirm your signup"
+subject = "Confirm your email address"
 content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
