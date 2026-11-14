@@ -5001,6 +5001,32 @@ export const CARDS = [
     ],
     notes: 'Proposed in #268 (PLAY-019). Worth doing only if the partner republishes lessons learners are part-way through.',
   },
+  // Owner, 2026-11-14, while planning MIG-001 (#294): Discord goes completely.
+  {
+    key: 'OPS-040',
+    title: 'Remove the Discord feedback webhook',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3291,
+    dependsOn: [],
+    goal:
+      'Discord sign-in is gone (docs/decisions/0221); the feedback webhook is the last Discord dependency. The owner ' +
+      'removes it (2026-11-14), so Discord leaves the app, the environment and the subprocessor list.',
+    acceptance: [
+      'lib/feedbackNotify.ts\'s Discord sending, its call sites and its tests are removed; feedback is still stored and still listed for admins (shown with one submitted row on the local stack).',
+      'FEEDBACK_DISCORD_WEBHOOK_URL is gone from .env.example, .env.local.example, docs/setup.md and every reader.',
+      'subprocessors.md loses the Discord row, with a version bump and a change-log line; the privacy policy changes too if it names Discord. Removing a recipient is not material (0095; the 1.7 precedent). The legal diff is shown to the owner before commit.',
+      '`rg -i discord` over tracked files is printed before (non-zero) and after; every remaining hit is explained (decision history, change logs).',
+    ],
+    notes:
+      'After the push, the owner deletes the Vercel variable and then the webhook in Discord, in that order. ' +
+      'The Discord message is the only way the owner learns that new feedback arrived: app/api/feedback/route.ts calls ' +
+      'notifyNewFeedback from after(), nothing else (no in-app notification, no sidebar badge on /app/admin/feedback, ' +
+      'no email: the app sends none, subprocessors.md "Resend" row). After this card, new feedback is seen only by ' +
+      'opening /app/admin/feedback. A replacement, if any, is the owner\'s call and a separate card. ' +
+      'MIG-001 inventories Discord as "removed by OPS-040, owner 2026-11-14; not recreated".',
+  },
   // Proposed in AUTH-022's closing comment (#272), filed by the owner 2026-11-02.
   {
     key: 'SHELL-038',
