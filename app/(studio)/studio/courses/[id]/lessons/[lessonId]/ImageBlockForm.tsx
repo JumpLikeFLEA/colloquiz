@@ -4,7 +4,7 @@ import { useEffect, useEffectEvent, type ClipboardEvent } from "react";
 import Image from "next/image";
 import { ClipboardPaste, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
-import type { ImageSize, TheoryBlock } from "@/lib/lessons";
+import { optionalInlineContent, type ImageSize, type TheoryBlock } from "@/lib/lessons";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
 import { imageFrame } from "@/lib/lessonPlayer/imageFrame";
 import { measureImage } from "@/lib/measureImage";
@@ -182,7 +182,7 @@ export function ImageBlockForm({
       <InlineField
         label="Caption (optional)"
         value={block.caption ?? []}
-        onChange={(caption) => onChange({ ...block, caption: caption.length > 0 ? caption : undefined })}
+        onChange={(caption) => onChange({ ...block, caption: optionalInlineContent(caption) })}
         errors={errors}
         path="caption"
       />

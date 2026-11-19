@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InlineContentSchema, InlineRunSchema, MultilineInlineContentSchema } from "./inline";
+import { InlineContentSchema, InlineRunSchema, MultilineInlineContentSchema, optionalInlineContent } from "./inline";
 
 describe("InlineRunSchema", () => {
   it("accepts plain text with no marks", () => {
@@ -85,5 +85,29 @@ describe("MultilineInlineContentSchema", () => {
 
   it("rejects a tab", () => {
     expect(MultilineInlineContentSchema.safeParse([{ text: "a\tb" }]).success).toBe(false);
+  });
+});
+
+describe("optionalInlineContent", () => {
+  it("is absent for no runs", () => {
+    expect(optionalInlineContent([])).toBeUndefined();
+  });
+
+  it("is absent for a cleared field", () => {
+    expect(optionalInlineContent([{ text: "" }])).toBeUndefined();
+  });
+
+  it("is absent when every run is empty, marks or not", () => {
+    expect(optionalInlineContent([{ text: "", marks: ["emphasis"] }, { text: "" }])).toBeUndefined();
+  });
+
+  it("keeps a field with text unchanged", () => {
+    const content = [{ text: "Amy speaking" }];
+    expect(optionalInlineContent(content)).toBe(content);
+  });
+
+  it("keeps an empty run next to one with text (the author is still editing)", () => {
+    const content = [{ text: "a" }, { text: "" }];
+    expect(optionalInlineContent(content)).toBe(content);
   });
 });

@@ -12,6 +12,7 @@ import { Switch } from "@/app/components/ui/switch";
 import {
   CALLOUT_VARIANTS,
   SELF_CHECK_RESPONSES,
+  optionalInlineContent,
   type CalloutVariant,
   type InlineContent,
   type SelfCheckResponse,
@@ -260,7 +261,7 @@ export function BlockForm({
           <InlineField
             label="Caption (optional)"
             value={block.caption ?? []}
-            onChange={(caption) => onChange({ ...block, caption: caption.length > 0 ? caption : undefined })}
+            onChange={(caption) => onChange({ ...block, caption: optionalInlineContent(caption) })}
             errors={errors}
             path="caption"
           />
@@ -286,7 +287,7 @@ export function BlockForm({
           <InlineField
             label="Caption (optional)"
             value={block.caption ?? []}
-            onChange={(caption) => onChange({ ...block, caption: caption.length > 0 ? caption : undefined })}
+            onChange={(caption) => onChange({ ...block, caption: optionalInlineContent(caption) })}
             errors={errors}
             path="caption"
           />
@@ -483,7 +484,7 @@ export function BlockForm({
           <InlineField
             label="Caption (optional)"
             value={block.caption ?? []}
-            onChange={(caption) => onChange({ ...block, caption: caption.length > 0 ? caption : undefined })}
+            onChange={(caption) => onChange({ ...block, caption: optionalInlineContent(caption) })}
             errors={errors}
             path="caption"
           />

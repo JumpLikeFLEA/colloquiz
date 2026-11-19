@@ -57,3 +57,12 @@ export type InlineContent = z.infer<typeof InlineContentSchema>;
  * (docs/decisions/0224): a renderer of such a field draws it with
  * `whitespace-pre-line`. Same TypeScript type as `InlineContent`. */
 export const MultilineInlineContentSchema = z.array(inlineRunSchema({ allowNewlines: true })).min(1);
+
+/** An optional inline field (a caption) as the editor hands it back: absent
+ * when every run's text is empty. The editor reports a cleared field as
+ * `[{ text: "" }]`, which `InlineContentSchema` refuses, so without this a
+ * caption once typed could never be removed. Runs are not dropped one by one:
+ * a run just added with "Add run" is empty until the author types in it. */
+export function optionalInlineContent(content: InlineContent): InlineContent | undefined {
+  return content.some((run) => run.text !== "") ? content : undefined;
+}
