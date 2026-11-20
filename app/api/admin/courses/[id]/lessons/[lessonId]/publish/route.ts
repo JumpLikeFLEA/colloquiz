@@ -73,7 +73,13 @@ export async function POST(
     const hasCompareSlot = parsed.document.some((b) => b.kind === "task" && b.type === "voice" && b.compare !== undefined);
     if (hasCompareSlot) {
       const others = await otherPublishedLessons(supabase, lessonId);
-      const conflicts = voiceCompareConflicts(lessonId, parsed.document, others);
+      const { data: ownRow, error: ownErr } = await supabase
+        .from("lessons")
+        .select("ordinal")
+        .eq("id", lessonId)
+        .maybeSingle();
+      if (ownErr) throw new Error(ownErr.message);
+      const conflicts = voiceCompareConflicts(lessonId, parsed.document, others, ownRow?.ordinal ?? undefined);
       if (conflicts.length > 0) {
         // 422, not 409: PreviewClient reads any 409 as "stale, reload".
         return NextResponse.json({ error: voiceCompareConflictMessage(conflicts[0]) }, { status: 422 });

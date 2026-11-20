@@ -75,9 +75,9 @@ export function VoiceTaskForm({
 
   function setCompare(v: string) {
     const compare = v === NO_COMPARE ? undefined : (v as VoiceCompareSlot);
-    // A new "after" task starts from the "before" task's list, once: only an
-    // empty list is filled, never one the author has written.
-    if (compare === "after" && !block.listenFor?.length && beforeList?.length) {
+    // A new "after" or "interim" task starts from the "before" task's list,
+    // once: only an empty list is filled, never one the author has written.
+    if ((compare === "after" || compare === "interim") && !block.listenFor?.length && beforeList?.length) {
       setText(beforeList.join(LINE_BREAK));
       onChange({ ...block, compare, listenFor: beforeList });
       return;
@@ -132,12 +132,15 @@ export function VoiceTaskForm({
           <SelectContent>
             <SelectItem value={NO_COMPARE}>None (a weekly task)</SelectItem>
             <SelectItem value="before">Before — the start-of-course recording</SelectItem>
+            <SelectItem value="interim">Interim (end of the free lesson)</SelectItem>
             <SelectItem value="after">After — the end-of-course recording</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          A course has at most one &ldquo;before&rdquo; and one &ldquo;after&rdquo;. Publishing checks the
-          course&rsquo;s other published lessons.
+          A course has at most one &ldquo;before&rdquo;, one &ldquo;interim&rdquo; and one &ldquo;after&rdquo;.
+          Publishing checks the course&rsquo;s other published lessons.
+          {block.compare === "interim" &&
+            " Compared with the Before task, with links to later lessons that practise what the learner needs."}
         </p>
       </div>
       <div className="space-y-1">
@@ -157,6 +160,7 @@ export function VoiceTaskForm({
             One per line, up to {VOICE_LISTEN_FOR_MAX_LENGTH} characters each. The voice feedback looks for these in
             the recording.
             {block.compare === "after" && " A new After task starts with the Before task’s list."}
+            {block.compare === "interim" && " A new Interim task starts with the Before task’s list."}
           </p>
           <span
             className={`shrink-0 text-xs tabular-nums ${

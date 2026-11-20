@@ -22,7 +22,7 @@ export type TaskBlockType = (typeof TASK_BLOCK_TYPES)[number];
 /** Which end of a cohort course this recording belongs to, for the
  * before/after screen (COH-005). At most one of each per course, enforced at
  * publish (lib/lessons/voiceCompare.ts). Absent on an ordinary weekly task. */
-export const VOICE_COMPARE_SLOTS = ["before", "after"] as const;
+export const VOICE_COMPARE_SLOTS = ["before", "interim", "after"] as const;
 export type VoiceCompareSlot = (typeof VOICE_COMPARE_SLOTS)[number];
 
 /** Bounds on a recording's length. The lower bound stops a typo ("3" meant

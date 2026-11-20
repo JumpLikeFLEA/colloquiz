@@ -87,6 +87,13 @@ describe("VoiceTaskForm — expressions to listen for", () => {
     expect(listenField().value).toBe("I used to\nby the time");
   });
 
+  it("copies the Before task's list into a task switched to Interim, once", () => {
+    render(<Harness initial={base} before={["I used to", "by the time"]} />);
+    choose("Interim");
+    expect(latest.compare).toBe("interim");
+    expect(latest.listenFor).toEqual(["I used to", "by the time"]);
+  });
+
   it("does not overwrite a list the author already wrote", () => {
     render(<Harness initial={{ ...base, listenFor: ["my own"] }} before={["I used to"]} />);
     choose("After");

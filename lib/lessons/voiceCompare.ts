@@ -20,11 +20,25 @@ export interface OtherPublishedLesson {
   /** For the message: which lesson already holds the slot. */
   title: string;
   document: unknown;
+  /** Display order (lessons.ordinal). Used only for the interim-before-before
+   * check; when either side lacks one, that cross-lesson check is skipped. */
+  ordinal?: number;
 }
 
 export type VoiceCompareConflict =
   | { slot: VoiceCompareSlot; reason: "twice_in_lesson"; blockIds: string[] }
-  | { slot: VoiceCompareSlot; reason: "held_by_other_lesson"; blockId: string; otherLessonId: string; otherTitle: string };
+  | { slot: VoiceCompareSlot; reason: "held_by_other_lesson"; blockId: string; otherLessonId: string; otherTitle: string }
+  /** VOICE-017 (0229 Decision 15): the interim recording must come after the
+   * course's before task. `otherHolds` says which task sits in another lesson;
+   * null means both are in the publishing lesson. */
+  | {
+      slot: "interim";
+      reason: "interim_before_before";
+      blockId: string;
+      otherHolds: "before" | "interim" | null;
+      otherLessonId: string | null;
+      otherTitle: string | null;
+    };
 
 function compareSlotOf(raw: unknown): VoiceCompareSlot | undefined {
   if (!raw || typeof raw !== "object") return undefined;
@@ -41,6 +55,7 @@ export function voiceCompareConflicts(
   lessonId: string,
   document: LessonDocument,
   others: readonly OtherPublishedLesson[],
+  ownOrdinal?: number,
 ): VoiceCompareConflict[] {
   const conflicts: VoiceCompareConflict[] = [];
 
@@ -68,7 +83,62 @@ export function voiceCompareConflicts(
     }
   }
 
+  conflicts.push(...interimOrderConflicts(lessonId, document, others, ownOrdinal));
   return conflicts;
+}
+
+/** An interim task must come after the course's before task: later in the same
+ * lesson, or in a lesson with a higher ordinal. A course with no before task is
+ * fine (the interim take then runs without a baseline). Equal ordinals are not
+ * ordered, so they never conflict. Both directions are checked, so publishing a
+ * "before" below an existing "interim" is refused too. */
+function interimOrderConflicts(
+  lessonId: string,
+  document: LessonDocument,
+  others: readonly OtherPublishedLesson[],
+  ownOrdinal: number | undefined,
+): VoiceCompareConflict[] {
+  const out: VoiceCompareConflict[] = [];
+  const voiceBlocks = document.filter((b) => b.kind === "task" && b.type === "voice");
+  const ownInterim = voiceBlocks.find((b) => b.compare === "interim");
+  const ownBefore = voiceBlocks.find((b) => b.compare === "before");
+
+  if (ownInterim && ownBefore && voiceBlocks.indexOf(ownInterim) < voiceBlocks.indexOf(ownBefore)) {
+    out.push({
+      slot: "interim",
+      reason: "interim_before_before",
+      blockId: ownInterim.id,
+      otherHolds: null,
+      otherLessonId: null,
+      otherTitle: null,
+    });
+  }
+
+  if (ownOrdinal === undefined) return out;
+  for (const other of others) {
+    if (other.lessonId === lessonId || !Array.isArray(other.document) || other.ordinal === undefined) continue;
+    if (ownInterim && other.ordinal > ownOrdinal && other.document.some((raw) => compareSlotOf(raw) === "before")) {
+      out.push({
+        slot: "interim",
+        reason: "interim_before_before",
+        blockId: ownInterim.id,
+        otherHolds: "before",
+        otherLessonId: other.lessonId,
+        otherTitle: other.title,
+      });
+    }
+    if (ownBefore && other.ordinal < ownOrdinal && other.document.some((raw) => compareSlotOf(raw) === "interim")) {
+      out.push({
+        slot: "interim",
+        reason: "interim_before_before",
+        blockId: ownBefore.id,
+        otherHolds: "interim",
+        otherLessonId: other.lessonId,
+        otherTitle: other.title,
+      });
+    }
+  }
+  return out;
 }
 
 /** The editor-facing sentence for one conflict (authoring chrome is
@@ -76,6 +146,15 @@ export function voiceCompareConflicts(
 export function voiceCompareConflictMessage(conflict: VoiceCompareConflict): string {
   if (conflict.reason === "twice_in_lesson") {
     return `This lesson has ${conflict.blockIds.length} "${conflict.slot}" voice tasks; a course can have only one.`;
+  }
+  if (conflict.reason === "interim_before_before") {
+    if (conflict.otherHolds === null) {
+      return `The "interim" voice task comes before the "before" voice task in this lesson; the interim recording has to come after it.`;
+    }
+    if (conflict.otherHolds === "before") {
+      return `The "interim" voice task is in a lesson that comes before "${conflict.otherTitle}", which holds the course's "before" voice task; the interim recording has to come after it.`;
+    }
+    return `The published lesson "${conflict.otherTitle}" has the course's "interim" voice task and comes before this lesson; the "before" voice task has to come first.`;
   }
   return `The published lesson "${conflict.otherTitle}" already has the course's "${conflict.slot}" voice task; a course can have only one.`;
 }

@@ -7,7 +7,7 @@ import {
   type OtherPublishedLesson,
 } from "./voiceCompare";
 
-function voice(id: string, compare?: "before" | "after") {
+function voice(id: string, compare?: "before" | "interim" | "after") {
   return {
     id,
     kind: "task",
@@ -102,5 +102,70 @@ describe("beforeListenFor (AUTH-020)", () => {
   it("does not throw on a document or a list written under another shape", () => {
     expect(beforeListenFor([null, "text", { not: "an array" }, [null, 3, withList("b", "before", "nope")]])).toBeUndefined();
     expect(beforeListenFor([[withList("b", "before", ["ok", 3, "  "])]])).toEqual(["ok"]);
+  });
+});
+
+describe("voiceCompareConflicts: the interim slot (VOICE-017)", () => {
+  const lessonAt = (lessonId: string, ordinal: number, ...blocks: unknown[]): OtherPublishedLesson => ({
+    lessonId,
+    title: `T-${lessonId}`,
+    ordinal,
+    document: blocks,
+  });
+
+  it("allows before then interim in the same lesson", () => {
+    expect(voiceCompareConflicts(LESSON_1, doc(voice("b", "before"), voice("i", "interim")), [], 1)).toEqual([]);
+  });
+
+  it("refuses interim then before in the same lesson", () => {
+    const conflicts = voiceCompareConflicts(LESSON_1, doc(voice("i", "interim"), voice("b", "before")), [], 1);
+    expect(conflicts).toEqual([
+      { slot: "interim", reason: "interim_before_before", blockId: "i", otherHolds: null, otherLessonId: null, otherTitle: null },
+    ]);
+    expect(voiceCompareConflictMessage(conflicts[0])).toContain("in this lesson");
+  });
+
+  it("refuses an interim in a lesson before the lesson that holds the before task", () => {
+    const others = [lessonAt(LESSON_2, 2, voice("b", "before"))];
+    const conflicts = voiceCompareConflicts(LESSON_1, doc(voice("i", "interim")), others, 1);
+    expect(conflicts).toEqual([
+      { slot: "interim", reason: "interim_before_before", blockId: "i", otherHolds: "before", otherLessonId: LESSON_2, otherTitle: "T-lesson-2" },
+    ]);
+    expect(voiceCompareConflictMessage(conflicts[0])).toContain('"T-lesson-2"');
+  });
+
+  it("allows an interim in a lesson after the lesson that holds the before task", () => {
+    const others = [lessonAt(LESSON_1, 1, voice("b", "before"))];
+    expect(voiceCompareConflicts(LESSON_2, doc(voice("i", "interim")), others, 2)).toEqual([]);
+  });
+
+  it("does not order two lessons with the same ordinal", () => {
+    const others = [lessonAt(LESSON_1, 3, voice("b", "before"))];
+    expect(voiceCompareConflicts(LESSON_2, doc(voice("i", "interim")), others, 3)).toEqual([]);
+  });
+
+  it("allows an interim with no before task in the course (it then runs without a baseline)", () => {
+    expect(voiceCompareConflicts(LESSON_1, doc(voice("i", "interim")), [lessonAt(LESSON_2, 2, prose("p"))], 1)).toEqual([]);
+  });
+
+  it("refuses publishing a before below a lesson that already holds the interim", () => {
+    const others = [lessonAt(LESSON_1, 1, voice("i", "interim"))];
+    const conflicts = voiceCompareConflicts(LESSON_2, doc(voice("b", "before")), others, 2);
+    expect(conflicts).toMatchObject([{ reason: "interim_before_before", blockId: "b", otherHolds: "interim", otherLessonId: LESSON_1 }]);
+  });
+
+  it("skips the cross-lesson order check when an ordinal is not known", () => {
+    const others: OtherPublishedLesson[] = [{ lessonId: LESSON_2, title: "x", document: [voice("b", "before")] }];
+    expect(voiceCompareConflicts(LESSON_1, doc(voice("i", "interim")), others)).toEqual([]);
+  });
+
+  it("refuses two interims, in one lesson and across lessons", () => {
+    expect(voiceCompareConflicts(LESSON_1, doc(voice("a", "interim"), voice("b", "interim")), [], 1)).toEqual([
+      { slot: "interim", reason: "twice_in_lesson", blockIds: ["a", "b"] },
+    ]);
+    const others = [lessonAt(LESSON_1, 1, voice("a", "interim"))];
+    expect(voiceCompareConflicts(LESSON_2, doc(voice("b", "interim")), others, 2)).toEqual([
+      { slot: "interim", reason: "held_by_other_lesson", blockId: "b", otherLessonId: LESSON_1, otherTitle: "T-lesson-1" },
+    ]);
   });
 });

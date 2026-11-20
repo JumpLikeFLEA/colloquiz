@@ -86,3 +86,19 @@ describe("beforeAfterView", () => {
     expect(onInvalid).toHaveBeenCalledOnce();
   });
 });
+
+describe("the interim slot (VOICE-017)", () => {
+  const Li = lesson("Li", 2, [voice("vi", "interim" as never)]);
+
+  it("is not located by the before/after screen", () => {
+    const slots = locateSlots([L1, Li, L4]);
+    expect(Object.keys(slots)).toEqual(["before", "after"]);
+    expect(slots.before).toMatchObject({ blockId: "vb" });
+    expect(slots.after).toMatchObject({ blockId: "va" });
+  });
+
+  it("leaves the view unchanged when the course has an interim block too", () => {
+    const takes = [take("t1", "L1", "vb"), take("ti", "Li", "vi"), take("t2", "L4", "va")];
+    expect(beforeAfterView([L1, Li, L4], takes, comment)).toEqual(beforeAfterView([L1, L4], takes, comment));
+  });
+});

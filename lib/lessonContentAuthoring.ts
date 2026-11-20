@@ -123,7 +123,7 @@ export async function otherPublishedLessons(
 
   const { data: lessons, error: lessonsErr } = await supabase
     .from("lessons")
-    .select("id, title, published_version_id")
+    .select("id, title, ordinal, published_version_id")
     .eq("course_id", lesson.course_id)
     .neq("id", lessonId)
     .not("published_version_id", "is", null);
@@ -145,7 +145,7 @@ export async function otherPublishedLessons(
     if (document === undefined) {
       throw new Error(`publish: could not read published version of lesson ${l.id} for the voice-task check`);
     }
-    return { lessonId: l.id as string, title: l.title as string, document };
+    return { lessonId: l.id as string, title: l.title as string, document, ordinal: l.ordinal as number };
   });
 }
 

@@ -1,6 +1,12 @@
 import { FeedbackContentSchema, type FeedbackContent } from "../feedback/content";
 import type { InlineContent } from "../lessons/inline";
-import { VOICE_COMPARE_SLOTS, VoiceTaskBlockSchema, type VoiceCompareSlot } from "../lessons/taskBlocks";
+import { VoiceTaskBlockSchema } from "../lessons/taskBlocks";
+
+/** The cohort before/after screen shows these two slots only. The `interim` slot
+ * (VOICE-017, docs/decisions/0229) is the end of the free first lesson: it has its own
+ * analysis and never appears here. */
+export const BEFORE_AFTER_SLOTS = ["before", "after"] as const;
+export type BeforeAfterSlot = (typeof BEFORE_AFTER_SLOTS)[number];
 
 /**
  * COH-005 (docs/decisions/0115) — the before/after screen's view of one run
@@ -65,15 +71,15 @@ export type BeforeAfterView = { before: SlotView; after: SlotView; comment: Fina
  * not SQL (0100 Decision 3), so a direct RPC call could leave two; the
  * earliest lesson by ordinal, then the earliest block, wins.
  */
-export function locateSlots(lessons: readonly ReadableLesson[]): Record<VoiceCompareSlot, SlotLocation | null> {
-  const out: Record<VoiceCompareSlot, SlotLocation | null> = { before: null, after: null };
+export function locateSlots(lessons: readonly ReadableLesson[]): Record<BeforeAfterSlot, SlotLocation | null> {
+  const out: Record<BeforeAfterSlot, SlotLocation | null> = { before: null, after: null };
   const ordered = [...lessons].sort((a, b) => a.ordinal - b.ordinal);
   for (const lesson of ordered) {
     for (const raw of lesson.document) {
       const parsed = VoiceTaskBlockSchema.safeParse(raw);
       if (!parsed.success || !parsed.data.compare) continue;
       const slot = parsed.data.compare;
-      if (out[slot]) continue;
+      if (slot === "interim" || out[slot]) continue;
       out[slot] = {
         lessonId: lesson.lessonId,
         blockId: parsed.data.id,
@@ -115,6 +121,6 @@ export function beforeAfterView(
     if (parsed.success) comment = { kind: "published", body: parsed.data };
     else onInvalidComment();
   }
-  const [before, after] = VOICE_COMPARE_SLOTS.map((slot) => slotView(slots[slot], takes));
+  const [before, after] = BEFORE_AFTER_SLOTS.map((slot) => slotView(slots[slot], takes));
   return { before, after, comment };
 }
