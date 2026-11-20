@@ -2,7 +2,7 @@
 
 **Colloquiz — https://colloquiz.app**
 
-Version 1.11 · Last updated 2026-11-10
+Version 1.12 · Last updated 2026-11-20
 
 > **Source of truth.** This file is the canonical text. `app/(colloquiz)/(legal)/privacy/page.tsx`
 > renders it; edit here first. Placeholders in `[BRACKETS]` must be filled before
@@ -43,11 +43,14 @@ Version 1.11 · Last updated 2026-11-10
 > It must be published before migration 109 is applied to hosted: a written answer sent to a
 > teacher is a new data category, which docs/decisions/0095 counts as material. The Telegram
 > drafts of docs/decisions/0201 (OPS-029) were numbered 1.11 and subprocessors 1.8; they now
-> apply as 1.12 and 1.8, merged by hand into this text (subprocessors stays 1.7 in this card). Section 8 lists written answers in the
+> apply as 1.13 and 1.9, merged by hand into this text (subprocessors stays 1.7 in this card). Section 8 lists written answers in the
 > export, which WRITE-005 builds: push that card in the same sitting that applies 109 to hosted,
 > so no answer exists while the export omits it. If `writing_submissions`, `writing_feedback` or
 > `_writing_can_review` change who can read an answer, or an AI check is added (0225 Decision 13),
 > re-check sections 3 to 5, 7 and 12.
+>
+> **1.12 adds the end-of-lesson comparison (docs/decisions/0229, VOICE-017).** It ships in the
+> same push as VOICE-017's code, which is what sends the outline.
 
 ---
 
@@ -287,10 +290,13 @@ your recording, and no one else does:
   from which it reads the audio. We send it no name or email; the address contains random
   identifiers.
 - **Anthropic** receives the transcript, the task and the list of expressions the author
-  wrote for it, and our instruction, and returns the feedback. For a final recording it also
-  receives the transcript of your first recording and the goal and main error from that
-  recording's feedback, so it can compare the two. It does not receive the audio or your
-  account details.
+  wrote for it, and our instruction, and returns the feedback. For a final recording, and
+  for an end-of-lesson recording (usually at the end of a course's free first lesson), it
+  also receives the transcript of your first recording and the goal and main error from
+  that recording's feedback, so it can compare the two. For an end-of-lesson recording it
+  also receives an outline of the course's later lessons (their titles, descriptions and
+  the expressions their speaking tasks practise), so the feedback can point to lessons that
+  practise what it found. It does not receive the audio or your account details.
 
 Both providers receive what you say, so please do not say anything in a recording that you
 would not want written down, such as health details or other people's personal data.
@@ -465,7 +471,9 @@ two AI systems work on your recording:
    those 3 minutes.
 2. A language model (**Anthropic's Claude**) reads that transcript and returns feedback:
    which of the expressions the author listed you used, one main error, what worked, a
-   goal for next time, and, for a final recording, how it compares with your first.
+   goal for next time, and, for a final or an end-of-lesson recording, how it compares with your
+   first. Feedback on an end-of-lesson recording can also point to up to two later
+   lessons of the course that practise something it found.
 
 Every piece of this feedback is labelled **"AI feedback"**, and it can be wrong; the
 transcript it is made from can contain mistakes too. It is not a grade, it is not
@@ -509,7 +517,9 @@ keeps, where it keeps it, and why it does not train on recordings. Version 1.9 a
 importing a course from a file, for authors who have the permission (sections 3 to 7, 9 and 12).
 Version 1.10 removed Discord sign-in, which is no longer offered (section 3.1). Version 1.11
 added written answers that you can send to a course author or a teacher, and the feedback
-they write on them (sections 3 to 5, 7 to 9 and 12).
+they write on them (sections 3 to 5, 7 to 9 and 12). Version 1.12 added feedback on an
+end-of-lesson recording, which is compared with your first recording and can point to later
+lessons of the course (sections 5 and 12).
 
 ---
 

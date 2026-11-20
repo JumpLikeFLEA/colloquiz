@@ -296,7 +296,10 @@ accepts its intent as met. (owner, 2026-11-20)
 
 ## Not done yet
 
-- Hosted migration 111 (owner, through the hosted-apply gate; a session applies it locally only).
+- Hosted migration 111: applied to hosted on 2026-11-20 through the hosted-apply gate, at the owner's
+  request (evidence on #320). Read-only probe afterwards: `voice_analyses_instruction_check` is
+  `CHECK ((instruction = ANY (ARRAY['first'::text, 'final'::text, 'interim'::text])))`, and `migration list
+  --linked` shows 111 under both local and remote.
 - OPS-041 (legal text), published before any interim task is created in production.
 - VOICE-018 (the offer and the sign-in invitation).
 - final-v2 (judges the interim `next_step`; Decision 10).
