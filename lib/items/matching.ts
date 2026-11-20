@@ -70,18 +70,10 @@ const MatchingPayloadSchema = z
     presentation: z.enum(["pairs", "sort"]).default("pairs"),
   })
   .superRefine((payload, ctx) => {
-    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+    const { unusedKeys } = checkExplanationCoverage(
       payload.pairs.map((pair) => pair.explanationRef),
       payload.explanations,
-      payload.fallbackExplanation,
     );
-    if (missingRefs.length > 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["explanations"],
-        message: `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${missingRefs.join(", ")}`,
-      });
-    }
     if (unusedKeys.length > 0) {
       ctx.addIssue({
         code: "custom",

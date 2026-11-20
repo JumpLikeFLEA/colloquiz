@@ -78,7 +78,7 @@ export function ExplanationField({
 }) {
   return (
     <TextAreaField
-      label="Explanation (optional — falls back to the item's fallback below)"
+      label="Explanation (optional)"
       value={explanationOf(explanations, id)}
       onChange={(text) => onChange(withExplanation(explanations, id, text))}
       errors={errors}
@@ -102,8 +102,9 @@ export function FallbackExplanationField({
   return (
     <div className="space-y-1 pt-2 border-t border-border">
       <p className="text-xs text-muted-foreground">
-        {count} part{count === 1 ? "" : "s"} above: give each its own explanation, or set one fallback here to cover
-        every part that has none.
+        {count} part{count === 1 ? "" : "s"} above: give each its own explanation, set one fallback here to cover
+        every part that has none, or leave both empty. Without an explanation, a learner who gets a part wrong sees
+        the right answer only.
       </p>
       <TextAreaField
         label="Fallback explanation (optional)"

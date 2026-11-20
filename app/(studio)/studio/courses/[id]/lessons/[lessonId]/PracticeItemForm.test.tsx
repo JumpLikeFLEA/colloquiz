@@ -140,20 +140,18 @@ describe("PracticeItemForm — parse rejections are reachable and shown in place
     expect(latest?.payload.presentation).toBe("sort");
   });
 
-  it("slots: explanationRef with no explanation and no fallback (docs/decisions/0017)", () => {
+  it("slots: a stale explanations key shows its error; a missing explanation shows none (docs/decisions/0230)", () => {
     const base = exampleFor("slots —") as SlotsItem;
-    const invalid: SlotsItem = {
+    const noExplanation: SlotsItem = {
       ...base,
       payload: { ...base.payload, gaps: [base.payload.gaps[0]], explanations: {}, fallbackExplanation: undefined },
     };
+    expect(parseItem(noExplanation).ok).toBe(true);
 
-    const errors = fieldErrorsFor(invalid);
-    render(<PracticeItemForm item={invalid} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
+    const stale: SlotsItem = { ...noExplanation, payload: { ...noExplanation.payload, explanations: { stale: "Old." } } };
+    const errors = fieldErrorsFor(stale);
+    render(<PracticeItemForm item={stale} onChange={() => {}} errors={errors} onUploadImage={noopUploadImage} />);
 
-    expect(
-      screen.getByText(
-        `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${invalid.payload.gaps[0].explanationRef}`,
-      ),
-    ).toBeDefined();
+    expect(screen.getByText("explanations has key(s) no gap's explanationRef references: stale")).toBeDefined();
   });
 });

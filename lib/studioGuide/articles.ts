@@ -90,7 +90,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "To make a variant for another level or group, press the copy icon on a lesson row, or **Duplicate** at the top of the course, and confirm. The copy opens at once.",
     ],
     tips: [
-      "Write an explanation for each wrong answer. Learners see it when they check their answer.",
+      "Explanations are optional. With one, a learner who gets a part wrong can press **Why?** to read it; without one, they see the right answer only. One **Fallback explanation** covers every part that has none.",
       "An **Image** block shows the picture at its own shape, uncropped. Press **Upload image**, or click the image box and paste a picture with Ctrl+V (⌘V on a Mac). Then choose its **Size**: Small, Medium, Large or Full width.",
       "An **Audio** block takes an MP3 or M4A file up to 5 MB: press **Upload audio**, then add a caption if you want one, such as the line being spoken. Learners play it in the lesson; nothing depends on it.",
       "A **Table** can be **Hidden until the learner opens it**. Learners see **Show the text** and open it when they want: use it for an audio script, so they listen before they read.",

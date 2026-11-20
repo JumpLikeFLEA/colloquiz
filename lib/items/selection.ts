@@ -53,18 +53,10 @@ const SelectionPayloadSchema = z
     fallbackExplanation: FallbackExplanationSchema,
   })
   .superRefine((payload, ctx) => {
-    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+    const { unusedKeys } = checkExplanationCoverage(
       [payload.explanationRef],
       payload.explanations,
-      payload.fallbackExplanation,
     );
-    if (missingRefs.length > 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["explanations"],
-        message: `explanationRef "${payload.explanationRef}" resolves to no explanation and no fallbackExplanation is set`,
-      });
-    }
     if (unusedKeys.length > 0) {
       ctx.addIssue({
         code: "custom",

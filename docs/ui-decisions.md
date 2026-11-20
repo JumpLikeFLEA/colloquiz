@@ -3237,3 +3237,13 @@ Appended to in the same commit as the change it records. Referenced from
   light, and 360/360 dark. Studio's `main` is 474/360 light and 491/360 dark, the lesson editor's
   pre-existing header overflow (see the AUTH-020 entry). Do not move these classes into
   `ui/radio-group.tsx`: it is vendored.
+- Explanations are optional (2026-11-20, ad hoc, docs/decisions/0230). Studio's per-part field
+  is labelled "Explanation (optional)". The fallback's note adds that leaving both empty shows the
+  learner the right answer only. Saving an exercise with no explanation no longer shows "explanationRef(s)
+  resolve to no explanation…". In the player, a wrong part with no explanation has no "Why?" and
+  keeps its right-answer marking ("Correct: …", or the correct option ticked). Copy only; no new
+  classes. Measured (local stack, Edge, 360px): a multiple-choice exercise saved with no
+  explanation showed the toast "Saved." and 0 explanation errors. Answered wrongly in the preview,
+  it showed 0 "Why?" buttons, the correct option ticked, 0 page errors and 360/360. In the same
+  preview, the lesson's other exercise, which has an explanation, showed 1 "Why?" after a wrong
+  answer. Do not bring back the coverage error: a stale `explanations` key is still rejected.

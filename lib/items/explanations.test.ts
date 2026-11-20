@@ -1,24 +1,20 @@
 import { describe, expect, it } from "vitest";
-import {
-  checkExplanationCoverage,
-  ExplanationResolutionError,
-  resolveExplanations,
-} from "./explanations";
+import { checkExplanationCoverage, resolveExplanations } from "./explanations";
 import { matchingModule } from "./matching";
 import { orderingModule } from "./ordering";
 import { selectionModule } from "./selection";
 import { selectionGridModule } from "./selectionGrid";
 import { slotsModule } from "./slots";
-import type { Item, ItemScoreResult, SelectionGridItem, SubResult } from "./types";
+import type { SelectionGridItem } from "./types";
 
 /**
  * ITEM-009. Coverage (parse-time rejection / acceptance) is exercised per
  * type below, through each type's own `parse` — the same "fixtures are built
  * THROUGH parse" convention every other lib/items/*.test.ts follows.
  * `resolveExplanations` itself is type-agnostic, so its own tests build one
- * representative item (selection_grid, since it has multiple sub-parts) and
- * one bypass-parse case to exercise the defensive branch parse is supposed
- * to make unreachable.
+ * representative item (selection_grid, since it has multiple sub-parts).
+ * Explanations are optional (docs/decisions/0230, revising 0017 Decision 3):
+ * a ref with no entry and no fallback parses and resolves to nothing.
  */
 
 function parsedGrid(payload: unknown, id = "grid-1"): SelectionGridItem {
@@ -28,29 +24,18 @@ function parsedGrid(payload: unknown, id = "grid-1"): SelectionGridItem {
 }
 
 describe("checkExplanationCoverage", () => {
-  it("reports a used ref with no specific entry and no fallback as missing", () => {
-    const { missingRefs } = checkExplanationCoverage(["a", "b"], { a: "explains a" }, undefined);
-    expect(missingRefs).toEqual(["b"]);
-  });
-
-  it("reports nothing missing once a fallback is set, regardless of which refs have specific entries", () => {
-    const { missingRefs } = checkExplanationCoverage(["a", "b"], {}, "fallback text");
-    expect(missingRefs).toEqual([]);
-  });
-
   it("reports an explanations key no ref uses as unused", () => {
-    const { unusedKeys } = checkExplanationCoverage(["a"], { a: "explains a", stale: "orphaned" }, undefined);
+    const { unusedKeys } = checkExplanationCoverage(["a"], { a: "explains a", stale: "orphaned" });
     expect(unusedKeys).toEqual(["stale"]);
   });
 
-  it("reports both empty when every ref has a specific entry and none are unused", () => {
-    const { missingRefs, unusedKeys } = checkExplanationCoverage(["a", "b"], { a: "x", b: "y" }, undefined);
-    expect(missingRefs).toEqual([]);
+  it("reports nothing when a used ref has no entry: explanations are optional (0230)", () => {
+    const { unusedKeys } = checkExplanationCoverage(["a", "b"], { a: "explains a" });
     expect(unusedKeys).toEqual([]);
   });
 });
 
-describe("every type rejects at parse when a used explanationRef has no coverage", () => {
+describe("every type accepts at parse a used explanationRef with no explanation (0230)", () => {
   it("selection", () => {
     const result = selectionModule.parse({
       id: "i",
@@ -67,8 +52,7 @@ describe("every type rejects at parse when a used explanationRef has no coverage
         explanations: {},
       },
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.explanations")).toBe(true);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   it("selection_grid", () => {
@@ -81,8 +65,7 @@ describe("every type rejects at parse when a used explanationRef has no coverage
         explanations: {},
       },
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.explanations")).toBe(true);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   it("ordering", () => {
@@ -98,8 +81,7 @@ describe("every type rejects at parse when a used explanationRef has no coverage
         explanations: {},
       },
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.explanations")).toBe(true);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   it("matching", () => {
@@ -114,8 +96,7 @@ describe("every type rejects at parse when a used explanationRef has no coverage
         explanations: {},
       },
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.explanations")).toBe(true);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   it("slots", () => {
@@ -129,8 +110,7 @@ describe("every type rejects at parse when a used explanationRef has no coverage
         explanations: {},
       },
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.some((e) => e.field === "payload.explanations")).toBe(true);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 });
 
@@ -200,23 +180,20 @@ describe("resolveExplanations", () => {
     expect(resolved.find((r) => r.subResultId === "r3")?.explanation).toBe("General fallback explanation.");
   });
 
-  it("throws ExplanationResolutionError for a wrong subResult with no explanation anywhere — unreachable via parse()", () => {
-    // Hand-constructed, bypassing parse() on purpose: this is the state
-    // checkExplanationCoverage exists to make impossible for real content.
-    const item: Item = {
-      id: "bad-item",
-      type: "selection_grid",
-      payload: {
-        prompt: "x",
-        rows: [{ id: "r1", statement: "s", correct: true, explanationRef: "orphan-ref" }],
-        explanations: {},
-      },
-    } as unknown as Item;
-    const subResults: SubResult[] = [
-      { id: "r1", correct: false, earned: 0, possible: 1, explanationRef: "orphan-ref" },
-    ];
-    const result: ItemScoreResult = { earned: 0, possible: 1, subResults };
-
-    expect(() => resolveExplanations(item, result)).toThrow(ExplanationResolutionError);
+  it("leaves out a wrong subResult with no explanation anywhere, and keeps the ones that have one (0230)", () => {
+    const item = parsedGrid({
+      prompt: "True or false?",
+      rows: [
+        { id: "r1", statement: "s1", correct: true, explanationRef: "exp-r1" },
+        { id: "r2", statement: "s2", correct: true, explanationRef: "exp-r2" },
+      ],
+      explanations: { "exp-r2": "Explains r2." },
+    });
+    const result = selectionGridModule.score(item, [
+      { rowId: "r1", answer: false },
+      { rowId: "r2", answer: false },
+    ]);
+    expect(result.subResults.filter((r) => !r.correct).map((r) => r.id)).toEqual(["r1", "r2"]);
+    expect(resolveExplanations(item, result)).toEqual([{ subResultId: "r2", explanation: "Explains r2." }]);
   });
 });

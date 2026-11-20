@@ -104,7 +104,9 @@ async function expectBlockedThenSaved(variant: ExerciseVariant, fill: () => void
   await waitFor(() =>
     expect(screen.getAllByText("Too small: expected string to have >=1 characters").length).toBeGreaterThan(0),
   );
-  expect(screen.queryAllByText(/resolves? to no explanation/).length).toBeGreaterThan(0);
+  // Explanations are optional (docs/decisions/0230): an empty exercise is
+  // blocked by its empty fields above, never by a missing explanation.
+  expect(screen.queryAllByText(/resolves? to no explanation/)).toHaveLength(0);
 
   fill();
   await save();

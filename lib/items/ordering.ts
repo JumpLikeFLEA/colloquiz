@@ -58,18 +58,10 @@ const OrderingPayloadSchema = z
       });
     }
 
-    const { missingRefs, unusedKeys } = checkExplanationCoverage(
+    const { unusedKeys } = checkExplanationCoverage(
       payload.elements.map((element) => element.explanationRef),
       payload.explanations,
-      payload.fallbackExplanation,
     );
-    if (missingRefs.length > 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["explanations"],
-        message: `explanationRef(s) resolve to no explanation and no fallbackExplanation is set: ${missingRefs.join(", ")}`,
-      });
-    }
     if (unusedKeys.length > 0) {
       ctx.addIssue({
         code: "custom",

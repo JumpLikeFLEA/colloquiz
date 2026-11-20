@@ -32,22 +32,19 @@ function errorFields(item: Item): string[] {
 const EXPECTED_EMPTY_FIELDS: Record<ExerciseVariant, string[]> = {
   multiple_choice: [
     "payload.correctOptionIds",
-    "payload.explanations",
     "payload.options",
     "payload.options[0].text",
     "payload.options[1].text",
     "payload.prompt",
   ],
-  true_false: ["payload.correctOptionIds", "payload.explanations", "payload.prompt"],
-  true_false_statements: ["payload.explanations", "payload.prompt", "payload.rows[0].statement"],
+  true_false: ["payload.correctOptionIds", "payload.prompt"],
+  true_false_statements: ["payload.prompt", "payload.rows[0].statement"],
   put_in_order: [
     "payload.elements[0].text",
     "payload.elements[1].text",
-    "payload.explanations",
     "payload.prompt",
   ],
   match_pairs: [
-    "payload.explanations",
     "payload.left[0].content.text",
     "payload.left[1].content.text",
     "payload.prompt",
@@ -55,15 +52,14 @@ const EXPECTED_EMPTY_FIELDS: Record<ExerciseVariant, string[]> = {
     "payload.right[1].content.text",
   ],
   sort_into_groups: [
-    "payload.explanations",
     "payload.left[0].content.text",
     "payload.left[1].content.text",
     "payload.prompt",
     "payload.right[0].content.text",
     "payload.right[1].content.text",
   ],
-  fill_the_gaps: ["payload.explanations", "payload.gaps[0].acceptedAnswers[0]", "payload.prompt"],
-  drag_words_into_gaps: ["payload.explanations", "payload.gaps[0].acceptedAnswers[0]", "payload.prompt"],
+  fill_the_gaps: ["payload.gaps[0].acceptedAnswers[0]", "payload.prompt"],
+  drag_words_into_gaps: ["payload.gaps[0].acceptedAnswers[0]", "payload.prompt"],
 };
 
 /** The smallest real content an author could type into each template. */

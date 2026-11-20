@@ -16,11 +16,11 @@ import type { Item, ItemScoreResult, SubResult } from "./types";
  *   convention `explanationRef` itself already follows. This module only
  *   holds the ONE check and the ONE resolver every type's payload shares,
  *   so the rule lives in one place instead of five near-identical copies.
- * - Coverage is checked at PARSE TIME (each type's `superRefine` calls
- *   `checkExplanationCoverage` and turns a gap into a `ParseError`), so an
- *   item that fails to resolve every explanation it can produce never
- *   reaches `score`/`resolveExplanations` at all — see the decision doc for
- *   why that is a parse-time rejection, not a runtime blank or a warning.
+ * - An explanation is OPTIONAL (owner, 2026-11-20, docs/decisions/0230,
+ *   revising 0017 Decision 3). A sub-part whose ref resolves to neither an
+ *   entry nor the fallback simply has no explanation: the learner sees the
+ *   right answer ("Correct: …", PLAY-015) and no "Why?". Parse still rejects
+ *   an `explanations` key no sub-part references (a stale ref).
  */
 
 /** An authored explanation is prose: multi-line allowed via authoredString's
@@ -48,24 +48,21 @@ export interface ItemExplanationFields {
 }
 
 /**
- * Checks that every `usedRef` (the `explanationRef` values an item's own
- * sub-parts declare, e.g. `payload.rows.map(r => r.explanationRef)`)
- * resolves to either a specific entry in `explanations` or, absent that, to
- * `fallbackExplanation`. Also flags `explanations` entries that no sub-part
- * references — almost always a stale ref after a row/pair/gap was renamed
- * or removed, so it is rejected the same way an unknown id anywhere else in
- * this engine is rejected, not silently ignored.
+ * Flags `explanations` entries that no sub-part references (`usedRefs` are
+ * the `explanationRef` values an item's own sub-parts declare, e.g.
+ * `payload.rows.map(r => r.explanationRef)`) — almost always a stale ref
+ * after a row/pair/gap was renamed or removed, so it is rejected the same way
+ * an unknown id anywhere else in this engine is rejected, not silently
+ * ignored. A ref with no entry and no fallback is NOT flagged: explanations
+ * are optional (docs/decisions/0230).
  */
 export function checkExplanationCoverage(
   usedRefs: readonly string[],
   explanations: ExplanationsMap,
-  fallbackExplanation: string | undefined,
-): { missingRefs: string[]; unusedKeys: string[] } {
+): { unusedKeys: string[] } {
   const used = new Set(usedRefs);
-  const missingRefs =
-    fallbackExplanation === undefined ? [...used].filter((ref) => !(ref in explanations)) : [];
   const unusedKeys = Object.keys(explanations).filter((key) => !used.has(key));
-  return { missingRefs, unusedKeys };
+  return { unusedKeys };
 }
 
 /** One resolved explanation for a wrong sub-response, in the order
@@ -78,52 +75,23 @@ export interface ResolvedExplanation {
   explanation: string;
 }
 
-/**
- * Thrown only when a `SubResult.explanationRef` resolves to neither a
- * specific entry nor a fallback — a state `checkExplanationCoverage`
- * guarantees cannot occur for any item that passed `parse()`. It exists as
- * an assertion, not a scoring outcome: reaching it means an `Item` was
- * constructed some way other than through `parseItem`/a type's own `parse`.
- */
-export class ExplanationResolutionError extends Error {
-  readonly itemId: string;
-  readonly subResultId: string;
-  readonly explanationRef: string;
-
-  constructor(itemId: string, subResultId: string, explanationRef: string) {
-    super(
-      `item "${itemId}": subResult "${subResultId}" has explanationRef "${explanationRef}", which resolves to ` +
-        "no specific explanation and no fallbackExplanation — this item did not pass parse()",
-    );
-    this.name = "ExplanationResolutionError";
-    this.itemId = itemId;
-    this.subResultId = subResultId;
-    this.explanationRef = explanationRef;
-  }
-}
-
-function resolveOne(
-  itemId: string,
-  fields: ItemExplanationFields,
-  subResult: SubResult,
-): string {
-  const specific = fields.explanations[subResult.explanationRef];
-  if (specific !== undefined) return specific;
-  if (fields.fallbackExplanation !== undefined) return fields.fallbackExplanation;
-  throw new ExplanationResolutionError(itemId, subResult.id, subResult.explanationRef);
+function resolveOne(fields: ItemExplanationFields, subResult: SubResult): string | undefined {
+  return fields.explanations[subResult.explanationRef] ?? fields.fallbackExplanation;
 }
 
 /**
  * Maps a scored item's WRONG sub-responses to their resolved explanation
  * text, in presentation order. A correct sub-response is excluded, never
- * returned with an empty explanation.
+ * returned with an empty explanation; so is a wrong one the author gave no
+ * explanation (no entry, no fallback — docs/decisions/0230).
  */
 export function resolveExplanations(item: Item, result: ItemScoreResult): ResolvedExplanation[] {
   const fields: ItemExplanationFields = item.payload;
-  return result.subResults
-    .filter((subResult) => !subResult.correct)
-    .map((subResult) => ({
-      subResultId: subResult.id,
-      explanation: resolveOne(item.id, fields, subResult),
-    }));
+  const resolved: ResolvedExplanation[] = [];
+  for (const subResult of result.subResults) {
+    if (subResult.correct) continue;
+    const explanation = resolveOne(fields, subResult);
+    if (explanation !== undefined) resolved.push({ subResultId: subResult.id, explanation });
+  }
+  return resolved;
 }

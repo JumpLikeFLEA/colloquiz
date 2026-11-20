@@ -79,28 +79,34 @@ describe("parseLessonDocument — rejections", () => {
     }
   });
 
-  it("rejects an explanation-coverage gap on a practice block — every 0008-0017 invariant applies", () => {
-    const badItem = {
-      id: "q-no-explanation",
-      kind: "practice",
-      type: "selection",
-      payload: {
-        prompt: "Pick one",
-        multi: false,
-        options: [
-          { id: "a", text: "A" },
-          { id: "b", text: "B" },
-        ],
-        correctOptionIds: ["a"],
-        explanationRef: "r1",
-        explanations: {}, // r1 resolves to nothing, and no fallback is set
-      },
-    };
-    const result = parseLessonDocument([badItem]);
+  const selectionWithExplanations = (id: string, explanations: Record<string, string>) => ({
+    id,
+    kind: "practice",
+    type: "selection",
+    payload: {
+      prompt: "Pick one",
+      multi: false,
+      options: [
+        { id: "a", text: "A" },
+        { id: "b", text: "B" },
+      ],
+      correctOptionIds: ["a"],
+      explanationRef: "r1",
+      explanations,
+    },
+  });
+
+  it("rejects a stale explanations key on a practice block — the item invariants apply", () => {
+    const result = parseLessonDocument([selectionWithExplanations("q-stale", { r1: "Why.", gone: "Stale." })]);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors[0].field.startsWith("q-no-explanation")).toBe(true);
+      expect(result.errors[0].field.startsWith("q-stale")).toBe(true);
     }
+  });
+
+  it("accepts a practice block with no explanation and no fallback (docs/decisions/0230)", () => {
+    const result = parseLessonDocument([selectionWithExplanations("q-no-explanation", {})]);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   it("rejects a duplicate block id", () => {

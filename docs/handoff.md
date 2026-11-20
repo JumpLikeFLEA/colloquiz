@@ -227,7 +227,10 @@ immediately. There is no per-lesson purchase and no drip release.
 ## Scoring and progress
 
 - **Nothing demotivates the learner.** 8 of 10 correct is 80%, counted as
-  progress — not a failed item. Every mistake gets an explanation.
+  progress — not a failed item. Every mistake shows the right answer, and
+  its explanation when the author wrote one (owner, 2026-11-20,
+  docs/decisions/0230: explanations are optional, no longer required to
+  save or publish).
 - **One attempt is sufficient.** Retakes are optional, never required. A
   learner may get an item wrong, see why, and move on. Nothing blocks progress
   on a wrong answer.
