@@ -4,6 +4,7 @@ import type { TokenUsage } from "../../costs/usageEvent";
 import { AnalysisStepError, isTransientStatus } from "./errors";
 import {
   FinalAnalysisSchema,
+  InterimAnalysisSchema,
   FirstAnalysisSchema,
   type RawAnalysis,
   type VoiceAnalysisInstruction,
@@ -62,7 +63,8 @@ export function createClaudeAnalyser(options: {
   return {
     async analyse({ kind, system, user }) {
       const model = options.model ?? voiceAnalysisModel();
-      const schema = kind === "first" ? FirstAnalysisSchema : FinalAnalysisSchema;
+      const schema =
+        kind === "first" ? FirstAnalysisSchema : kind === "interim" ? InterimAnalysisSchema : FinalAnalysisSchema;
 
       let res;
       try {

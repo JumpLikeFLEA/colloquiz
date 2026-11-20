@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawFinalAnalysis, RawFirstAnalysis } from "./schema";
+import type { OutlineLesson, RawFinalAnalysis, RawFirstAnalysis, RawInterimAnalysis } from "./schema";
 import { findQuoteSpan, validateAnalysis, type ValidateContext } from "./validate";
 
 const T = "I made up my mind. I go, I went to the school and I used to uh play football. <b>Fun</b> time.";
@@ -93,7 +93,7 @@ describe("validateAnalysis: verbatim only", () => {
     expect(out.errors.map((e) => e.quote)).toEqual(["I go, I went"]);
     expect(out.thenNow).toHaveLength(1);
     expect(out.thenNow[0].thenSpan).toEqual({ start: 5, end: 17 });
-    expect(out.dropped).toEqual({ expressions: 0, highlights: 0, errors: 1, thenNow: 2 });
+    expect(out.dropped).toEqual({ expressions: 0, highlights: 0, errors: 1, thenNow: 2, courseLinks: 0 });
   });
 
   it("drops an expression that is not on the authors list, and a repeated one", () => {
@@ -310,5 +310,114 @@ describe("validateAnalysis: goal and coverage", () => {
     );
     expect(out.summary.length).toBeLessThanOrEqual(600);
     expect(out.highlights).toEqual([]);
+  });
+});
+
+describe("validateAnalysis: an interim analysis (VOICE-017)", () => {
+  const OUTLINE: OutlineLesson[] = [
+    { number: 2, lessonId: "lesson-id-2", title: "Telling a story", about: null, expressions: [] },
+    { number: 3, lessonId: "lesson-id-3", title: "Plans", about: null, expressions: [] },
+    { number: 4, lessonId: "lesson-id-4", title: "Airport", about: null, expressions: [] },
+  ];
+  const interim = (over: Partial<RawInterimAnalysis> = {}): RawInterimAnalysis => {
+    const { goal: _goal, ...rest } = raw();
+    return {
+      ...rest,
+      then_now: [],
+      goal_reached: { status: "partly", note: "Once." },
+      course_links: [],
+      next_step: "Keep going.",
+      ...over,
+    };
+  };
+  const ictx = (over: Partial<ValidateContext> = {}) =>
+    ctx({ kind: "interim", includeGoal: false, firstGoal: "Use I used to twice.", courseOutline: OUTLINE, ...over });
+  const link = (lesson: number, quote: string, note = "Lesson practises this.") => ({ lesson, quote, note });
+
+  it("keeps a link to a lesson in the outline, with the lesson's id and the quote's offsets", () => {
+    const out = validateAnalysis(interim({ course_links: [link(2, "I go, I went")] }), ictx());
+    expect(out.courseLinks).toEqual([
+      {
+        lessonId: "lesson-id-2",
+        lesson: 2,
+        quote: "I go, I went",
+        span: { start: T.indexOf("I go, I went"), end: T.indexOf("I go, I went") + "I go, I went".length },
+        note: "Lesson practises this.",
+      },
+    ]);
+    expect(out.dropped.courseLinks).toBe(0);
+  });
+
+  it("drops a link to a lesson that is not in the outline (control: the same quote to lesson 2 is kept)", () => {
+    const out = validateAnalysis(interim({ course_links: [link(9, "I go, I went"), link(2, "I go, I went")] }), ictx());
+    expect(out.courseLinks.map((l) => l.lesson)).toEqual([2]);
+    expect(out.dropped.courseLinks).toBe(1);
+  });
+
+  it("drops every link when the request carried no outline", () => {
+    const out = validateAnalysis(interim({ course_links: [link(2, "I go, I went")] }), ictx({ courseOutline: [] }));
+    expect(out.courseLinks).toEqual([]);
+    expect(out.dropped.courseLinks).toBe(1);
+  });
+
+  it("drops a link whose quote is not in the transcript (control: a true quote is kept)", () => {
+    const out = validateAnalysis(interim({ course_links: [link(2, "I goed there"), link(3, "I used to")] }), ictx());
+    expect(out.courseLinks.map((l) => l.lesson)).toEqual([3]);
+    expect(out.dropped.courseLinks).toBe(1);
+  });
+
+  it("drops a link on words an earlier link already uses, and a second link to the same lesson", () => {
+    const out = validateAnalysis(
+      interim({
+        course_links: [
+          link(2, "I go, I went to the school"),
+          link(3, "went to the school and"),
+          link(2, "I used to"),
+          link(4, "I used to"),
+        ],
+      }),
+      ictx(),
+    );
+    expect(out.courseLinks.map((l) => [l.lesson, l.quote])).toEqual([
+      [2, "I go, I went to the school"],
+      [4, "I used to"],
+    ]);
+    expect(out.dropped.courseLinks).toBe(2);
+  });
+
+  it("keeps at most two links, in the model's order", () => {
+    const out = validateAnalysis(
+      interim({ course_links: [link(2, "I go, I went"), link(3, "I used to"), link(4, "play football")] }),
+      ictx(),
+    );
+    expect(out.courseLinks.map((l) => l.lesson)).toEqual([2, 3]);
+    expect(out.dropped.courseLinks).toBe(1);
+  });
+
+  it("drops a link with an empty note", () => {
+    const out = validateAnalysis(interim({ course_links: [link(2, "I go, I went", "  ")] }), ictx());
+    expect(out.courseLinks).toEqual([]);
+  });
+
+  it("judges the goal and names a next step as a final does, with no goal card", () => {
+    const out = validateAnalysis(interim(), ictx());
+    expect(out.kind).toBe("interim");
+    expect(out.goal).toBeNull();
+    expect(out.goalReached).toEqual({ status: "partly", note: "Once." });
+    expect(out.nextStep).toBe("Keep going.");
+  });
+
+  it("keeps then/now pairs only when there is a first transcript", () => {
+    const pair = { then: "before", now: "I go, I went", note: "Better." };
+    const withFirst = validateAnalysis(interim({ then_now: [pair] }), ictx({ firstTranscript: "before words" }));
+    expect(withFirst.thenNow).toHaveLength(1);
+    const without = validateAnalysis(interim({ then_now: [pair] }), ictx({ firstTranscript: null, firstGoal: null }));
+    expect(without.thenNow).toEqual([]);
+    expect(without.goalReached).toBeNull();
+    expect(without.dropped.thenNow).toBe(1);
+  });
+
+  it("a final or first analysis has no course links", () => {
+    expect(validateAnalysis(raw(), ctx()).courseLinks).toEqual([]);
   });
 });

@@ -11,7 +11,7 @@ import {
 } from "./schema";
 import { STT_MODEL, type SttClient } from "./assemblyai";
 import { validateAnalysis } from "./validate";
-import type { FirstAnalysisContext } from "./schema";
+import type { FirstAnalysisContext, OutlineLesson } from "./schema";
 
 /**
  * One take, from "sent" to "stored" (VOICE-012, docs/decisions/0156 Decisions 1, 4, 5, 0187).
@@ -47,6 +47,8 @@ export type JobContext = {
    * analysis, or one with neither (a take analysed before VOICE-013 still has a goal).
    */
   baseline: { submissionId: string; transcript: string; firstAnalysis: FirstAnalysisContext | null } | null;
+  /** An `interim` task only: the course's later lessons (outline.ts). Absent or empty for any other task. */
+  outline?: readonly OutlineLesson[];
 };
 
 export type LoadedJob = { ok: true; job: JobContext } | { ok: false; code: string };
@@ -211,7 +213,10 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
     // ── Step 2: the analysis ────────────────────────────────────────────────
     const choice = chooseInstruction(job.task.role, job.baseline !== null);
     claudeStep = choice.kind;
-    const firstTranscript = choice.kind === "final" ? (job.baseline?.transcript ?? null) : null;
+    // `final` and `interim` compare with the learner's `before` take; `interim` also runs without one.
+    const compares = choice.kind === "final" || choice.kind === "interim";
+    const firstTranscript = compares ? (job.baseline?.transcript ?? null) : null;
+    const courseOutline = choice.kind === "interim" ? (job.outline ?? []) : [];
     const system = await deps.instruction(choice.kind);
     const answer = await deps.claude.analyse({
       kind: choice.kind,
@@ -222,7 +227,8 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
         expressions: job.task.listenFor,
         transcript,
         firstTranscript,
-        firstAnalysis: choice.kind === "final" ? (job.baseline?.firstAnalysis ?? null) : null,
+        firstAnalysis: compares ? (job.baseline?.firstAnalysis ?? null) : null,
+        courseOutline,
       }),
     });
     // Recorded before the result is validated or stored: a take replaced meanwhile still cost this.
@@ -238,7 +244,8 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
       firstTranscript,
       expressionsListed: job.task.listenFor,
       includeGoal: choice.includeGoal,
-      firstGoal: choice.kind === "final" ? (job.baseline?.firstAnalysis?.goal ?? null) : null,
+      firstGoal: compares ? (job.baseline?.firstAnalysis?.goal ?? null) : null,
+      courseOutline,
       analysedSeconds: audioSeconds === null ? null : Math.min(Math.round(audioSeconds), VOICE_ANALYSIS_MAX_SECONDS),
       truncated,
     });
@@ -251,7 +258,7 @@ export async function runVoiceAnalysis(submissionId: string, deps: PipelineDeps)
       promptVersion: promptVersionLabel(choice.kind),
       model: answer.model,
       usage: { ...answer.usage, audioSeconds, sttDeleted },
-      baselineSubmissionId: choice.kind === "final" ? (job.baseline?.submissionId ?? null) : null,
+      baselineSubmissionId: compares ? (job.baseline?.submissionId ?? null) : null,
     });
     // False: the take was replaced or purged while this ran, its row is gone, and the
     // result writes nothing (096, voice_analysis_finish).

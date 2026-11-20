@@ -261,3 +261,58 @@ describe("parseStatusBody", () => {
     expect(parseStatusBody({ ok: true, status: "done" })).toBeNull();
   });
 });
+
+describe("parseStoredAnalysis: an interim analysis (VOICE-017)", () => {
+  const link = (over: Record<string, unknown> = {}) => ({
+    lessonId: "lesson-id-2",
+    lesson: 2,
+    quote: "I go",
+    span: span("I go"),
+    note: "Lesson 2 practises the past simple.",
+    ...over,
+  });
+  const interim = (over: Record<string, unknown> = {}) =>
+    stored({
+      kind: "interim",
+      goal: null,
+      goalReached: { status: "partly", note: "Once." },
+      nextStep: "Keep going.",
+      courseLinks: [link()],
+      ...over,
+    });
+
+  it("reads goalReached, nextStep and the course links like a final's fields", () => {
+    const a = parseStoredAnalysis(interim(), TRANSCRIPT)!;
+    expect(a.kind).toBe("interim");
+    expect(a.goalReached).toEqual({ status: "partly", note: "Once." });
+    expect(a.nextStep).toBe("Keep going.");
+    expect(a.courseLinks).toEqual([link()]);
+  });
+
+  it("drops a link whose span no longer points at its quote, and a malformed one (control: the true link stays)", () => {
+    const a = parseStoredAnalysis(
+      interim({ courseLinks: [link({ span: { start: 0, end: 3 } }), null, { lesson: "x" }, link({ lessonId: "lesson-id-3", lesson: 3 })] }),
+      TRANSCRIPT,
+    )!;
+    expect(a.courseLinks.map((l) => l.lesson)).toEqual([3]);
+  });
+
+  it("reads an interim row with no baseline transcript: then/now pairs go, the rest stays", () => {
+    const a = parseStoredAnalysis(interim(), TRANSCRIPT, null)!;
+    expect(a.thenNow).toEqual([]);
+    expect(a.courseLinks).toHaveLength(1);
+  });
+
+  it("a first or final row has no course links, even if the stored row carries some", () => {
+    expect(parseStoredAnalysis(stored({ courseLinks: [link()] }), TRANSCRIPT)!.courseLinks).toEqual([]);
+    expect(parseStoredAnalysis(stored({ kind: "final", courseLinks: [link()] }), TRANSCRIPT)!.courseLinks).toEqual([]);
+  });
+
+  it("a stored first row reads as before (course links empty, goal kept, no final fields)", () => {
+    const a = parseStoredAnalysis(stored(), TRANSCRIPT)!;
+    expect(a.goal).toBe("Use the past simple two times.");
+    expect(a.goalReached).toBeNull();
+    expect(a.nextStep).toBeNull();
+    expect(a.courseLinks).toEqual([]);
+  });
+});

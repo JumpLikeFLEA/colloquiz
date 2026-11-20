@@ -10,6 +10,7 @@ import { VOICE_BUCKET } from "../recording";
 import { createSttClient, type SttClient } from "./assemblyai";
 import { createClaudeAnalyser } from "./claude";
 import { findBeforeBlock, firstAnalysisContext, voiceTaskInfo } from "./context";
+import { buildCourseOutline, type OutlineRow } from "./outline";
 import { parseVoiceAnalysisMode } from "./mode";
 import {
   runVoiceAnalysis,
@@ -134,18 +135,58 @@ export function createPipelineStore(admin: SupabaseClient): PipelineStore {
       if (!lookup.ok) return { ok: false, code: lookup.reason };
 
       let baseline: JobContext["baseline"] = null;
-      if (lookup.task.role === "after") baseline = await loadBaseline(admin, sub);
+      const role = lookup.task.role;
+      if (role === "after" || role === "interim") baseline = await loadBaseline(admin, sub);
+      const outline = role === "interim" ? await loadOutline(admin, sub) : [];
 
-      return { ok: true, job: { objectName: sub.object_name, task: lookup.task, baseline } };
+      return { ok: true, job: { objectName: sub.object_name, task: lookup.task, baseline, outline } };
     },
   };
 }
 
 /**
- * The learner's `before` take and its transcript, for an `after` task. The before block is
+ * The later lessons of the course, for an `interim` task (outline.ts). The rows are read in
+ * the course page's order (ordinal, then slug: lib/coursePage.ts), because the number the model
+ * names a lesson by is the position the page prints. Only the published version's document is
+ * read, and only for its voice tasks' expressions.
+ */
+async function loadOutline(
+  admin: SupabaseClient,
+  sub: { course_id: string; lesson_id: string },
+): Promise<ReturnType<typeof buildCourseOutline>> {
+  const { data: lessons, error } = await admin
+    .from("lessons")
+    .select("id, title, description, published_version_id, archived_at")
+    .eq("course_id", sub.course_id)
+    .order("ordinal", { ascending: true })
+    .order("slug", { ascending: true });
+  if (error) rpcFailed("lessons read", error);
+  const versionIds = (lessons ?? []).flatMap((l) =>
+    l.published_version_id && !l.archived_at ? [l.published_version_id as string] : [],
+  );
+  const documents = new Map<string, unknown>();
+  if (versionIds.length > 0) {
+    const { data: versions, error: vErr } = await admin.from("lesson_versions").select("id, document").in("id", versionIds);
+    if (vErr) rpcFailed("lesson_versions read", vErr);
+    for (const v of versions ?? []) documents.set(v.id as string, v.document as unknown);
+  }
+  const rows: OutlineRow[] = (lessons ?? []).map((l) => ({
+    id: l.id as string,
+    title: l.title as string,
+    description: (l.description as string | null) ?? null,
+    published_version_id: (l.published_version_id as string | null) ?? null,
+    archived_at: (l.archived_at as string | null) ?? null,
+    document: documents.get(l.published_version_id as string),
+  }));
+  return buildCourseOutline(rows, sub.lesson_id);
+}
+
+/**
+ * The learner's `before` take and its transcript, for an `after` or `interim` task. The before block is
  * found in the course's published lessons (lib/lessons/voiceCompare.ts keeps it unique);
  * the take is the learner's current one in the same slot (the same enrolment, or none).
- * Anything missing is "no baseline", and the pipeline falls back to `first`.
+ * Anything missing is "no baseline": an `after` task then falls back to `first`, and an
+ * `interim` task runs without a first take.
  */
 async function loadBaseline(
   admin: SupabaseClient,

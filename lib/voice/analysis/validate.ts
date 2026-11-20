@@ -1,4 +1,11 @@
-import type { RawAnalysis, Span, StoredAnalysis, VoiceAnalysisInstruction } from "./schema";
+import {
+  MAX_COURSE_LINKS,
+  type OutlineLesson,
+  type RawAnalysis,
+  type Span,
+  type StoredAnalysis,
+  type VoiceAnalysisInstruction,
+} from "./schema";
 
 /**
  * Model output is checked before it is stored (docs/decisions/0156 "Model output is
@@ -12,6 +19,9 @@ import type { RawAnalysis, Span, StoredAnalysis, VoiceAnalysisInstruction } from
  *   first stays, the later one is dropped. Lists are not resolved against each other: an
  *   expression sits legitimately inside an error ("made my mind"), and how the layers
  *   draw over each other is the view's decision (VOICE-014).
+ * - An interim analysis's course links are kept only for a lesson number the request's outline
+ *   carried (stored with that lesson's id), with a quote found in this take, on words no earlier
+ *   kept link uses, for a lesson no earlier link used, and at most two (VOICE-017, 0229).
  * - Every count is computed here from what was kept.
  * - Nothing is rewritten, escaped or stripped. A quote containing `<b>` stays that text;
  *   the view renders text, never HTML.
@@ -34,6 +44,8 @@ export type ValidateContext = {
   expressionsListed: readonly string[];
   /** A `before` task only; any other task has no goal card. */
   includeGoal: boolean;
+  /** The outline the interim request carried: a link's `lesson` must be one of these (empty for any other kind). */
+  courseOutline?: readonly OutlineLesson[];
   /** The goal the first analysis set, for a final: `goal_reached` is kept only when there is one. */
   firstGoal?: string | null;
   /** Seconds of the take that were analysed (null when unknown), and whether it was longer. */
@@ -66,7 +78,8 @@ function clamp(text: string): string {
 }
 
 export function validateAnalysis(raw: RawAnalysis, ctx: ValidateContext): StoredAnalysis {
-  const dropped = { expressions: 0, highlights: 0, errors: 0, thenNow: 0 };
+  const dropped = { expressions: 0, highlights: 0, errors: 0, thenNow: 0, courseLinks: 0 };
+  const compares = ctx.kind === "final" || ctx.kind === "interim";
 
   const exprTaken: Span[] = [];
   const seenExpressions = new Set<string>();
@@ -127,7 +140,7 @@ export function validateAnalysis(raw: RawAnalysis, ctx: ValidateContext): Stored
   const mainError = raw.main_error === null ? null : (keptIndex.get(raw.main_error) ?? null);
 
   const thenNow: StoredAnalysis["thenNow"] = [];
-  if ("then_now" in raw && ctx.kind === "final" && ctx.firstTranscript !== null) {
+  if ("then_now" in raw && compares && ctx.firstTranscript !== null) {
     const thenTaken: Span[] = [];
     const nowTaken: Span[] = [];
     for (const p of raw.then_now) {
@@ -150,12 +163,32 @@ export function validateAnalysis(raw: RawAnalysis, ctx: ValidateContext): Stored
   const goal = ctx.includeGoal && "goal" in raw ? clamp(raw.goal) : "";
   let goalReached: StoredAnalysis["goalReached"] = null;
   let nextStep: string | null = null;
-  if ("next_step" in raw && ctx.kind === "final") {
+  if ("next_step" in raw && compares) {
     const note = raw.goal_reached ? clamp(raw.goal_reached.note) : "";
     // Judging a goal nobody gave the model is made up, whatever it answered.
     if (raw.goal_reached && note && ctx.firstGoal) goalReached = { status: raw.goal_reached.status, note };
     const step = clamp(raw.next_step);
     nextStep = step.length > 0 ? step : null;
+  }
+
+  const courseLinks: StoredAnalysis["courseLinks"] = [];
+  if ("course_links" in raw) {
+    const linkTaken: Span[] = [];
+    const linkedLessons = new Set<number>();
+    for (const l of raw.course_links) {
+      const target = ctx.kind === "interim" ? ctx.courseOutline?.find((o) => o.number === l.lesson) : undefined;
+      const note = clamp(l.note);
+      // The quote's first occurrence, not the first free one: a link on words an earlier link already
+      // marks is the same point twice, and moving it to a later repeat of those words would hide that.
+      const span = target && note && courseLinks.length < MAX_COURSE_LINKS ? findQuoteSpan(ctx.transcript, l.quote) : null;
+      if (!target || !span || linkedLessons.has(l.lesson) || linkTaken.some((t) => overlaps(t, span))) {
+        dropped.courseLinks++;
+        continue;
+      }
+      linkedLessons.add(l.lesson);
+      linkTaken.push(span);
+      courseLinks.push({ lessonId: target.lessonId, lesson: target.number, quote: l.quote.trim(), span, note });
+    }
   }
 
   return {
@@ -171,6 +204,7 @@ export function validateAnalysis(raw: RawAnalysis, ctx: ValidateContext): Stored
     errors,
     mainError,
     thenNow,
+    courseLinks,
     counts: {
       errors: errors.length,
       highlights: highlights.length,

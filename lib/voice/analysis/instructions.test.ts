@@ -23,15 +23,17 @@ describe("versioned instruction files (VOICE-013)", () => {
   it("the stored label is the file stem", () => {
     expect(instructionFileName("first")).toBe("first-v1.md");
     expect(instructionFileName("final")).toBe("final-v1.md");
+    expect(instructionFileName("interim")).toBe("interim-v1.md");
     expect(promptVersionLabel("first")).toBe("first-v1");
     expect(promptVersionLabel("final")).toBe("final-v1");
+    expect(promptVersionLabel("interim")).toBe("interim-v1");
   });
 
   it("no instruction file is left in the folder that the registry does not name or a label cannot find", () => {
     // v0 files stay: a stored `first-v0` row still points at them. Anything else must be
     // <instruction>-v<number>.md, so a misnamed file cannot sit beside the live one.
     for (const file of readdirSync(DIR)) {
-      expect(file).toMatch(/^(first|final)-v\d+\.md$/);
+      expect(file).toMatch(/^(first|final|interim)-v\d+\.md$/);
     }
   });
 
@@ -66,7 +68,17 @@ describe("the instruction text treats learner speech as data", () => {
     const tags =
       kind === "first"
         ? ["task_prompt", "expressions", "transcript"]
-        : ["task_prompt", "expressions", "first_transcript", "first_goal", "first_main_error", "final_transcript"];
+        : kind === "interim"
+          ? [
+              "task_prompt",
+              "expressions",
+              "first_transcript",
+              "first_goal",
+              "first_main_error",
+              "interim_transcript",
+              "course_outline",
+            ]
+          : ["task_prompt", "expressions", "first_transcript", "first_goal", "first_main_error", "final_transcript"];
     for (const tag of tags) expect(body).toContain(`<${tag}>`);
   });
 
@@ -80,7 +92,23 @@ describe("the instruction text treats learner speech as data", () => {
     expect(final).not.toMatch(/^\d+\. `goal`:/m);
   });
 
-  it("both ban scores, levels and counts: the page computes its own counts", () => {
+  it("interim answers the first goal and names a next step, links to later lessons, and sets no goal of its own", () => {
+    const interim = instructionBody(text("interim"));
+    expect(interim).toContain("`goal_reached`");
+    expect(interim).toContain("`next_step`");
+    expect(interim).toContain("`course_links`");
+    expect(interim).not.toMatch(/^\d+\. `goal`:/m);
+    expect(interim.split("-->")[0]).toBeDefined();
+    expect(text("interim").split("-->")[0]).toContain("Never edit");
+  });
+
+  it("interim keeps the offer out of the model's mouth: the page makes it (0229 Decision 5)", () => {
+    const interim = instructionBody(text("interim"));
+    expect(interim).toContain("Never mention buying, prices, access, offers, discounts or time limits");
+    expect(interim).toContain("never tell them whether to continue");
+  });
+
+  it("every instruction bans scores, levels and counts: the page computes its own counts", () => {
     for (const kind of VOICE_ANALYSIS_INSTRUCTIONS) {
       expect(instructionBody(text(kind))).toContain("No score, no level, no grade, no percentage");
     }
@@ -98,7 +126,7 @@ describe("the instruction text matches what the pipeline does with it (0188 Deci
     expect(instructionBody(text(kind))).toContain("`expression` is the line from <expressions> copied exactly");
   });
 
-  it("the Never-list is the same text in both instructions", () => {
+  it("the Never-list is the same text in all three instructions", () => {
     const block = (kind: VoiceAnalysisInstruction) => {
       const body = instructionBody(text(kind));
       const from = body.indexOf("Never list:");
@@ -109,7 +137,21 @@ describe("the instruction text matches what the pipeline does with it (0188 Deci
     };
     const first = block("first");
     const final = block("final");
+    const interim = block("interim");
     expect(first.length).toBeGreaterThan(300);
     expect(final).toBe(first);
+    expect(interim).toBe(first);
+  });
+});
+
+describe("interim-v1 is the text recorded in docs/decisions/0229", () => {
+  it("matches the decision file byte for byte", () => {
+    const decision = readFileSync(
+      join(process.cwd(), "docs", "decisions", "0229-voice017-interim-instruction.md"),
+      "utf8",
+    ).replace(/\r/g, "");
+    const block = decision.match(/````markdown\n([\s\S]*?)\n````/);
+    expect(block).not.toBeNull();
+    expect(`${block![1]}\n`).toBe(text("interim").replace(/\r/g, ""));
   });
 });

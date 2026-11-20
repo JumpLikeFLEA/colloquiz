@@ -1,6 +1,6 @@
 import type { VoiceCompareSlot } from "../../lessons/taskBlocks";
 import { promptVersionLabel } from "./instructions";
-import type { FirstAnalysisContext, VoiceAnalysisInstruction } from "./schema";
+import type { FirstAnalysisContext, OutlineLesson, VoiceAnalysisInstruction } from "./schema";
 
 export { promptVersionLabel };
 
@@ -32,13 +32,16 @@ export type InstructionChoice = { kind: VoiceAnalysisInstruction; includeGoal: b
 
 /**
  * 0156 Decision 10: an `after` task gets `final` when the learner's `before` take has a
- * transcript to compare with, and every other task gets `first`. The goal card is the
+ * transcript to compare with, and every other task gets `first`. An `interim` task (the end of
+ * the free first lesson, 0229) always gets `interim`, with or without a baseline: the
+ * instruction handles a missing first take itself (0229 Decision 8). The goal card is the
  * `before` task's alone: a final answers that goal instead of setting a new one, and a
  * task with no role, or an `after` task with nothing to compare against, has no goal
  * card (VOICE-013, 0188).
  */
 export function chooseInstruction(role: VoiceCompareSlot | undefined, hasBaseline: boolean): InstructionChoice {
   if (role === "before") return { kind: "first", includeGoal: true };
+  if (role === "interim") return { kind: "interim", includeGoal: false };
   if (role === "after" && hasBaseline) return { kind: "final", includeGoal: false };
   return { kind: "first", includeGoal: false };
 }
@@ -51,6 +54,8 @@ export type AnalysisRequestInput = {
   firstTranscript: string | null;
   /** The stored first analysis (its goal and main error), for a final. Null when it has neither. */
   firstAnalysis?: FirstAnalysisContext | null;
+  /** Interim only: the later lessons (outline.ts). Left out of the message when empty. */
+  courseOutline?: readonly OutlineLesson[];
 };
 
 /** The user message, in the shape scripts/voice-bench-claude.ts measured. */
@@ -65,6 +70,15 @@ export function buildUserMessage(input: AnalysisRequestInput): string {
       `<first_transcript>${promptSafeText(input.firstTranscript)}</first_transcript>\n` +
       firstAnalysisBlock(input.firstAnalysis ?? null) +
       `<final_transcript>${promptSafeText(input.transcript)}</final_transcript>`
+    );
+  }
+  if (input.kind === "interim") {
+    return (
+      head +
+      (input.firstTranscript === null ? "" : `<first_transcript>${promptSafeText(input.firstTranscript)}</first_transcript>\n`) +
+      (input.firstTranscript === null ? "" : firstAnalysisBlock(input.firstAnalysis ?? null)) +
+      `<interim_transcript>${promptSafeText(input.transcript)}</interim_transcript>` +
+      courseOutlineBlock(input.courseOutline ?? [])
     );
   }
   return `${head}<transcript>${promptSafeText(input.transcript)}</transcript>`;
@@ -89,4 +103,28 @@ function firstAnalysisBlock(first: FirstAnalysisContext | null): string {
       `</first_main_error>\n`;
   }
   return out;
+}
+
+/**
+ * The outline as data: one block of "key: value" lines per lesson, a blank line between
+ * blocks. Author text, so every value passes the angle-bracket filter and loses its line
+ * breaks (a description holding "lesson: 9" on a line of its own must not read as a block).
+ * The lesson id is never sent: the model names a lesson by its number, and validate.ts maps
+ * the number back (0229 Decision 18). Empty: no tag, which is how the instruction knows the
+ * course has no later lessons.
+ */
+function courseOutlineBlock(outline: readonly OutlineLesson[]): string {
+  if (outline.length === 0) return "";
+  const line = (v: string) => promptSafeText(v).replace(/\s+/g, " ").trim();
+  const blocks = outline.map((l) =>
+    [
+      `lesson: ${l.number}`,
+      `title: ${line(l.title)}`,
+      l.about ? `about: ${line(l.about)}` : null,
+      l.expressions.length > 0 ? `expressions: ${l.expressions.map(line).join("; ")}` : null,
+    ]
+      .filter((x): x is string => x !== null)
+      .join("\n"),
+  );
+  return `\n<course_outline>\n${blocks.join("\n\n")}\n</course_outline>`;
 }

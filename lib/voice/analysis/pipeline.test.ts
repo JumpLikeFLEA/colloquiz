@@ -236,6 +236,53 @@ describe("runVoiceAnalysis: the whole run", () => {
     expect(t.finished[0].result.nextStep).toBe("Keep going.");
   });
 
+  const OUTLINE = [
+    { number: 2, lessonId: "33333333-3333-4333-8333-333333333333", title: "Telling a story", about: null, expressions: ["first of all"] },
+  ];
+  const INTERIM_RAW = {
+    ...(FINAL_RAW as object),
+    course_links: [{ lesson: 2, quote: "I used to", note: "Lesson 2 practises stories." }],
+  } as RawAnalysis;
+  const interimAnswer = async (): Promise<ClaudeAnalysis> => ({ ...(await finalAnswer()), raw: INTERIM_RAW });
+  const INTERIM_JOB = (baseline: JobContext["baseline"]): LoadedJob => ({
+    ok: true,
+    job: { ...JOB, task: { ...JOB.task, role: "interim" }, baseline, outline: OUTLINE },
+  });
+
+  it("an interim task gets the interim instruction, the first take, the outline, and stores links by lesson id", async () => {
+    const t = build({
+      job: INTERIM_JOB({
+        submissionId: "22222222-2222-2222-2222-222222222222",
+        transcript: "before words",
+        firstAnalysis: { goal: "Use I used to twice.", mainError: null },
+      }),
+      claude: interimAnswer,
+    });
+    await runVoiceAnalysis(ID, t.deps);
+    expect(t.claudeCalls[0].kind).toBe("interim");
+    expect(t.claudeCalls[0].system).toBe("INSTRUCTION interim");
+    expect(t.claudeCalls[0].user).toContain("<first_transcript>before words</first_transcript>");
+    expect(t.claudeCalls[0].user).toContain("<interim_transcript>");
+    expect(t.claudeCalls[0].user).toContain("lesson: 2\ntitle: Telling a story");
+    expect(t.claudeCalls[0].user).not.toContain("33333333");
+    const f = t.finished[0];
+    expect(f.instruction).toBe("interim");
+    expect(f.promptVersion).toBe("interim-v1");
+    expect(f.baselineSubmissionId).toBe("22222222-2222-2222-2222-222222222222");
+    expect(f.result.goalReached).toEqual({ status: "partly", note: "You used it once." });
+    expect(f.result.courseLinks).toMatchObject([{ lessonId: "33333333-3333-4333-8333-333333333333", lesson: 2, quote: "I used to" }]);
+  });
+
+  it("an interim task with no before take still runs as interim: no first take, no goal verdict, links kept", async () => {
+    const t = build({ job: INTERIM_JOB(null), claude: interimAnswer });
+    await runVoiceAnalysis(ID, t.deps);
+    expect(t.claudeCalls[0].kind).toBe("interim");
+    expect(t.claudeCalls[0].user).not.toContain("<first_transcript>");
+    expect(t.finished[0].baselineSubmissionId).toBeNull();
+    expect(t.finished[0].result.goalReached).toBeNull();
+    expect(t.finished[0].result.courseLinks).toHaveLength(1);
+  });
+
   it("a task with no role gets first without the goal card", async () => {
     const t = build({ job: { ok: true, job: { ...JOB, task: { ...JOB.task, role: undefined } } } });
     await runVoiceAnalysis(ID, t.deps);

@@ -36,6 +36,13 @@ const ErrorSchema = z.object({
   explanation: z.string(),
   span: SpanSchema,
 });
+const CourseLinkSchema = z.object({
+  lessonId: z.string(),
+  lesson: z.number().int(),
+  quote: z.string(),
+  span: SpanSchema,
+  note: z.string(),
+});
 const ThenNowSchema = z.object({
   then: z.string(),
   now: z.string(),
@@ -56,7 +63,7 @@ function lenientList<T extends z.ZodType>(item: T) {
 }
 
 const StoredSchema = z.object({
-  kind: z.enum(["first", "final"]),
+  kind: z.enum(["first", "final", "interim"]),
   summary: z.string().catch(""),
   howItSounds: z.string().catch(""),
   goal: z.string().nullable().catch(null),
@@ -70,6 +77,7 @@ const StoredSchema = z.object({
   errors: lenientList(ErrorSchema),
   mainError: z.number().int().nullable().catch(null),
   thenNow: lenientList(ThenNowSchema),
+  courseLinks: lenientList(CourseLinkSchema),
   counts: z.object({ expressionsListed: z.number().int().min(0) }).partial().catch({}),
   coverage: z
     .object({ analysedSeconds: z.number().nullable().catch(null), truncated: z.boolean().catch(false) })
@@ -103,8 +111,10 @@ export function parseStoredAnalysis(
     if (r.mainError === i) mainError = errors.length;
     errors.push(e);
   });
+  const compares = r.kind === "final" || r.kind === "interim";
+  const courseLinks = r.kind === "interim" ? r.courseLinks.filter((l) => pointsAt(transcript, l.span, l.quote)) : [];
   const thenNow =
-    r.kind === "final" && baselineTranscript !== null
+    compares && baselineTranscript !== null
       ? r.thenNow.filter(
           (p) => pointsAt(baselineTranscript, p.thenSpan, p.then) && pointsAt(transcript, p.nowSpan, p.now),
         )
@@ -115,13 +125,14 @@ export function parseStoredAnalysis(
     summary: r.summary,
     howItSounds: r.howItSounds,
     goal: r.kind === "first" ? r.goal : null,
-    goalReached: r.kind === "final" ? r.goalReached : null,
-    nextStep: r.kind === "final" ? r.nextStep : null,
+    goalReached: compares ? r.goalReached : null,
+    nextStep: compares ? r.nextStep : null,
     expressionsUsed,
     highlights,
     errors,
     mainError,
     thenNow,
+    courseLinks,
     counts: {
       errors: errors.length,
       highlights: highlights.length,
