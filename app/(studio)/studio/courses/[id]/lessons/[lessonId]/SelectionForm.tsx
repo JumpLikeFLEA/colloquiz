@@ -46,7 +46,7 @@ export function SelectionForm({
         Multiple correct answers (off = single choice / True-False)
       </label>
       <div className="space-y-2">
-        <label className={labelClass}>Options</label>
+        <label className={labelClass}>Options (mark the correct {payload.multi ? "answers" : "answer"})</label>
         {payload.multi ? (
           payload.options.map((option, i) => (
             <div key={option.id} className="flex items-start gap-2">
@@ -95,7 +95,11 @@ export function SelectionForm({
           >
             {payload.options.map((option, i) => (
               <div key={option.id} className="flex items-start gap-2">
-                <RadioGroupItem value={option.id} className="mt-2" aria-label={`Option ${i + 1} correct`} />
+                <RadioGroupItem
+                  value={option.id}
+                  className="mt-2 size-5 border-2 border-muted-foreground bg-card data-[state=checked]:border-brand [&_svg]:size-2.5 [&_svg]:fill-brand [&_svg]:text-brand"
+                  aria-label={`Option ${i + 1} correct`}
+                />
                 <div className="flex-1 min-w-0">
                   <input
                     value={option.text}

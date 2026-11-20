@@ -3225,3 +3225,15 @@ Appended to in the same commit as the change it records. Referenced from
   with two links, the second with one link and "Lesson 4" unlinked, the empty analysis with none. Not
   measured: Studio's list and detail page in a browser, dark mode, a phone. Do not decide in the client
   where a link opens: `lessonTargets` comes from the status route.
+- Multiple choice: the "correct" radio is visible (2026-11-20, ad hoc, author feedback). The
+  single-choice option rows in Studio's exercise form (`SelectionForm.tsx`) used the vendored
+  `RadioGroupItem` as is. Its `border-input` is `transparent` in light mode (`app/globals.css`
+  `--input`), so only a faint shadow showed. The form now passes `size-5 border-2
+  border-muted-foreground bg-card`, a `border-brand` ring and a brand dot when checked. The label
+  reads "Options (mark the correct answer)" ("answers" with multiple correct on). `ui/radio-group.tsx`
+  itself is unchanged, so other radios are untouched. Existing tokens; no new colours. Measured
+  (local stack, Edge, an editor adding a Multiple choice exercise): unchecked border `rgb(105, 104,
+  121)` at 2px on white, checked border and dot `rgb(79, 70, 229)`; document 360/360 and 1280/1280,
+  light, and 360/360 dark. Studio's `main` is 474/360 light and 491/360 dark, the lesson editor's
+  pre-existing header overflow (see the AUTH-020 entry). Do not move these classes into
+  `ui/radio-group.tsx`: it is vendored.
