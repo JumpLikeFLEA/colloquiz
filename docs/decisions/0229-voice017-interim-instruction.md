@@ -1,6 +1,6 @@
 # 0229 — VOICE-017: the interim instruction, feedback at the end of a free lesson
 
-Status: written 2026-11-20; VOICE-017 (#320). Follow-ups: VOICE-018 (#321), OPS-041 (#322).
+Status: written 2026-11-20; owner signed off on runs C and D on 2026-11-20; VOICE-017 (#320). Follow-ups: VOICE-018 (#321), OPS-041 (#322).
 
 ## Context
 
@@ -289,13 +289,18 @@ validator in either run.
   do not exist, so it was skipped.
 - `then_now` is 0 in every case again; goal_reached is `reached` in (a) and (c) of both runs.
 
+**Owner sign-off.** The issue's word list hit twice in run C case (b): "will" inside the correction of the
+learner's "I will splurge", and "buy" in the next-step example "I used to buy". Both are grammar talk or
+the learner's vocabulary, not an outcome promise or a sales word. The line's "0 hits" is a proxy; the owner
+accepts its intent as met. (owner, 2026-11-20)
+
 ## Not done yet
 
 - Hosted migration 111 (owner, through the hosted-apply gate; a session applies it locally only).
-- Owner sign-off on the bench outputs (acceptance line 7).
 - OPS-041 (legal text), published before any interim task is created in production.
 - VOICE-018 (the offer and the sign-in invitation).
 - final-v2 (judges the interim `next_step`; Decision 10).
+- then→now has not been run on a same-topic pair (true of final since 0188 too).
 
 ## Revisit when
 
@@ -304,3 +309,6 @@ validator in either run.
   and descriptions allow.
 - The outline should be stored with the analysis for reproducibility (it is rebuilt at analysis
   time today, so a later edit to a lesson changes what the same take would have been shown).
+- goal_reached reads as generous: a first goal naming "took" and "gave" was judged reached on "learned" and
+  "liked" in every run. If learners see `reached` for goals they did not meet, tighten how first words its
+  goals (first-v2) or interim's goal rule.
