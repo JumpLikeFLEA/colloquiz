@@ -1,8 +1,7 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
-import { notifyNewFeedback } from "@/lib/feedbackNotify";
 import {
   asFeedbackCategory,
   FEEDBACK_CATEGORY_KEYS,
@@ -153,22 +152,6 @@ export async function POST(req: NextRequest) {
       console.error("feedback insert failed", error);
       return NextResponse.json({ error: FEEDBACK_ERRORS.serverError }, { status: 500 });
     }
-
-    // Announce it AFTER the response. The row is committed and the user is
-    // about to be told so; the notification is the operator's convenience and
-    // must never be able to delay, fail or alter that. after() runs the
-    // callback once the response is finished (on Vercel, via waitUntil), and
-    // notifyNewFeedback never rejects — so the worst case is a line in the
-    // server log and an operator who has to open the queue themselves.
-    after(() =>
-      notifyNewFeedback({
-        category: body.category,
-        message: body.message.trim(),
-        route: body.route ?? null,
-        submittedBy: user.email,
-        userId: user.id,
-      }),
-    );
 
     return NextResponse.json({ ok: true });
   } catch (e) {

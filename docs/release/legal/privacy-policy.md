@@ -43,7 +43,7 @@ Version 1.12 · Last updated 2026-11-20
 > It must be published before migration 109 is applied to hosted: a written answer sent to a
 > teacher is a new data category, which docs/decisions/0095 counts as material. The Telegram
 > drafts of docs/decisions/0201 (OPS-029) were numbered 1.11 and subprocessors 1.8; they now
-> apply as 1.13 and 1.9, merged by hand into this text (subprocessors stays 1.7 in this card). Section 8 lists written answers in the
+> apply as 1.13 and 1.10, merged by hand into this text (subprocessors stays 1.7 in this card). Section 8 lists written answers in the
 > export, which WRITE-005 builds: push that card in the same sitting that applies 109 to hosted,
 > so no answer exists while the export omits it. If `writing_submissions`, `writing_feedback` or
 > `_writing_can_review` change who can read an answer, or an AI check is added (0225 Decision 13),

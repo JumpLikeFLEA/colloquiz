@@ -238,7 +238,9 @@ Account deletion calls the Files API to remove a deleted user's import files
 
 ## Discord feedback webhook
 
-Removed by OPS-040 (#319), owner 2026-11-14; not recreated.
+Removed by OPS-040 (#319), owner 2026-11-14; not recreated. The code, the variable in `.env.example` and the
+subprocessors row are gone (docs/decisions/0232). After the push the owner deletes the Vercel variable, then the
+webhook in Discord, in that order. New feedback is seen only by opening `/app/admin/feedback`.
 
 ## GitHub
 
@@ -260,8 +262,7 @@ Reconciled against
 `rg -o --no-filename "process\.env\.[A-Z0-9_]+" app lib scripts proxy.ts next.config.ts | sort -u`
 (28 names, printed in the evidence), plus names read indirectly, which that pattern
 misses: through an `env` parameter defaulting to `process.env`
-(`COURSE_IMPORT_MODEL`, `VOICE_ANALYSIS_MODEL`) or through a computed key
-(`FEEDBACK_DISCORD_WEBHOOK_URL`).
+(`COURSE_IMPORT_MODEL`, `VOICE_ANALYSIS_MODEL`).
 
 - **production**: set on Vercel for the live site.
 - **local-only**: scripts, tests, the CLI or the session hook; never on Vercel.
@@ -295,7 +296,6 @@ lacked and deleted `.env.local.example`, which was gitignored (`.gitignore:34`,
 | `ANTHROPIC_MODEL_GENERATOR` | quiz-only | `lib/generator/llm.ts`, `scripts/seed-questions-ai.ts` | yes | not set |
 | `ANTHROPIC_MODEL_CRITIC` | quiz-only | same | yes | not set |
 | `QUIZ_SESSION_TIMEOUT_MINUTES` | quiz-only | `lib/quizSession.ts` | yes | not set |
-| `FEEDBACK_DISCORD_WEBHOOK_URL` | removed by OPS-040 (#319), owner 2026-11-14; not recreated | `lib/feedbackNotify.ts` (computed key) | yes, until OPS-040 | not set |
 | `SUPABASE_ACCESS_TOKEN` | local-only (Supabase CLI and Management API) | not read by code | yes | not set |
 | `BENCH_EMAIL`, `BENCH_PASSWORD`, `BENCH_PROD_URL` | local-only | `scripts/bench.ts` | yes | not set |
 | `BUDGET_BASE_URL` | local-only | `scripts/budget.ts` | no | not set |
