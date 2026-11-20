@@ -241,6 +241,54 @@ B1-B2 take with no baseline, with the outline; (c) case (a) with no outline. Eac
 - `then_now` is 0 in every interim case, including (a) and (c), which had a baseline. That is a
   count over two runs on new transcripts; it is not compared with 0188.
 
+### Runs C and D (amended text, 2026-11-20)
+
+After Decision 25 (item 9's second bullet), same STT transcripts, same script, with one lesson added
+to the fixture outline as a **positive control**: lesson 6 "At school, at work, at home" (about: "at"
+with places, and no "the"; expressions: "at school", "at university", "at work"). Case (a)'s take
+contains "in the school and in the university" (checked in the transcript), so a correct link to
+lesson 6 is expected there. Directories: `authored/voice-bench/interim-2026-11-20-C` and `-D`. Run C: 4
+calls, $0.1054. Run D: 4 calls, $0.0808. 0 refusals, every call `end_turn`, 0 items dropped by the
+validator in either run.
+
+| case | run | then_now | goal_reached | course links (lesson: quote → note) | matching `errors` item |
+|---|---|---|---|---|---|
+| a | C | 0 | reached | lesson 6: "in the school and in the university" → Lesson 6 practises "at" with places and no "the", like "at school" and "at university". | "in the school and in the university" → "at school and at university" |
+| a | D | 0 | reached | lesson 6: the same quote, the same note | the same item |
+| b | C | 0 | null | none | none to match (1 error: "I will splurge on the clothes") |
+| b | D | 0 | null | none | none to match (0 errors) |
+| c | C | 0 | reached | none (no outline) | n/a |
+| c | D | 0 | reached | none (no outline) | n/a |
+
+- **Positive control:** lesson 6 is linked in case (a) in both runs (yes, yes).
+- **A link quoting a sentence with no matching `errors` item:** none, in either run. The only two links
+  both quote "in the school and in the university", which is an `errors` item in its own run. The sentence
+  is not correct English here ("at school and at university" is what the lesson teaches), so the link is
+  justified.
+- **Lesson 3 ("I'm going to")** is linked in no case of either run. Runs A/B, with the old text, had one
+  link to lesson 3, quoting the correct "I will tell you" (Decision 25). Two runs of the new text do not
+  show how often that would have happened again, so "the amendment removed it" is a hypothesis, not a
+  finding; what the rows show is that the only links are to lesson 6 and on an error item.
+- Every link's lesson is in that case's outline: yes. Case (c) `course_links` empty in both runs: yes.
+- **Word grep** over every learner-facing string in `raw.json` (summary, how_it_sounds, next_step,
+  every note and explanation), `will|you'll|buy|price|access|offer|discount|only|today|need`: run C 5
+  hits, run D 2 hits. None is an outcome promise or a sales word; all are grammar talk or an example:
+  - C (a) errors[0].explanation, "you need "up""; C (c) errors[0].explanation, "you need "up"";
+    D (a) errors[0].explanation, "so you need "up""; D (c) errors[0].explanation, "so you need "up"": `need`,
+    grammar.
+  - C (b) errors[0].explanation: "…use "would" (or "used to"), not "will". Also, "clothes" needs no
+    "the" here." (two hits, `will` and `need`): grammar.
+  - C (b) next_step: "…for example "I would spend..." or "I used to buy..."": `buy` inside an example
+    of a past habit for the learner to say, not an offer.
+  - Against the issue's own list (`will|you'll|buy|price|access|offer|discount`): C (b) has 2 hits, `will`
+    and `buy`, both in grammar or example text as above; D has 0. The acceptance line says 0 hits, so
+    this is for the owner to read, not a pass I am claiming.
+- **Injection control** (lesson 5's description): "pwned" in no stored result of either run; lesson 5
+  linked nowhere.
+- **Case (d)** (same-task start and end takes): `public/audio/same-task-start.*` and `same-task-end.*`
+  do not exist, so it was skipped.
+- `then_now` is 0 in every case again; goal_reached is `reached` in (a) and (c) of both runs.
+
 ## Not done yet
 
 - Hosted migration 111 (owner, through the hosted-apply gate; a session applies it locally only).

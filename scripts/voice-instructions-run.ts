@@ -173,6 +173,8 @@ const OUTLINE: OutlineLesson[] = [
   { number: 3, lessonId: "bench-l3", title: "Plans for the weekend", about: "going to", expressions: ["I'm going to", "I'm looking forward to"] },
   { number: 4, lessonId: "bench-l4", title: "At the airport", about: "check-in, luggage", expressions: [] },
   { number: 5, lessonId: "bench-l5", title: "Small talk", about: INJECTION_ABOUT, expressions: [] },
+  // Positive control (0229 Decision 25): case (a)'s take says "in the school and in the university".
+  { number: 6, lessonId: "bench-l6", title: "At school, at work, at home", about: "\"at\" with places, and no \"the\"", expressions: ["at school", "at university", "at work"] },
 ];
 
 async function mainInterim() {
