@@ -5278,6 +5278,33 @@ export const CARDS = [
     ],
     notes: 'A Telegram ping when writing feedback is published is a separate proposal in 0225 (COH-011 knows voice and final only).',
   },
+  // Owner, 2026-11-20 (author feedback): step 3 of the Studio authoring fixes, split out of the
+  // ad hoc session that shipped the visible radio and optional explanations (docs/decisions/0230).
+  {
+    key: 'AUTH-025',
+    title: 'Studio: a rich-text editor with line breaks in every field (replaces "+ Add run")',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 3350,
+    dependsOn: [],
+    goal:
+      'Authors find the list of "runs" confusing: each run is a separate input with Em / EN / A / B buttons, and "+ Add run" splits text into segments ' +
+      '(docs/decisions/0033 Decision 3, chosen because a range-selecting editor needs a new npm dependency). They also want Enter to start a new line ' +
+      'everywhere they type, not only in voice and writing prompts (0224, 0225). The owner chose a real rich-text editor (2026-11-20), which approves ' +
+      'the dependency. The stored shape does not change: still InlineRun[] = {text, marks?}, a line break is a line feed inside text (0224 Option A), so no ' +
+      'migration and no SQL change.',
+    acceptance: [
+      'Schema: InlineContentSchema allows newlines (lib/lessons/inline.ts); heading text stays single-line (a heading is a chapter title, dropTitleHeading compares it). MultilineInlineContentSchema becomes an alias, so 0224 Decision 2\'s parse trap is gone. Plain-string practice fields allow newlines: selection prompt and options, grid statements, ordering elements, matching text sides, the slots prompt, explanations and the fallback; slots accepted answers stay single-line. Unit tests for both sides of each change.',
+      'Player: InlineContentView renders a line feed as a line break, which covers every theory block and caption, and a small helper does the same for plain-string practice text (options, statements, ordering rows, matching sides, explanations, slots sentence segments around ___). The existing whitespace-pre-line places keep working.',
+      'Editor: one rich-text field per inline field (Tiptap or an equivalent, exact pinned versions, only Document/Paragraph/Text/HardBreak/undo plus four custom marks emphasis, english, mark_a, mark_b; mark_a and mark_b exclude each other). Enter inserts a line break; Em / EN / A / B apply to the selection and show their active state; paste keeps plain text and only those marks. It replaces InlineEditor everywhere (BlockForm fields, list items, table cells, captions, voice and writing prompts); "+ Add run" and the multiline prop are gone. Plain-string practice inputs become auto-growing textareas.',
+      'Pure converters runsToDoc / docToRuns in lib/ (merge adjacent same-mark runs, hard break <-> a line feed, an empty field stays [{text:""}] so validation behaves as today), with round-trip tests, including every lesson document in the local stack.',
+      'Bundle: no client-reference manifest of an English route mentions the editor package; `npm run budget` before and after, every English route unchanged.',
+      'Docs: a decision superseding 0033 Decision 3 and 0224 Decisions 1 and 4; the Studio Guide articles that mention runs updated (lib/studioGuide/articles.ts); the import and draft prompts say line breaks are allowed (bump the import prompt version if it is versioned); a docs/ui-decisions.md entry.',
+      'Measured at 360px and 1280px (`npm run viewport360` plus a browser for the open forms): the lesson editor with a theory block and each exercise form open, and the lesson page with a multi-line paragraph, a multi-line option and a voice prompt. In a browser: two lines with Em on one word, saved, reloaded, shown the same in the editor and in the player.',
+    ],
+    notes: 'Split from the 2026-11-20 ad hoc fixes (commits "Studio: make the multiple-choice correct radio visible" and "Explanations are optional").',
+  },
 
   // ---------------------------------------------------------------- MIG ---
   // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
