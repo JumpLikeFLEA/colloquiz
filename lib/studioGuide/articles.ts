@@ -204,13 +204,14 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     steps: [
       "Open the lesson in the editor, press **Add block** and choose **Voice task** (below the exercises).",
       "Type the prompt: what the learner should say. Press Enter to start a new line, for example to put two situations on lines of their own.",
-      "Set the length limit. If this task is the second recording of a pair, use **Before / after comparison** to say which one it is.",
+      "Set the length limit. If this task is one of the course's comparison recordings, use **Before / after comparison** to say which: **Before** (the first recording), **Interim** (the end of the free first lesson: compared with Before, with links to later lessons that practise what the learner needs) or **After** (the end of the course).",
       "Optionally fill **Expressions to listen for (optional)**: one expression per line. Learners see them as chips to try to use, and the AI feedback marks the ones they said.",
       "Press **Save**, then publish the lesson (see **Publish**).",
     ],
     tips: [
       "A voice task is never scored and does not count toward the lesson's exercises.",
-      "Setting a task to After fills its expressions from the Before task, once. A list you wrote yourself is never overwritten.",
+      "Setting a task to Interim or After fills its expressions from the Before task, once. A list you wrote yourself is never overwritten.",
+      "An Interim task must come after the Before task: publishing refuses it in an earlier lesson, or above the Before task in the same lesson.",
       "A visitor without an account can practise, but the recording stays on their device and is not sent.",
     ],
     goTo: { label: "Open your courses", path: "/studio/courses" },
