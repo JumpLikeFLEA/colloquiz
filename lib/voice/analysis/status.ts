@@ -1,3 +1,4 @@
+import { courseLinkLessonIds, type LessonTargets } from "./lessonTargets";
 import type { VoiceAnalysisMode } from "./mode";
 import { IN_PROGRESS_STATUSES, type AnalysisStatusBody } from "./view";
 
@@ -28,6 +29,8 @@ export type StatusDeps = {
   readBaselineId: (submissionId: string) => Promise<string | null>;
   /** Under the caller's session: that take's analysis, only if it is done and still visible. */
   readBaseline: (baselineId: string) => Promise<{ transcript: string; result: unknown } | null>;
+  /** Under the caller's session: where an interim take's course links open now (VOICE-017). */
+  readLessonTargets?: (lessonIds: string[]) => Promise<LessonTargets>;
 };
 
 export type VisibleRow = { status: string; transcript: string | null; result: unknown };
@@ -64,7 +67,20 @@ export async function readAnalysisStatus(
         const baselineId = await deps.readBaselineId(submissionId);
         if (baselineId) baseline = await deps.readBaseline(baselineId);
       }
-      return { ok: true, status: "done", transcript: visible.transcript, result: visible.result, baseline };
+      // A failed read of the targets only costs the links: "Lesson N" is still shown, without one.
+      const linkIds = courseLinkLessonIds(visible.result);
+      let lessonTargets: LessonTargets = {};
+      if (linkIds.length > 0 && deps.readLessonTargets) {
+        lessonTargets = await deps.readLessonTargets(linkIds).catch(() => ({}));
+      }
+      return {
+        ok: true,
+        status: "done",
+        transcript: visible.transcript,
+        result: visible.result,
+        baseline,
+        ...(Object.keys(lessonTargets).length > 0 ? { lessonTargets } : {}),
+      };
     }
     if (IN_PROGRESS.has(visible.status)) {
       // Under `off` nobody is shown anything (production before OPS-027); the row is about to be paused.

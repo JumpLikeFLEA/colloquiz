@@ -77,7 +77,7 @@ export function VoiceAnalysisPanel({ submissionId, cohort, listenFor, fetchStatu
   if (body?.status === "done") {
     content = done ? (
       <>
-        <AnalysisResult analysis={done.analysis} transcript={done.transcript} baseline={done.baseline} listenFor={listenFor} />
+        <AnalysisResult analysis={done.analysis} transcript={done.transcript} baseline={done.baseline} listenFor={listenFor} lessonTargets={body.lessonTargets} />
         <p className="mt-3 text-xs text-muted-foreground">{copy.disclaimer}</p>
       </>
     ) : (

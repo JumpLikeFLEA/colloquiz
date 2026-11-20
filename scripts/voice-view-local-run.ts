@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VOICE-014's local verification (docs/decisions/0189). Everything runs against the LOCAL
  * Supabase stack and refuses any other URL. It calls no AI provider: every analysis state is
  * written straight into the tables, through the service role and the 096/097 functions.
@@ -57,7 +57,7 @@ type State = {
   objects: string[];
 };
 
-// ── the words ──────────────────────────────────────────────────────────────
+// â”€â”€ the words â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FIRST_TEXT =
   "Yesterday I go to the shop with my sister. Um, I made my mind to buy a new coat. It was very <b>red</b> and I had a great time.";
 const FINAL_TEXT =
@@ -95,6 +95,17 @@ function firstResult(text: string) {
   };
 }
 
+/** VOICE-017: an interim result is a final's comparison plus up to two links to later lessons (by id). */
+function interimResult(text: string, firstText: string, links: { lessonId: string; lesson: number; quote: string; note: string }[]) {
+  const f = finalResult(text, firstText);
+  return {
+    ...f,
+    kind: "interim",
+    courseLinks: links.map((l) => ({ ...l, span: at(text, l.quote) })),
+    dropped: { ...f.dropped, courseLinks: 0 },
+  };
+}
+
 function finalResult(text: string, firstText: string) {
   return {
     v: 1,
@@ -102,7 +113,7 @@ function finalResult(text: string, firstText: string) {
     summary: "Your story is clearer and your verbs are in the past.",
     howItSounds: "Smoother than the first time.",
     goal: null,
-    goalReached: { status: "reached", note: "You said “went”, “bought” and “had”: three past forms." },
+    goalReached: { status: "reached", note: "You said â€œwentâ€, â€œboughtâ€ and â€œhadâ€: three past forms." },
     nextStep: "Keep telling short stories about yesterday.",
     expressionsUsed: [{ expression: "make up my mind", quote: "made up my mind", exact: true, span: at(text, "made up my mind") }],
     highlights: [{ quote: "I had a great time", kind: "strength", note: "Same good phrase, now with the past.", span: at(text, "I had a great time") }],
@@ -117,7 +128,7 @@ function finalResult(text: string, firstText: string) {
   };
 }
 
-// ── seed ───────────────────────────────────────────────────────────────────
+// â”€â”€ seed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function newUser(label: string, tag: string) {
   const email = `v14-${label}-${tag}@verify.test`;
   const { data, error } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
@@ -139,7 +150,7 @@ async function seedCourse(tag: string, format: "self_paced" | "cohort", blocks: 
   const course = must(
     await admin
       .from("courses")
-      .insert({ slug: `v14-${format === "cohort" ? "co" : "sp"}-${tag}`, title: `V14 ${format}`, level: "A2", status: "published", format, subtitle: "s", cover_image_url: "c" })
+      .insert({ slug: `v14-${format === "cohort" ? "co" : "sp"}-${tag}`, title: `V14 ${format}`, level: "A2", status: "published", format, subtitle: "s", cover_image_url: `${URL_}/storage/v1/object/public/lesson-images/c.png` })
       .select("id")
       .single(),
     "course",
@@ -190,6 +201,32 @@ async function seed() {
     voiceBlock("d-withdrawn"),
     voiceBlock("e-paused"),
   ]);
+  // VOICE-017: three interim blocks, and the later lessons their links point at (3 is archived below).
+  const later: { lessonId: string; title: string }[] = [];
+  for (const [i, title] of ["Plans for the weekend", "At the airport", "Small talk"].entries()) {
+    const l = must(
+      await admin
+        .from("lessons")
+        .insert({ course_id: sp.courseId, ordinal: i + 2, title, slug: `later-${i + 2}`, access_level: "anyone" })
+        .select("id")
+        .single(),
+      "later lesson",
+    );
+    const v = must(await admin.from("lesson_versions").insert({ lesson_id: l.id, document: [], source: "editor" }).select("id").single(), "later version");
+    must(await admin.from("lessons").update({ published_version_id: v.id }).eq("id", l.id).select("id").single(), "later publish");
+    later.push({ lessonId: l.id as string, title });
+  }
+  must(await admin.from("lessons").update({ archived_at: new Date().toISOString() }).eq("id", later[2].lessonId).select("id").single(), "archive");
+  {
+    const doc = [
+      voiceBlock("h-interim", { compare: "interim" }),
+      voiceBlock("i-interim-empty", { compare: "interim" }),
+      voiceBlock("j-interim-gone", { compare: "interim" }),
+    ];
+    const cur = must(await admin.from("lessons").select("published_version_id").eq("id", sp.lessonId).single(), "cur");
+    const old = must(await admin.from("lesson_versions").select("document").eq("id", cur.published_version_id).single(), "old doc");
+    must(await admin.from("lesson_versions").update({ document: [...(old.document as unknown[]), ...doc] }).eq("id", cur.published_version_id).select("id").single(), "doc");
+  }
   const co = await seedCourse(tag, "cohort", [voiceBlock("f-limit"), voiceBlock("g-done")]);
   st.courseIds.push(sp.courseId, co.courseId);
 
@@ -251,7 +288,7 @@ async function seed() {
   async function analysisRow(id: string, sendId: string) {
     must(await admin.from("voice_analyses").insert({ submission_id: id, send_id: sendId }).select("submission_id").single(), "analysis row");
   }
-  async function finish(id: string, text: string, result: unknown, instruction: "first" | "final", baseline: string | null = null) {
+  async function finish(id: string, text: string, result: unknown, instruction: "first" | "final" | "interim", baseline: string | null = null) {
     const r = await admin.rpc("voice_analysis_finish", {
       p_submission_id: id,
       p_transcript: text,
@@ -272,6 +309,21 @@ async function seed() {
   const a2 = await take(sp.courseId, sp, "a-final", null);
   await analysisRow(a2, await ledger(sp, "a-final", a2, "self_paced"));
   await finish(a2, FINAL_TEXT, finalResult(FINAL_TEXT, FIRST_TEXT), "final", a1);
+
+  // h / i / j: interim analyses (VOICE-017): two links, no links, and a link to an archived lesson.
+  const interimLinks = [
+    { lessonId: later[0].lessonId, lesson: 2, quote: "I made up my mind quickly", note: "You are ready to talk about plans next." },
+    { lessonId: later[1].lessonId, lesson: 3, quote: "I bought a blue coat", note: "Travel words come up when you buy things abroad." },
+  ];
+  for (const [blockId, links] of [
+    ["h-interim", interimLinks],
+    ["i-interim-empty", []],
+    ["j-interim-gone", [interimLinks[0], { ...interimLinks[1], lessonId: later[2].lessonId, lesson: 4 }]],
+  ] as const) {
+    const t = await take(sp.courseId, sp, blockId, null);
+    await analysisRow(t, await ledger(sp, blockId, t, "self_paced"));
+    await finish(t, FINAL_TEXT, interimResult(FINAL_TEXT, FIRST_TEXT, [...links]), "interim", a1);
+  }
 
   // b-working: in progress, with a lease in the future so the route never offers it to the pipeline.
   const b = await take(sp.courseId, sp, "b-working", null);
@@ -327,7 +379,7 @@ async function seed() {
   console.log(JSON.stringify({ seeded: true, tag, learner: `${learner.email}:${PASSWORD}`, stranger: `${stranger.email}:${PASSWORD}`, paths: st.paths, out: OUT }));
 }
 
-// ── check ──────────────────────────────────────────────────────────────────
+// â”€â”€ check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type Person = { cookie: string; ssr: ReturnType<typeof createServerClient> };
 async function signIn(email: string): Promise<Person> {
   const jar = new Map<string, string>();
@@ -395,7 +447,7 @@ async function check() {
   process.exit(failures === 0 ? 0 : 1);
 }
 
-// ── cleanup ────────────────────────────────────────────────────────────────
+// â”€â”€ cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function cleanup() {
   const st = JSON.parse(readFileSync(OUT, "utf8")) as State;
   const count = async (table: string, col: string, ids: string[]) =>

@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRight, Target } from "lucide-react";
 import { voiceAnalysisCopy as copy } from "@/lib/alliengll/voiceAnalysisCopy";
+import type { LessonTargets } from "@/lib/voice/analysis/lessonTargets";
 import { GOAL_REACHED_LABELS, statCards, type ViewAnalysis } from "@/lib/voice/analysis/view";
 import { MarkedTranscript } from "./MarkedTranscript";
 
@@ -13,7 +15,8 @@ import { MarkedTranscript } from "./MarkedTranscript";
  * the learner's words with the marks, the lesson's expressions, the one error to fix (and all of
  * them under a disclosure), how it sounds, then the goal (a first), or the goal verdict, the
  * then/now pairs and the next step (a final). A final also holds the first take's feedback,
- * collapsed. The counts are what was marked, not a score (0156 Decision 1): no colour judges them.
+ * collapsed. An interim analysis (VOICE-017, 0229) reads like a final plus "In this course": up to two
+ * later lessons, each linked by its CURRENT title, and no offer or price. The counts are what was marked, not a score (0156 Decision 1): no colour judges them.
  */
 
 const SECTION_HEADING = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
@@ -26,11 +29,13 @@ type Props = {
   baseline: { analysis: ViewAnalysis; transcript: string } | null;
   /** The task's own list, to name what was not used. Absent on a `before` task (the list stays hidden). */
   listenFor?: readonly string[];
+  /** An interim analysis: where each course link opens now, by lesson id. A lesson without one shows no link. */
+  lessonTargets?: LessonTargets;
   /** Drawn inside the Day 1 disclosure: no second baseline, no count deltas. */
   embedded?: boolean;
 };
 
-export function AnalysisResult({ analysis: a, transcript, baseline, listenFor, embedded = false }: Props) {
+export function AnalysisResult({ analysis: a, transcript, baseline, listenFor, lessonTargets, embedded = false }: Props) {
   const cards = statCards(a, baseline?.analysis ?? null);
   const main = a.mainError !== null ? a.errors[a.mainError] : null;
   const usedExpressions = new Set(a.expressionsUsed.map((e) => e.expression));
@@ -173,6 +178,33 @@ export function AnalysisResult({ analysis: a, transcript, baseline, listenFor, e
             <Target className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <p className="break-words text-sm font-medium">{a.nextStep}</p>
           </div>
+        </section>
+      )}
+
+      {a.courseLinks.length > 0 && (
+        <section className="flex flex-col gap-1.5">
+          <h4 className={SECTION_HEADING}>{copy.inThisCourse}</h4>
+          <ul className="flex flex-col gap-2">
+            {a.courseLinks.map((l, i) => {
+              const target = lessonTargets?.[l.lessonId];
+              const label = target ? `${copy.lessonWord} ${l.lesson} · ${target.title}` : `${copy.lessonWord} ${l.lesson}`;
+              return (
+                <li key={i} className={CARD}>
+                  {target ? (
+                    <Link
+                      href={target.href}
+                      className="break-words text-sm font-medium text-brand-text underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <p className="break-words text-sm font-medium text-foreground">{label}</p>
+                  )}
+                  <p className="mt-1 break-words text-sm text-muted-foreground">{l.note}</p>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
 

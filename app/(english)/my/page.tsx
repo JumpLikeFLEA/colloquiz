@@ -405,7 +405,7 @@ function AnalysisRow({ lang, row }: { lang: SurfaceLang; row: LearnerAnalysisRow
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <p className="break-words text-sm font-semibold text-foreground sm:text-base">{where || m.aiFirst}</p>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className={SMALL_PILL_CLASS}>{row.kind === "final" ? m.aiFinal : m.aiFirst}</span>
+          <span className={SMALL_PILL_CLASS}>{row.kind === "final" ? m.aiFinal : row.kind === "interim" ? m.aiInterim : m.aiFirst}</span>
           <span className="text-xs text-muted-foreground sm:text-sm">
             <LocalDateTime iso={row.sentAt} locale={localeFor(lang)} />
           </span>

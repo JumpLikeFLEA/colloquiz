@@ -91,6 +91,7 @@ describe("toVoiceListRow", () => {
       blockId: "b1",
       cohort: false,
       purged: false,
+      kind: "first",
     });
   });
   it("a take in a run is cohort; a purged object is purged", () => {
@@ -107,5 +108,30 @@ describe("toVoiceListRow", () => {
     expect(toVoiceListRow(raw({}, { user_id: null }))).toBeNull();
     expect(toVoiceListRow(raw({ status: 3 }))).toBeNull();
     expect(toVoiceListRow(null)).toBeNull();
+  });
+});
+
+describe("toVoiceListRow: kind (VOICE-017)", () => {
+  const raw = (instruction: unknown) => ({
+    submission_id: ID,
+    status: "done",
+    hidden_at: null,
+    created_at: "2026-11-01T00:00:00Z",
+    instruction,
+    voice_submissions: {
+      submitted_at: "2026-11-01T00:00:00Z",
+      user_id: ID,
+      course_id: ID,
+      lesson_id: ID,
+      block_id: "b",
+      enrolment_id: null,
+      object_name: "x",
+    },
+  });
+  it("labels interim apart from first and final", () => {
+    expect(toVoiceListRow(raw("interim"))?.kind).toBe("interim");
+    expect(toVoiceListRow(raw("final"))?.kind).toBe("final");
+    expect(toVoiceListRow(raw("first"))?.kind).toBe("first");
+    expect(toVoiceListRow(raw(null))?.kind).toBe("first");
   });
 });

@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { LESSON_TARGET_COLUMNS, toLessonTargets } from "./lessonTargets";
 import type { StatusDeps } from "./status";
 
 /**
@@ -75,6 +76,12 @@ export function statusDeps(supabase: SupabaseClient, userId: string, admin: () =
       if (error) throw error;
       if (!data || data.status !== "done" || typeof data.transcript !== "string") return null;
       return { transcript: data.transcript as string, result: data.result };
+    },
+    async readLessonTargets(ids) {
+      // Under the caller's session: the course page's own rows. RLS decides what a lesson is to them.
+      const { data, error } = await supabase.from("lessons").select(LESSON_TARGET_COLUMNS).in("id", ids);
+      if (error) throw error;
+      return toLessonTargets(data ?? []);
     },
   };
   return { deps, seen };

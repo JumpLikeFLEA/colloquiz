@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import type { LessonTargets } from "@/lib/voice/analysis/lessonTargets";
 import { AnalysisResult } from "@/app/components/lesson-player/blocks/analysis/AnalysisResult";
 import { parseStoredAnalysis } from "@/lib/voice/analysis/parseStored";
 import { STATE_LABEL, STATE_PILL, canHide, studioAnalysisState } from "@/lib/voice/analysis/studioList";
@@ -103,10 +104,12 @@ function HideAnalysis({ submissionId }: { submissionId: string }) {
 function Body({
   data,
   listenFor,
+  lessonTargets,
   showHeader = true,
 }: {
   data: StudioAnalysisData;
   listenFor?: readonly string[];
+  lessonTargets?: LessonTargets;
   /** Off inside the review card's summary, which already carries the label and the state. */
   showHeader?: boolean;
 }) {
@@ -158,6 +161,7 @@ function Body({
             transcript={data.transcript}
             baseline={shown.baseline}
             listenFor={listenFor}
+            lessonTargets={lessonTargets}
           />
         ) : (
           <p className="text-sm text-muted-foreground">This analysis can&apos;t be displayed.</p>
@@ -175,13 +179,15 @@ function Body({
 export function StudioAnalysis({
   data,
   listenFor,
+  lessonTargets,
   collapsible = false,
 }: {
   data: StudioAnalysisData;
   listenFor?: readonly string[];
+  lessonTargets?: LessonTargets;
   collapsible?: boolean;
 }) {
-  if (!collapsible) return <Body data={data} listenFor={listenFor} />;
+  if (!collapsible) return <Body data={data} listenFor={listenFor} lessonTargets={lessonTargets} />;
   const state = studioAnalysisState(data);
   return (
     <details className="rounded-xl border border-border bg-card px-3" data-studio="card-analysis">
@@ -190,7 +196,7 @@ export function StudioAnalysis({
         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STATE_PILL[state]}`}>{STATE_LABEL[state]}</span>
       </summary>
       <div className="pb-3">
-        <Body data={data} listenFor={listenFor} showHeader={false} />
+        <Body data={data} listenFor={listenFor} lessonTargets={lessonTargets} showHeader={false} />
       </div>
     </details>
   );

@@ -1,3 +1,4 @@
+import { parseLessonTargets, type LessonTargets } from "./lessonTargets";
 import type { GOAL_REACHED_STATUSES, Span, StoredAnalysis } from "./schema";
 
 /**
@@ -193,6 +194,8 @@ export type AnalysisStatusBody =
       result: unknown;
       /** The learner's first take of the same task, for a final: its transcript and result. */
       baseline: { transcript: string; result: unknown } | null;
+      /** An interim take: where each course link opens now, by lesson id (lessonTargets.ts). Absent otherwise. */
+      lessonTargets?: LessonTargets;
     };
 
 const STATUS_WORDS = new Set<string>([...IN_PROGRESS_STATUSES, "done", "failed", "withdrawn", "limit", "paused", "off", "none"]);
@@ -213,5 +216,13 @@ export function parseStatusBody(raw: unknown): AnalysisStatusBody | null {
     typeof b === "object" && b !== null && typeof (b as Record<string, unknown>).transcript === "string"
       ? { transcript: (b as { transcript: string }).transcript, result: (b as { result?: unknown }).result }
       : null;
-  return { ok: true, status: "done", transcript: o.transcript, result: o.result, baseline };
+  const lessonTargets = parseLessonTargets(o.lessonTargets);
+  return {
+    ok: true,
+    status: "done",
+    transcript: o.transcript,
+    result: o.result,
+    baseline,
+    ...(Object.keys(lessonTargets).length > 0 ? { lessonTargets } : {}),
+  };
 }

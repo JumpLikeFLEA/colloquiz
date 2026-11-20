@@ -3207,3 +3207,21 @@ Appended to in the same commit as the change it records. Referenced from
   Picking a seat added it to Editors and dropped it from the list; a typed unknown email still
   shows "No account found with that email." Not measured: dark mode, a disabled "(no email)"
   item in a browser. Do not grant by user id from the client without a by-id RPC.
+- Interim feedback: "In this course" and a third pill (2026-11-20, VOICE-017, docs/decisions/0229).
+  An interim analysis (the end of a free first lesson) draws like a final (summary, then and now, goal
+  check, the other cards, next step) plus an "In this course" section after "Next step": up to two
+  `bg-muted` cards, each a bold line "Lesson N · <current title>" in `text-brand-text` linking to that
+  lesson, then the model's note in muted text. The title and path are read when the page loads
+  (`lessonTargets`, from the lessons the caller's own session can read); a lesson that is gone,
+  unpublished or archived shows "Lesson N" in plain text with no link. No offer, price or button
+  (VOICE-018). With no links the section is absent. `/my`'s AI feedback list gains a third pill,
+  "End-of-lesson recording" / "Запись в конце урока", worded like its neighbours "Recording" and "Final
+  recording" (not "AI feedback · …": the row already sits under the AI feedback heading). Studio's AI
+  feedback list marks an interim take with a muted "End of lesson" pill beside Cohort / Self-paced, and
+  its detail page shows the same section and baseline as a final. Existing classes and tokens; no new
+  colours. Measured at 360px (local stack, seeded learner, `next dev`, `scrollWidth/innerWidth`): 360/360
+  on the lesson with three interim analyses on one page (two links; none; one link and one gone lesson),
+  1280/1280 at 1280px, 360/360 on `/my` with the pill. In Edge: two "In this course" sections, the first
+  with two links, the second with one link and "Lesson 4" unlinked, the empty analysis with none. Not
+  measured: Studio's list and detail page in a browser, dark mode, a phone. Do not decide in the client
+  where a link opens: `lessonTargets` comes from the status route.

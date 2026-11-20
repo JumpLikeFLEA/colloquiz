@@ -5,6 +5,7 @@ import { listAuthoredCourses } from "@/lib/courseAuthoring";
 import { createClient } from "@/lib/supabase/server";
 import {
   STATE_LABEL,
+  KIND_LABEL,
   STATE_PILL,
   pageCount,
   parseVoiceListFilters,
@@ -88,6 +89,11 @@ export default async function VoiceListPage({
                       <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-muted text-muted-foreground">
                         {r.cohort ? "Cohort" : "Self-paced"}
                       </span>
+                      {r.kind === "interim" && (
+                        <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-muted text-muted-foreground">
+                          {KIND_LABEL.interim}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground break-words">
                       {r.courseTitle} · {r.lessonTitle}

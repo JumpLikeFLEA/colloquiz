@@ -14,8 +14,8 @@ export const LEARNER_ANALYSIS_LIMIT = 12;
 export type LearnerAnalysisRow = {
   submissionId: string;
   sentAt: string;
-  /** `first` for a first or stand-alone take, `final` for the take compared with an earlier one. */
-  kind: "first" | "final";
+  /** `first` for a first or stand-alone take, `final` for the take compared with an earlier one, `interim` for the end of a free first lesson (VOICE-017). */
+  kind: "first" | "final" | "interim";
   courseSlug: string | null;
   courseTitle: string | null;
   lessonSlug: string | null;
@@ -46,7 +46,7 @@ export function toLearnerAnalysisRow(raw: unknown): LearnerAnalysisRow | null {
   return {
     submissionId,
     sentAt,
-    kind: analysis.instruction === "final" ? "final" : "first",
+    kind: analysis.instruction === "final" ? "final" : analysis.instruction === "interim" ? "interim" : "first",
     courseSlug: str(course?.slug),
     courseTitle: str(course?.title),
     lessonSlug: str(lesson?.slug),

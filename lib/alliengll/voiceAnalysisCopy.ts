@@ -48,6 +48,8 @@ export const voiceAnalysisCopy = {
   now: "Now",
   nextStepHeading: "Next step",
   day1: "Day 1 feedback",
+  inThisCourse: "In this course",
+  lessonWord: "Lesson",
   was: "was",
   truncated: "This feedback covers the first 3 minutes of your recording.",
 } as const;

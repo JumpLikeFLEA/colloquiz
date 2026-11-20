@@ -24,6 +24,7 @@ function deps(over: Partial<StatusDeps> = {}): StatusDeps & { calls: Record<stri
     readLedger: counted("readLedger", merged.readLedger),
     readBaselineId: counted("readBaselineId", merged.readBaselineId),
     readBaseline: counted("readBaseline", merged.readBaseline),
+    ...(merged.readLessonTargets ? { readLessonTargets: counted("readLessonTargets", merged.readLessonTargets) } : {}),
     calls,
   };
 }
@@ -127,5 +128,34 @@ describe("readAnalysisStatus", () => {
 
   it("is none for a take with no ledger row and no hidden analysis", async () => {
     expect(await readAnalysisStatus("t1", "on", deps())).toEqual({ ok: true, status: "none" });
+  });
+});
+
+describe("readAnalysisStatus: interim course links (VOICE-017)", () => {
+  const interim = { status: "done", transcript: "I went home.", result: { kind: "interim", courseLinks: [{ lessonId: "L3", lesson: 3 }] } };
+  const target = { L3: { title: "Plans", href: "/courses/c/plans" } };
+
+  it("adds where the links open, asked for the result's own lesson ids only", async () => {
+    const readLessonTargets = vi.fn(async () => target);
+    const body = await readAnalysisStatus("t1", "on", deps({ readVisible: async () => interim, readLessonTargets }));
+    expect(readLessonTargets).toHaveBeenCalledWith(["L3"]);
+    expect(body).toMatchObject({ status: "done", lessonTargets: target });
+  });
+
+  it("asks nothing for a first or final result (control: the same deps, a result with no links)", async () => {
+    const readLessonTargets = vi.fn(async () => target);
+    const body = await readAnalysisStatus("t1", "on", deps({ readVisible: async () => DONE, readLessonTargets }));
+    expect(readLessonTargets).not.toHaveBeenCalled();
+    expect(body).not.toHaveProperty("lessonTargets");
+  });
+
+  it("a failed read of the targets still returns the analysis, without them", async () => {
+    const body = await readAnalysisStatus(
+      "t1",
+      "on",
+      deps({ readVisible: async () => interim, readLessonTargets: async () => { throw new Error("boom"); } }),
+    );
+    expect(body.status).toBe("done");
+    expect(body).not.toHaveProperty("lessonTargets");
   });
 });

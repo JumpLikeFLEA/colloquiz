@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { canEnterStudio, canEditCourse, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
-import { contactLabels, readAnalyses, readTake, readTaskOf } from "@/lib/voice/analysis/studioRead";
+import { contactLabels, readAnalyses, readLessonTargetsFor, readTake, readTaskOf } from "@/lib/voice/analysis/studioRead";
 import { SignedAudio } from "@/app/components/voice/SignedAudio";
 import { LocalTime } from "@/app/(studio)/studio/courses/[id]/LocalTime";
 import { StudioAnalysis } from "../StudioAnalysis";
@@ -35,6 +35,7 @@ export default async function VoiceDetailPage({ params }: { params: Promise<{ su
   const analysis = analyses.get(take.submissionId);
   if (!analysis) notFound();
 
+  const lessonTargets = await readLessonTargetsFor(supabase, analysis.result);
   const signed = take.objectName ? await signVoicePlaybackUrl(supabase, take.objectName) : null;
   const learner = labels.get(take.userId) || "Unknown learner";
 
@@ -71,7 +72,7 @@ export default async function VoiceDetailPage({ params }: { params: Promise<{ su
       </section>
 
       <section className="rounded-2xl border border-border bg-card px-4 py-4">
-        <StudioAnalysis data={analysis} listenFor={task?.listenFor} />
+        <StudioAnalysis data={analysis} listenFor={task?.listenFor} lessonTargets={lessonTargets} />
       </section>
     </div>
   );

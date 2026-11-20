@@ -25,6 +25,7 @@ describe("toLearnerAnalysisRow", () => {
 
   it("marks a final take as final, and anything else as first", () => {
     expect(toLearnerAnalysisRow(row({}, { instruction: "final" }))?.kind).toBe("final");
+    expect(toLearnerAnalysisRow(row({}, { instruction: "interim" }))?.kind).toBe("interim");
     expect(toLearnerAnalysisRow(row({}, { instruction: "weekly" }))?.kind).toBe("first");
     expect(toLearnerAnalysisRow(row({}, { instruction: null }))?.kind).toBe("first");
   });

@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { LESSON_TARGET_COLUMNS, courseLinkLessonIds, toLessonTargets, type LessonTargets } from "./lessonTargets";
 import { voiceTaskInfo, type VoiceTaskInfo } from "./context";
 import { VOICE_LIST_PAGE_SIZE, toVoiceListRow, type VoiceListFilters, type VoiceListRow } from "./studioList";
 
@@ -67,7 +68,7 @@ export async function listAnalysedTakes(
   let query = supabase
     .from("voice_analyses")
     .select(
-      "submission_id, status, hidden_at, created_at, voice_submissions!submission_id!inner(id, user_id, course_id, lesson_id, block_id, enrolment_id, object_name, submitted_at)",
+      "submission_id, status, hidden_at, created_at, instruction, voice_submissions!submission_id!inner(id, user_id, course_id, lesson_id, block_id, enrolment_id, object_name, submitted_at)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -104,6 +105,21 @@ export async function listAnalysedTakes(
 }
 
 /**
+ * Where an interim analysis's course links open now, read under the caller's own session
+ * (0229 Decision 18). A failed read gives no targets: the view then shows "Lesson N" unlinked.
+ */
+export async function readLessonTargetsFor(supabase: SupabaseClient, result: unknown): Promise<LessonTargets> {
+  const ids = courseLinkLessonIds(result);
+  if (ids.length === 0) return {};
+  const { data, error } = await supabase.from("lessons").select(LESSON_TARGET_COLUMNS).in("id", ids);
+  if (error) {
+    console.error("lesson targets:", error.message);
+    return {};
+  }
+  return toLessonTargets(data ?? []);
+}
+
+/**
  * The analyses of some takes (the caller has already proved they edit those takes' courses).
  * A final carries the first take's transcript and result; the baseline is read under the session
  * too, so one the editor policy hides simply is not there.
@@ -135,7 +151,7 @@ export async function readAnalyses(
     });
   }
 
-  const finals = [...out.values()].filter((a) => a.instruction === "final" && a.status === "done").map((a) => a.submissionId);
+  const finals = [...out.values()].filter((a) => (a.instruction === "final" || a.instruction === "interim") && a.status === "done").map((a) => a.submissionId);
   if (finals.length === 0) return out;
 
   const links = await admin().from("voice_analyses").select("submission_id, baseline_submission_id").in("submission_id", finals);

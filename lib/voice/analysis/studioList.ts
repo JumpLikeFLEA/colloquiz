@@ -86,6 +86,14 @@ export type VoiceListRow = {
   /** A take made inside a cohort run (an enrolment); NULL enrolment is a self-paced take. */
   cohort: boolean;
   purged: boolean;
+  /** `first`, `final` or `interim` (VOICE-017); anything else, or none, reads as `first`. */
+  kind: "first" | "final" | "interim";
+};
+
+export const KIND_LABEL: Record<VoiceListRow["kind"], string> = {
+  first: "First take",
+  final: "Final take",
+  interim: "End of lesson",
 };
 
 /** One row of the list query, or null when it is not the shape asked for. */
@@ -118,5 +126,6 @@ export function toVoiceListRow(raw: unknown): VoiceListRow | null {
     blockId,
     cohort: sub.enrolment_id != null,
     purged: sub.object_name == null,
+    kind: r.instruction === "final" ? "final" : r.instruction === "interim" ? "interim" : "first",
   };
 }
