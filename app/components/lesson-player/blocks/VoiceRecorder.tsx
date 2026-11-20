@@ -20,6 +20,8 @@ import { postVoiceSubmission, sendVoiceTake, uploadVoiceTake } from "@/lib/voice
 import { addTake, findTake, removeTake, takesFull } from "@/lib/voice/takes";
 import type { VoiceTaskSubmission, VoiceTasksContext } from "@/lib/voice/taskContext";
 import { SUBMIT_BUTTON_CLASS } from "../practice/practiceClasses";
+import { voiceAnchorId } from "@/lib/lessonPlayer/anchors";
+import { voiceOfferCopy } from "@/lib/alliengll/voiceOfferCopy";
 import { FeedbackContentView } from "./FeedbackContentView";
 
 // VOICE-014 (docs/decisions/0189): the AI feedback view is its own chunk, fetched only when a
@@ -319,6 +321,13 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
   const showSent = sent !== null;
   const full = takesFull(takes);
   const showAnalysis = context.analysis === true && mode === "send" && showSent;
+  // VOICE-018: an anonymous visitor on a `before` task is invited to sign in where Send would be, and
+  // comes back to this task. Everyone else, and every other task, draws exactly what it drew.
+  const offerCopy = voiceOfferCopy[context.lang ?? "en"];
+  const signInHref =
+    mode === "practice" && context.mode === "practice" && context.signInNext && block.compare === "before"
+      ? `/login?next=${encodeURIComponent(`${context.signInNext}#${voiceAnchorId(block.id)}`)}`
+      : null;
 
   return (
     <div className="mt-4 flex flex-col gap-3">
@@ -347,6 +356,7 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
               key={sent.id}
               submissionId={sent.id}
               cohort={context.mode === "send" && context.slot === "enrolment"}
+              lang={context.lang}
               listenFor={block.compare === "before" ? undefined : block.listenFor}
             />
           )}
@@ -366,6 +376,11 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
                   <button type="button" onClick={() => send(take.id)} disabled={busy} className={SUBMIT_BUTTON_CLASS}>
                     {failedId === take.id ? voiceCopy.retry : voiceCopy.sendThisTake}
                   </button>
+                )}
+                {signInHref && (
+                  <a href={signInHref} className={SUBMIT_BUTTON_CLASS}>
+                    {offerCopy.signInCta}
+                  </a>
                 )}
                 <button
                   type="button"
@@ -430,6 +445,12 @@ export function VoiceRecorder({ block, context }: { block: VoiceTaskBlock; conte
         <p className="text-xs text-muted-foreground">{voiceCopy.resendNote}</p>
       )}
       {mode === "practice" && <p className="text-xs text-muted-foreground">{voiceCopy.practiceNote}</p>}
+      {signInHref && (
+        <div className="rounded-xl bg-brand-subtle px-3 py-2.5 text-sm text-brand-text" data-testid="voice-sign-in">
+          <p className="break-words font-medium">{offerCopy.signInBody}</p>
+          <p className="mt-1 break-words text-xs">{offerCopy.signInNote}</p>
+        </div>
+      )}
     </div>
   );
 }

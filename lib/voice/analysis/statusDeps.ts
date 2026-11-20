@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LESSON_TARGET_COLUMNS, toLessonTargets } from "./lessonTargets";
+import { offerFrom } from "./offer";
 import type { StatusDeps } from "./status";
 
 /**
@@ -82,6 +83,30 @@ export function statusDeps(supabase: SupabaseClient, userId: string, admin: () =
       const { data, error } = await supabase.from("lessons").select(LESSON_TARGET_COLUMNS).in("id", ids);
       if (error) throw error;
       return toLessonTargets(data ?? []);
+    },
+    async readOffer(ids) {
+      // `lesson_state` (055) is the single decision; the course's join link is a public column.
+      const states = await Promise.all(
+        ids.map(async (id) => {
+          const { data, error } = await supabase.rpc("lesson_state", { p_lesson_id: id });
+          if (error) throw error;
+          const row = (Array.isArray(data) ? data[0] : data) as { state?: unknown } | null | undefined;
+          return typeof row?.state === "string" ? row.state : null;
+        }),
+      );
+      if (!states.includes("needs_entitlement")) return null;
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("id, courses(how_to_join_url)")
+        .in("id", ids);
+      if (error) throw error;
+      for (const raw of data ?? []) {
+        const c = (raw as { courses: unknown }).courses;
+        const course = (Array.isArray(c) ? c[0] : c) as { how_to_join_url?: unknown } | null;
+        const offer = offerFrom(states, course?.how_to_join_url);
+        if (offer) return offer;
+      }
+      return null;
     },
   };
   return { deps, seen };

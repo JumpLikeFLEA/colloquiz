@@ -1,4 +1,5 @@
 import { parseLessonTargets, type LessonTargets } from "./lessonTargets";
+import { parseOffer, type AnalysisOffer } from "./offer";
 import type { GOAL_REACHED_STATUSES, Span, StoredAnalysis } from "./schema";
 
 /**
@@ -196,6 +197,8 @@ export type AnalysisStatusBody =
       baseline: { transcript: string; result: unknown } | null;
       /** An interim take: where each course link opens now, by lesson id (lessonTargets.ts). Absent otherwise. */
       lessonTargets?: LessonTargets;
+      /** An interim take whose linked lesson the learner cannot open: the page's offer (offer.ts). Absent otherwise. */
+      offer?: AnalysisOffer;
     };
 
 const STATUS_WORDS = new Set<string>([...IN_PROGRESS_STATUSES, "done", "failed", "withdrawn", "limit", "paused", "off", "none"]);
@@ -217,6 +220,7 @@ export function parseStatusBody(raw: unknown): AnalysisStatusBody | null {
       ? { transcript: (b as { transcript: string }).transcript, result: (b as { result?: unknown }).result }
       : null;
   const lessonTargets = parseLessonTargets(o.lessonTargets);
+  const offer = parseOffer(o.offer);
   return {
     ok: true,
     status: "done",
@@ -224,5 +228,6 @@ export function parseStatusBody(raw: unknown): AnalysisStatusBody | null {
     result: o.result,
     baseline,
     ...(Object.keys(lessonTargets).length > 0 ? { lessonTargets } : {}),
+    ...(offer ? { offer } : {}),
   };
 }

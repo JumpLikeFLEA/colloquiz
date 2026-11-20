@@ -144,7 +144,7 @@ export default async function LessonPage({
       ? failSoft("failed to read the lesson's best score", () => getCourseAttemptSummary(lesson.courseId), null as AttemptsByLessonSlug | null)
       : null,
     getNextCatalogueCourse(courseSlug),
-    hasVoiceTask ? getVoiceTasksContext(lesson.lessonId, lesson.courseId, lesson.state === "ok") : undefined,
+    hasVoiceTask ? getVoiceTasksContext(lesson.lessonId, lesson.courseId, lesson.state === "ok", lessonPath) : undefined,
     // WRITE-002 (docs/decisions/0225): only a signed-in visitor on a lesson with a ticked writing task.
     signedIn ? getWritingTasksContext(lesson.lessonId, lesson.document) : undefined,
   ]);

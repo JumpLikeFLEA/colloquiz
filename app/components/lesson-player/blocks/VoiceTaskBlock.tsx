@@ -1,5 +1,6 @@
 import { Mic } from "lucide-react";
 import { formatVoiceDuration, type VoiceTaskBlock } from "@/lib/lessons";
+import { voiceAnchorId } from "@/lib/lessonPlayer/anchors";
 import { voiceCopy } from "@/lib/alliengll/voiceCopy";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { PRACTICE_CARD_CLASS } from "../columnLayout";
@@ -29,7 +30,7 @@ import { VoiceRecorder } from "./VoiceRecorder";
  */
 export function VoiceTaskBlockView({ block, context }: { block: VoiceTaskBlock; context?: VoiceTasksContext }) {
   return (
-    <div className={PRACTICE_CARD_CLASS}>
+    <div id={voiceAnchorId(block.id)} className={`${PRACTICE_CARD_CLASS} scroll-mt-20`}>
       <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-2.5 py-1 text-xs font-medium text-brand-text">
         <Mic className="size-3.5" aria-hidden="true" />
         {voiceCopy.label}

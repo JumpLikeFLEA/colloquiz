@@ -25,6 +25,7 @@ function deps(over: Partial<StatusDeps> = {}): StatusDeps & { calls: Record<stri
     readBaselineId: counted("readBaselineId", merged.readBaselineId),
     readBaseline: counted("readBaseline", merged.readBaseline),
     ...(merged.readLessonTargets ? { readLessonTargets: counted("readLessonTargets", merged.readLessonTargets) } : {}),
+    ...(merged.readOffer ? { readOffer: merged.readOffer } : {}),
     calls,
   };
 }
@@ -157,5 +158,46 @@ describe("readAnalysisStatus: interim course links (VOICE-017)", () => {
     );
     expect(body.status).toBe("done");
     expect(body).not.toHaveProperty("lessonTargets");
+  });
+});
+
+describe("readAnalysisStatus: the offer (VOICE-018)", () => {
+  const interim = { status: "done", transcript: "I will tell you.", result: { kind: "interim", courseLinks: [{ lessonId: "L3" }] } };
+  const offer = { howToJoinUrl: "https://example.com/join" };
+
+  it("attaches the offer for the owner of an interim take", async () => {
+    const readOffer = vi.fn(async () => offer);
+    const body = await readAnalysisStatus("t1", "on", deps({ readVisible: async () => interim, readOffer }));
+    expect(readOffer).toHaveBeenCalledWith(["L3"]);
+    expect(body).toMatchObject({ status: "done", offer });
+  });
+
+  it("makes no offer when the lessons are open to the learner (control: same row)", async () => {
+    const body = await readAnalysisStatus("t1", "on", deps({ readVisible: async () => interim, readOffer: async () => null }));
+    expect(body.status).toBe("done");
+    expect(body).not.toHaveProperty("offer");
+  });
+
+  it("makes no offer to someone who does not own the take", async () => {
+    const readOffer = vi.fn(async () => offer);
+    const body = await readAnalysisStatus("t1", "on", deps({ readVisible: async () => interim, readOffer, ownsTake: async () => false }));
+    expect(readOffer).not.toHaveBeenCalled();
+    expect(body).not.toHaveProperty("offer");
+  });
+
+  it("asks nothing for a result with no links", async () => {
+    const readOffer = vi.fn(async () => offer);
+    await readAnalysisStatus("t1", "on", deps({ readVisible: async () => DONE, readOffer }));
+    expect(readOffer).not.toHaveBeenCalled();
+  });
+
+  it("a failed read still returns the analysis, without the offer", async () => {
+    const body = await readAnalysisStatus(
+      "t1",
+      "on",
+      deps({ readVisible: async () => interim, readOffer: async () => { throw new Error("boom"); } }),
+    );
+    expect(body.status).toBe("done");
+    expect(body).not.toHaveProperty("offer");
   });
 });

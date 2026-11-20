@@ -1,4 +1,5 @@
 import { courseLinkLessonIds, type LessonTargets } from "./lessonTargets";
+import type { AnalysisOffer } from "./offer";
 import type { VoiceAnalysisMode } from "./mode";
 import { IN_PROGRESS_STATUSES, type AnalysisStatusBody } from "./view";
 
@@ -31,6 +32,11 @@ export type StatusDeps = {
   readBaseline: (baselineId: string) => Promise<{ transcript: string; result: unknown } | null>;
   /** Under the caller's session: where an interim take's course links open now (VOICE-017). */
   readLessonTargets?: (lessonIds: string[]) => Promise<LessonTargets>;
+  /**
+   * Under the caller's session: the offer for an interim take's linked lessons, or null (VOICE-018).
+   * It asks `lesson_state()`, the one SQL function that decides access; nothing here does.
+   */
+  readOffer?: (lessonIds: string[]) => Promise<AnalysisOffer | null>;
 };
 
 export type VisibleRow = { status: string; transcript: string | null; result: unknown };
@@ -73,6 +79,12 @@ export async function readAnalysisStatus(
       if (linkIds.length > 0 && deps.readLessonTargets) {
         lessonTargets = await deps.readLessonTargets(linkIds).catch(() => ({}));
       }
+      // Only the take's owner is offered anything (a teacher reading the row is not a prospect); a
+      // failed read costs the offer, never the analysis.
+      let offer: AnalysisOffer | null = null;
+      if (linkIds.length > 0 && deps.readOffer && (await deps.ownsTake(submissionId))) {
+        offer = await deps.readOffer(linkIds).catch(() => null);
+      }
       return {
         ok: true,
         status: "done",
@@ -80,6 +92,7 @@ export async function readAnalysisStatus(
         result: visible.result,
         baseline,
         ...(Object.keys(lessonTargets).length > 0 ? { lessonTargets } : {}),
+        ...(offer ? { offer } : {}),
       };
     }
     if (IN_PROGRESS.has(visible.status)) {

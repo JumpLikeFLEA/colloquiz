@@ -4,3 +4,8 @@
 export function exerciseAnchorId(blockId: string): string {
   return `exercise-${blockId}`;
 }
+
+/** The fragment id of a voice task's card (VOICE-018): the sign-in link returns the learner to it. */
+export function voiceAnchorId(blockId: string): string {
+  return `voice-${blockId}`;
+}

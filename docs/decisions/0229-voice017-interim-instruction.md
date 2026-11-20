@@ -301,7 +301,7 @@ accepts its intent as met. (owner, 2026-11-20)
   `CHECK ((instruction = ANY (ARRAY['first'::text, 'final'::text, 'interim'::text])))`, and `migration list
   --linked` shows 111 under both local and remote.
 - OPS-041 (legal text), published before any interim task is created in production.
-- VOICE-018 (the offer and the sign-in invitation).
+- VOICE-018 (the offer and the sign-in invitation): built, docs/decisions/0231.
 - final-v2 (judges the interim `next_step`; Decision 10).
 - then→now has not been run on a same-topic pair (true of final since 0188 too).
 

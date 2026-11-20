@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { ArrowRight, Target } from "lucide-react";
 import { voiceAnalysisCopy as copy } from "@/lib/alliengll/voiceAnalysisCopy";
+import { voiceOfferCopy } from "@/lib/alliengll/voiceOfferCopy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
+import type { AnalysisOffer } from "@/lib/voice/analysis/offer";
 import type { LessonTargets } from "@/lib/voice/analysis/lessonTargets";
 import { GOAL_REACHED_LABELS, statCards, type ViewAnalysis } from "@/lib/voice/analysis/view";
+import { SUBMIT_BUTTON_CLASS } from "../../practice/practiceClasses";
 import { MarkedTranscript } from "./MarkedTranscript";
 
 /**
@@ -31,11 +35,15 @@ type Props = {
   listenFor?: readonly string[];
   /** An interim analysis: where each course link opens now, by lesson id. A lesson without one shows no link. */
   lessonTargets?: LessonTargets;
+  /** The page's offer, decided in SQL by the status route; shown only beside course links (VOICE-018). */
+  offer?: AnalysisOffer;
+  /** The saved EN/RU choice, for the offer. */
+  lang?: SurfaceLang;
   /** Drawn inside the Day 1 disclosure: no second baseline, no count deltas. */
   embedded?: boolean;
 };
 
-export function AnalysisResult({ analysis: a, transcript, baseline, listenFor, lessonTargets, embedded = false }: Props) {
+export function AnalysisResult({ analysis: a, transcript, baseline, listenFor, lessonTargets, offer, lang, embedded = false }: Props) {
   const cards = statCards(a, baseline?.analysis ?? null);
   const main = a.mainError !== null ? a.errors[a.mainError] : null;
   const usedExpressions = new Set(a.expressionsUsed.map((e) => e.expression));
@@ -205,6 +213,19 @@ export function AnalysisResult({ analysis: a, transcript, baseline, listenFor, l
               );
             })}
           </ul>
+          {offer && !embedded && (
+            <div className="flex flex-col items-start gap-2 rounded-xl bg-brand-subtle px-3 py-2.5 text-brand-text" data-testid="course-offer">
+              <p className="break-words text-sm font-medium">{voiceOfferCopy[lang ?? "en"].offerBody}</p>
+              <a
+                href={offer.howToJoinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={SUBMIT_BUTTON_CLASS}
+              >
+                {voiceOfferCopy[lang ?? "en"].offerCta}
+              </a>
+            </div>
+          )}
         </section>
       )}
 

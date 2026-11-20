@@ -219,3 +219,102 @@ describe("a send refused for a cap", () => {
     expect(screen.queryByText(/was not sent/)).toBeNull();
   });
 });
+
+describe("VOICE-018: sign-in invitation for an anonymous visitor", () => {
+  const before = { ...base, compare: "before" } as unknown as VoiceTaskBlock;
+  const after = { ...base, compare: "after" } as unknown as VoiceTaskBlock;
+  const anon = (over: Partial<Extract<VoiceTasksContext, { mode: "practice" }>> = {}): VoiceTasksContext => ({
+    mode: "practice",
+    analysis: true,
+    signInNext: "/courses/c/lesson-1",
+    ...over,
+  });
+
+  it("shows the invitation on a before task, with a link back to that task's card", () => {
+    render(<VoiceTaskBlockView block={before} context={anon()} />);
+    const note = screen.getByTestId("voice-sign-in");
+    expect(note.textContent).toContain("Sign in to send this recording");
+    expect(document.getElementById("voice-v1")).not.toBeNull();
+  });
+
+  it("is in Russian with the saved choice", () => {
+    render(<VoiceTaskBlockView block={before} context={anon({ lang: "ru" })} />);
+    expect(screen.getByTestId("voice-sign-in").textContent).toContain("Войдите");
+  });
+
+  it("shows nothing on a task that is not a before task (control: same context)", () => {
+    render(<VoiceTaskBlockView block={after} context={anon()} />);
+    expect(screen.queryByTestId("voice-sign-in")).toBeNull();
+  });
+
+  it("shows nothing when the page gave no sign-in path (analysis off, or a lesson that is not open)", () => {
+    render(<VoiceTaskBlockView block={before} context={anon({ signInNext: undefined })} />);
+    expect(screen.queryByTestId("voice-sign-in")).toBeNull();
+  });
+
+  it("shows nothing to a signed-in learner who can send", () => {
+    render(<VoiceTaskBlockView block={before} context={sentIn({ submissions: {} })} />);
+    expect(screen.queryByTestId("voice-sign-in")).toBeNull();
+  });
+});
+
+describe("VOICE-018: the offer and the sign-in link", () => {
+  const before = { ...base, compare: "before" } as unknown as VoiceTaskBlock;
+  const interimBody = (extra: Record<string, unknown>) => ({
+    ...DONE,
+    result: {
+      ...DONE.result,
+      kind: "interim",
+      courseLinks: [{ lessonId: "L3", lesson: 3, quote: "made my mind", span: { start: 2, end: 14 }, note: "Lesson 3 practises it." }],
+      goalReached: null,
+      nextStep: "Try it.",
+    },
+    lessonTargets: { L3: { title: "Plans", href: "/courses/c/plans" } },
+    ...extra,
+  });
+  const offer = { howToJoinUrl: "https://example.com/join" };
+
+  async function panel(body: unknown, lang?: "ru") {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => body });
+    render(<VoiceTaskBlockView block={withList("after")} context={sentIn({ ...(lang ? { lang } : {}) })} />);
+    await screen.findByText("In this course");
+  }
+
+  it("draws the offer next to the course links when the server sent one", async () => {
+    await panel(interimBody({ offer }));
+    const card = screen.getByTestId("course-offer");
+    const link = card.querySelector("a")!;
+    expect(link.getAttribute("href")).toBe(offer.howToJoinUrl);
+    expect(link.textContent).toBe("How to get access");
+    expect(link.getAttribute("target")).toBe("_blank");
+  });
+
+  it("draws no offer when the server sent none (control: same links)", async () => {
+    await panel(interimBody({}));
+    expect(screen.getByText("Lesson 3 · Plans")).toBeDefined();
+    expect(screen.queryByTestId("course-offer")).toBeNull();
+  });
+
+  it("draws no offer with a join link that is not https", async () => {
+    await panel(interimBody({ offer: { howToJoinUrl: "javascript:alert(1)" } }));
+    expect(screen.queryByTestId("course-offer")).toBeNull();
+  });
+
+  it("is in Russian with the saved choice", async () => {
+    await panel(interimBody({ offer }), "ru");
+    expect(screen.getByTestId("course-offer").textContent).toContain("Как получить доступ");
+  });
+
+  it("an anonymous visitor's recorded take shows a sign-in link that returns to the task", async () => {
+    render(<VoiceTaskBlockView block={before} context={{ mode: "practice", analysis: true, signInNext: "/courses/c/lesson-1" }} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /^record$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("button", { name: /stop/i }));
+    });
+    const link = screen.getByRole("link", { name: "Sign in to send" });
+    expect(link.getAttribute("href")).toBe(`/login?next=${encodeURIComponent("/courses/c/lesson-1#voice-v1")}`);
+    expect(screen.queryByRole("button", { name: /send this take/i })).toBeNull();
+  });
+});

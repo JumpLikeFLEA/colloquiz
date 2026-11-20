@@ -3247,3 +3247,23 @@ Appended to in the same commit as the change it records. Referenced from
   it showed 0 "Why?" buttons, the correct option ticked, 0 page errors and 360/360. In the same
   preview, the lesson's other exercise, which has an explanation, showed 1 "Why?" after a wrong
   answer. Do not bring back the coverage error: a stale `explanations` key is still rejected.
+- Offer beside the interim feedback, sign-in invitation on the start task (2026-11-20, VOICE-018,
+  docs/decisions/0231). Inside the voice-task card, existing classes and tokens, no new colours:
+  - Under the "In this course" list, only when the server found a linked lesson the learner cannot
+    open and the course has a join link: a `bg-brand-subtle text-brand-text` box with one line
+    ("The lessons above are part of the full course." / "Эти уроки входят в полный курс.") and a
+    `SUBMIT_BUTTON_CLASS` link, "How to get access" / "Как получить доступ", to the course's
+    how-to-join URL in a new tab. No price: no course column holds one.
+  - For an anonymous visitor on a `before` task (analysis on): a `bg-brand-subtle` note under the
+    recorder ("Sign in to send this recording and get AI feedback on it." plus a muted line that
+    recordings stay on the device) and, once a take exists, a `SUBMIT_BUTTON_CLASS` "Sign in to
+    send" link in the take row in place of Send, to `/login?next=<lesson>#voice-<block id>`. RU with
+    the saved choice. The voice card gained `id="voice-<block id>"` and `scroll-mt-20`.
+  Measured at 360px (`scrollWidth/innerWidth`, local stack, `next dev` with the analysis on, Edge,
+  seeded learner): 360/360 for the signed-in lesson with two interim analyses showing the offer
+  (EN and RU; card x 46, width 268) and for the anonymous lesson with a recorded take and the link
+  (EN and RU); `npm run viewport360` 360/360 on the anonymous lesson with the note. Control: with
+  an entitlement grant the same page drew 2 course-link sections and 0 offers. Not measured: dark
+  mode, a phone, `npm run budget` (the code is in the recorder's lazy chunk, which no budget route
+  loads). Do not decide the offer in the client, and do not show it without course links.
+

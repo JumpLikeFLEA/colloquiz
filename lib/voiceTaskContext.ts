@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { authUserFrom } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signVoicePlaybackUrl } from "@/lib/voice/storage";
@@ -32,14 +34,18 @@ export async function getVoiceTasksContext(
   lessonId: string,
   courseId: string,
   lessonOpen: boolean,
+  lessonPath: string,
 ): Promise<VoiceTasksContext> {
   const analysisMode = parseVoiceAnalysisMode(process.env.VOICE_ANALYSIS_MODE);
   // VOICE-014: the view and the "Try to use" list exist only while the analysis is switched on.
   const analysis = analysisMode !== "off";
+  const lang = parseSurfaceLang((await cookies()).get(SURFACE_LANG_COOKIE)?.value);
   try {
     const supabase = await createClient();
     const user = await authUserFrom(supabase);
-    if (!user) return { mode: "practice", analysis };
+    // VOICE-018: a visitor on an open lesson is invited to sign in where Send would be, but only
+    // while the analysis is on: with it off nobody can send, so there is nothing to sign in for.
+    if (!user) return { mode: "practice", analysis, lang, ...(analysis && lessonOpen ? { signInNext: lessonPath } : {}) };
 
     const { data: enrolments, error: enrolErr } = await supabase
       .from("run_enrolments")
@@ -59,7 +65,7 @@ export async function getVoiceTasksContext(
       enrolmentId,
       analysisMode,
     });
-    if (!slot) return { mode: "practice", analysis };
+    if (!slot) return { mode: "practice", analysis, lang };
 
     const { data: rows, error: subErr } = await supabase
       .from("voice_submissions")
@@ -96,9 +102,9 @@ export async function getVoiceTasksContext(
       }),
     );
 
-    return { mode: "send", analysis, slot, lessonId, courseId, userId: user.id, submissions };
+    return { mode: "send", analysis, lang, slot, lessonId, courseId, userId: user.id, submissions };
   } catch (err) {
     console.error("failed to read the voice task context", err);
-    return { mode: "practice", analysis };
+    return { mode: "practice", analysis, lang };
   }
 }

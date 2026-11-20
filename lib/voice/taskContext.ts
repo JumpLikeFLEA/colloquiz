@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FeedbackContentSchema, type FeedbackContent } from "../feedback/content";
+import type { SurfaceLang } from "../alliengll/surfaceLang";
 import { parseVoiceAnalysisMode, type VoiceAnalysisMode } from "./analysis/mode";
 
 /**
@@ -32,7 +33,15 @@ export type VoiceTaskSubmission = {
 };
 
 type VoiceTasksMode =
-  | { mode: "practice" }
+  | {
+      mode: "practice";
+      /**
+       * VOICE-018 (docs/decisions/0231): an anonymous visitor on an open lesson while the analysis is on.
+       * The lesson's own path; a `before` task replaces Send with a sign-in link that returns here, to
+       * that task. Absent for a signed-in learner and while the analysis is off.
+       */
+      signInNext?: string;
+    }
   | {
       mode: "send";
       /** Whose slot a send files under (VOICE-014 words the sent line and the cap states by it). */
@@ -51,6 +60,8 @@ export type VoiceTasksContext = VoiceTasksMode & {
    * feature: no feedback panel, no "Try to use" list, and no extra code downloaded.
    */
   analysis?: boolean;
+  /** The saved EN/RU choice, for the offer and the sign-in invitation (VOICE-018). Absent means English. */
+  lang?: SurfaceLang;
   /**
    * TCH-006 (docs/decisions/0153): the "Ask the teacher" link for a voice
    * task's card. Never part of what the server sends (a function does not

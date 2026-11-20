@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { voiceAnalysisCopy as copy } from "@/lib/alliengll/voiceAnalysisCopy";
+import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { parseStoredAnalysis } from "@/lib/voice/analysis/parseStored";
 import { isInProgress, type AnalysisStatus } from "@/lib/voice/analysis/view";
 import { AnalysisResult } from "./AnalysisResult";
@@ -27,6 +28,8 @@ type Props = {
   cohort: boolean;
   /** The task's "Try to use" list; absent on a `before` task so the baseline stays honest. */
   listenFor?: readonly string[];
+  /** The saved EN/RU choice, for the offer next to an interim take's course links (VOICE-018). */
+  lang?: SurfaceLang;
   /** For tests. */
   fetchStatus?: StatusFetcher;
 };
@@ -57,7 +60,7 @@ function progressText(status: AnalysisStatus): string {
   return copy.pending;
 }
 
-export function VoiceAnalysisPanel({ submissionId, cohort, listenFor, fetchStatus }: Props) {
+export function VoiceAnalysisPanel({ submissionId, cohort, listenFor, lang, fetchStatus }: Props) {
   const { body, loadFailed, stalled } = useAnalysisStatus(submissionId, fetchStatus);
 
   const done = useMemo(() => {
@@ -77,7 +80,7 @@ export function VoiceAnalysisPanel({ submissionId, cohort, listenFor, fetchStatu
   if (body?.status === "done") {
     content = done ? (
       <>
-        <AnalysisResult analysis={done.analysis} transcript={done.transcript} baseline={done.baseline} listenFor={listenFor} lessonTargets={body.lessonTargets} />
+        <AnalysisResult analysis={done.analysis} transcript={done.transcript} baseline={done.baseline} listenFor={listenFor} lessonTargets={body.lessonTargets} offer={body.offer} lang={lang} />
         <p className="mt-3 text-xs text-muted-foreground">{copy.disclaimer}</p>
       </>
     ) : (
