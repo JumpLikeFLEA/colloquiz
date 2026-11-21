@@ -5354,6 +5354,33 @@ export const CARDS = [
     notes: 'Proposed in #323\'s evidence comment. The true-or-false route being over its own budget (261.0 KB of 260 before AUTH-025) is a separate matter and is not part of this card.',
   },
 
+  // Owner, 2026-11-21: from the review of AUTH-025's Tiptap field (chat).
+  {
+    key: 'AUTH-026',
+    title: 'Studio rich-text field: undo, paste, shortcuts and first paint',
+    milestone: 'M4',
+    epic: 'AUTH',
+    type: 'task',
+    rank: 3380,
+    dependsOn: ['AUTH-025'],
+    goal:
+      'A review of AUTH-025 (2026-11-21) found two bugs in the Studio rich-text field and three gaps. Bugs: Ctrl+Z after removing a list item or table column, ' +
+      'or after restoring a version, brings back the old text and saves it, because list items and table cells are keyed by index and the outside-value sync ' +
+      'goes into the undo history; and a paste can show something other than what is stored (a heading shows a pasted line break but stores a space; a pasted ' +
+      'blank line shows as two paragraphs and is stored as one line break). Gaps: no keyboard shortcuts for the marks; each field renders for one frame without ' +
+      'its box when a block expands; every parent re-render calls setOptions on every open editor; field errors are not tied to the field for screen readers. ' +
+      'The stored shape does not change. Decisions: docs/decisions/0234.',
+    acceptance: [
+      'Paste keeps the stored shape: the field\'s document is one paragraph; pasted paragraphs join with a line break (a space in a heading\'s field), a heading\'s pasted <br> becomes a space, and a pasted blank line stays two line breaks, as two typed Enters do. Five tests in richTextExtensions.test.ts, each also asserting that the editor\'s document equals runsToDoc of what the field stores; failing before the change and passing after (both runs printed).',
+      'A value changed from outside a field is not undoable, and removing a list item, a table column or a table row removes that field\'s own editor (keys held only in the form, never stored). Tests in RichTextField.test.tsx (outside value; the author\'s own typing still undoes) and BlockForm.richText.test.tsx (list item, table column); failing before, passing after.',
+      'Ctrl/Cmd+I toggles Em, also on a Russian keyboard layout; EN, A and B take the shortcuts recorded in 0234. Each button\'s tooltip names its shortcut for the platform (⌘ on macOS, Ctrl elsewhere) and the button carries aria-keyshortcuts. Tests in richTextExtensions.test.ts and RichTextField.test.tsx.',
+      'A field and its text are in the DOM in the first commit after a block expands; a parent re-render with the same value does not call the editor\'s setOptions; a field with errors is aria-invalid and described by its error text, one without is neither. Tests in RichTextField.test.tsx.',
+      'Studio only, as in 0233: rg shows no file under app/(english) or app/components/lesson-player importing RichTextField or richTextExtensions.',
+      'docs/decisions/0234; a docs/ui-decisions.md entry (tooltips name their shortcut, no other visual change); the Studio Guide tip on Em / EN / A / B names the shortcuts. No new visual state, so no 360px run; the evidence says "Not measured: no new state".',
+    ],
+    notes: 'From the 2026-11-21 review of AUTH-025 (chat). Not here: whether A / B / EN marks should stop at the last letter (inclusive: false) is an author question.',
+  },
+
   // ---------------------------------------------------------------- MIG ---
   // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
   // starts it only if the English product goes well. MIG-001..003 are worth
