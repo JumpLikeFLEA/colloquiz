@@ -94,7 +94,10 @@ export function RichTextField({
   useEffect(() => {
     if (!editor || sameRuns(value, lastEmitted.current)) return;
     lastEmitted.current = value;
-    editor.commands.setContent(runsToDoc(value), { emitUpdate: false });
+    // Not an undo step (docs/decisions/0234 Decision 3): Tiptap's setContent
+    // records one unless told not to, so Ctrl+Z would bring the old value
+    // back and save it. History from before this change maps to nothing.
+    editor.chain().setMeta("addToHistory", false).setContent(runsToDoc(value), { emitUpdate: false }).run();
   }, [editor, value]);
 
   const state = useEditorState({
