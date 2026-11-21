@@ -27,8 +27,22 @@ export const MARK_EDITOR_CLASS: Record<InlineMark, string> = {
   mark_b: "bg-accent border-b-2 border-dashed border-foreground/50 rounded-[2px] px-0.5",
 };
 
+/** The keyboard shortcuts for the four marks (AUTH-026, docs/decisions/0234
+ * Decision 1). prosemirror-keymap falls back to the physical key when a
+ * modifier is held and the typed character is not ASCII, so Ctrl+I also works
+ * on a Russian layout (the test is the evidence). */
+export const MARK_SHORTCUT: Record<InlineMark, string> = {
+  emphasis: "Mod-i",
+  english: "Mod-Alt-1",
+  mark_a: "Mod-Alt-2",
+  mark_b: "Mod-Alt-3",
+};
+
 const Emphasis = Mark.create({
   name: "emphasis",
+  addKeyboardShortcuts() {
+    return { [MARK_SHORTCUT.emphasis]: () => this.editor.commands.toggleMark(this.name) };
+  },
   parseHTML() {
     return [{ tag: "em" }, { tag: "i" }, { style: "font-style=italic" }];
   },
@@ -39,6 +53,9 @@ const Emphasis = Mark.create({
 
 const English = Mark.create({
   name: "english",
+  addKeyboardShortcuts() {
+    return { [MARK_SHORTCUT.english]: () => this.editor.commands.toggleMark(this.name) };
+  },
   parseHTML() {
     return [{ tag: "span[data-mark=english]" }, { tag: 'span[lang="en"]' }];
   },
@@ -53,6 +70,9 @@ const English = Mark.create({
 const MarkA = Mark.create({
   name: "mark_a",
   excludes: "mark_b",
+  addKeyboardShortcuts() {
+    return { [MARK_SHORTCUT.mark_a]: () => this.editor.commands.toggleMark(this.name) };
+  },
   parseHTML() {
     return [{ tag: "span[data-mark=mark_a]" }];
   },
@@ -64,6 +84,9 @@ const MarkA = Mark.create({
 const MarkB = Mark.create({
   name: "mark_b",
   excludes: "mark_a",
+  addKeyboardShortcuts() {
+    return { [MARK_SHORTCUT.mark_b]: () => this.editor.commands.toggleMark(this.name) };
+  },
   parseHTML() {
     return [{ tag: "span[data-mark=mark_b]" }];
   },

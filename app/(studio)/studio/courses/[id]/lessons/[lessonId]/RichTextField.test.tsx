@@ -48,3 +48,13 @@ describe("RichTextField — a value changed from outside (AUTH-026)", () => {
     expect(editor.getText()).toBe("New");
   });
 });
+
+describe("RichTextField — shortcut hints (AUTH-026)", () => {
+  it("the Em button names its shortcut and carries aria-keyshortcuts (jsdom is not macOS)", async () => {
+    render(<RichTextField label="Text" value={[{ text: "x" }]} onChange={() => {}} />);
+    await screen.findByRole("textbox", { name: "Text" });
+    const button = screen.getByRole("button", { name: "Emphasis" });
+    expect(button.getAttribute("title")).toContain("Ctrl+I");
+    expect(button.getAttribute("aria-keyshortcuts")).toBe("Control+I");
+  });
+});

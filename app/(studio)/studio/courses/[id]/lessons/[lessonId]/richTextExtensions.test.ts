@@ -151,3 +151,34 @@ describe("richTextExtensions — paste keeps the stored shape (AUTH-026)", () =>
     shows(e);
   });
 });
+
+describe("richTextExtensions — mark shortcuts (AUTH-026)", () => {
+  it("Mod-I toggles emphasis on the selection", () => {
+    const e = make([{ text: "Hello world" }]);
+    e.commands.setTextSelection({ from: 7, to: 12 });
+    e.commands.keyboardShortcut("Mod-i");
+    expect(runs(e)).toEqual([{ text: "Hello " }, { text: "world", marks: ["emphasis"] }]);
+    e.commands.keyboardShortcut("Mod-i");
+    expect(runs(e)).toEqual([{ text: "Hello world" }]);
+  });
+
+  it("Ctrl+I works on a Russian keyboard layout (key ш, physical I)", () => {
+    const e = make([{ text: "word" }]);
+    e.commands.selectAll();
+    const event = new KeyboardEvent("keydown", { key: "ш", keyCode: 73, ctrlKey: true, bubbles: true });
+    const handled = e.view.someProp("handleKeyDown", (f) => f(e.view, event));
+    expect(handled).toBe(true);
+    expect(runs(e)).toEqual([{ text: "word", marks: ["emphasis"] }]);
+  });
+
+  it.each([
+    ["Mod-Alt-1", "english"],
+    ["Mod-Alt-2", "mark_a"],
+    ["Mod-Alt-3", "mark_b"],
+  ] as const)("%s toggles %s", (shortcut, mark) => {
+    const e = make([{ text: "word" }]);
+    e.commands.selectAll();
+    e.commands.keyboardShortcut(shortcut);
+    expect(runs(e)).toEqual([{ text: "word", marks: [mark] }]);
+  });
+});

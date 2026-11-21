@@ -4,7 +4,21 @@ import { useEffect, useRef } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { INLINE_MARKS, type InlineContent, type InlineMark } from "@/lib/lessons";
 import { docToRuns, normalizeRuns, runsToDoc, type RichTextDoc } from "@/lib/lessons/richTextDoc";
-import { richTextExtensions } from "./richTextExtensions";
+import { MARK_SHORTCUT, richTextExtensions } from "./richTextExtensions";
+
+/** Shortcut hints for a button (AUTH-026, docs/decisions/0234 Decision 1),
+ * written for the platform: ⌘ and ⌥ on macOS, Ctrl and Alt elsewhere. */
+const isMac = () => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
+
+function shortcutHint(mark: InlineMark, mac: boolean): { label: string; aria: string } {
+  const [, ...mods] = MARK_SHORTCUT[mark].split("-").reverse();
+  const key = MARK_SHORTCUT[mark].split("-").pop() as string;
+  const alt = mods.includes("Alt");
+  return {
+    label: mac ? `⌘${alt ? "⌥" : ""}${key.toUpperCase()}` : `Ctrl+${alt ? "Alt+" : ""}${key.toUpperCase()}`,
+    aria: `${mac ? "Meta" : "Control"}+${alt ? "Alt+" : ""}${key.toUpperCase()}`,
+  };
+}
 
 /**
  * One rich-text field for one stored `InlineContent` value (AUTH-025,
@@ -100,6 +114,8 @@ export function RichTextField({
     editor.chain().setMeta("addToHistory", false).setContent(runsToDoc(value), { emitUpdate: false }).run();
   }, [editor, value]);
 
+  const mac = isMac();
+
   const state = useEditorState({
     editor,
     selector: ({ editor: current }) => ({
@@ -136,8 +152,9 @@ export function RichTextField({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => editor?.chain().focus().toggleMark(mark).run()}
                 disabled={!editor}
-                title={MARK_TITLE[mark]}
+                title={`${MARK_TITLE[mark]} (${shortcutHint(mark, mac).label})`}
                 aria-label={MARK_TITLE[mark]}
+                aria-keyshortcuts={shortcutHint(mark, mac).aria}
                 aria-pressed={active}
                 className={`cursor-pointer rounded px-1.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   active ? "bg-brand text-white" : "border border-border text-muted-foreground hover:bg-accent"
