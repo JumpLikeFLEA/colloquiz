@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { INLINE_MARKS, type InlineContent, type InlineMark } from "@/lib/lessons";
 import { docToRuns, normalizeRuns, runsToDoc, type RichTextDoc } from "@/lib/lessons/richTextDoc";
@@ -81,20 +81,37 @@ export function RichTextField({
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  const editor = useEditor({
-    extensions: richTextExtensions({ singleLine }),
-    content: runsToDoc(value),
-    // Next renders client components on the server too; Tiptap must not
-    // build its view there (it would mismatch on hydration).
-    immediatelyRender: false,
-    editorProps: {
+  const errorId = useId();
+  const hasErrors = (fieldErrors?.length ?? 0) > 0;
+
+  // useEditor compares every option on each render and calls setOptions when
+  // one differs (only the on* callbacks are exempt), so each option is held
+  // still here (docs/decisions/0234, "Context"). Later values reach the
+  // editor through the sync effect below, never through `content`.
+  const extensions = useMemo(() => richTextExtensions({ singleLine }), [singleLine]);
+  const [initialContent] = useState(() => runsToDoc(value));
+  const editorProps = useMemo(
+    () => ({
       attributes: {
         class: FIELD_CLASS,
         role: "textbox",
         "aria-multiline": singleLine ? "false" : "true",
         ...(label ? { "aria-label": label } : {}),
+        ...(hasErrors ? { "aria-invalid": "true", "aria-describedby": errorId } : {}),
       },
-    },
+    }),
+    [singleLine, label, hasErrors, errorId],
+  );
+
+  const editor = useEditor({
+    extensions,
+    content: initialContent,
+    // The field only ever mounts inside an expanded block (BlockList's
+    // expandedId starts null), so it is never server-rendered; building the
+    // view at once puts the box and its text in the first commit instead of
+    // one empty frame later (docs/decisions/0234 Decision 4).
+    immediatelyRender: true,
+    editorProps,
     onUpdate: ({ editor: current }) => {
       // A single-line field's paste is flattened by the schema's paste plugin
       // (richTextExtensions, docs/decisions/0234 Decision 5), not here.
@@ -166,11 +183,15 @@ export function RichTextField({
           })}
         </div>
       </div>
-      {fieldErrors?.map((message, i) => (
-        <p key={i} className="text-xs text-destructive-text">
-          {message}
-        </p>
-      ))}
+      {hasErrors && (
+        <div id={errorId}>
+          {fieldErrors?.map((message, i) => (
+            <p key={i} className="text-xs text-destructive-text">
+              {message}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

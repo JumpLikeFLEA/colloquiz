@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Editor } from "@tiptap/core";
 import type { InlineContent } from "@/lib/lessons";
@@ -56,5 +57,56 @@ describe("RichTextField — shortcut hints (AUTH-026)", () => {
     const button = screen.getByRole("button", { name: "Emphasis" });
     expect(button.getAttribute("title")).toContain("Ctrl+I");
     expect(button.getAttribute("aria-keyshortcuts")).toBe("Control+I");
+  });
+});
+
+describe("RichTextField — rendering (AUTH-026)", () => {
+  it("a parent re-render with the same value leaves the editor alone", async () => {
+    const value: InlineContent = [{ text: "Same" }];
+    const { rerender } = render(<RichTextField label="Text" value={value} onChange={() => {}} />);
+    const editor = editorOf(await screen.findByRole("textbox", { name: "Text" }));
+    const setOptions = vi.spyOn(editor, "setOptions");
+    // A new onChange closure on every render, as BlockForm passes one.
+    rerender(<RichTextField label="Text" value={value} onChange={() => {}} />);
+    rerender(<RichTextField label="Text" value={value} onChange={() => {}} />);
+    expect(setOptions).not.toHaveBeenCalled();
+  });
+
+  it("the field and its text are in the DOM in the first commit (no empty frame before paint)", () => {
+    let firstCommit: { textbox: boolean; text: string } | null = null;
+    function Probe() {
+      const ref = useRef<HTMLDivElement>(null);
+      const [value] = useState<InlineContent>([{ text: "Hello" }]);
+      // A parent's layout effect runs after its children are in the DOM and
+      // before the browser paints.
+      useLayoutEffect(() => {
+        const box = ref.current?.querySelector('[contenteditable="true"]');
+        firstCommit ??= { textbox: box !== null && box !== undefined, text: box?.textContent ?? "" };
+      }, []);
+      return (
+        <div ref={ref}>
+          <RichTextField label="Text" value={value} onChange={() => {}} />
+        </div>
+      );
+    }
+    render(<Probe />);
+    expect(firstCommit).toEqual({ textbox: true, text: "Hello" });
+  });
+});
+
+describe("RichTextField — errors (AUTH-026)", () => {
+  it("marks the field invalid and describes it with the error text", async () => {
+    render(<RichTextField label="Text" value={[{ text: "" }]} onChange={() => {}} fieldErrors={["Text is required."]} />);
+    const field = await screen.findByRole("textbox", { name: "Text" });
+    expect(field.getAttribute("aria-invalid")).toBe("true");
+    const ids = (field.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);
+    expect(ids.map((id) => document.getElementById(id)?.textContent)).toEqual(["Text is required."]);
+  });
+
+  it("a field with no errors is not marked invalid (positive control)", async () => {
+    render(<RichTextField label="Text" value={[{ text: "Fine" }]} onChange={() => {}} />);
+    const field = await screen.findByRole("textbox", { name: "Text" });
+    expect(field.getAttribute("aria-invalid")).toBeNull();
+    expect(field.getAttribute("aria-describedby")).toBeNull();
   });
 });
