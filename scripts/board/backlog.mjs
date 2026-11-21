@@ -5305,6 +5305,54 @@ export const CARDS = [
     ],
     notes: 'Split from the 2026-11-20 ad hoc fixes (commits "Studio: make the multiple-choice correct radio visible" and "Explanations are optional").',
   },
+  // Owner, 2026-11-21: two of the three cards proposed in AUTH-025's evidence comment (#323).
+  // The third (true-or-false over its JS budget) was declined for now.
+  {
+    key: 'PLAY-022',
+    title: 'Line breaks in the places that still draw text on one line',
+    milestone: 'M4',
+    epic: 'PLAY',
+    type: 'task',
+    rank: 3360,
+    dependsOn: ['AUTH-025'],
+    goal:
+      'Since AUTH-025 (docs/decisions/0233) authors can put line breaks in prompts, options, statements, ordering elements, matching text and ' +
+      'explanations, and the lesson player draws them. Some places still draw that text on one line and show a break as a space; 0233 "Known limits" ' +
+      'lists them. Decide per place whether the break should show, and draw it where it should, so a learner and a teacher read what the author wrote.',
+    acceptance: [
+      'Each place is re-derived from the code (`rg` for the field it reads) and listed in the decision with what it draws today: at least "Correct: <option>" (WrongAnswerNotes, PLAY-015), the answer review line (LessonCompletion, `truncate`), Studio\'s answer text (TCH-003) and homework results (TCH-018), the ask-the-teacher attachment card\'s option list (TCH-006), and the course stats prompt (`plainText`, AUTH-014).',
+      'Per place, a recorded choice: draw the break (LineBreaks), or keep one line (a truncated or clamped line stays one line on purpose); the reason goes in the decision.',
+      'Where the break is drawn, a component test shows a two-line value rendering a `<br>`; where it is kept on one line, a test shows the line feed read as a space, not lost or joined without one.',
+      'Measured at 360px (`npm run viewport360` with `--expect`, plus a browser for states behind a click) in every changed place, with a two-line value and a long unbroken word.',
+      'A docs/ui-decisions.md entry and a decision file.',
+    ],
+    notes: 'Proposed in #323\'s evidence comment. Not a schema change: the stored text already holds the line feed.',
+  },
+  {
+    key: 'OPS-042',
+    title: 'Budget guard: make the signed-in routes measurable',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3370,
+    dependsOn: [],
+    goal:
+      '`npm run budget` cannot measure its signed-in routes: on 2026-11-21 (AUTH-025, #323) `/my` (x2), `/runs/...f1a1`, `/my/messages`, `/my/settings` ' +
+      'and `/courses/coh005-fixture` all printed "FAIL (sign-in as <fixture>@example.com: page.waitForURL: Timeout 15000ms exceeded.)" and ' +
+      '`/runs/...f1a0` "FAIL (navigation returned 404)", on the run before the change and after it, so those budgets are not enforced at all. ' +
+      'Hypothesis (unverified): the script starts `next start` with `.env.local`, which points at the hosted project, while those fixtures are seeded ' +
+      'only on the local stack (scripts/seed-local-fixtures.ts). A second gap seen in the same session: the build stamp (`.next/budget-source-fingerprint`, ' +
+      'OPS-017, docs/decisions/0089) hashes the `.env*` files, not the Supabase URL the build was actually made with, so a `next build` run with other ' +
+      'env vars can be reused by the guard.',
+    acceptance: [
+      'The cause of each FAIL above is re-derived and printed (which project the server reads, whether each fixture user and run exists there), and the hypothesis in the goal is confirmed or replaced in the decision.',
+      'There is one documented way to run the guard so that every route in ROUTES is measured (for example against the local stack with its seeded fixtures), and a run that way prints a KB figure for every signed-in route, with no sign-in timeout.',
+      'A route whose fixture is missing fails fast with a message naming the fixture and the seed command, not after a 15 s timeout; shown by a run with one fixture removed (positive control: the same run with it present measures).',
+      'The build stamp records the Supabase URL the build was made against, and the guard rebuilds when it differs from the URL it will serve; shown by a run after a build made with another URL.',
+      'The budget\'s usage comment, the verify skill and the handoff line on budgets say how to run it; `npm run budget` output before and after is in the evidence.',
+    ],
+    notes: 'Proposed in #323\'s evidence comment. The true-or-false route being over its own budget (261.0 KB of 260 before AUTH-025) is a separate matter and is not part of this card.',
+  },
 
   // ---------------------------------------------------------------- MIG ---
   // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
