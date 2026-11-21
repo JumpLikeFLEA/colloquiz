@@ -186,8 +186,17 @@ describe("selection_grid — parse rejects items that cannot be scored meaningfu
     expect(errors.some((e) => e.field.includes("explanationRef"))).toBe(true);
   });
 
+  it("takes line breaks in the prompt and row statements (docs/decisions/0233)", () => {
+    const ok = selectionGridModule.parse({
+      id: "i",
+      type: "selection_grid",
+      payload: { ...base, prompt: "two\nlines", rows: [row("r1", true), { ...row("r2", false), statement: "a\nb" }] },
+    });
+    expect(ok.ok).toBe(true);
+  });
+
   it("applies the shared authoredString guard to the prompt and each row statement", () => {
-    expect(reject({ ...base, prompt: "two\nlines" })[0].field).toBe("payload.prompt");
+    expect(reject({ ...base, prompt: "bad\ttab" })[0].field).toBe("payload.prompt");
     expect(
       reject({ ...base, rows: [row("r1", true), { ...row("r2", false), statement: "bad\ttab" }] })[0].field,
     ).toBe("payload.rows[1].statement");

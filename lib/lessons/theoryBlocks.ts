@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authoredString } from "../authoredString";
-import { InlineContentSchema } from "./inline";
+import { InlineContentSchema, SingleLineInlineContentSchema } from "./inline";
 
 /**
  * The Alliengll theory-block set (0018 Decision 2; field shapes decided here,
@@ -40,7 +40,8 @@ export const HeadingBlockSchema = z.strictObject({
   /** Two levels only: a lesson runs 10-15 minutes, not a document needing a
    * deep outline. 1 = section heading, 2 = subheading. */
   level: z.union([z.literal(1), z.literal(2)]).default(1),
-  text: InlineContentSchema,
+  /** Single-line: a level-1 heading is a chapter title (docs/decisions/0233). */
+  text: SingleLineInlineContentSchema,
 });
 
 export const ProseBlockSchema = z.strictObject({

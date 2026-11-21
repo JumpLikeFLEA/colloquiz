@@ -21,6 +21,7 @@ import { buildMatchingResponse, clearMatchingPair, setMatchingPair } from "@/lib
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { MatchingContentView } from "./MatchingContentView";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-011b/0060 — `matching` renderer for `presentation: "sort"`: statements
@@ -148,7 +149,7 @@ export function BucketRenderer({
 
   return (
     <div>
-      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}>{item.payload.prompt}</p>
+      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}><LineBreaks text={item.payload.prompt} /></p>
       <DndContext
         id={`bucket-${attemptId}:${item.id}`}
         sensors={sensors}

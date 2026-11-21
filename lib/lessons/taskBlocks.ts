@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MultilineInlineContentSchema } from "./inline";
+import { InlineContentSchema } from "./inline";
 
 /**
  * Task blocks — the third block kind beside theory and practice (VOICE-003,
@@ -61,7 +61,7 @@ export const VoiceTaskBlockSchema = z.strictObject({
    * block's text, so the partner can emphasise a phrase. A run may hold line
    * breaks, so two situations in one task can sit on lines of their own
    * (docs/decisions/0224). */
-  prompt: MultilineInlineContentSchema,
+  prompt: InlineContentSchema,
   maxSeconds: z.number().int().min(VOICE_MIN_SECONDS).max(VOICE_MAX_SECONDS),
   compare: z.enum(VOICE_COMPARE_SLOTS).optional(),
   listenFor: ListenForSchema.optional(),
@@ -79,7 +79,7 @@ export const WritingTaskBlockSchema = z.strictObject({
   id: z.string().min(1),
   kind: z.literal("task"),
   type: z.literal("writing"),
-  prompt: MultilineInlineContentSchema,
+  prompt: InlineContentSchema,
   sendToTeacher: z.boolean(),
 });
 

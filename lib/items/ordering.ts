@@ -26,7 +26,7 @@ import {
 
 const OrderingElementSchema = z.strictObject({
   id: z.string().min(1),
-  text: authoredString(),
+  text: authoredString(1, { allowNewlines: true }),
   /** A reference into `explanations` (or the `fallbackExplanation`) — see
    * lib/items/explanations.ts. Per-element, not per-item: a wrong position is
    * a wrong sub-response of its own (ITEM-009), the same as a grid row, a
@@ -41,7 +41,7 @@ export type OrderingElement = z.infer<typeof OrderingElementSchema>;
 
 const OrderingPayloadSchema = z
   .strictObject({
-    prompt: authoredString(),
+    prompt: authoredString(1, { allowNewlines: true }),
     // Fewer than 2 elements has only one possible order and measures nothing
     // — the ordering analogue of selection's "every option correct" rejection.
     elements: z.array(OrderingElementSchema).min(2),

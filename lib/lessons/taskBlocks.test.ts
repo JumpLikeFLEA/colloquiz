@@ -159,9 +159,11 @@ describe("voice task prompt line breaks (docs/decisions/0224)", () => {
     if (!result.ok) expect(result.errors.map((e) => e.field).join(" ")).toContain("prompt");
   });
 
-  it("leaves a theory block's text single-line", () => {
+  it("takes line breaks in a theory block's text, not in a heading (docs/decisions/0233)", () => {
     const prose = { id: "p1", kind: "theory", type: "prose", text: [{ text: "One\nTwo" }] };
-    expect(parseLessonDocument([prose]).ok).toBe(false);
+    expect(parseLessonDocument([prose]).ok).toBe(true);
+    const heading = { id: "h1", kind: "theory", type: "heading", level: 1, text: [{ text: "One\nTwo" }] };
+    expect(parseLessonDocument([heading]).ok).toBe(false);
   });
 
   it("round-trips through serializeLessonDocument unchanged", () => {

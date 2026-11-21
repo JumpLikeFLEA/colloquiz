@@ -161,8 +161,21 @@ describe("ordering — parse rejects items that cannot be scored meaningfully", 
     expect(errors.some((e) => e.message.includes("must be distinct"))).toBe(true);
   });
 
+  it("takes line breaks in the prompt and element text (docs/decisions/0233)", () => {
+    const ok = orderingModule.parse({
+      id: "i",
+      type: "ordering",
+      payload: { ...base, prompt: "two\r\nlines", elements: [element("a"), { ...element("b"), text: "b\nb" }, element("c")] },
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.item.payload.prompt).toBe("two\nlines");
+      expect(ok.item.payload.elements[1].text).toBe("b\nb");
+    }
+  });
+
   it("applies the shared authoredString guard to the prompt and each element's text", () => {
-    expect(reject({ ...base, prompt: "two\nlines" })[0].field).toBe("payload.prompt");
+    expect(reject({ ...base, prompt: "bad\ttab" })[0].field).toBe("payload.prompt");
     expect(
       reject({ ...base, elements: [element("a"), { id: "b", text: "bad\ttab" }, element("c")] })[0].field,
     ).toBe("payload.elements[1].text");

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { InlineContent, InlineMark, InlineRun } from "@/lib/lessons";
+import { LineBreaks } from "./LineBreaks";
 
 /**
  * Renders one authored `InlineContent` field (an ordered run sequence — see
@@ -32,7 +33,7 @@ function runClassName(marks: readonly InlineMark[] | undefined): string {
 function InlineRunView({ run }: { run: InlineRun }) {
   const marks = run.marks ?? [];
   const className = runClassName(marks);
-  let node: ReactNode = run.text;
+  let node: ReactNode = <LineBreaks text={run.text} />;
 
   if (marks.includes("english")) {
     node = <span lang="en">{node}</span>;

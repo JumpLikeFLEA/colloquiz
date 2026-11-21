@@ -254,9 +254,19 @@ describe("selection — parse rejects items that cannot be scored meaningfully",
     expect(reject({ ...base, correctOptionIds: [] }).length).toBeGreaterThan(0);
   });
 
+  it("takes line breaks in the prompt and option text (docs/decisions/0233)", () => {
+    const ok = selectionModule.parse({
+      id: "i",
+      type: "selection",
+      payload: { ...base, prompt: "two\nlines", options: [{ id: "a", text: "a\r\nb" }, { id: "b", text: "ok" }] },
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.item.payload.options[0].text).toBe("a\nb");
+  });
+
   it("applies the shared authoredString guard to prompt and option text", () => {
-    // Same C0-control rule as lib/authoredString.ts — no newline smuggled into a stem.
-    expect(reject({ ...base, prompt: "two\nlines" })[0].field).toBe("payload.prompt");
+    // Same C0-control rule as lib/authoredString.ts, minus the line feed (0233).
+    expect(reject({ ...base, prompt: "bad\ttab" })[0].field).toBe("payload.prompt");
     expect(reject({ ...base, options: [{ id: "a", text: "bad\ttab" }, { id: "b", text: "ok" }] })[0].field).toBe(
       "payload.options[0].text",
     );

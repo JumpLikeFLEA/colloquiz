@@ -14,6 +14,7 @@ import {
 } from "@/lib/lessonPlayer/selectionResponse";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { optionClassName } from "./optionClassName";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-002 — `selection` renderer (MCQ single, MCQ multi, True/False; one
@@ -61,7 +62,7 @@ export function SelectionRenderer({
 
   return (
     <div>
-      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}>{item.payload.prompt}</p>
+      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}><LineBreaks text={item.payload.prompt} /></p>
       <div className="flex flex-col gap-2" role={item.payload.multi ? "group" : "radiogroup"}>
         {options.map((option) => {
           const isSelected = selected.includes(option.id);
@@ -76,7 +77,7 @@ export function SelectionRenderer({
               onClick={() => setSelected((prev) => toggleSelectionOption(prev, option.id, item.payload.multi))}
               className={optionClassName({ isSelected, submitted, feedback: rowFeedback })}
             >
-              <span className="min-h-6 flex-1">{option.text}</span>
+              <span className="min-h-6 flex-1"><LineBreaks text={option.text} /></span>
               {rowFeedback?.wasSelected && rowFeedback.isCorrect && (
                 <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
               )}

@@ -26,7 +26,7 @@ import {
 
 const SelectionGridRowSchema = z.strictObject({
   id: z.string().min(1),
-  statement: authoredString(),
+  statement: authoredString(1, { allowNewlines: true }),
   /** The row's answer key: true = the statement is true. */
   correct: z.boolean(),
   /** A reference into `explanations` (or the `fallbackExplanation`) — see
@@ -38,7 +38,7 @@ export type SelectionGridRow = z.infer<typeof SelectionGridRowSchema>;
 
 const SelectionGridPayloadSchema = z
   .strictObject({
-    prompt: authoredString(),
+    prompt: authoredString(1, { allowNewlines: true }),
     // Zero rows is rejected here, at parse, rather than reaching score() and
     // dividing 0/0 into NaN — this card's acceptance names that case explicitly.
     rows: z.array(SelectionGridRowSchema).min(1),

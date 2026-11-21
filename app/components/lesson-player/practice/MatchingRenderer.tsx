@@ -28,6 +28,7 @@ import { BucketRenderer } from "./BucketRenderer";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { MatchingContentView } from "./MatchingContentView";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-003/0039 — `matching` renderer (pairs between a left and right side;
@@ -176,7 +177,7 @@ function PairsMatchingRenderer({
 
   return (
     <div>
-      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}>{item.payload.prompt}</p>
+      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}><LineBreaks text={item.payload.prompt} /></p>
       <DndContext
         id={`matching-${attemptId}:${item.id}`}
         sensors={sensors}

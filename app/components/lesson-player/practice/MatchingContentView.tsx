@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { MatchingContent } from "@/lib/items/matching";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-003 — renders a matching element's `content` union (text or image;
@@ -19,7 +20,11 @@ export function MatchingContentView({
   inline?: boolean;
 }) {
   if (content.kind === "text") {
-    return <span className={className}>{content.text}</span>;
+    return (
+      <span className={className}>
+        <LineBreaks text={content.text} />
+      </span>
+    );
   }
 
   return (

@@ -39,7 +39,7 @@ export type SlotGap = z.infer<typeof SlotGapSchema>;
 
 const SlotsPayloadSchema = z
   .strictObject({
-    prompt: authoredString(),
+    prompt: authoredString(1, { allowNewlines: true }),
     input: z.enum(["typed", "drag"]),
     gaps: z.array(SlotGapSchema).min(1),
     explanations: ExplanationsSchema,

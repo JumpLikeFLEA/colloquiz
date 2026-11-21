@@ -206,6 +206,14 @@ describe("slots — parse rejects items that cannot be scored meaningfully", () 
     fallbackExplanation: "explanation",
   };
 
+  it("takes line breaks in the prompt but not in an accepted answer (docs/decisions/0233)", () => {
+    const ok = slotsModule.parse({ id: "item-x", type: "slots", payload: { ...base, prompt: "One ___.\nTwo ___." } });
+    expect(ok.ok).toBe(true);
+    const errors = reject({ ...base, gaps: [gap("g1", "two\nlines"), gap("g2", "dog")] });
+    expect(errors.some((e) => e.field.includes("acceptedAnswers"))).toBe(true);
+    expect(reject({ ...base, prompt: "bad\ttab" })[0].field).toBe("payload.prompt");
+  });
+
   it("rejects zero gaps — an item with nothing to score measures nothing", () => {
     const errors = reject({ ...base, gaps: [] });
     expect(errors.some((e) => e.field === "payload.gaps")).toBe(true);

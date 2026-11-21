@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InlineContentSchema, InlineRunSchema, MultilineInlineContentSchema, optionalInlineContent } from "./inline";
+import { InlineContentSchema, InlineRunSchema, MultilineInlineContentSchema, SingleLineInlineContentSchema, optionalInlineContent } from "./inline";
 
 describe("InlineRunSchema", () => {
   it("accepts plain text with no marks", () => {
@@ -51,9 +51,10 @@ describe("InlineRunSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects a control character (multi-line prose belongs in separate blocks)", () => {
-    const result = InlineRunSchema.safeParse({ text: "line one\nline two" });
-    expect(result.success).toBe(false);
+  it("takes a line break, stores CRLF as LF, rejects a tab (docs/decisions/0233)", () => {
+    const result = InlineRunSchema.safeParse({ text: "line one\r\nline two" });
+    expect(result.success && result.data.text).toBe("line one\nline two");
+    expect(InlineRunSchema.safeParse({ text: "a\tb" }).success).toBe(false);
   });
 });
 
@@ -70,10 +71,8 @@ describe("InlineContentSchema", () => {
 });
 
 describe("MultilineInlineContentSchema", () => {
-  it("accepts a line break that InlineContentSchema rejects", () => {
-    const value = [{ text: "line one\nline two", marks: ["emphasis"] }];
-    expect(MultilineInlineContentSchema.safeParse(value).success).toBe(true);
-    expect(InlineContentSchema.safeParse(value).success).toBe(false);
+  it("is the same schema as InlineContentSchema (docs/decisions/0233)", () => {
+    expect(MultilineInlineContentSchema).toBe(InlineContentSchema);
   });
 
   it("keeps the run rules: marks, empty text, mark_a with mark_b", () => {
@@ -85,6 +84,15 @@ describe("MultilineInlineContentSchema", () => {
 
   it("rejects a tab", () => {
     expect(MultilineInlineContentSchema.safeParse([{ text: "a\tb" }]).success).toBe(false);
+  });
+});
+
+describe("SingleLineInlineContentSchema", () => {
+  it("refuses the line break InlineContentSchema takes", () => {
+    const value = [{ text: "line one\nline two" }];
+    expect(InlineContentSchema.safeParse(value).success).toBe(true);
+    expect(SingleLineInlineContentSchema.safeParse(value).success).toBe(false);
+    expect(SingleLineInlineContentSchema.safeParse([{ text: "one line", marks: ["emphasis"] }]).success).toBe(true);
   });
 });
 

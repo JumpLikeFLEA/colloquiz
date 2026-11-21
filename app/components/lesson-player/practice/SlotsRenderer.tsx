@@ -29,6 +29,7 @@ import {
 } from "@/lib/lessonPlayer/slotsResponse";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
+import { LineBreaks } from "../LineBreaks";
 
 type SubResultById = Map<string, ItemScoreResult["subResults"][number]>;
 
@@ -104,7 +105,7 @@ function GapLayout({
       <p className={lineClassName}>
         {segments.map((segment, index) => (
           <span key={index}>
-            {segment}
+            <LineBreaks text={segment} />
             {index < gapCount && renderGap(index)}
           </span>
         ))}
@@ -114,7 +115,7 @@ function GapLayout({
 
   return (
     <>
-      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}>{prompt}</p>
+      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}><LineBreaks text={prompt} /></p>
       <div className="mb-3 flex flex-col gap-2">
         {Array.from({ length: gapCount }, (_, index) => (
           <div key={index} className="flex items-center gap-2">

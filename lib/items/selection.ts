@@ -31,7 +31,7 @@ import {
 
 const SelectionOptionSchema = z.strictObject({
   id: z.string().min(1),
-  text: authoredString(),
+  text: authoredString(1, { allowNewlines: true }),
 });
 
 /** One selectable option. `id` is what a response references; `text` is what
@@ -40,7 +40,7 @@ export type SelectionOption = z.infer<typeof SelectionOptionSchema>;
 
 const SelectionPayloadSchema = z
   .strictObject({
-    prompt: authoredString(),
+    prompt: authoredString(1, { allowNewlines: true }),
     /** true = several options may be selected; false = exactly one (MCQ single, True/False). */
     multi: z.boolean(),
     options: z.array(SelectionOptionSchema).min(2),

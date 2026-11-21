@@ -11,6 +11,7 @@ import {
   setGridRowAnswer,
 } from "@/lib/lessonPlayer/selectionResponse";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-002 — `selection_grid` renderer (inline True/False over N
@@ -59,7 +60,7 @@ export function SelectionGridRenderer({
 
   return (
     <div>
-      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}>{item.payload.prompt}</p>
+      <p className={`mb-3 ${PROMPT_TEXT_CLASS}`}><LineBreaks text={item.payload.prompt} /></p>
       <div className="flex flex-col gap-2">
         {item.payload.rows.map((row, index) => {
           const answer = answers.get(row.id);
@@ -79,7 +80,7 @@ export function SelectionGridRenderer({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span id={`${idBase}-${row.id}`} className="flex-1 text-sm text-foreground">
                   <span className="mr-1 text-muted-foreground">{index + 1}.</span>
-                  {row.statement}
+                  <LineBreaks text={row.statement} />
                 </span>
                 {/* PLAY-018: the group is named by the row's statement, so a
                     screen reader hears it on entering the True / False pair

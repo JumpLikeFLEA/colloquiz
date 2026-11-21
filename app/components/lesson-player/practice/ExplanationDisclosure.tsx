@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-008 — the "Why?" control every sub-part renderer opens directly
@@ -33,7 +34,7 @@ export function ExplanationDisclosure({ explanation }: { explanation: string }) 
       </button>
       {open && (
         <p id={panelId} className="mb-1 rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">
-          {explanation}
+          <LineBreaks text={explanation} />
         </p>
       )}
     </div>

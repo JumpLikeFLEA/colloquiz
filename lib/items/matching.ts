@@ -24,7 +24,7 @@ import {
  */
 
 const MatchingContentSchema = z.discriminatedUnion("kind", [
-  z.strictObject({ kind: z.literal("text"), text: authoredString() }),
+  z.strictObject({ kind: z.literal("text"), text: authoredString(1, { allowNewlines: true }) }),
   z.strictObject({ kind: z.literal("image"), src: authoredString(), alt: authoredString() }),
 ]);
 
@@ -53,7 +53,7 @@ export type MatchingPair = z.infer<typeof MatchingPairSchema>;
 
 const MatchingPayloadSchema = z
   .strictObject({
-    prompt: authoredString(),
+    prompt: authoredString(1, { allowNewlines: true }),
     left: z.array(MatchingElementSchema).min(1),
     right: z.array(MatchingElementSchema).min(1),
     // A left element with no pair is a legal distractor (see decision 0013),

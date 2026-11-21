@@ -197,6 +197,21 @@ describe("matching — parse rejects items that cannot be scored meaningfully", 
     fallbackExplanation: "explanation",
   };
 
+  it("takes line breaks in the prompt and a text side, not in an image's alt (docs/decisions/0233)", () => {
+    const ok = matchingModule.parse({
+      id: "item-x",
+      type: "matching",
+      payload: { ...base, prompt: "a\nb", left: [{ id: "l1", content: { kind: "text", text: "x\ny" } }, textElement("l2")] },
+    });
+    expect(ok.ok).toBe(true);
+    const errors = reject({
+      ...base,
+      right: [{ id: "r1", content: { kind: "image", src: "https://example.com/a.png", alt: "a\nb" } }, textElement("r2")],
+    });
+    expect(errors.some((e) => e.field.includes("alt"))).toBe(true);
+    expect(reject({ ...base, prompt: "bad\ttab" })[0].field).toBe("payload.prompt");
+  });
+
   it("rejects zero pairs — an item with nothing to score measures nothing", () => {
     const errors = reject({ ...base, pairs: [] });
     expect(errors.some((e) => e.field === "payload.pairs")).toBe(true);

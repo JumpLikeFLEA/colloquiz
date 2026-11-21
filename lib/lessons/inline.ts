@@ -43,7 +43,12 @@ function inlineRunSchema(opts?: { allowNewlines?: boolean }) {
   });
 }
 
-export const InlineRunSchema = inlineRunSchema();
+/** A run whose text may hold line breaks (`
+`; CR/CRLF stored as LF, tabs
+ * and every other control character still refused). Since AUTH-025
+ * (docs/decisions/0233) every inline field takes line breaks: the editor's
+ * Enter inserts one, and `InlineContentView` draws it as `<br>`. */
+export const InlineRunSchema = inlineRunSchema({ allowNewlines: true });
 
 export type InlineRun = z.infer<typeof InlineRunSchema>;
 
@@ -52,11 +57,16 @@ export const InlineContentSchema = z.array(InlineRunSchema).min(1);
 
 export type InlineContent = z.infer<typeof InlineContentSchema>;
 
-/** The same runs, where a run's text may also hold line breaks (`\n`; CR/CRLF
- * stored as LF, tabs still refused). Only the voice task's prompt takes it
- * (docs/decisions/0224): a renderer of such a field draws it with
- * `whitespace-pre-line`. Same TypeScript type as `InlineContent`. */
-export const MultilineInlineContentSchema = z.array(inlineRunSchema({ allowNewlines: true })).min(1);
+/** Single-line runs: a heading's text only. A level-1 heading is a chapter
+ * title (0128) and `dropTitleHeading` compares it with the lesson title, so it
+ * stays on one line. Same TypeScript type as `InlineContent`. */
+export const SingleLineInlineContentSchema = z.array(inlineRunSchema()).min(1);
+
+/** @deprecated An alias of `InlineContentSchema` since AUTH-025 (0233): every
+ * inline field takes line breaks, so the 0224 Decision 2 trap (a multi-line
+ * prompt failing the single-line parse) is gone. Kept so existing readers
+ * keep compiling. */
+export const MultilineInlineContentSchema = InlineContentSchema;
 
 /** An optional inline field (a caption) as the editor hands it back: absent
  * when every run's text is empty. The editor reports a cleared field as

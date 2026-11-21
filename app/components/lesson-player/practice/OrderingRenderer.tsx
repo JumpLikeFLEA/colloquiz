@@ -22,6 +22,7 @@ import {
 } from "@/lib/lessonPlayer/orderingResponse";
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { useLessonPlayerSensors } from "./useLessonPlayerSensors";
+import { LineBreaks } from "../LineBreaks";
 
 /**
  * PLAY-003/0032/0054 — `ordering` renderer (permutation of N elements;
@@ -96,7 +97,7 @@ export function OrderingRenderer({
 
   return (
     <div>
-      <p className={`mb-1 ${PROMPT_TEXT_CLASS}`}>{item.payload.prompt}</p>
+      <p className={`mb-1 ${PROMPT_TEXT_CLASS}`}><LineBreaks text={item.payload.prompt} /></p>
       {!submitted && (
         <p className="mb-3 text-xs text-muted-foreground">{alliengllCopy.player.dragReorderHint}</p>
       )}
@@ -188,7 +189,7 @@ function OrderingRow({
         >
           <GripVertical className="size-4" aria-hidden="true" />
         </button>
-        <span className="min-h-6 flex-1 text-sm text-foreground">{text}</span>
+        <span className="min-h-6 flex-1 text-sm text-foreground"><LineBreaks text={text} /></span>
         {submitted &&
           (correct ? (
             <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
@@ -214,7 +215,7 @@ function OrderingRowPreview({ text }: { text: string }) {
   return (
     <div className="flex min-h-11 items-center gap-2 rounded-lg border border-brand bg-card px-3 py-2 shadow-lg">
       <GripVertical className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <span className="flex-1 text-sm text-foreground">{text}</span>
+      <span className="flex-1 text-sm text-foreground"><LineBreaks text={text} /></span>
     </div>
   );
 }

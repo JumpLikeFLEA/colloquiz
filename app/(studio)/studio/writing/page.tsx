@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { canEnterStudio, getCourseAccess } from "@/lib/courseAccess";
 import { createClient } from "@/lib/supabase/server";
-import { MultilineInlineContentSchema } from "@/lib/lessons/inline";
+import { InlineContentSchema } from "@/lib/lessons/inline";
 import { inlinePlainText } from "@/lib/lessons/plainText";
 import {
   matchesWritingStatus,
@@ -47,7 +47,7 @@ export default async function WritingReviewsPage({
     .filter((r) => !filters.course || r.courseId === filters.course)
     .filter((r) => matchesWritingStatus(r.status, filters.status))
     .map((r) => {
-      const prompt = MultilineInlineContentSchema.safeParse(r.blockPrompt);
+      const prompt = InlineContentSchema.safeParse(r.blockPrompt);
       return { ...r, promptText: prompt.success ? inlinePlainText(prompt.data) : "" };
     });
 
