@@ -4,6 +4,8 @@ import HardBreak from "@tiptap/extension-hard-break";
 import Paragraph from "@tiptap/extension-paragraph";
 import Text from "@tiptap/extension-text";
 import { UndoRedo } from "@tiptap/extensions";
+import { Fragment, Slice, type Mark as PMMark, type Node as PMNode } from "@tiptap/pm/model";
+import { Plugin } from "@tiptap/pm/state";
 import type { InlineMark } from "@/lib/lessons";
 
 /**
@@ -83,9 +85,68 @@ const LineBreakOnEnter = (singleLine: boolean) =>
     },
   });
 
+/** The field is one paragraph (the schema says so), so a paste must arrive as
+ * one paragraph too, or the editor shows something the stored runs can't
+ * hold (AUTH-026, docs/decisions/0234 Decisions 2 and 5). Pasted blocks and
+ * plain-text lines join with a line break, a blank line stays two; a
+ * single-line field (a heading) joins with a space and turns a pasted <br>
+ * into one, as `docToRuns` would have stored it. */
+const PasteShape = (singleLine: boolean) =>
+  Extension.create({
+    name: "pasteShape",
+    addProseMirrorPlugins() {
+      const schema = this.editor.schema;
+      const joint = (marks?: readonly PMMark[]) =>
+        singleLine ? schema.text(" ", marks) : schema.nodes.hardBreak.create();
+      const oneParagraph = (inline: PMNode[]) =>
+        new Slice(Fragment.from(schema.nodes.paragraph.create(null, inline)), 1, 1);
+      return [
+        new Plugin({
+          props: {
+            clipboardTextParser(text) {
+              const inline: PMNode[] = [];
+              text.split(/\r\n|\r|\n/).forEach((line, i) => {
+                if (i > 0) inline.push(joint());
+                if (line) inline.push(schema.text(line));
+              });
+              return oneParagraph(inline);
+            },
+            transformPasted(slice) {
+              const blocks: PMNode[][] = [];
+              let loose: PMNode[] | null = null;
+              slice.content.forEach((node) => {
+                if (node.isTextblock) {
+                  loose = null;
+                  const children: PMNode[] = [];
+                  node.content.forEach((child) => children.push(child));
+                  blocks.push(children);
+                } else if (node.isInline) {
+                  if (!loose) {
+                    loose = [];
+                    blocks.push(loose);
+                  }
+                  loose.push(node);
+                }
+              });
+              if (blocks.length === 0) return slice;
+              const inline: PMNode[] = [];
+              blocks.forEach((children, i) => {
+                if (i > 0) inline.push(joint());
+                for (const child of children) {
+                  inline.push(singleLine && child.type.name === "hardBreak" ? schema.text(" ", child.marks) : child);
+                }
+              });
+              return oneParagraph(inline);
+            },
+          },
+        }),
+      ];
+    },
+  });
+
 export function richTextExtensions({ singleLine = false }: { singleLine?: boolean } = {}): AnyExtension[] {
   return [
-    Document,
+    Document.extend({ content: "paragraph" }),
     Paragraph,
     Text,
     HardBreak.configure({ keepMarks: true }),
@@ -95,5 +156,6 @@ export function richTextExtensions({ singleLine = false }: { singleLine?: boolea
     MarkA,
     MarkB,
     LineBreakOnEnter(singleLine),
+    PasteShape(singleLine),
   ];
 }

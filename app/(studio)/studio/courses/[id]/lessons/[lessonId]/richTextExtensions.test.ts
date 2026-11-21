@@ -101,3 +101,53 @@ describe("richTextExtensions", () => {
     expect(runs(e)).toEqual([{ text: "" }]);
   });
 });
+
+// AUTH-026 (docs/decisions/0234): the field shows exactly what it stores,
+// whatever arrives by paste. `shows` is the invariant: the editor's document is
+// the one the stored runs convert back to.
+const shows = (e: Editor) => expect(e.getJSON()).toEqual(runsToDoc(runs(e)));
+
+describe("richTextExtensions — paste keeps the stored shape (AUTH-026)", () => {
+  it("a single-line field turns a pasted <br> into the space it stores", () => {
+    const e = make([{ text: "" }], true);
+    e.commands.focus();
+    e.view.pasteHTML("one<br>two");
+    expect(runs(e)).toEqual([{ text: "one two" }]);
+    shows(e);
+  });
+
+  it("a single-line field joins pasted paragraphs with a space", () => {
+    const e = make([{ text: "" }], true);
+    e.commands.focus();
+    e.view.pasteHTML("<p>one</p><p>two</p>");
+    expect(e.getJSON().content).toHaveLength(1);
+    expect(runs(e)).toEqual([{ text: "one two" }]);
+    shows(e);
+  });
+
+  it("a single-line field joins pasted plain-text lines with a space", () => {
+    const e = make([{ text: "" }], true);
+    e.commands.focus();
+    e.view.pasteText("one\ntwo");
+    expect(runs(e)).toEqual([{ text: "one two" }]);
+    shows(e);
+  });
+
+  it("a multi-line field keeps a pasted blank line, as two typed Enters do", () => {
+    const e = make([{ text: "" }]);
+    e.commands.focus();
+    e.view.pasteText("Line one\n\nLine three");
+    expect(e.getJSON().content).toHaveLength(1);
+    expect(runs(e)).toEqual([{ text: "Line one\n\nLine three" }]);
+    shows(e);
+  });
+
+  it("a multi-line field turns pasted paragraphs into one paragraph with a line break", () => {
+    const e = make([{ text: "" }]);
+    e.commands.focus();
+    e.view.pasteHTML("<p>one</p><p><em>two</em></p>");
+    expect(e.getJSON().content).toHaveLength(1);
+    expect(runs(e)).toEqual([{ text: "one\n" }, { text: "two", marks: ["emphasis"] }]);
+    shows(e);
+  });
+});

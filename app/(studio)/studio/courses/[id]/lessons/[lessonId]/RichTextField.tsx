@@ -80,11 +80,11 @@ export function RichTextField({
         "aria-multiline": singleLine ? "false" : "true",
         ...(label ? { "aria-label": label } : {}),
       },
-      transformPastedText: (text) => (singleLine ? text.replace(/\s*\r?\n\s*/g, " ") : text),
     },
     onUpdate: ({ editor: current }) => {
-      let next = docToRuns(current.getJSON() as RichTextDoc);
-      if (singleLine) next = next.map((run) => ({ ...run, text: run.text.replace(/\n/g, " ") }));
+      // A single-line field's paste is flattened by the schema's paste plugin
+      // (richTextExtensions, docs/decisions/0234 Decision 5), not here.
+      const next = docToRuns(current.getJSON() as RichTextDoc);
       lastEmitted.current = next;
       onChangeRef.current(next);
     },
