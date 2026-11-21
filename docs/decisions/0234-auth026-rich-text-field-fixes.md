@@ -58,3 +58,18 @@ From the 2026-11-21 review of AUTH-025's Tiptap field (chat), re-checked read-on
 - A field can render on first load (for example, a deep link that opens a block): Decision 4 no longer holds.
 - Tiptap changes `setContent`'s history behaviour or `useEditor`'s option comparison.
 - The authors answer the inclusive-marks question.
+
+## Evidence
+
+Copied from the printed `vitest` / `npm` output of the 2026-11-21 run (`--project editor`; `npm test` run from PowerShell on `D:\`).
+
+| Step | Before the fix | After the fix | `npm run check` / `npm test` |
+|---|---|---|---|
+| 2 paste (`richTextExtensions.test.ts`, 5 new) | `Tests  5 failed \| 8 passed (13)`; the five failures were the ones named in the prompt (`<br>` kept as `\n`; two paragraphs; plain-text lines kept as `\n`; blank line, 2 paragraphs; pasted paragraphs, 2 paragraphs) | `Tests  13 passed (13)` | exit 0 / exit 0, `Test Files  204 passed`, `Tests  2445 passed` |
+| 3 undo and keys (`RichTextField.test.tsx` 2, `BlockForm.richText.test.tsx` 2) | `Tests  4 failed (4)`: `expected 'Old value' to be 'New value'`, `expected 'Old' to be 'New'`, and two `toBe(editor)` identity failures | `Tests  4 passed (4)`; with `VoiceTaskForm`, `LessonContentEditor` and the other editor files that render these forms, `Tests  28 passed (28)` | exit 0 / exit 0, `Test Files  206 passed`, `Tests  2449 passed` |
+| 4 shortcuts (5 new + 1 button test) | `Tests  6 failed \| 15 passed (21)` (`expected undefined to be true` for the Russian layout, `expected 'Emphasis' to contain 'Ctrl+I'`) | `Tests  23 passed (23)` | exit 0 / exit 0, `Test Files  206 passed`, `Tests  2455 passed` |
+| 5 first paint, re-renders, errors (4 new) | `Tests  3 failed \| 4 passed (7)`: `setOptions ... called 2 times`, `{ textbox: false, text: '' }`, `expected null to be 'true'`; the no-error positive control passed | `Tests  56 passed (56)` over the seven editor files | exit 0 / exit 0, `Test Files  206 passed`, `Tests  2459 passed` |
+
+Acceptance 5: `rg -n "RichTextField|richTextExtensions" "app/(english)" app/components/lesson-player` printed nothing (exit 1); the same pattern over `app/(studio)` lists `BlockForm.tsx`, `RichTextField.tsx`, `richTextExtensions.ts` and their tests.
+
+Not measured: no new visual state (so no 360px run), no real browser run of a paste or a shortcut (jsdom only; the Russian-layout case is driven through `handleKeyDown` with `key: "ш"`, `keyCode: 73`), macOS tooltip wording (jsdom is not macOS; the ⌘ branch is untested).

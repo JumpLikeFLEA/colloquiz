@@ -3301,3 +3301,10 @@ Appended to in the same commit as the change it records. Referenced from
   locally before and after. Not measured: dark mode, a phone, Safari, a real OS paste into the field (paste
   is covered by a jsdom test). Do not register another Tiptap node or mark without widening the stored
   shape first (0233 "Revisit if"), and do not import `RichTextField` outside Studio.
+- Rich-text field: shortcuts named in the tooltips (2026-11-21, AUTH-026, docs/decisions/0234).
+  The Em / EN / A / B buttons' tooltips now name their shortcut for the platform ("Emphasis (Ctrl+I)",
+  "English span (Ctrl+Alt+1)", "Highlight A (Ctrl+Alt+2)", "Highlight B (Ctrl+Alt+3)"; ⌘ and ⌥ on a Mac)
+  and carry `aria-keyshortcuts`. Nothing else changes visually: the field is built in the first frame
+  instead of one frame later, a paste keeps the stored shape, and an outside change is not undoable (all
+  behaviour, no new state). Existing classes and tokens; no new colours. Not measured: no new state.
+  Do not bind the marks to Ctrl+Shift+digit (Cmd+Shift+3 is a macOS screenshot).

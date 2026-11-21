@@ -90,7 +90,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "To make a variant for another level or group, press the copy icon on a lesson row, or **Duplicate** at the top of the course, and confirm. The copy opens at once.",
     ],
     tips: [
-      "Type in a text box as in any editor. Enter starts a new line everywhere except a heading. To mark words, select them and press **Em** (emphasis), **EN** (English), **A** or **B** (the two highlights); the button stays lit while the cursor is in marked text. A word takes A or B, never both.",
+      "Type in a text box as in any editor. Enter starts a new line everywhere except a heading. To mark words, select them and press **Em** (emphasis), **EN** (English), **A** or **B** (the two highlights); the button stays lit while the cursor is in marked text. Shortcuts: Ctrl+I for **Em**, Ctrl+Alt+1 for **EN**, Ctrl+Alt+2 for **A**, Ctrl+Alt+3 for **B** (⌘ and ⌥ on a Mac); a button's tooltip names its own. A word takes A or B, never both.",
       "Explanations are optional. With one, a learner who gets a part wrong can press **Why?** to read it; without one, they see the right answer only. One **Fallback explanation** covers every part that has none.",
       "An **Image** block shows the picture at its own shape, uncropped. Press **Upload image**, or click the image box and paste a picture with Ctrl+V (⌘V on a Mac). Then choose its **Size**: Small, Medium, Large or Full width.",
       "An **Audio** block takes an MP3 or M4A file up to 5 MB: press **Upload audio**, then add a caption if you want one, such as the line being spoken. Learners play it in the lesson; nothing depends on it.",
