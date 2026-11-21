@@ -148,11 +148,15 @@ the file fails validation.
 - `estimatedMinutes`: the PDF's own stated time for the section (sum them
   for merged sections). Never estimated from word counts; omit the field if
   the PDF gives no time.
-- Course-level and lesson-level `description` accept `\n` paragraph breaks
-  (the only fields in this schema that do). **Every other text field below
-  — including every InlineContent run, every prompt, option, statement,
-  explanation, accepted answer, model answer and checklist item — is a
-  single line**: no literal newlines, no tabs, no markup.
+- Line breaks (`\n`) are allowed in: course-level and lesson-level
+  `description`, every InlineContent run EXCEPT a heading's, every practice
+  prompt, option, statement, ordering element, matching text side,
+  explanation and fallback explanation, and the voice and writing task
+  prompts. Use one only where the file itself breaks the line (two
+  situations on lines of their own, a short dialogue); a new paragraph of
+  theory is still a new prose block. **Single line, no `\n`:** a heading's
+  text, an accepted answer, an example's label, image alt text and URLs,
+  and checklist items. Never a tab, never markup.
 
 ===== INLINE CONTENT =====
 
@@ -191,9 +195,9 @@ Any field typed InlineContent is an ARRAY of "runs":
   `string`, so it cannot carry highlighting — do not try to emulate marks
   with symbols, capitals or asterisks.
 
-Every field typed plain `string` (not InlineContent) is a single line of
-plain text — do not wrap it in the run-array structure, and do not put
-markup in it.
+Every field typed plain `string` (not InlineContent) is plain text (a line
+break only where the rule above allows one) — do not wrap it in the
+run-array structure, and do not put markup in it.
 
 ===== THEORY BLOCKS (kind: "theory") — lib/lessons/theoryBlocks.ts =====
 
@@ -334,7 +338,7 @@ verified against `lib/items/explanations.ts`:
   `explanationRef` in the payload** — an unused key is ALSO a validation
   error, even when a `fallbackExplanation` is also set. If every sub-part
   uses the fallback, `explanations` is `{}`.
-- Explanations are single-line plain strings, shown to a learner who just
+- Explanations are plain strings (a line break allowed), shown to a learner who just
   got that sub-part wrong. Say what the right answer is and why.
 - Prefer a SPECIFIC explanation per sub-part over one shared
   `fallbackExplanation` whenever the PDF's answer key gives a per-item
@@ -500,8 +504,9 @@ required, not optional:
 
 You cannot run the validator, so walk through this list for each lesson:
 1. Block ids unique within the lesson; every slug is kebab-case.
-2. No empty InlineContent and no empty run text anywhere; no newline or tab
-   in any string except the two `description` fields.
+2. No empty InlineContent and no empty run text anywhere; no tab anywhere,
+   and no newline in a heading, an accepted answer, a label, alt text, a URL
+   or a checklist item.
 3. Every table row has exactly `header.length` cells.
 4. Per practice block: every `explanationRef` resolves (key or fallback),
    and every `explanations` key is referenced by something.

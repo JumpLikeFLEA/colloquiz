@@ -2,19 +2,19 @@ import type { ImportPlan, ImportPlanLesson } from "./plan";
 
 /**
  * What goes to Claude (CNT-018, docs/decisions/0203). The system block is the drafting rules
- * (prompts/course-import/system-v1.md) and is the same for every call of a job, so the file
+ * (prompts/course-import/system-v2.md) and is the same for every call of a job, so the file
  * that follows it is cached after the first call. Each step's instruction is a prompt file
  * (plan, lesson, repair); everything the author typed or wrote is data inside tags.
  *
  * Nothing here takes a user id, a name or an email, so none can reach the provider.
  */
 
-export const IMPORT_PROMPT_VERSION = "course-import-v1";
+export const IMPORT_PROMPT_VERSION = "course-import-v2";
 
 export type ImportPromptName = "system" | "plan" | "lesson" | "repair";
 
 export function promptFileName(name: ImportPromptName): string {
-  return `${name}-v1.md`;
+  return `${name}-v2.md`;
 }
 
 /** The prompt files start with an HTML comment for maintainers; the model never sees it. */

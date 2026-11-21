@@ -26,6 +26,11 @@ lesson draws every run inline in one `<p>`, so the two situations ran together
   data migration.
 
 ## Decision
+
+> **Decisions 1 and 4 superseded (2026-11-21, docs/decisions/0233, AUTH-025):**
+> every inline field now takes line breaks and is edited in a rich-text field;
+> `MultilineInlineContentSchema` is an alias of `InlineContentSchema`.
+
 1. **A.** `MultilineInlineContentSchema` (lib/lessons/inline.ts) is
    `InlineContentSchema` with `allowNewlines` on each run's text. Only
    `VoiceTaskBlockSchema.prompt` uses it. Theory text, captions and the

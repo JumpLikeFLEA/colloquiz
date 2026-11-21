@@ -3266,4 +3266,38 @@ Appended to in the same commit as the change it records. Referenced from
   an entitlement grant the same page drew 2 course-link sections and 0 offers. Not measured: dark
   mode, a phone, `npm run budget` (the code is in the recorder's lazy chunk, which no budget route
   loads). Do not decide the offer in the client, and do not show it without course links.
-
+- Rich-text fields and line breaks everywhere (2026-11-21, AUTH-025, docs/decisions/0233), SUPERSEDING
+  the run-by-run inline editor (0033 Decision 3) and the 2026-11-09 entry's voice-prompt textarea runs
+  and hint (0224 Decision 4); the drawing half of that entry stands.
+  - Studio: every inline field (theory text, list items, table cells, captions, the voice and writing
+    prompts) is one Tiptap field in the old input's look (`rounded-lg border border-border bg-background
+    text-sm`, `focus:border-brand`), with the Em / EN / A / B buttons beside it as before, now applying to
+    the selection or to what is typed next and lit (`bg-brand text-white`, `aria-pressed`) while the
+    cursor is in that mark. In the field, English text has a dotted underline and A / B the player's own
+    highlight classes. Enter starts a new line everywhere except a heading's text. "+ Add run", "Remove
+    run" and the voice and writing forms' "Press Enter to start a new line." are gone. Practice prompts,
+    options, statements, ordering elements and matching text are textareas that grow with their text
+    (`GrowingTextarea`, the input's classes plus `resize-none field-sizing-content`).
+  - Player: a line feed is drawn as a line break (`LineBreaks`, `<br>`) in every theory block, caption,
+    table cell, practice prompt, option, statement, ordering row, matching text, slots sentence and
+    explanation. Text with no line feed renders as before.
+  - Existing classes and tokens; no new colours.
+  Measured (local stack, `next build` + `next start`, Edge, a scratch admin and a scratch version of
+  `play-006-smoke/writing-lesson`, both removed after): the lesson editor `document 360/360` and
+  `1280/1280` at load and with each form open in turn (Prose, Multiple choice, True/False statements, Put
+  in order, Match pairs, Fill the gaps, Voice task, Writing task). Studio's `main` is 380/360 at load,
+  before any form opens: the lesson editor's pre-existing header overflow (see the AUTH-020 entry). In a
+  browser at 1280: two lines typed with Em on one word, saved as `[{"text":"Two lines with one
+  "},{"text":"stressed","marks":["emphasis"]},{"text":" word.\nThis is the second line."}]`, reloaded as
+  `<p>Two lines with one <em>stressed</em> word.<br>This is the second line.</p>` in the editor. The
+  lesson page with that paragraph, a two-line prompt, a two-line option and a two-line voice prompt:
+  `npm run viewport360 --expect="This is the second line."` 360/360; in Edge `document 360/360` and
+  `1280/1280`, 0 page errors, a `<br>` in each of the four. Bundle: the editor code is in one chunk,
+  referenced only by the Studio lesson editor's client-reference manifest (0 of 191 others). `npm run
+  budget` before and after the editor, identical on all 9 routes it reached (`/login` 289.2 KB, `/` 192.9,
+  `/` phone 185.9, true-or-false 261.1, applied-practice 289.2, the course page 177.4, `/invite`, `/join`
+  and `/completed` 177.1); the line-break drawing itself adds 0.1 KB to true-or-false (261.0 before the
+  card, already over its 260) and 0.3 KB to applied-practice (288.9). The signed-in routes FAIL to sign in
+  locally before and after. Not measured: dark mode, a phone, Safari, a real OS paste into the field (paste
+  is covered by a jsdom test). Do not register another Tiptap node or mark without widening the stored
+  shape first (0233 "Revisit if"), and do not import `RichTextField` outside Studio.

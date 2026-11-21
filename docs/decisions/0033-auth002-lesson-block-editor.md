@@ -46,6 +46,9 @@ scale (docs/handoff.md).
 
 ## Decision 3 — the inline-markup control
 
+> **Superseded (2026-11-21, docs/decisions/0233, AUTH-025):** the run-by-run
+> control below is replaced by a rich-text field; the stored shape is unchanged.
+
 `InlineEditor.tsx` represents an `InlineContent` value (lib/lessons/inline.ts)
 as a flat list of runs, each its own text input plus mark-toggle buttons
 (Emphasis / English / Highlight A / Highlight B, A and B mutually exclusive
