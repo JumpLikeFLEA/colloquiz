@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { Plus, X } from "lucide-react";
 import {
   Select,
@@ -19,7 +20,7 @@ import {
   type TheoryBlock,
 } from "@/lib/lessons";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
-import { InlineEditor } from "./InlineEditor";
+import { RichTextField } from "./RichTextField";
 import { LessonAudioUploadButton } from "./LessonAudioUploadButton";
 
 // One field-group per theory block type — no raw JSON is ever shown to the
@@ -30,6 +31,21 @@ import { LessonAudioUploadButton } from "./LessonAudioUploadButton";
 export const inputClass =
   "w-full px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none";
 export const labelClass = "text-xs font-medium text-muted-foreground";
+
+/** A plain-text box that takes line breaks and grows with its text
+ * (AUTH-025, docs/decisions/0233): practice prompts, options, statements,
+ * ordering elements and matching text. `field-sizing: content` grows it
+ * where supported; `rows` (one per line) is the fallback. */
+export function GrowingTextarea({ className, value, ...props }: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      {...props}
+      value={value}
+      rows={String(value ?? "").split("\n").length}
+      className={`${inputClass} resize-none field-sizing-content ${className ?? ""}`}
+    />
+  );
+}
 
 export function errorsFor(errors: BlockFieldErrors | undefined, path: string): string[] | undefined {
   return errors?.get(path);
@@ -42,6 +58,7 @@ export function TextField({
   errors,
   path,
   placeholder,
+  multiline = false,
 }: {
   label: string;
   value: string;
@@ -49,17 +66,28 @@ export function TextField({
   errors?: BlockFieldErrors;
   path: string;
   placeholder?: string;
+  /** A growing textarea that takes line breaks (a practice prompt, 0233). */
+  multiline?: boolean;
 }) {
   const fieldErrors = errorsFor(errors, path);
   return (
     <div className="space-y-1">
       <label className={labelClass}>{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={inputClass}
-      />
+      {multiline ? (
+        <GrowingTextarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          aria-label={label}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={inputClass}
+        />
+      )}
       {fieldErrors?.map((m, i) => (
         <p key={i} className="text-xs text-destructive-text">
           {m}
@@ -76,7 +104,7 @@ export function InlineField({
   errors,
   path,
   placeholder,
-  multiline,
+  singleLine,
   hint,
 }: {
   label: string;
@@ -85,18 +113,20 @@ export function InlineField({
   errors?: BlockFieldErrors;
   path: string;
   placeholder?: string;
-  multiline?: boolean;
+  /** A heading's text: Enter does nothing (docs/decisions/0233). */
+  singleLine?: boolean;
   hint?: string;
 }) {
   return (
     <div className="space-y-1">
       <label className={labelClass}>{label}</label>
-      <InlineEditor
+      <RichTextField
         value={value}
         onChange={onChange}
         fieldErrors={errorsFor(errors, path)}
         placeholder={placeholder}
-        multiline={multiline}
+        label={label}
+        singleLine={singleLine}
       />
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
@@ -140,6 +170,7 @@ export function BlockForm({
             onChange={(text) => onChange({ ...block, text })}
             errors={errors}
             path="text"
+            singleLine
           />
         </div>
       );
@@ -216,7 +247,8 @@ export function BlockForm({
             {block.items.map((item, i) => (
               <div key={i} className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <InlineEditor
+                  <RichTextField
+                    label={`Item ${i + 1}`}
                     value={item}
                     onChange={(next) =>
                       onChange({ ...block, items: block.items.map((it, idx) => (idx === i ? next : it)) })
@@ -390,7 +422,8 @@ export function BlockForm({
               <div key={c} className="flex items-start gap-2">
                 <span className="text-xs text-muted-foreground pt-2 w-4 shrink-0">{c + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <InlineEditor
+                  <RichTextField
+                    label={`Header ${c + 1}`}
                     value={cell}
                     onChange={(next) =>
                       onChange({
@@ -451,8 +484,9 @@ export function BlockForm({
                   </button>
                 </div>
                 {row.map((cell, c) => (
-                  <InlineEditor
+                  <RichTextField
                     key={c}
+                    label={`Row ${r + 1}, column ${c + 1}`}
                     value={cell}
                     onChange={(next) =>
                       onChange({

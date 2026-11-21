@@ -5,7 +5,7 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import type { SelectionItem } from "@/lib/items";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
-import { inputClass, labelClass, TextField } from "./BlockForm";
+import { GrowingTextarea, labelClass, TextField } from "./BlockForm";
 import { AddButton, ExplanationField, FallbackExplanationField, RemoveButton, RepeaterErrors, errorList, newId } from "./practiceFields";
 
 export function SelectionForm({
@@ -32,7 +32,7 @@ export function SelectionForm({
 
   return (
     <div className="space-y-3">
-      <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <TextField multiline label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
       <label className="flex items-center gap-2 text-sm text-foreground">
         <Switch
           checked={payload.multi}
@@ -57,7 +57,7 @@ export function SelectionForm({
                 aria-label={`Option ${i + 1} correct`}
               />
               <div className="flex-1 min-w-0">
-                <input
+                <GrowingTextarea
                   value={option.text}
                   onChange={(e) =>
                     onChange({
@@ -68,7 +68,6 @@ export function SelectionForm({
                       },
                     })
                   }
-                  className={inputClass}
                 />
                 {errorList(errors, `payload.options[${i}].text`)}
               </div>
@@ -101,7 +100,7 @@ export function SelectionForm({
                   aria-label={`Option ${i + 1} correct`}
                 />
                 <div className="flex-1 min-w-0">
-                  <input
+                  <GrowingTextarea
                     value={option.text}
                     onChange={(e) =>
                       onChange({
@@ -112,7 +111,6 @@ export function SelectionForm({
                         },
                       })
                     }
-                    className={inputClass}
                   />
                   {errorList(errors, `payload.options[${i}].text`)}
                 </div>

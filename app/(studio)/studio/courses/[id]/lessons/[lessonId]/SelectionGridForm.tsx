@@ -3,7 +3,7 @@
 import { Switch } from "@/app/components/ui/switch";
 import type { SelectionGridItem } from "@/lib/items";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
-import { inputClass, labelClass, TextField } from "./BlockForm";
+import { GrowingTextarea, labelClass, TextField } from "./BlockForm";
 import { AddButton, ExplanationField, FallbackExplanationField, RemoveButton, RepeaterErrors, errorList, newId, withExplanation } from "./practiceFields";
 
 export function SelectionGridForm({
@@ -39,14 +39,14 @@ export function SelectionGridForm({
 
   return (
     <div className="space-y-3">
-      <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <TextField multiline label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
       <div className="space-y-3">
         <label className={labelClass}>Rows</label>
         {payload.rows.map((row, i) => (
           <div key={row.id} className="space-y-2 rounded-lg border border-border p-2.5">
             <div className="flex items-start gap-2">
               <div className="flex-1 min-w-0">
-                <input
+                <GrowingTextarea
                   value={row.statement}
                   onChange={(e) =>
                     onChange({
@@ -58,7 +58,6 @@ export function SelectionGridForm({
                     })
                   }
                   placeholder="Statement"
-                  className={inputClass}
                 />
                 {errorList(errors, `payload.rows[${i}].statement`)}
               </div>

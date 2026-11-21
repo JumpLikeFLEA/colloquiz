@@ -3,7 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import type { MatchingElement } from "@/lib/items/matching";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
-import { inputClass } from "./BlockForm";
+import { GrowingTextarea, inputClass } from "./BlockForm";
 import { LessonImageUploadButton, type UploadLessonImage } from "./LessonImageUploadButton";
 import { RemoveButton, errorList } from "./practiceFields";
 
@@ -55,10 +55,9 @@ export function MatchingElementEditor({
         </div>
         {content.kind === "text" ? (
           <div>
-            <input
+            <GrowingTextarea
               value={content.text}
               onChange={(e) => onChange({ ...element, content: { kind: "text", text: e.target.value } })}
-              className={inputClass}
               placeholder="Text"
             />
             {errorList(errors, `${errorPrefix}.content.text`)}

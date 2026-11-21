@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseLessonDocument, type VoiceTaskBlock } from "@/lib/lessons";
@@ -125,22 +125,41 @@ describe("VoiceTaskForm — expressions to listen for", () => {
   });
 });
 
-describe("VoiceTaskForm — prompt line breaks (docs/decisions/0224)", () => {
-  it("edits each prompt run in a textarea and keeps a typed line break", () => {
+describe("VoiceTaskForm — prompt line breaks (docs/decisions/0224, 0233)", () => {
+  // Tiptap puts its Editor on the view's DOM node; driving it through its
+  // commands is the path jsdom supports (it has no real text input).
+  function editorOf(el: HTMLElement) {
+    return (el as HTMLElement & { editor: import("@tiptap/core").Editor }).editor;
+  }
+
+  it("edits the prompt in one rich-text field where Enter starts a new line", async () => {
     render(<Harness initial={base} />);
-    const run = screen.getByDisplayValue("Tell us about your week.");
-    expect(run.tagName).toBe("TEXTAREA");
-    fireEvent.change(run, { target: { value: "Situation 1.\nSituation 2." } });
-    expect(latest.prompt).toEqual([{ text: "Situation 1.\nSituation 2." }]);
+    const field = await screen.findByRole("textbox", { name: "Prompt" });
+    expect(field.getAttribute("contenteditable")).toBe("true");
+    const editor = editorOf(field);
+    act(() => {
+      editor.commands.focus("end");
+      editor.commands.keyboardShortcut("Enter");
+      editor.commands.insertContent("Situation 2.");
+    });
+    expect(latest.prompt).toEqual([{ text: "Tell us about your week.\nSituation 2." }]);
     expect(parseLessonDocument([latest]).ok).toBe(true);
-    expect(screen.getByText("Press Enter to start a new line.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /add run/i })).toBeNull();
   });
 
-  it("leaves a theory block's inline field a single-line input", () => {
-    const { container } = render(
-      <InlineField label="Text" value={[{ text: "Cats are animals." }]} onChange={() => {}} path="text" />,
+  it("a heading's field ignores Enter; other inline fields are the same rich-text field", async () => {
+    let value = [{ text: "Chapter" }];
+    render(
+      <InlineField label="Text" value={value} onChange={(next) => (value = next)} path="text" singleLine />,
     );
-    expect(container.querySelector("input")).toBeTruthy();
-    expect(container.querySelector("textarea")).toBeNull();
+    const field = await screen.findByRole("textbox", { name: "Text" });
+    expect(field.getAttribute("aria-multiline")).toBe("false");
+    const editor = editorOf(field);
+    act(() => {
+      editor.commands.focus("end");
+      editor.commands.keyboardShortcut("Enter");
+      editor.commands.insertContent(" one");
+    });
+    expect(value).toEqual([{ text: "Chapter one" }]);
   });
 });

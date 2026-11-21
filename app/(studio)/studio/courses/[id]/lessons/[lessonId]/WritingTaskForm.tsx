@@ -24,8 +24,6 @@ export function WritingTaskForm({
         onChange={(prompt) => onChange({ ...block, prompt })}
         errors={errors}
         path="prompt"
-        multiline
-        hint="Press Enter to start a new line."
       />
       <div className="space-y-1">
         <label className="flex items-center gap-2 text-sm text-foreground">

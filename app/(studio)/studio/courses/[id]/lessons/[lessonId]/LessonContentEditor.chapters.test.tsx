@@ -22,6 +22,27 @@ import { LessonContentEditor } from "./LessonContentEditor";
 // chapter cards. Without the overlay rule below, the DragOverlay node would
 // measure at top 0 and ArrowDown would resolve from the top of the list.
 
+// The outline is under test here, not the rich-text field (its own tests are
+// richTextExtensions.test.ts and VoiceTaskForm.test.tsx): a plain textarea
+// stands in for it so the test can type the way it did before AUTH-025.
+vi.mock("./RichTextField", () => ({
+  RichTextField: ({
+    value,
+    onChange,
+    label,
+  }: {
+    value: { text: string }[];
+    onChange: (next: { text: string }[]) => void;
+    label?: string;
+  }) => (
+    <textarea
+      aria-label={label}
+      value={value.map((run) => run.text).join("")}
+      onChange={(e) => onChange([{ text: e.target.value }])}
+    />
+  ),
+}));
+
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => (
     <a href={href} {...rest}>

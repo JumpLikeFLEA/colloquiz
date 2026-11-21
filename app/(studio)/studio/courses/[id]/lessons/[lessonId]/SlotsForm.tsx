@@ -36,7 +36,7 @@ export function SlotsForm({
 
   return (
     <div className="space-y-3">
-      <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <TextField multiline label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
       <p className="text-xs text-muted-foreground -mt-1">Write ___ (three underscores) in the prompt where each gap goes, in the same order as the gaps below.</p>
       <div className="space-y-1">
         <label className={labelClass}>Input affordance</label>

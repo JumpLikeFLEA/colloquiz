@@ -61,7 +61,7 @@ export function MatchingForm({
 
   return (
     <div className="space-y-3">
-      <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <TextField multiline label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
       <div className="space-y-1">
         <label className={labelClass}>Show as</label>
         <Select

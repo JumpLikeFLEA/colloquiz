@@ -2,7 +2,7 @@
 
 import type { OrderingItem } from "@/lib/items";
 import type { BlockFieldErrors } from "@/lib/lessonEditorErrors";
-import { inputClass, labelClass, TextField } from "./BlockForm";
+import { GrowingTextarea, labelClass, TextField } from "./BlockForm";
 import { AddButton, ExplanationField, FallbackExplanationField, RemoveButton, RepeaterErrors, errorList, newId, withExplanation } from "./practiceFields";
 
 export function OrderingForm({
@@ -43,7 +43,7 @@ export function OrderingForm({
 
   return (
     <div className="space-y-3">
-      <TextField label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
+      <TextField multiline label="Prompt" value={payload.prompt} onChange={(prompt) => onChange({ ...item, payload: { ...payload, prompt } })} errors={errors} path="payload.prompt" />
       <p className="text-xs text-muted-foreground -mt-1">Elements are authored in the CORRECT order — no separate answer key.</p>
       <div className="space-y-3">
         <label className={labelClass}>Elements, in correct order</label>
@@ -59,7 +59,7 @@ export function OrderingForm({
                 </button>
               </div>
               <div className="flex-1 min-w-0">
-                <input
+                <GrowingTextarea
                   value={el.text}
                   onChange={(e) =>
                     onChange({
@@ -67,7 +67,6 @@ export function OrderingForm({
                       payload: { ...payload, elements: payload.elements.map((e2, idx) => (idx === i ? { ...e2, text: e.target.value } : e2)) },
                     })
                   }
-                  className={inputClass}
                 />
                 {errorList(errors, `payload.elements[${i}].text`)}
               </div>
