@@ -3308,3 +3308,9 @@ Appended to in the same commit as the change it records. Referenced from
   instead of one frame later, a paste keeps the stored shape, and an outside change is not undoable (all
   behaviour, no new state). Existing classes and tokens; no new colours. Not measured: no new state.
   Do not bind the marks to Ctrl+Shift+digit (Cmd+Shift+3 is a macOS screenshot).
+- Voice task: up to 24 expressions to listen for (2026-11-22, ad hoc, docs/decisions/0186
+  "Revised"), REVISING the AUTH-020 entry's "at most 12 lines" and `N / 12` counter: the counter
+  reads `N / 24` and turns `text-destructive-text` over 24; the 60-character line limit is
+  unchanged. Classes and layout unchanged. Not measured: the form or the learner's "Try to use"
+  chips at 360px with 24 lines. Do not lower it below a course's published lists without
+  checking them: a stored list over the cap fails to parse.

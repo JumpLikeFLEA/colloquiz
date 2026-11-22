@@ -95,8 +95,8 @@ describe("voice task listenFor (AUTH-020)", () => {
     if (result.ok) expect(result.document[0]).toMatchObject({ listenFor: ["I used to", "by the time"] });
   });
 
-  it("accepts 12 items of 60 characters, the limits themselves", () => {
-    const items = Array.from({ length: 12 }, (_, i) => String(i).padStart(2, "0") + "x".repeat(58));
+  it("accepts 24 items of 60 characters, the limits themselves", () => {
+    const items = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0") + "x".repeat(58));
     expect(items[0]).toHaveLength(60);
     expect(parse(items).ok).toBe(true);
   });
@@ -108,7 +108,7 @@ describe("voice task listenFor (AUTH-020)", () => {
   });
 
   it.each([
-    ["13 items", Array.from({ length: 13 }, (_, i) => "item " + i), "v1: listenFor"],
+    ["25 items", Array.from({ length: 25 }, (_, i) => "item " + i), "v1: listenFor"],
     ["a 61-character item", ["x".repeat(61)], "v1: listenFor[0]"],
     ["an empty item", [""], "v1: listenFor[0]"],
     ["a blank item (empty after trimming)", ["   "], "v1: listenFor[0]"],

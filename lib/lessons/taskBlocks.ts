@@ -36,8 +36,10 @@ export const VOICE_DEFAULT_SECONDS = 180;
 
 /** "Expressions to listen for" (AUTH-020, docs/decisions/0156 Decision 8): the
  * lesson's chunks the voice analysis looks for in the transcript. Bounds keep
- * the instruction short and a line a phrase, not a paragraph. */
-export const VOICE_LISTEN_FOR_MAX_ITEMS = 12;
+ * the instruction short and a line a phrase, not a paragraph. 24 since
+ * 2026-11-22 (0186 "Revised"): a final task may list every phrase of a
+ * four-episode course; 12 was the card's number, not a measurement. */
+export const VOICE_LISTEN_FOR_MAX_ITEMS = 24;
 export const VOICE_LISTEN_FOR_MAX_LENGTH = 60;
 
 const ListenForSchema = z

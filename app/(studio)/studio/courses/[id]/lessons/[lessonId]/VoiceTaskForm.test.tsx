@@ -72,11 +72,13 @@ describe("VoiceTaskForm — expressions to listen for", () => {
     expect(latest).not.toHaveProperty("listenFor", []);
   });
 
-  it("counts lines against the limit of 12", () => {
+  it("counts lines against the limit of 24", () => {
     render(<Harness initial={base} />);
-    expect(screen.getByText("0 / 12")).toBeTruthy();
-    fireEvent.change(listenField(), { target: { value: Array.from({ length: 13 }, (_, i) => `e${i}`).join("\n") } });
-    expect(screen.getByText("13 / 12").className).toContain("text-destructive-text");
+    expect(screen.getByText("0 / 24")).toBeTruthy();
+    fireEvent.change(listenField(), { target: { value: Array.from({ length: 24 }, (_, i) => `e${i}`).join("\n") } });
+    expect(screen.getByText("24 / 24").className).toContain("text-muted-foreground");
+    fireEvent.change(listenField(), { target: { value: Array.from({ length: 25 }, (_, i) => `e${i}`).join("\n") } });
+    expect(screen.getByText("25 / 24").className).toContain("text-destructive-text");
   });
 
   it("copies the Before task's list into a task switched to After, once", () => {

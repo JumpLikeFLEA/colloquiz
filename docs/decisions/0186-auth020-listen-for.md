@@ -61,8 +61,22 @@ not this card's.
   `authored/courses/*.json` (gitignored, so skipped on a checkout without it) and asserts a
   positive file and block count, so an empty directory cannot pass.
 
+## Revised 2026-11-22: at most 24 expressions
+
+Owner's call. The partner's platform script for "No way!"
+(`authored/NO_WAY_Course_platform.docx`, lesson 9's After task) lists 15 expressions, and the
+course teaches 24 phrases in four episodes, so a final task may reasonably list all of them.
+12 was the card's number, never a measurement, and nothing downstream depends on it: no
+migration or SQL function reads `listenFor` (grep of `supabase/migrations` finds none), the
+analysis passes the list to the model and only checks that a reported expression is a member
+of it (`lib/voice/analysis/validate.ts`), and the learner's "Try to use" chips wrap.
+`VOICE_LISTEN_FOR_MAX_ITEMS` is now 24; the 60-character line limit is unchanged. Not
+measured: an analysis run with more than 12 expressions on the bench (an assumption that the
+instruction still behaves, not a finding), and the chips at 360px with 24 of them.
+
 ## Revisit when
 
-- VOICE-012 finds the model needs more than 12 expressions or longer than 60 characters.
+- VOICE-012 finds the model needs more than 24 expressions or longer than 60 characters, or an
+  analysis with a long list misses or invents expressions.
 - An author wants the list to be case-insensitive unique.
 - Authors write a `before` task in a lesson they have not yet published and expect the copy.
