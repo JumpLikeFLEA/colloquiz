@@ -3314,3 +3314,15 @@ Appended to in the same commit as the change it records. Referenced from
   unchanged. Classes and layout unchanged. Not measured: the form or the learner's "Try to use"
   chips at 360px with 24 lines. Do not lower it below a course's published lists without
   checking them: a stored list over the cap fails to parse.
+- Lesson editor block rows clip their preview (2026-11-23, ad hoc, owner report). A long prose
+  preview in a block row ran under the row's delete icon on colloquiz.app: `truncate` sat on an
+  inline `<span>`, where `overflow: hidden` and `text-overflow` do nothing. The row's toggle button
+  is now `flex items-center`, the type label `shrink-0` and the preview `min-w-0 truncate`, so the
+  preview ends in an ellipsis before the icon. Classes only; existing tokens. Measured (local
+  stack, Edge, a scratch lesson version with the reported Russian prose and a 160-character
+  unbroken word, removed after): before, the preview's right edge was at x 1630 at 360px and 1886
+  at 1280px, past the delete icon's left edge (301, 1221); after, 293 and 1213 for both long
+  blocks, 8px clear of the icon, ellipsis on, a short block unchanged. Document 360/360 and
+  1280/1280 before and after. Studio's `main` is 491/360 before and after, so the rows are not the
+  source of the lesson editor's overflow in the AUTH-020 entry. Not measured: dark mode, a phone.
+  Do not put `truncate` back on an inline element.

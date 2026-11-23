@@ -644,9 +644,9 @@ function BlockRow({
             <ChevronDown size={12} />
           </button>
         </div>
-        <button type="button" onClick={onToggleExpand} className="cursor-pointer flex-1 min-w-0 text-left">
-          <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground mr-2">{typeLabel}</span>
-          <span className="text-sm text-foreground truncate">{blockPreview(block)}</span>
+        <button type="button" onClick={onToggleExpand} className="cursor-pointer flex flex-1 min-w-0 items-center text-left">
+          <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground mr-2">{typeLabel}</span>
+          <span className="min-w-0 truncate text-sm text-foreground">{blockPreview(block)}</span>
         </button>
         <button
           type="button"
