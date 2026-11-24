@@ -51,6 +51,14 @@ is never scored. On a cohort course it sits alongside the partner's
 written feedback. Planned (M4, VOICE-009..016, OPS-026/027); production
 stays without it until the legal revision (OPS-026) is published.
 
+**The notebook (owner, 2026-11-24, docs/decisions/0235).** A signed-in learner's
+notebook keeps the phrases they said, their fixes, the AI summaries and
+their own notes. Its text outlives the 6-month audio purge; the audio and
+the analysis itself do not. It is a record, not a retention mechanic: no
+streaks, goals or reminders come with it. Its Fixes are a record too, not
+practice: no drills, resurfacing or scheduling ("Deliberately out of scope
+for v1" stands). Planned (M4, PROG-011..020, OPS-043).
+
 **A third line: teachers on manual seats (owner, 2026-10-15,
 docs/decisions/0141).** An English teacher pays, outside the app, for a seat
 with an expiry. With it they build their own courses in Studio, link their
