@@ -5381,6 +5381,232 @@ export const CARDS = [
     notes: 'From the 2026-11-21 review of AUTH-025 (chat). Not here: whether A / B / EN marks should stop at the last letter (inclusive: false) is an author question.',
   },
 
+  // ------------------------------------------------------------ notebook ---
+  // The learner notebook, owner 2026-11-24 (docs/decisions/0235), scoped from
+  // prompts/notebook-backlog.md. For every card: counts are printed, never typed;
+  // a check over zero rows is a FAIL; a positive control sits beside every denial;
+  // a card touching an English route prints npm run budget before and after, run
+  // on the local stack through --url with the environment named (0235); no card
+  // raises a budget; every new state is measured at 360px, EN and RU.
+  {
+    key: 'PROG-011',
+    title: 'Notebook data model, copy rule and retention',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'decision',
+    rank: 3390,
+    dependsOn: [],
+    goal:
+      'Settle everything the notebook\'s schema and reads depend on before a migration is written. The bar (owner, 2026-11-24, docs/decisions/0235): a signed-in learner has one place, /my/notebook, that shows what they can say and what they have saved (phrases said out loud, fixes, phrases to try, their own notes, the latest AI summary and a short record of their study). The text outlives the 6-month audio purge, and a linked teacher reads the part that comes from lessons they can already read. This card lays out options with evidence; the owner picks.',
+    acceptance: [
+      'Tables: one entries table with a kind (said / fix / own) plus a summaries table, or another shape, with columns, length limits (phrase, note), indexes and the row count a heavy learner reaches. Copied rows reference voice_submissions ON DELETE CASCADE, and not voice_analyses: replacing a take deletes the voice_submissions row and the retention purge keeps it (096, 098), so one key gives both rules. The options say how an entry stays readable when its lesson is renamed, archived or unpublished, and what its course and lesson keys do when a draft course is deleted (course_delete_blockers).',
+      'Copy: inside voice_analysis_finish (the only writer of status done, 096:293), an AFTER UPDATE trigger on voice_analyses, or the app pipeline. For each, what happens when the copy fails: the analysis must still reach done, and something must recover the missing copy. The owner\'s lean, to be argued with: voice_analysis_sweep re-runs the copy, idempotently, for done, non-hidden analyses with no copied summary. The option says how that does not bring back a summary or an entry the learner deleted (there are no tombstones), for example by a copied marker on the analysis row or by making summaries not deletable.',
+      'Backfill: one step inside the migration, guarded so that re-applying the file copies nothing (the gate re-applies it), with its counts. Hiding an analysis removes its entries; there is no unhide today.',
+      'Meanings settled: a started course; whether a phrase said in two takes is one row or two, and which of them the phrases number counts; whether a summary can be deleted; which enrolment\'s before take counts on a repeat run; what a before block id changed by a republish does.',
+      'Teacher read path: one SECURITY DEFINER RPC over _teacher_readable_lessons (080:530, per lesson) or a policy, and why; whether _is_teacher is also required (079 checks it, 078 and 080 do not). Own notes are never returned.',
+      'To try: the options include a SECURITY DEFINER function, callable by authenticated users, that returns ONLY a boolean for a course: its published lessons contain a before voice task (no list, no lesson ids, no content). True: To try shows nothing for that course until the learner\'s before take exists. False: it lists phrases from lessons readable under the learner\'s own session only. The card says whether the boolean itself leaks anything (a draft or unlisted course id, archived lessons); if it does, the fallback is: show a course\'s list only if its before task is readable and taken, or if every published lesson is readable and none has one. Cost per page load is printed.',
+      '/my\'s AI feedback list (PROG-007, 0191) is laid out as an option for the owner: keep it, or drop it once the notebook\'s recording rows link to each lesson\'s full feedback and leave /my with the notebook link (the owner\'s lean, to be argued with). What each loses is written down, including hidden analyses, the 12-row limit and the mode off.',
+      'The account export shape, the notebook text file\'s format, and the privacy delta text that OPS-043 publishes.',
+      'Output: the decision file, the owner\'s picks, and the schema PROG-012 builds. No code and no migration in this card.',
+    ],
+    notes: 'Read docs/decisions/0235 first: it holds the settled inputs and the owner\'s rulings of 2026-11-24. This card does not re-open them.',
+  },
+  {
+    key: 'OPS-043',
+    title: 'Privacy policy: the notebook\'s retention and the teacher\'s view',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3400,
+    dependsOn: ['PROG-011'],
+    goal:
+      'The policy must be true before copying starts in production: text copied from AI feedback outlives the recording, a linked teacher reads part of it, and own notes are a new category. Publishing this unblocks PROG-012\'s hosted apply (0235, assumed decision H).',
+    acceptance: [
+      'The notebook is its own category: what is copied from AI feedback (phrases with the learner\'s words, the fix, the summary with its next step or goal, the date, course and lesson), own notes, why, who sees it, how long it is kept (until the learner deletes it or the account; entries copied from a take are removed when the learner replaces it or the author hides its feedback, and only the retention purge leaves them behind; after the purge only the learner can remove them), export and erasure.',
+      'Every passage the notebook changes is updated, found again by grep and not by these line numbers (they are of 1.12): 124, 254 (the scope sentence gains the notebook, and says own notes are never shown to a teacher), 285, 361-362, 389-392, 414-416 and section 13. The retention row still says the transcript and the full feedback go with the recording, and no longer says that quotes of a first recording always go with the later feedback, because a copied summary can contain one.',
+      'The text matches what PROG-011 decided and the link statement PROG-020 ships (lib/teacherLinks.ts says a change to one is a change to both): the two EN/RU bullets are drafted here and quoted in the evidence. The wording is also true in the interval before PROG-020 ships, when no teacher sees the notebook yet.',
+      'Version and date bump per 0083. Notice under 0095: none, because production has only test accounts (owner, 2026-11-24). The evidence says so, and asks the owner again if real accounts may exist by the time this ships.',
+      'The full rendered diff is shown to the owner before commit (the ANON-019 precedent). Stop there.',
+    ],
+    notes: 'The in-app banner of 0095 does not exist (0184) and is not built here. Publishing this unblocks PROG-012\'s hosted apply.',
+  },
+  {
+    key: 'PROG-012',
+    title: 'Migration: notebook tables, copy on completion, hide and replace rules, backfill, export and deletion',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3410,
+    dependsOn: ['PROG-011', 'OPS-043'],
+    goal:
+      'The notebook\'s storage, its one copy path and every read and delete rule, under the full protocol. It depends on OPS-043 so that the hosted apply cannot run before the policy is published.',
+    acceptance: [
+      'Print rule first: the latest migration and the latest delete_my_account body, printed. Tables as PROG-011 decided; RLS on; the learner reads their own rows. No client role can insert a copied kind; own notes are written, edited and deleted only through RPCs that use auth.uid(), and the RPC that deletes a copied entry is built here. A positive control beside every denial.',
+      'Copy: on a seeded take, finishing its analysis creates the entries; running the finish path again leaves the counts unchanged (both counts printed). Parity: for seeded first, final, interim and no-slot results, the SQL copy equals what parseStoredAnalysis reads from the same rows; the no-slot result has neither goal nor next step (0156 Decision 10) and is still copied.',
+      'Forced failure: with a malformed stored result the analysis still reaches done, the recovery PROG-011 chose is shown copying a missing entry afterwards, and an entry the learner deleted does not come back through it.',
+      'Purge, replace and hide are three separate runs with counts before and after. voice_mark_removed on a seeded take: the analysis row is gone and its notebook rows remain. Replacing a take removes exactly its entries, including a capped cohort send that gets no analysis (0185). Hiding a seeded analysis removes exactly its entries. Control for each: an untouched take keeps everything.',
+      'Teacher matrix, each cell printed: a lesson of a course the teacher edits; a whole-course assignment; a single assigned lesson (another lesson of that course refused); the assignment deleted; the link ended; an editor of the course who is not linked; a teacher linked to someone else; another learner; anon. Own notes are returned to no teacher.',
+      'The account export contains the notebook (the format version bumps) and delete_my_account deletes the notebook rows by an explicit DELETE, re-emitted from its latest body: the profiles row survives, so CASCADE never fires. Full protocol on a seeded account.',
+      'The backfill runs once inside the migration, only if the table did not exist when the transaction started, before any deletion UI exists; no tombstones. Local: done, non-hidden analyses before equals copied summaries after (both printed, neither zero). Re-apply test: delete an entry, re-apply the file, it stays deleted.',
+      'Every earlier verify script for a function this migration re-emits or a table it touches is re-run and prints PASS; supabase/verify/NNN prints its PASS line.',
+      'Hosted through the hosted-apply gate, only after OPS-043 is live. The same two backfill counts are printed on hosted; if they are 0 and 0 that is reported as nothing to copy, not as evidence. The hosted apply comes before the push of the export change, because one failed read fails the whole export (0225 Decision 14).',
+    ],
+    notes: 'The decision file says voice_analysis_finish is the only writer of status done. Not destructive: the backfill only inserts.',
+  },
+  {
+    key: 'PROG-013',
+    title: 'lib/notebook: the pure model behind the page',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3420,
+    dependsOn: ['PROG-011'],
+    goal:
+      'Everything the page shows that can be decided without a database, as tested pure modules under lib/notebook, so the page only draws.',
+    acceptance: [
+      'Tabs (Phrases, Fixes, To try) and the course filter over a learner\'s entries, with counts per tab. Own notes and said phrases share Phrases and are told apart by kind; close comes from exact: false.',
+      'To try: listen-for phrases of started courses minus phrases said in that course (trimmed, case-insensitive; typographic and straight apostrophes compare equal). Tests for both branches of PROG-011\'s boolean: a before task and no take (nothing shown), a before task and a take (list shown), no before task (list from readable lessons only), and an unreadable before lesson.',
+      'The record is four numbers: lessons completed (from the learner\'s completion rows, not limited to published lessons), recordings sent (tasks recorded, not sends), phrases said out loud, notes saved. No courses finished, no days with English.',
+      'A recording\'s kept-until date (self-paced from submitted_at, cohort from the run\'s ends_at, 094) and the audio-deleted-notes-kept state. The summary card\'s model for a first take (goal), a final or interim (next step) and a take with neither goal nor next step (0156 Decision 10).',
+      'Empty states: each tab, the whole notebook, and a course filter that leaves a tab empty.',
+      'npm test passes; one module per file; no Supabase or React import.',
+    ],
+    notes: 'If PROG-011 rejects the boolean, the To try tests follow the fallback it records.',
+  },
+  {
+    key: 'PROG-014',
+    title: '/my/notebook: the compact page and its empty state',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3430,
+    dependsOn: ['PROG-012', 'PROG-013'],
+    goal:
+      'The page: Notebook / Блокнот at /my/notebook, signed-in only, guarded exactly like /my, in the owner\'s compact layout (one list under three tabs, course chips, the four numbers in one row under the summary card, recordings folded into one row).',
+    acceptance: [
+      'A Server Component under app/(english)/my/notebook/, following the saved EN/RU choice with no toggle of its own. proxy.ts gates everything under /my/; shown by a signed-out request going to /login?next=/my/notebook. MY_PAGE in lib/alliengll/surfaceLang.ts does not match /my/notebook today, so it is added with a test (html lang and footer follow the saved choice).',
+      'Layout as 0235, not grouped by course. Tab and course filter are URL search params (?tab=&course=), both allow-listed, so they cost no client JS; recordings fold with a native details. The download icon in the top bar is PROG-019\'s and is absent until then.',
+      'Summary card: the newest copied summary with its next step or goal, the state with neither, and the existing line that AI feedback can be wrong and is not a grade. Existing copies show with VOICE_ANALYSIS_MODE off (shown by a run with it off).',
+      'Empty state: an invitation to study and one button, Choose a course, to /#catalogue. No starter-lesson logic.',
+      'No SignedAudio on this page (0120 Decision 3 stands). A recording row links to its lesson (Listen in the lesson) where the lesson is readable, and shows kept-until, or audio deleted, notes kept.',
+      'To try reads lists only under the learner\'s session, never the service role: a seeded unreadable lesson\'s phrases do not appear, and a readable one\'s do (positive control).',
+      'A ROUTES entry for /my/notebook in scripts/budget.ts at 180 KB (the /my limit), signed in as a fixture seeded with entries in every tab; /my printed before and after.',
+      'Composes from surfaceClasses.ts and existing tokens, no new colour, no Recharts; a docs/ui-decisions.md entry. 360px in every state (empty, each tab, a filter with an empty tab, recordings open, RU), scrollWidth/innerWidth printed with --expect.',
+    ],
+    notes: 'If the page does not fit 180 KB, stop and ask: no card raises a budget (owner, 2026-11-24).',
+  },
+  {
+    key: 'PROG-016',
+    title: 'Own notes on the notebook page: add, edit, delete',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3440,
+    dependsOn: ['PROG-012', 'PROG-014'],
+    goal:
+      'The notebook page gets its write side, and the delete control the privacy policy promises for every entry. A note is private to the learner.',
+    acceptance: [
+      'Add a phrase with an optional note; edit and delete own notes; delete a copied entry (copied text is never editable), with a confirmation that names what goes. Every write goes through a PROG-012 RPC; PROG-011\'s limits are enforced there and shown in the form.',
+      'Tested: empty phrase, over-length phrase and note, a Cyrillic note, a duplicate phrase (allowed or merged, as PROG-011 says), an entry that is not the caller\'s (refused; the caller\'s own is the control).',
+      'Deleting a said phrase can put it back in To try; tested, so it is intended. A deleted entry stays deleted after PROG-011\'s copy recovery runs.',
+      '360px for the form, its errors and the confirmation, EN and RU; the /my/notebook budget before and after; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'Saving from inside a lesson is PROG-017\'s, not this card\'s.',
+  },
+  {
+    key: 'PROG-015',
+    title: 'Ways in: /my, the lesson\'s AI feedback, course complete',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3450,
+    dependsOn: ['PROG-014'],
+    goal:
+      'A learner meets the notebook where they already are. /my\'s AI feedback list changes only as the owner\'s pick in PROG-011 says.',
+    acceptance: [
+      '/my links to the notebook at the top, under its header and not inside Up next (capped at three ranked rows, 0211). The AI feedback list is kept or removed exactly as picked in PROG-011; a removal has its own docs/ui-decisions.md entry.',
+      'The lesson\'s link sits in VoiceAnalysisPanel\'s done branch (AnalysisResult is also drawn by Studio and /runs). It is measured on a signed-in voice lesson with a finished analysis, before and after: no route in scripts/budget.ts loads that chunk, so the free lesson\'s figure alone proves nothing. The free lesson is printed too.',
+      'The course-complete card (CourseAwareCompletion, a lazy chunk) links to the notebook for a signed-in learner only; an anonymous finisher sees the card as it is today (both shown).',
+      'The resend note (lib/alliengll/voiceCopy.ts, resendNote) also says that replacing a recording removes its notebook entries.',
+      '360px for each changed state, EN and RU where the surface follows the saved choice; budgets for /my and the free lesson before and after; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'No budget is raised here: a figure over a limit is a stop.',
+  },
+  {
+    key: 'PROG-019',
+    title: 'Downloads: a recording, and the notebook as a file',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3460,
+    dependsOn: ['PROG-012', 'PROG-014'],
+    goal:
+      'The learner can keep their recordings and their notebook. Download is the notebook\'s only audio control.',
+    acceptance: [
+      'A recording downloads through a route handler that checks user_id = the caller BEFORE signing a URL with a readable download filename. Denials, each beside the owner succeeding: an editor of that course (who can sign the same object today), a linked teacher, another learner, anon. A purged take answers 410.',
+      'The container format (webm, ogg or m4a, from content_type) is always stated beside the download button. docs/decisions/0097 left every phone, Safari and in-app cell not tested, so no device claim is made.',
+      'The notebook downloads as one text file built on the server from the learner\'s own rows, in the format PROG-011 set, UTF-8 with Cyrillic intact. The formatter is a pure lib/ module under vitest, with a Cyrillic case and an entry of every kind.',
+      'The download icon in the notebook\'s top bar; 360px for the changed states, EN and RU; the /my/notebook budget before and after; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'No new dependency and no AI call.',
+  },
+  {
+    key: 'PROG-020',
+    title: 'Studio: a linked student\'s notebook',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3470,
+    dependsOn: ['PROG-012', 'PROG-013', 'OPS-043'],
+    goal:
+      'A teacher linked to a learner reads that learner\'s notebook entries from the lessons they can already read, while the link holds, read-only, on /studio/learners/[userId].',
+    acceptance: [
+      'Reads through the path PROG-011 chose, over _teacher_readable_lessons, per lesson. PROG-012\'s teacher matrix is repeated in the UI with a positive control beside every denial: an author who is not linked sees nothing; a single assigned lesson shows that lesson\'s entries only; ending the link hides everything; own notes are never shown.',
+      'The link statement (lib/teacherLinks.ts) gains an EN/RU bullet for notebook entries from lessons the teacher can read, and an EN/RU bullet for the written answers sent for those lessons, which privacy-policy.md section 5 already lists. A test asserts both in both languages. The cannot line stays true because own notes are excluded, and the published policy text matches (quoted in the evidence).',
+      'The /my copy about teachers (teachersLead, leaveConfirm) is checked against the final statement and is still true; anything that is not is reported, not silently reworded.',
+      'The Studio Guide article for the learner page is updated in the same commit (0206 Decision 11; lib/studioGuide/articles.test.ts passes). A docs/ui-decisions.md entry. 360px, document and main, with entries and without; the join and invite pages re-measured with the longer statement, EN and RU, and their budgets printed.',
+    ],
+    notes: 'Deploy after OPS-043 is live and PROG-012 is applied to hosted.',
+  },
+  {
+    key: 'PROG-017',
+    title: 'Saving a phrase from inside a lesson (spike)',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'decision',
+    rank: 3480,
+    dependsOn: ['PROG-011'],
+    goal:
+      'How a learner saves a phrase with an optional note while reading any lesson, text-only courses included; the source course and lesson are recorded automatically. The options are tried on a throwaway branch and measured; the owner picks, and the build card follows from the pick. Nothing from the branch is merged.',
+    acceptance: [
+      'Options tried, each with its clashes with drag items and text inputs in the player named: a notebook button in the lesson\'s chrome that opens a sheet, filled from the current text selection when there is one; an action that appears over selected text; a save affordance on specific blocks (theory phrases, the fix in the AI feedback, an explanation), and whether it needs authoring; any other option found.',
+      'Every option is measured loading on tap: what it adds to the free lesson\'s first load, printed, and what it adds on the tap. The free lesson printed 259.9 KB of 260 on the local stack (0235). No option raises a budget.',
+      'Browser matrix (iOS Safari, Android Chrome, the Instagram and Telegram in-app browsers), run by the owner on real phones, with the branch made reachable by the owner (a push, or their own network): the session never pushes. A cell not run reads not tested, and the recommendation rests on no such cell.',
+      'Signed-out learners: keeping a phrase until sign-in (PROG-018: a local store, a migration for the cross-browser case, an uploader) compared with hiding save for signed-out visitors, with the cost of each and what the learner loses.',
+      'Output: options, evidence and a recommendation; the owner picks. The commit recording the pick adds the build card to backlog.mjs and puts it in PROG-018\'s dependsOn; if saving is hidden for signed-out visitors, PROG-018 is dropped.',
+    ],
+    notes: 'Ranked second to last on purpose: the first pickable card being a decision card returns `work on next` to chat.',
+  },
+  {
+    key: 'PROG-018',
+    title: 'Signed-out notes: local store and the move at sign-in',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3490,
+    dependsOn: ['PROG-012', 'PROG-017'],
+    goal:
+      'A phrase saved while signed out is kept in browser storage and moves to the account at sign-in (0235, settled input 7). The notebook itself stays signed-in only. Not workable until PROG-017\'s pick adds its build card to this card\'s dependsOn: nothing saves a phrase inside a lesson before it.',
+    acceptance: [
+      'A versioned local store that never throws and falls back to memory (the ANON-002 pattern), tested under lib/ including an unparseable and an old-version payload.',
+      'A migration, because the cross-browser path cannot carry notes: pending_claims holds an array of attempts of at most 16,384 bytes, passes it to record_lesson_attempts, and the stash is skipped when there are no attempts (049, RegistrationOffer.tsx). Notes with no attempts work; a claim is single-use; a malformed or oversized payload is refused. course_delete_blockers reads pending-claim payloads, so it is extended. Print rule, full protocol, hosted through the gate.',
+      'An uploader that does not depend on a lesson page (uploadPendingAttempts runs only inside LessonPlayer). It posts to a route, because /my/notebook cannot load @supabase/ssr up front (0181: 262.3 KB). Uploading twice leaves one copy.',
+      'End to end, printed: save in browser A, confirm the email in browser B, the note is in B\'s notebook; the same-browser case; a sign-in that lands on /my/notebook without opening a lesson.',
+      'The save confirmation says the notebook opens after sign-in (EN/RU). 360px; budgets for the free lesson and /my/notebook before and after; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'Ranked last. Dropped if PROG-017\'s pick hides saving for signed-out visitors.',
+  },
+
   // ---------------------------------------------------------------- MIG ---
   // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
   // starts it only if the English product goes well. MIG-001..003 are worth
