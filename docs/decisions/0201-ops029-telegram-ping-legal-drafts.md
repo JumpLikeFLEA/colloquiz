@@ -4,6 +4,7 @@ Status: DRAFTS ONLY. Nothing under `docs/release/legal/` is changed by this card
 reviews and publishes (card acceptance 3). Decided unattended under `--no-approval`; the
 drafts are proposals, the owner can overturn any of them.
 
+Renumbered again 2026-11-25: OPS-043 (0237) takes privacy 1.13 (the notebook). Apply these drafts as privacy 1.14 and subprocessors 1.10, merged by hand into the text 1.13 leaves.
 Renumbered again 2026-11-20: OPS-040 (0232) took subprocessors 1.9 (Discord webhook removed). Apply these drafts as privacy 1.13 and subprocessors 1.10, merged by hand into the text 1.9 leaves.
 Renumbered 2026-11-20: OPS-041 (0229) took privacy 1.12 and subprocessors 1.8. Apply these drafts as privacy 1.13 and subprocessors 1.9, merged by hand into the text 1.12 leaves. Versions are assigned in commit order and never reserved.
 Renumbered earlier, 2026-11-10: WRITE-004 (0225) takes privacy 1.11 (written answers). Apply these drafts as privacy 1.12 and subprocessors 1.8 instead, merged by hand into the text 1.11 leaves.
