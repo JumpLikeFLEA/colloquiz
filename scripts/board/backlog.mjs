@@ -5608,6 +5608,46 @@ export const CARDS = [
     notes: 'Ranked last. Dropped if PROG-017\'s pick hides saving for signed-out visitors.',
   },
 
+  // Found in PROG-011 (docs/decisions/0236, "Found on the way"), filed by the owner 2026-11-25.
+  {
+    key: 'OPS-044',
+    title: 'Account export pages past the PostgREST row limit',
+    milestone: 'M5',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3500,
+    dependsOn: [],
+    goal:
+      'app/api/account/export/route.ts reads each table with one select and no paging, and PostgREST stops at max_rows (1,000 in supabase/config.toml), so an account with more rows than that in one table may get a file that is cut without saying so. Hypothesis, not reproduced (docs/decisions/0236): the first step is to reproduce it.',
+    acceptance: [
+      'The hosted row limit is read (read-only) and printed beside the local one; every read in the export route, tables and RPCs that return rows, is listed with whether the limit can cut it.',
+      'Reproduced on the local stack before the change: an account with more than 1,000 lesson_attempts exports fewer rows than count(*) prints (both figures). If it does not reproduce, the evidence says why and the card stops there.',
+      'After the change the same account exports exactly count(*) rows, with no duplicate id, for every read that can be cut; an account under the limit exports the same rows as before (control). Paging has a stable order with a unique tiebreak, so rows sharing a timestamp are neither lost nor repeated (tested).',
+      'A failed page fails the whole export, as a failed read does today (0225 Decision 14); no partial file is returned.',
+      'The paging helper is a pure lib/ module under vitest: 0 rows, one page, exactly the limit, limit + 1, and a failing second page.',
+    ],
+    notes: 'RLS and the user_id filters are unchanged. PROG-012 reads the notebook as one JSONB value for the same reason (0236).',
+  },
+  {
+    key: 'TCH-019',
+    title: 'One teacher check for the linked-student readers',
+    milestone: 'M5',
+    epic: 'TCH',
+    type: 'task',
+    rank: 3510,
+    dependsOn: [],
+    goal:
+      'The readers over _teacher_readable_lessons (080: linked_student_attempts, linked_student_lesson_scores, linked_student_assigned_lessons; 109:195: written answers) ask for an active link but not _is_teacher, while messages and ask-the-teacher (079, 081, 083) ask for both. A person who has lost every course and seat, with a link still active and an old assignment, can still call them (docs/decisions/0236).',
+    acceptance: [
+      'The gap is shown first on the local stack: a linked user with an assignment and no admin role, course or seat reads the student\'s answers for the assigned lesson (count printed, not zero).',
+      'After the change the same user reads nothing from any of those readers, printed per reader. Controls, each reading the same rows as before: an editor, a teacher with an active seat, and a teacher with a lapsed seat (a lapsed seat still reads, 0155).',
+      'The check is made in one place, or the evidence says why it cannot be. Every caller of _teacher_readable_lessons at that time, the notebook reader of PROG-012 included if it exists, is listed with the effect on it.',
+      'What a student sees when their teacher stops being a teacher is checked, not assumed: their written answer still has a route or falls back to practice as 0225 says, and /my\'s teacher list is reported as it is.',
+      'Print rule, full protocol, every earlier verify script for a re-emitted function re-run and PASS; hosted through the gate.',
+    ],
+    notes: 'PROG-012\'s own reader requires _is_teacher whichever card lands first (0236).',
+  },
+
   // ---------------------------------------------------------------- MIG ---
   // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
   // starts it only if the English product goes well. MIG-001..003 are worth

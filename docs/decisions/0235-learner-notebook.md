@@ -182,6 +182,20 @@ it, so "Spaced repetition and mistake-based review" stays out of scope
   M6, MIG-001 included; the owner accepted that.
 - Production has only test accounts (owner, 2026-11-24), so 0095 needs no notice.
 
+## Amended by 0236 (owner, 2026-11-25)
+
+- **To try, "returns only a boolean".** The function takes no course id. It returns, for the caller's own
+  started courses only, `(course_id, has_before, before_taken)`. `before_taken` is the caller's own data.
+  `has_before` is TRUE for a started course that is no longer published or entitled to the caller
+  (fail-closed). The started set (an open, an attempt or a take) cannot be forged: 056, 074 and 096 check that
+  the lesson is readable before writing, and no client role can insert into those tables (0236 section 6).
+  The fail-closed fallback is not needed.
+- **The teacher's view** includes AI summaries. A final or interim one is returned only when the teacher can
+  also read its baseline's lesson, stored at copy time; with none stored, never. The link statement and privacy
+  section 5 name AI summaries.
+- **Copy recovery** goes by a `notebook_copied_at` marker, not by a missing summary.
+- **`/my`'s AI feedback list** is dropped once the notebook is live (PROG-015).
+
 ## Assumed decisions, as they now stand
 
 Marked as assumed by the prompt; the owner overrode some.
