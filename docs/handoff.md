@@ -60,7 +60,7 @@ practice: no drills, resurfacing or scheduling ("Deliberately out of scope
 for v1" stands). The storage, the copy and
 the read and delete rules are built (PROG-012, docs/decisions/0238, migration 112,
 applied to hosted 2026-11-25), and so is the pure model behind the page (PROG-013, docs/decisions/0239);
-the page and the rest are planned (M4, PROG-014..020).
+the page itself, `/my/notebook`, is built (PROG-014, docs/decisions/0240), and the rest is planned (M4, PROG-015..020).
 
 **A third line: teachers on manual seats (owner, 2026-10-15,
 docs/decisions/0141).** An English teacher pays, outside the app, for a seat

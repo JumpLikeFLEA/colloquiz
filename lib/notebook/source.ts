@@ -32,3 +32,13 @@ export function rowSource(row: SourceRow, index: SourceIndex): NotebookSource {
     href: course && lesson && !lesson.archived ? `/courses/${course.slug}/${lesson.slug}` : null,
   };
 }
+
+/**
+ * A recording's link, narrower than `rowSource`'s: the lesson's published document was read under
+ * the caller's session (that policy is `can_read_lesson`). A lesson whose row is listed but whose
+ * content is not theirs (paid, or not open yet) has no link, since nothing plays there.
+ */
+export function openLessonHref(row: SourceRow, index: SourceIndex): string | null {
+  const lesson = row.lessonId ? index.lessons.get(row.lessonId) : undefined;
+  return lesson?.document ? rowSource(row, index).href : null;
+}

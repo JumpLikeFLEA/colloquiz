@@ -3326,3 +3326,23 @@ Appended to in the same commit as the change it records. Referenced from
   1280/1280 before and after. Studio's `main` is 491/360 before and after, so the rows are not the
   source of the lesson editor's overflow in the AUTH-020 entry. Not measured: dark mode, a phone.
   Do not put `truncate` back on an inline element.
+- Notebook at `/my/notebook` (2026-11-25, PROG-014, docs/decisions/0235 + 0240). A signed-in English-surface
+  page in `/my/messages`' frame (grid paper, "← My courses", the account chip, a "Your account" pill, the
+  "Notebook" / "Блокнот" `h1`), EN/RU with the saved choice and no toggle. Compact, not grouped by course, top
+  to bottom:
+  - "Latest summary": a `PAPER_PANEL_CLASS` card with the kind pill, the copied summary, its goal or next step
+    in a `bg-brand-subtle` box (or one muted line when it has neither), the lesson, and `/my`'s AI disclaimer;
+  - the record: one panel of four numbers in one row at every width (display face over a small label);
+  - course chips (`min-h-11`, ink outline, the chosen one marker yellow), then three tabs with counts (links,
+    a `border-brand` underline on the chosen one), then one divided panel of rows. A said phrase has a
+    microphone icon and "You said: …" with a muted "close" pill when not exact; an own note has a pencil; a
+    fix is "You said" over "Better"; each row ends with its course · lesson;
+  - "Recordings": one native `<details>` row; open, each take has its kind, sent time, "Kept until <date>" /
+    "The audio will be deleted soon" / "Audio deleted, notes kept" / "Audio deleted", and "Listen in the
+    lesson" where the lesson's content is readable.
+  An empty list is the dashed ink box. An empty notebook is an invitation and one violet "Choose a course"
+  button to `/#catalogue`. Filters are links, no client JS beyond `LocalDateTime`. Existing classes and tokens;
+  no new colours. Measured at 360px (local stack): `scrollWidth/innerWidth` 360/360 in every state (0240
+  "Measured"), RU and dark included; 1280/1280 light and dark. `npm run budget`: `/my/notebook` 166.5 KB of
+  180, `/my` 175.2 before and after. Not measured: a phone, a screen reader. Copy is pending owner review.
+  Do not put `SignedAudio` on this page (0120 Decision 3), and do not read To try's lists with the service role.

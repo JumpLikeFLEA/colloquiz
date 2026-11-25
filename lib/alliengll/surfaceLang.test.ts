@@ -55,13 +55,13 @@ describe("footerLangForPath", () => {
   });
 
   it.each([["ru"], ["en"]] as const)("follows the saved choice (%s) on the pages under /my", (saved) => {
-    for (const path of ["/my/settings", "/my/settings/", "/my/messages", "/my/messages/2f3ea82e286ca70dbcb775895b09d9ca"]) {
+    for (const path of ["/my/settings", "/my/settings/", "/my/notebook", "/my/notebook/", "/my/messages", "/my/messages/2f3ea82e286ca70dbcb775895b09d9ca"]) {
       expect(footerLangForPath(path, saved)).toBe(saved);
       expect(pageLangForPath(path, saved)).toBe(saved);
     }
   });
 
-  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/runs"], ["/runs/a/b"], ["/my/x"], ["/my/settings/x"], ["/my/messages/a/b"], ["/mya"], ["/privacy"], ["/no-such-page"]])(
+  it.each([["/courses"], ["/courses/a/b/c"], ["/invite"], ["/invite/a/b"], ["/runs"], ["/runs/a/b"], ["/my/x"], ["/my/settings/x"], ["/my/notebook/x"], ["/my/messages/a/b"], ["/mya"], ["/privacy"], ["/no-such-page"]])(
     "stays Russian anywhere else (%s)",
     (path) => {
       expect(footerLangForPath(path, "en")).toBe("ru");

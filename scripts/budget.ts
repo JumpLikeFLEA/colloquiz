@@ -228,6 +228,10 @@ const ROUTES: RouteBudget[] = [
   // only. Measured 176.3 KB before and 171.0 KB after (local stack, mode on); budgetKB is the
   // after figure plus ~4.5% headroom (the PLAY-012 precedent, 0057).
   { path: "/runs/c0050000-0000-4000-8000-00000000f1a1", budgetKB: 179, guardForbiddenSignatures: true, signInAs: "prog007-learner@example.com" },
+  // PROG-014 (docs/decisions/0240): the notebook, as the fixture learner with a row in every tab.
+  // 180 is /my's own limit, fixed by the card (no card raises a budget, owner 2026-11-24), not
+  // derived from this page's measurement.
+  { path: "/my/notebook", budgetKB: 180, guardForbiddenSignatures: true, signInAs: "prog007-learner@example.com" },
   // TCH-004 (docs/decisions/0151): the learner's message list, signed in as the
   // same learner-home fixture. It ships the layout's JS only: the composer
   // lives on the thread page (/my/messages/[teacherId]), whose URL carries a

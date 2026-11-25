@@ -390,7 +390,9 @@ async function main() {
   await seedRealLessonFixture(editorId);
   await seedCohortRunFixture(editorId);
   await seedLearnerHomeFixture(await upsertUser(USERS.learnerHome));
-  await seedFinalScreenFixture(await upsertUser(USERS.finalScreen));
+  const finalScreenId = await upsertUser(USERS.finalScreen);
+  await seedFinalScreenFixture(finalScreenId);
+  await seedNotebookFixture(finalScreenId, editorId);
 
   console.log("Done.");
 }
@@ -809,6 +811,83 @@ async function seedFinalScreenFixture(learnerId: string): Promise<void> {
   );
   if (commentErr) throw new Error(`run_final_comments upsert failed: ${commentErr.message}`);
   console.log("Final-screen fixture:", USERS.finalScreen, "run:", FINAL_SCREEN_RUN_ID);
+}
+
+// PROG-014 (docs/decisions/0240): the same learner's notebook, with a row in every tab. Phrases and
+// Fixes come from the two analyses above (112 copies them); this adds an own note and, for To try, a
+// self-paced course the learner has opened, with one lesson they can open and one paid lesson they
+// cannot: the paid lesson's phrase must never appear on their page.
+const NOTEBOOK_NOTE_ID = "f0140000-0000-4000-8000-0000000000a1";
+
+async function seedNotebookFixture(learnerId: string, editorId: string): Promise<void> {
+  const { data: course, error: courseErr } = await supabase
+    .from("courses")
+    .upsert(
+      {
+        slug: "prog014-fixture",
+        title: "PROG-014 notebook fixture",
+        subtitle: "A fixture course for the notebook's To try tab",
+        subject: "english",
+        status: "published",
+        level: "B1",
+        cover_image_url: `${url}/storage/v1/object/public/lesson-images/fixture-cover.png`,
+        author_id: editorId,
+      },
+      { onConflict: "slug" },
+    )
+    .select("id")
+    .single();
+  if (courseErr) throw new Error(`notebook course upsert failed: ${courseErr.message}`);
+  const courseId = course.id as string;
+  const voice = (id: string, listenFor: string[]) => ({
+    id,
+    kind: "task",
+    type: "voice",
+    prompt: [{ text: "Tell us about your plans." }],
+    maxSeconds: 60,
+    listenFor,
+  });
+  await upsertLessons(courseId, [
+    {
+      slug: "open-list",
+      title: "An open list",
+      description: "A voice task anyone can open.",
+      accessLevel: "anyone",
+      ordinal: 1,
+      document: [VALID_DOCUMENT[0], voice("vo", ["on second thought", "be about to"])],
+      archived: false,
+    },
+    {
+      slug: "paid-list",
+      title: "A paid list",
+      description: "A voice task behind the paywall.",
+      accessLevel: "entitled",
+      ordinal: 2,
+      document: [VALID_DOCUMENT[0], voice("vp", ["unreadable paid phrase"])],
+      archived: false,
+    },
+  ]);
+  const open = await publishedVersionId("prog014-fixture", "open-list");
+  const { error: openErr } = await supabase
+    .from("lesson_opens")
+    .upsert({ user_id: learnerId, lesson_id: open.lessonId }, { onConflict: "user_id,lesson_id", ignoreDuplicates: true });
+  if (openErr) throw new Error(`lesson_opens upsert failed: ${openErr.message}`);
+  const { error: noteErr } = await supabase.from("notebook_entries").upsert(
+    {
+      id: NOTEBOOK_NOTE_ID,
+      user_id: learnerId,
+      kind: "own",
+      course_id: courseId,
+      lesson_id: open.lessonId,
+      course_title: "PROG-014 notebook fixture",
+      lesson_title: "An open list",
+      phrase: "in the long run",
+      note: "Says when something pays off later.",
+    },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (noteErr) throw new Error(`notebook note upsert failed: ${noteErr.message}`);
+  console.log("Notebook fixture:", USERS.finalScreen, "course:", courseId);
 }
 
 main().catch((e) => {
