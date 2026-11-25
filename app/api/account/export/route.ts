@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { authUserFrom } from "@/lib/auth";
 import { ACHIEVEMENTS } from "@/lib/achievements";
-import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type TelegramLinkExportRow, type VoiceAnalysisExportRow, type VoiceSubmissionRow, type WritingSubmissionRow } from "@/lib/accountExport";
+import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type NotebookExport, type TelegramLinkExportRow, type VoiceAnalysisExportRow, type VoiceSubmissionRow, type WritingSubmissionRow } from "@/lib/accountExport";
 import { VOICE_BUCKET } from "@/lib/voice/recording";
 
 /**
@@ -65,7 +65,7 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes] =
+    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes, notebookRes] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -161,14 +161,23 @@ export async function GET() {
           )
           .eq("user_id", user.id)
           .order("submitted_at", { ascending: false }),
+        // PROG-012: the caller's notebook, one JSON value (112). Strict like every other section,
+        // so this ships only once 112 is on hosted.
+        supabase.rpc("my_notebook"),
       ]);
 
     // A partial export is worse than none: the user would have no way to tell a
     // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes]
+    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes, notebookRes]
       .find(r => r.error);
     if (failed?.error) {
       return NextResponse.json({ error: failed.error.message }, { status: 500 });
+    }
+
+    // my_notebook() always returns both lists; anything else is a failed section, not an empty one.
+    const notebook = notebookRes.data as NotebookExport | null;
+    if (!Array.isArray(notebook?.entries) || !Array.isArray(notebook.summaries)) {
+      return NextResponse.json({ error: "Could not read the notebook." }, { status: 500 });
     }
 
     // A copy of each take's audio (privacy-policy.md section 8), downloaded
@@ -215,6 +224,7 @@ export async function GET() {
         authorSeat: ((authorSeatRes.data ?? []) as AuthorSeatExportRow[])[0] ?? null,
         calendarFeed: ((calendarFeedRes.data ?? []) as CalendarFeedExportRow[])[0] ?? null,
         telegramLink: ((telegramLinkRes.data ?? []) as TelegramLinkExportRow[])[0] ?? null,
+        notebook,
         voiceAnalyses: (voiceAnalysesRes.data ?? []) as VoiceAnalysisExportRow[],
       },
       ACHIEVEMENTS,

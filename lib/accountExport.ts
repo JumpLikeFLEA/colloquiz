@@ -10,7 +10,7 @@ export const EXPORT_ENDPOINT = "/api/account/export";
  * notice. Present in the file so an export can be identified long after it was
  * downloaded.
  */
-export const EXPORT_FORMAT_VERSION = 17;
+export const EXPORT_FORMAT_VERSION = 18;
 
 /** The sections a reader should expect, for the "what's in it" list in the UI. */
 export const EXPORT_CONTENTS = [
@@ -27,6 +27,7 @@ export const EXPORT_CONTENTS = [
   "Invites you claimed — the name and contact the course author wrote on your invite",
   "Voice recordings — each recording you sent, with a copy of the audio, and the author's published written feedback",
   "Voice transcripts and AI feedback — the text of what you said in each recording and the automatic feedback made from it, including any feedback an author withdrew",
+  "Notebook — the phrases you said, their fixes, the AI summaries and your own notes",
   "Written answers — each answer you sent for feedback, whether it went to a course's authors or to a teacher, and the published written feedback",
   "Final comments — the author's published closing comment for each course run you joined",
   "Teacher links — which teachers you linked to, when, how, and when and by whom each link ended",
@@ -214,6 +215,44 @@ export type VoiceAnalysisExportRow = {
   finished_at: string | null;
 };
 
+/**
+ * `my_notebook()` (112), the reader's own rows as one JSON value, so PostgREST's row limit cannot
+ * cut it (docs/decisions/0236 section 1). Every row, not merged.
+ */
+export type NotebookExport = {
+  entries: {
+    id: string;
+    /** 'said' | 'fix' (copied from a recording's AI feedback) | 'own' (the reader's note). */
+    kind: string;
+    /** null exactly for an own note. */
+    submission_id: string | null;
+    course_id: string | null;
+    lesson_id: string | null;
+    /** Titles as they were when the row was written. */
+    course_title: string | null;
+    lesson_title: string | null;
+    phrase: string | null;
+    quote: string | null;
+    exact: boolean | null;
+    correction: string | null;
+    note: string | null;
+    created_at: string;
+    updated_at: string;
+  }[];
+  summaries: {
+    submission_id: string;
+    kind: string;
+    course_id: string | null;
+    lesson_id: string | null;
+    course_title: string | null;
+    lesson_title: string | null;
+    summary: string;
+    next_step: string | null;
+    goal: string | null;
+    taken_at: string;
+  }[];
+};
+
 /** The reader's own row of `my_telegram_link` (090), or none. */
 export type TelegramLinkExportRow = {
   chat_id: number | string;
@@ -265,6 +304,8 @@ export type ExportSources = {
   telegramLink: TelegramLinkExportRow | null;
   /** VOICE-016 (098): the reader's transcripts and analyses, hidden ones too. */
   voiceAnalyses: VoiceAnalysisExportRow[];
+  /** PROG-012 (112): the reader's notebook. */
+  notebook: NotebookExport;
 };
 
 /**
@@ -410,6 +451,40 @@ export function buildExportPayload(
       created_at: row.created_at,
       finished_at: row.finished_at,
     })),
+
+    // PROG-012 (docs/decisions/0236 section 8; privacy-policy.md section 8): the notebook. Copied
+    // rows outlive the recording's audio and analysis; `phrase_key` is an index, not the reader's
+    // text, so it is left out.
+    notebook: {
+      entries: src.notebook.entries.map((e) => ({
+        entry_id: e.id,
+        kind: e.kind,
+        submission_id: e.submission_id,
+        course_id: e.course_id,
+        course_title: e.course_title,
+        lesson_id: e.lesson_id,
+        lesson_title: e.lesson_title,
+        phrase: e.phrase,
+        quote: e.quote,
+        exact: e.exact,
+        correction: e.correction,
+        note: e.note,
+        created_at: e.created_at,
+        updated_at: e.updated_at,
+      })),
+      summaries: src.notebook.summaries.map((s) => ({
+        submission_id: s.submission_id,
+        kind: s.kind,
+        course_id: s.course_id,
+        course_title: s.course_title,
+        lesson_id: s.lesson_id,
+        lesson_title: s.lesson_title,
+        summary: s.summary,
+        next_step: s.next_step,
+        goal: s.goal,
+        taken_at: s.taken_at,
+      })),
+    },
 
     // WRITE-005 (docs/decisions/0225 Decisions 10 and 14): every written answer this reader
     // sent, the route it took ("cohort": the course's authors; "teacher": a linked teacher)

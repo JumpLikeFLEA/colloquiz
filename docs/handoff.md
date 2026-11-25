@@ -57,7 +57,9 @@ their own notes. Its text outlives the 6-month audio purge; the audio and
 the analysis itself do not. It is a record, not a retention mechanic: no
 streaks, goals or reminders come with it. Its Fixes are a record too, not
 practice: no drills, resurfacing or scheduling ("Deliberately out of scope
-for v1" stands). Planned (M4, PROG-011..020, OPS-043).
+for v1" stands). The storage, the copy and
+the read and delete rules are built (PROG-012, docs/decisions/0238, migration 112,
+applied to hosted 2026-11-25); the page and the rest are planned (M4, PROG-013..020).
 
 **A third line: teachers on manual seats (owner, 2026-10-15,
 docs/decisions/0141).** An English teacher pays, outside the app, for a seat

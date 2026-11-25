@@ -10,6 +10,7 @@ const baseSources = {
   achievements: [],
   memberships: [],
   duels: [],
+  notebook: { entries: [], summaries: [] },
   lessonAttempts: [],
   signupAcquisition: null,
   lessonOpens: [],
@@ -431,8 +432,8 @@ describe("buildExportPayload — final_comments (COH-008)", () => {
     expect(payload.final_comments.map((c) => c.enrolment_id)).toEqual(["enr-1"]);
   });
 
-  it("is format version 15", () => {
-    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(17);
+  it("is format version 18", () => {
+    expect(buildExportPayload(baseSources, []).meta.format_version).toBe(18);
   });
 });
 
@@ -703,6 +704,36 @@ describe("buildExportPayload — voice_analyses (VOICE-016)", () => {
     const leaky = { ...row, usage: { tokens: 1 }, failure: "boom", hidden_by: "teacher-1", send_id: "s" };
     const json = JSON.stringify(buildExportPayload({ ...baseSources, voiceAnalyses: [leaky] }, []).voice_analyses);
     expect(json).not.toMatch(/usage|boom|teacher-1|send_id|hidden_by/);
+  });
+});
+
+describe("buildExportPayload — notebook (PROG-012)", () => {
+  const place = { course_id: "c1", course_title: "Course", lesson_id: "l1", lesson_title: "Lesson" };
+  const said = {
+    id: "e1", kind: "said", submission_id: "s1", ...place, phrase: "be about to", quote: "was about to",
+    exact: false, correction: null, note: null, created_at: "2026-11-25T10:00:00Z", updated_at: "2026-11-25T10:00:00Z",
+  };
+  const own = { ...said, id: "e2", kind: "own", submission_id: null, quote: null, exact: null, note: "mine" };
+  const summary = {
+    submission_id: "s1", kind: "final", ...place, summary: "Clear.", next_step: "Go on.", goal: null, taken_at: "2026-11-25T10:00:00Z",
+  };
+
+  it("is two empty lists for a reader with none", () => {
+    expect(buildExportPayload(baseSources, []).notebook).toEqual({ entries: [], summaries: [] });
+  });
+
+  it("carries copied rows, own notes and summaries, without the index key or another person's id", () => {
+    const leaky = { ...said, phrase_key: "be about to", user_id: "u" };
+    const { notebook } = buildExportPayload(
+      { ...baseSources, notebook: { entries: [leaky, own], summaries: [summary] } },
+      [],
+    );
+    const { id, ...rest } = said;
+    const { id: ownId, ...ownRest } = own;
+    expect(notebook).toEqual({
+      entries: [{ entry_id: id, ...rest }, { entry_id: ownId, ...ownRest }],
+      summaries: [summary],
+    });
   });
 });
 
