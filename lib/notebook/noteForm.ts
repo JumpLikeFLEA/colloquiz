@@ -16,6 +16,8 @@ export type NoteError =
   | "note_too_long"
   | "note_cap"
   | "not_found"
+  /** `notebook_add_note` with a lesson the caller cannot read (112:525, PROG-022). */
+  | "not_readable"
   | "unauthenticated"
   | "failed";
 
@@ -39,7 +41,14 @@ export function noteFormError(phrase: string, note: string): NoteError | null {
   return null;
 }
 
-const KNOWN = new Set<NoteError>(["phrase_empty", "phrase_too_long", "note_too_long", "not_found", "unauthenticated"]);
+const KNOWN = new Set<NoteError>([
+  "phrase_empty",
+  "phrase_too_long",
+  "note_too_long",
+  "not_found",
+  "not_readable",
+  "unauthenticated",
+]);
 
 /**
  * What a write RPC's answer means. The note cap is a PT429 raised by the insert trigger, so it

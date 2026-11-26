@@ -53,6 +53,8 @@ describe("noteRpcOutcome", () => {
   it("names the RPC's own refusals, and someone else's entry is not_found", () => {
     expect(noteRpcOutcome({ ok: false, error: "phrase_too_long" }, null)).toEqual({ ok: false, error: "phrase_too_long" });
     expect(noteRpcOutcome({ ok: false, error: "not_found" }, null)).toEqual({ ok: false, error: "not_found" });
+    expect(noteRpcOutcome({ ok: false, error: "not_readable" }, null)).toEqual({ ok: false, error: "not_readable" });
+    expect(noteRpcOutcome({ ok: false, error: "unauthenticated" }, null)).toEqual({ ok: false, error: "unauthenticated" });
     expect(noteRpcOutcome({ ok: false, error: "something_new" }, null)).toEqual({ ok: false, error: "failed" });
   });
 
