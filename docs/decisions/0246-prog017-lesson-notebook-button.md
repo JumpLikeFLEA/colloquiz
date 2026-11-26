@@ -127,6 +127,8 @@ measured shapes each cost the anonymous path 0.2 KB or more. PROG-022 builds on 
 anonymous headroom: any change to `LessonFrame` or the strip that the anonymous path ships is
 measured in bytes, not KB.
 
+**Accepted (owner, 2026-11-26):** the 29 B on the anonymous free lesson, 266,181 → 266,210 of 266,240 B.
+
 **Rename, recommended for PROG-022.** "Linked" no longer describes who gets `LinkedLesson` /
 `LinkedLessonPageClient`: every signed-in learner does. Renaming them (for example to
 `SignedInLesson` / `SignedInLessonPageClient`) is PROG-022's, with its doc comments and 0153's
