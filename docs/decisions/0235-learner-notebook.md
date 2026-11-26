@@ -53,6 +53,9 @@ reads the part that comes from lessons they can already read.
    storage and moves to the account at sign-in. PROG-017 compares that with hiding
    save for signed-out visitors, with the cost of both; PROG-018 is dropped if the
    owner picks hiding. PROG-018 ranks last.
+
+   > **Superseded in part by 0246 (owner, 2026-11-26, PROG-017):** saving from a lesson is for
+   > signed-in learners only. A signed-out visitor sees no save control, and PROG-018 is dropped.
 8. **Empty state.** An invitation to study and one button, "Choose a course", to
    `/#catalogue`. No starter-lesson logic.
 9. **Downloads.** Each recording, by its owner only, and the whole notebook as one

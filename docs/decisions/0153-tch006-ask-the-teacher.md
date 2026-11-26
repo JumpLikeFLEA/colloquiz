@@ -151,6 +151,13 @@ What would reach zero: serve linked students a different route (a rewrite in
 `proxy.ts` on a flag), which trades 0.2 KB for a second URL and a flag that
 can go stale. Not built; the owner's call.
 
+> **Superseded in part by 0246 (owner, 2026-11-26, PROG-017):** `page.tsx`'s "everyone else gets the
+> page client untouched" becomes "signed-out visitors get it untouched". Every signed-in learner gets
+> the lazy client behind `LinkedLesson.tsx`, with `askTeacher` optional, so the notebook button
+> reaches them through the stub this section already paid for. A signed-in learner nobody qualifies
+> for now downloads the lazy chunk (Ask code included, +3.1 KB measured in 0246) but still sees no
+> Ask link.
+
 ## Verification
 
 - `supabase/verify/081_ask_the_teacher.sql`: PASS locally, with a positive

@@ -5607,23 +5607,50 @@ export const CARDS = [
     notes: 'Ranked second to last on purpose: the first pickable card being a decision card returns `work on next` to chat.',
   },
   {
-    key: 'PROG-018',
-    title: 'Signed-out notes: local store and the move at sign-in',
+    key: 'OPS-045',
+    title: 'Phone engines in Playwright: WebKit (iPhone) and Chromium (Pixel) at 360px against the local stack',
+    milestone: 'M4',
+    epic: 'OPS',
+    type: 'task',
+    rank: 3484,
+    dependsOn: [],
+    goal:
+      'The owner has no iOS or Android test devices (docs/decisions/0246). Phone behaviour is checked in Playwright’s WebKit, the engine of iOS Safari and of every iOS in-app browser, and in Chromium, the engine of Android Chrome and of Android in-app browsers. Both run at 360px with touch, against a production build on the seeded local stack. ' +
+      'A pass is evidence about the engines, not about a phone: real-device cells stay “not tested”.',
+    acceptance: [
+      'playwright.config.ts has two projects: webkit-iphone (devices["iPhone 13"]) and chromium-pixel (devices["Pixel 7"]). Each sets the viewport width to 360 and keeps the descriptor’s touch, mobile and user-agent settings, printed from the resolved config. Specs live in e2e/. vitest runs no file under e2e/ (printed), and npm run check type-checks and lints e2e/.',
+      'npm run e2e builds and serves against the local stack with the same env and build stamp budget:local uses: shared code, extracted if it is inline in scripts/budget.ts, not copied. It can also run against an already-running server with --url. With the stack down, it stops and says how to start and seed it (0245 Decision 1).',
+      'Signed-in specs use one storage state per fixture (prog002-learner, prog007-learner), made through the login form. A missing fixture fails fast with the form’s own message (0245 Decision 3).',
+      'A smoke spec passes in both projects: the free lesson signed out and /my/notebook signed in, each with scrollWidth/innerWidth printed. Positive control, run once and then removed: a scratch element 400px wide makes the spec fail in both projects, with the width printed.',
+      'Browsers are installed with npx playwright install (webkit, chromium) and never committed; docs/setup.md says how. A @playwright/test version change is allowed (owner, 2026-11-26): print package.json and package-lock.json before and after. CLAUDE.md’s “Exact commands” gains npm run e2e. A decision file.',
+    ],
+    notes:
+      'Not CI: it runs on the owner’s machine, like budget:local. viewport360 and budget stay as they are; moving them onto this config would be a later card, if wanted. ' +
+      'Not emulated: the on-screen keyboard, the toolbars and safe areas of Instagram’s and Telegram’s own browsers, and anything a real phone’s hardware changes.',
+  },
+  {
+    key: 'PROG-022',
+    title: 'Add a phrase from inside a lesson: the notebook button in the lesson strip (signed in)',
     milestone: 'M4',
     epic: 'PROG',
     type: 'task',
-    rank: 3490,
-    dependsOn: ['PROG-012', 'PROG-017'],
+    rank: 3488,
+    dependsOn: ['PROG-017', 'OPS-045'],
     goal:
-      'A phrase saved while signed out is kept in browser storage and moves to the account at sign-in (0235, settled input 7). The notebook itself stays signed-in only. Not workable until PROG-017\'s pick adds its build card to this card\'s dependsOn: nothing saves a phrase inside a lesson before it.',
+      'A signed-in learner adds a phrase, with an optional note, from any lesson (text-only lessons included) without leaving it. The note keeps its course and lesson (notebook_add_note, 112) and appears in the notebook under that course. ' +
+      'Signed-out visitors see nothing new, and the free lesson’s first load does not change (docs/decisions/0246: the owner picked option A).',
     acceptance: [
-      'A versioned local store that never throws and falls back to memory (the ANON-002 pattern), tested under lib/ including an unparseable and an old-version payload.',
-      'A migration, because the cross-browser path cannot carry notes: pending_claims holds an array of attempts of at most 16,384 bytes, passes it to record_lesson_attempts, and the stash is skipped when there are no attempts (049, RegistrationOffer.tsx). Notes with no attempts work; a claim is single-use; a malformed or oversized payload is refused. course_delete_blockers reads pending-claim payloads, so it is extended. Print rule, full protocol, hosted through the gate.',
-      'An uploader that does not depend on a lesson page (uploadPendingAttempts runs only inside LessonPlayer). It posts to a route, because /my/notebook cannot load @supabase/ssr up front (0181: 262.3 KB). Uploading twice leaves one copy.',
-      'End to end, printed: save in browser A, confirm the email in browser B, the note is in B\'s notebook; the same-browser case; a sign-in that lands on /my/notebook without opening a lesson.',
-      'The save confirmation says the notebook opens after sign-in (EN/RU). 360px; budgets for the free lesson and /my/notebook before and after; a docs/ui-decisions.md entry.',
+      'The button: NotebookPen, a 44px target labelled “Add a phrase”, at the right end of LessonProgressStrip. It shows for signed-in learners only, through the mechanism 0246 measured (the signed-in lazy lesson client (LinkedLesson widened)). For a signed-in learner the strip also renders on a lesson with no exercises: the back link and the button, with no bar and no count. For a signed-out visitor the strip is exactly as it is today. Both lesson clients get the button through LessonFrame; the admin preview and the demo get none. A docs/ui-decisions.md entry.',
+      'The dialog: the Radix Dialog from app/components/ui/dialog, in a chunk fetched on the first tap (the AskTeacher precedent, 0153). It is pinned to the top of the screen so an on-screen keyboard cannot cover it. It has Phrase (required), Note (optional), a read-only “From: <course> · <lesson>” line and Save. Limits, trim and counting come from lib/notebook/noteForm.ts, reused rather than copied; the server re-checks and the RPC decides. NoteForm is reused if it can take this action without a fork; if it can’t, the decision file says why. Strings are English (lesson chrome, 0080 D5), in a module that only the dialog’s chunk imports. Fields keep the 16px text the ui inputs use on phones.',
+      'Saving: a Server Action calls notebook_add_note(phrase, note, lessonId) under the learner’s session, with no redirect and no reload. The lesson’s answers, drag positions and typed inline inputs stay as they were. On success the dialog closes and a role="status" line says the phrase was added, with a link to the notebook filtered to this course (lib/notebook/href.ts). Each refusal has its own message: an empty phrase, an over-length phrase or note, the 1,000-note cap (PT429, 0241 Decision 2), not_readable, and an expired session (with a sign-in link that returns to this lesson).',
+      'Privacy unchanged: a note added from a lesson is an own row, which linked_student_notebook never returns (112:652). Point to the existing check that shows this for an own note in a lesson the teacher can read. If there is none, add that cell to supabase/verify/112_notebook.sql and print its PASS on the local stack.',
+      'e2e tests (OPS-045) in both projects, at 360 with touch, signed in: add a phrase from the free lesson and from a lesson with no exercises, then find each note in /my/notebook under its course. If the seed has no lesson without exercises, add one to scripts/seed-local-fixtures.ts and print the change. Also test: the empty-phrase refusal; closing with the X and with Escape, with focus returning to the button; in applied-practice, a drag that completes after the dialog has been opened and closed; and a typed inline input that keeps its text across a save. Signed out, the free lesson has no button, with the signed-in run as the control. The evidence lists iOS Safari, Android Chrome, Instagram and Telegram as not tested.',
+      'Budgets: npm run budget:local before and after. The anonymous free lesson stays at its before figure, and every other route is printed. The signed-in free lesson and the bytes fetched on the first tap are printed before and after, with 0246’s scratch measurement. No budget is raised: a figure over a limit is a stop.',
+      'Measured at 360 in every new state (the strip with the button, a lesson without exercises, the dialog open, each refusal, the “added” status) with scrollWidth/innerWidth printed, and once at 1280. npm run check && npm test. A decision file.',
     ],
-    notes: 'Ranked last. Dropped if PROG-017\'s pick hides saving for signed-out visitors.',
+    notes:
+      'Not built here, but possible later as more ways into the same dialog (0246): save chips under author-marked phrases (a new inline mark and a marking pass over the courses), and a pick mode (tap the first word and the last). Pre-filling from a text selection was left out because it cannot be shown to work without the phones. ' +
+      'Signed-out saving was dropped with PROG-018 (0246).',
   },
 
   // Found in PROG-011 (docs/decisions/0236, "Found on the way"), filed by the owner 2026-11-25.

@@ -283,6 +283,10 @@ band. It holds an icon-only back link (server-rendered, `aria-label`
   sticks to the bottom, not the top.
 - It is not rendered for a lesson with no exercises.
 
+> **Superseded in part by 0246 (owner, 2026-11-26, PROG-017):** for a signed-in learner the strip
+> also renders on a lesson with no exercises, holding the back link and the notebook button ("Add a
+> phrase"), with no bar and no count. A signed-out visitor's strip is unchanged.
+
 **How it reaches the page.** `LessonPlayer` gained an optional
 `renderProgress(progress)`, rendered as a sibling just before its column.
 Only `LessonPageClient` passes it. The admin preview and the demo render
