@@ -290,7 +290,13 @@ What it means concretely:
   `npm run budget` measures the replacement directly (OPS-006): a cold,
   cache-disabled `next start` load through headless Chromium, summing
   compressed script bytes actually downloaded. A budget with no printed
-  figure behind it is not evidence.
+  figure behind it is not evidence. Run it as `npm run budget:local`
+  (OPS-042, docs/decisions/0245): it builds and serves against the seeded
+  local stack, the only place the signed-in routes' fixtures exist, and it
+  is the one way every route in the guard prints a figure. Plain
+  `npm run budget` serves against `.env.local`'s hosted project, where those
+  routes FAIL at once by design. Each run prints the Supabase URL it served;
+  record it beside the figures.
 - One Tailwind build serves both surfaces, so the stylesheet is shared and
   that is accepted — CSS is small next to JS. Do not split the build to chase
   it.

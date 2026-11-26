@@ -297,6 +297,8 @@ npm run dev
 npm run viewport360 -- --base=<origin> [--as=email:password] --expect="<text>" /path   # 360px overflow check
 npm run budget                     # cold-load JS byte budget per route (OPS-006), --url=<origin> to
                                     # point at an already-running server; kept out of `check` (slow)
+npm run budget:local               # the same, built and served against the seeded local stack: the one way
+                                    # every route (incl. the signed-in ones) prints a figure (OPS-042, 0245)
 
 node scripts/board/next-card.mjs
 node scripts/board/board-move.mjs <KEY> "In progress"

@@ -26,7 +26,22 @@
  *     cannot see.
  *
  * Usage:
- *   npx tsx --env-file=.env.local scripts/budget.ts [--url=<origin>]
+ *   npm run budget:local   (= scripts/budget.ts --local)  ← the way to measure EVERY route
+ *   npm run budget         (= npx tsx --env-file=.env.local scripts/budget.ts [--url=<origin>])
+ *
+ * --local (OPS-042, docs/decisions/0245) builds and serves against the local
+ * Supabase stack: it reads the stack's URL and keys from `npx supabase@2.120.0
+ * status -o env` and hands them to `next build` and `next start`. Every
+ * signed-in route's fixture and every `seeded` route's data exist only there,
+ * so this is the documented way to get a KB figure for every route in ROUTES.
+ * Before it: `npx supabase@2.120.0 start`, `db reset` if migrations are
+ * pending, and the seed (scripts/seed-local-fixtures.ts with the local URL and
+ * service key in the env; `npm run seed:local` alone reads `.env.local`'s hosted
+ * URL and refuses. The verify skill's "Budget" section has the line).
+ * Plain `npm run budget` serves against whatever `.env.local` names, which is
+ * the hosted project: there the signed-in routes FAIL at once with the login
+ * form's answer and the fixture's email, and a seeded route's 404 names the seed.
+ * Every run prints the Supabase URL it serves (a hosted project's ref masked).
  *
  * --url (or BUDGET_BASE_URL) points the guard at an already-running server —
  * e.g. OPS-010's launch rehearsal against the deployed production URL.
@@ -38,7 +53,10 @@
  * files `next build` reads (NEXT_PUBLIC_* values are frozen into the build),
  * to `.next/budget-source-fingerprint`, and reuses the build only when that
  * stamp matches the sources now. No stamp, a mismatch or a missing build all
- * rebuild. --url builds nothing and checks nothing about `.next`.
+ * rebuild. Since OPS-042 the stamp also records the NEXT_PUBLIC_SUPABASE_URL
+ * the build was made with and the BUILD_ID it produced: a run that will serve
+ * another URL, or finds a BUILD_ID from a `next build` run outside the guard,
+ * rebuilds. --url builds nothing and checks nothing about `.next`.
  *
  * The `/courses/play-006-smoke/free-lesson` route below requires
  * `npm run seed:local` (scripts/seed-local-fixtures.ts) to have been run
@@ -51,7 +69,13 @@ import { execFileSync, spawn, spawnSync, type ChildProcess } from "node:child_pr
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { buildDecision, sourceFingerprint, type SourceEntry } from "./budgetBuildStamp";
+import {
+  buildDecision,
+  describeSupabaseUrl,
+  formatStamp,
+  sourceFingerprint,
+  type SourceEntry,
+} from "./budgetBuildStamp";
 
 const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
 
@@ -108,6 +132,8 @@ type RouteBudget = {
   signInAs?: string;
   phone?: boolean;
   alsoForbid?: string[];
+  /** The route's data comes from scripts/seed-local-fixtures.ts: its 404 names the seed (OPS-042). */
+  seeded?: boolean;
 };
 
 /** scripts/seed-local-fixtures.ts's PASSWORD: local-stack fixtures only. */
@@ -153,7 +179,7 @@ const ROUTES: RouteBudget[] = [
   // budgetKB below is a TARGET, not necessarily today's number — see
   // docs/decisions/0057 for the measured baseline and what would close any
   // gap; do not raise it to match whatever the guard currently prints.
-  { path: "/courses/future-imperfect/true-or-false", budgetKB: 260, guardForbiddenSignatures: true },
+  { path: "/courses/future-imperfect/true-or-false", budgetKB: 260, guardForbiddenSignatures: true, seeded: true },
   // PLAY-012 (docs/decisions/0057): a SEPARATE regression budget for a
   // drag-heavy lesson — `future-imperfect`'s `applied-practice` (matching +
   // ordering + selection, 25 blocks; also seeded by
@@ -164,7 +190,7 @@ const ROUTES: RouteBudget[] = [
   // PLAY-012, docs/decisions/0057 addendum) plus ~12.6 KB (4.5%) headroom;
   // re-derive both from a real `npm run budget` run before changing it,
   // never guess.
-  { path: "/courses/future-imperfect/applied-practice", budgetKB: 290, guardForbiddenSignatures: true },
+  { path: "/courses/future-imperfect/applied-practice", budgetKB: 290, guardForbiddenSignatures: true, seeded: true },
   // SHELL-008: the course page itself — `future-imperfect`'s catalogue-card
   // target. Same local-seed dependency as the two routes above (requires
   // `npm run seed:local`). Measured 173.3 KB after fixing a barrel-import
@@ -174,7 +200,7 @@ const ROUTES: RouteBudget[] = [
   // docs/decisions/0059). budgetKB below is that measurement plus ~4.5%
   // headroom (the PLAY-012 precedent, docs/decisions/0057) — re-derive both
   // from a real `npm run budget` run before raising it, never guess.
-  { path: "/courses/future-imperfect", budgetKB: 182, guardForbiddenSignatures: true },
+  { path: "/courses/future-imperfect", budgetKB: 182, guardForbiddenSignatures: true, seeded: true },
   // COH-003 (docs/decisions/0107): the invite claim page. Every state is a
   // Server Component and the Join action is a plain form POST, so the
   // page ships only the layout's and next/link's JS; an unknown token
@@ -196,7 +222,7 @@ const ROUTES: RouteBudget[] = [
   // A Server Component with no client JS of its own (the layout's and
   // next/link's only), so budgetKB starts at the invite page's, the same
   // shape; re-derived from a real `npm run budget` run (0209 "Measured").
-  { path: "/completed/future-imperfect", budgetKB: 183, guardForbiddenSignatures: true },
+  { path: "/completed/future-imperfect", budgetKB: 183, guardForbiddenSignatures: true, seeded: true },
   // COH-005 (docs/decisions/0115): the before/after screen, signed out (its
   // sign-in card) — the run is scripts/seed-local-fixtures.ts's cohort
   // fixture at a fixed id; without that seed the page 404s, a hard FAIL.
@@ -205,7 +231,7 @@ const ROUTES: RouteBudget[] = [
   // static import, so the signed-out route already ships it. budgetKB is
   // that plus ~4.5% headroom (the PLAY-012 precedent, docs/decisions/0057).
   // Re-derive both from a real `npm run budget` run before raising it.
-  { path: "/runs/c0050000-0000-4000-8000-00000000f1a0", budgetKB: 184, guardForbiddenSignatures: true },
+  { path: "/runs/c0050000-0000-4000-8000-00000000f1a0", budgetKB: 184, guardForbiddenSignatures: true, seeded: true },
   // PROG-002 (docs/decisions/0120): the learner home, signed in as the seed's
   // learner-home fixture (an attempt, an extended enrolment with a call, a
   // published feedback), so every section renders. Signed out it redirects
@@ -274,6 +300,50 @@ function die(msg: string): never {
 }
 
 const urlOverride = getArg("url") ?? process.env.BUDGET_BASE_URL;
+const useLocalStack = process.argv.includes("--local");
+if (useLocalStack && urlOverride) die("--local starts its own server against the local stack; it cannot be combined with --url.");
+
+// `npm run seed:local` alone refuses: it reads `.env.local`'s hosted URL and the
+// seed runs against a local URL only, so the hint names the env it needs.
+const SEED_HINT =
+  "seed the local stack with scripts/seed-local-fixtures.ts, passing the local URL and service key " +
+  "(`npx supabase@2.120.0 status -o env`) as NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY " +
+  "(.claude/skills/verify, \"Budget\")";
+
+// ── --local: build and serve against the local Supabase stack (OPS-042) ─
+// The signed-in routes' fixture accounts and the cohort run exist only where
+// scripts/seed-local-fixtures.ts ran, which is the local stack (it refuses any
+// other URL). `.env.local` points at the hosted project, so without this the
+// guard's server signs in against hosted, where the fixtures don't exist
+// (docs/decisions/0245). The local URL and keys are put in this process's
+// env, which `next build` and `next start` inherit and which wins over every
+// `.env*` file (@next/env's processEnv keeps a key already in process.env).
+const LOCAL_STACK_ENV: Record<string, string> = {
+  API_URL: "NEXT_PUBLIC_SUPABASE_URL",
+  ANON_KEY: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  SERVICE_ROLE_KEY: "SUPABASE_SERVICE_ROLE_KEY",
+};
+
+function applyLocalStackEnv(): void {
+  const result = spawnSync(npxBin, ["supabase@2.120.0", "status", "-o", "env"], { encoding: "utf8", shell: true });
+  const values = new Map<string, string>();
+  for (const line of (result.stdout ?? "").split(/\r?\n/)) {
+    const m = /^([A-Z_]+)="?(.*?)"?$/.exec(line.trim());
+    if (m) values.set(m[1], m[2]);
+  }
+  const missing = Object.keys(LOCAL_STACK_ENV).filter((k) => !values.get(k));
+  if (result.status !== 0 || missing.length > 0) {
+    die(
+      "--local: could not read the local Supabase stack (`npx supabase@2.120.0 status -o env`" +
+        (missing.length > 0 ? `, missing ${missing.join(", ")}` : "") +
+        `). Start it with \`npx supabase@2.120.0 start\`, then ${SEED_HINT}.`,
+    );
+  }
+  for (const [from, to] of Object.entries(LOCAL_STACK_ENV)) process.env[to] = values.get(from);
+}
+
+if (useLocalStack) applyLocalStackEnv();
+const servedSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
 // ── Local server lifecycle ──────────────────────────────────────────────
 const LOCAL_PORT = 4173; // arbitrary, unlikely to collide with `next dev`'s 3000
@@ -315,12 +385,19 @@ function currentSourceEntries(): SourceEntry[] {
   return paths.map((path) => ({ path, content: existsSync(path) ? readFileSync(path) : null }));
 }
 
+const BUILD_ID_PATH = join(process.cwd(), ".next", "BUILD_ID");
+
+function readBuildId(): string | null {
+  return existsSync(BUILD_ID_PATH) ? readFileSync(BUILD_ID_PATH, "utf8").trim() : null;
+}
+
 function buildIfNeeded(): void {
   const current = sourceFingerprint(currentSourceEntries());
   const decision = buildDecision({
-    buildIdExists: existsSync(join(process.cwd(), ".next", "BUILD_ID")),
+    buildId: readBuildId(),
     stamp: existsSync(STAMP_PATH) ? readFileSync(STAMP_PATH, "utf8") : null,
     current,
+    supabaseUrl: servedSupabaseUrl,
   });
   if (decision.action === "reuse") {
     console.log(`Reusing .next: ${decision.reason}.`);
@@ -331,8 +408,11 @@ function buildIfNeeded(): void {
   if (result.status !== 0) die("`next build` failed.");
   // Stamp the fingerprint taken BEFORE the build: a file edited while the
   // build ran then mismatches next time and rebuilds, instead of being
-  // recorded as built.
-  writeFileSync(STAMP_PATH, current);
+  // recorded as built. The URL is the one this process handed the build
+  // (OPS-042), and BUILD_ID is the one it produced.
+  const buildId = readBuildId();
+  if (buildId === null) die("`next build` succeeded but left no .next/BUILD_ID.");
+  writeFileSync(STAMP_PATH, formatStamp({ fingerprint: current, supabaseUrl: servedSupabaseUrl, buildId }));
 }
 
 async function startLocalServer(): Promise<{ origin: string; proc: ChildProcess }> {
@@ -392,10 +472,23 @@ async function signInCookies(
     await page.goto(`${origin}/login`, { waitUntil: "networkidle", timeout: 15_000 });
     await page.fill("#email", email);
     await page.fill("#password", FIXTURE_PASSWORD);
-    await Promise.all([
-      page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 15_000 }),
-      page.click("button[type=submit]"),
+    // OPS-042: wait for whichever comes first, leaving /login or the form's
+    // error box (AuthScreen's `bg-destructive-subtle` <p>). A fixture that
+    // doesn't exist on the server's project answers "Invalid login
+    // credentials" at once; waiting on the URL alone sat out the full 15 s.
+    const errorBox = page.locator("form p.bg-destructive-subtle");
+    await page.click("button[type=submit]");
+    const outcome = await Promise.race([
+      page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 15_000 }).then(() => "signed-in" as const),
+      errorBox.waitFor({ state: "visible", timeout: 15_000 }).then(() => "refused" as const),
     ]);
+    if (outcome === "refused") {
+      const message = ((await errorBox.textContent()) ?? "").trim();
+      throw new Error(
+        `the login form answered "${message}": fixture ${email} is missing on ${describeSupabaseUrl(servedSupabaseUrl)} (or has another password than the seed's). ` +
+          `To measure it: ${SEED_HINT}, then run \`npm run budget:local\``,
+      );
+    }
     return await context.cookies();
   } finally {
     await context.close();
@@ -501,7 +594,11 @@ async function main() {
   if (urlOverride) {
     origin = urlOverride.replace(/\/$/, "");
     console.log(`Using existing server at ${origin}.`);
+    console.log("Supabase: whatever that server was started with (not checked by --url).");
   } else {
+    console.log(
+      `Supabase: ${describeSupabaseUrl(servedSupabaseUrl)} (${useLocalStack ? "--local: the local stack" : "from the environment / .env.local"}).`,
+    );
     const started = await startLocalServer();
     origin = started.origin;
     localProc = started.proc;
@@ -535,7 +632,11 @@ async function main() {
       );
       if (!result.ok) {
         anyFailed = true;
-        console.log(`${route.phone ? `${route.path} (phone)` : route.path} | FAIL (${result.reason}) | ${route.budgetKB}`);
+        const hint =
+          route.seeded && result.reason === "navigation returned 404"
+            ? `; this route's data is seeded on the local stack only: ${SEED_HINT}, then run \`npm run budget:local\``
+            : "";
+        console.log(`${route.phone ? `${route.path} (phone)` : route.path} | FAIL (${result.reason}${hint}) | ${route.budgetKB}`);
         continue;
       }
       const kb = result.scriptKB;

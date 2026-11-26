@@ -15,6 +15,7 @@
     "bench": "tsx --env-file=.env.local scripts/bench.ts",
     "viewport360": "tsx scripts/viewport360.ts",
     "budget": "tsx --env-file=.env.local scripts/budget.ts",
+    "budget:local": "tsx --env-file=.env.local scripts/budget.ts --local",
     "seed:local": "tsx --env-file=.env.local scripts/seed-local-fixtures.ts",
     "backfill:images": "tsx --env-file=.env.local scripts/backfill-image-webp.ts"
   },

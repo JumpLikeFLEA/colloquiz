@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildDecision, sourceFingerprint, type SourceEntry } from "./budgetBuildStamp";
+import {
+  buildDecision,
+  describeSupabaseUrl,
+  formatStamp,
+  parseStamp,
+  sourceFingerprint,
+  type SourceEntry,
+} from "./budgetBuildStamp";
 
 const bytes = (s: string) => new TextEncoder().encode(s);
 
@@ -56,21 +63,78 @@ describe("sourceFingerprint", () => {
 
 describe("buildDecision", () => {
   const current = sourceFingerprint(base);
+  const local = "http://127.0.0.1:54321";
+  const hosted = "https://abcdefghijklmnop.supabase.co";
+  const stamp = (over: Partial<{ fingerprint: string; supabaseUrl: string; buildId: string }> = {}) =>
+    formatStamp({ fingerprint: current, supabaseUrl: local, buildId: "B1", ...over });
+  const decide = (stampRaw: string | null, buildId: string | null = "B1", supabaseUrl = local) =>
+    buildDecision({ buildId, stamp: stampRaw, current, supabaseUrl });
 
   it("builds when there is no .next build", () => {
-    expect(buildDecision({ buildIdExists: false, stamp: current, current }).action).toBe("build");
+    expect(decide(stamp(), null).action).toBe("build");
   });
 
   it("builds when .next exists but carries no stamp", () => {
-    expect(buildDecision({ buildIdExists: true, stamp: null, current }).action).toBe("build");
+    expect(decide(null).action).toBe("build");
+  });
+
+  it("builds on an older guard's bare-hash stamp, which records no Supabase URL", () => {
+    const decision = decide(`${current}\n`);
+    expect(decision.action).toBe("build");
+    expect(decision.reason).toMatch(/no Supabase URL/);
+  });
+
+  it("builds when BUILD_ID changed since the stamp (a `next build` run outside the guard)", () => {
+    const decision = decide(stamp(), "B2");
+    expect(decision.action).toBe("build");
+    expect(decision.reason).toMatch(/outside `npm run budget`/);
+  });
+
+  it("builds when the build was made against another Supabase URL, naming both (ref masked)", () => {
+    const decision = decide(stamp({ supabaseUrl: hosted }), "B1", local);
+    expect(decision).toEqual({
+      action: "build",
+      reason: "the build was made against https://*.supabase.co, and this run serves http://127.0.0.1:54321",
+    });
   });
 
   it("builds when the stamp differs from the current sources", () => {
-    const decision = buildDecision({ buildIdExists: true, stamp: "0".repeat(64), current });
-    expect(decision).toEqual({ action: "build", reason: "sources changed since the last budget build" });
+    expect(decide(stamp({ fingerprint: "0".repeat(64) }))).toEqual({
+      action: "build",
+      reason: "sources changed since the last budget build",
+    });
   });
 
-  it("reuses only when the stamp matches, tolerating a trailing newline", () => {
-    expect(buildDecision({ buildIdExists: true, stamp: `${current}\n`, current }).action).toBe("reuse");
+  it("reuses only when build id, URL and sources all match, tolerating a trailing newline", () => {
+    expect(decide(`${stamp()}\n`).action).toBe("reuse");
+  });
+
+  it("treats a trailing slash on the URL as the same URL", () => {
+    expect(decide(stamp({ supabaseUrl: `${local}/` })).action).toBe("reuse");
+  });
+});
+
+describe("parseStamp / formatStamp", () => {
+  it("round-trips", () => {
+    const s = { fingerprint: "f", supabaseUrl: "http://127.0.0.1:54321", buildId: "B" };
+    expect(parseStamp(formatStamp(s))).toEqual(s);
+  });
+
+  it("reads a bare hash as a stamp with no URL and no build id", () => {
+    expect(parseStamp("abc123\n")).toEqual({ fingerprint: "abc123", supabaseUrl: null, buildId: null });
+  });
+});
+
+describe("describeSupabaseUrl", () => {
+  it("masks a hosted project ref", () => {
+    expect(describeSupabaseUrl("https://abcdefghijklmnop.supabase.co")).toBe("https://*.supabase.co");
+  });
+
+  it("leaves a local URL as it is", () => {
+    expect(describeSupabaseUrl("http://127.0.0.1:54321/")).toBe("http://127.0.0.1:54321");
+  });
+
+  it("names a missing URL", () => {
+    expect(describeSupabaseUrl(null)).toBe("(no NEXT_PUBLIC_SUPABASE_URL)");
   });
 });

@@ -15,6 +15,13 @@ description: How to build, run, and drive this app to verify changes end-to-end 
 - Cloud Supabase is configured in `.env.local` (project kumrlovftctxcbbbmnfy); `npm run dev` hits the real cloud project.
 - A local stack also works (ANON-009, 2026-10-07): `npx supabase@2.120.0 start` (needs Docker), `npx supabase@2.120.0 db reset` (applies every migration), then `scripts/seed-local-fixtures.ts` with the local URL and keys passed as env vars — they take precedence over `.env.local`. Use it for RLS protocols and unapplied migrations.
 
+## Budget (`npm run budget:local`, OPS-042, docs/decisions/0245)
+- The one way to get a KB figure for EVERY route in `scripts/budget.ts`'s ROUTES is `npm run budget:local`. It reads the local stack's URL and keys from `npx supabase@2.120.0 status -o env` and builds and serves against them; the signed-in routes' fixture accounts and the seeded routes' data exist only on the local stack.
+- Before it: `npx supabase@2.120.0 start`; `npx supabase@2.120.0 db reset` if a migration is pending locally; then seed. `npm run seed:local` alone refuses (it reads `.env.local`'s hosted URL), so pass the local values (Git Bash): `eval "$(npx supabase@2.120.0 status -o env | grep -E '^(API_URL|SERVICE_ROLE_KEY)=')"; NEXT_PUBLIC_SUPABASE_URL=$API_URL SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY npx tsx scripts/seed-local-fixtures.ts`. Never print the keys.
+- Plain `npm run budget` serves against `.env.local` (hosted). Its public routes measure, but every `signInAs` route FAILs at once with the login form's answer and the fixture's email, and `/runs/…f1a0` 404s with the seed named. That is expected, not a regression.
+- Every run prints `Supabase: <url>` (a hosted ref masked as `*.supabase.co`). Name it beside every figure you record: the local and hosted builds differ by about 1 KB on the same code (the URL and key are baked into the bundle).
+- The build stamp records the Supabase URL and BUILD_ID; switching between `budget` and `budget:local`, or running `next build` yourself, makes the next run rebuild (several minutes). That is the guard working.
+
 ## Drive the UI (no Playwright in repo)
 - Install Playwright in the session scratchpad (`npm i playwright`) and launch with `channel: 'msedge', headless: true` — uses system Edge, no browser download.
 - Auth form field ids: `#name`, `#email`, `#city`, `#password`, `#confirmPassword`; submit is `button[type=submit]`.

@@ -9,6 +9,14 @@
  * the current sources. Everything else rebuilds — the direction a mistake in
  * this rule fails in is a slower run, never a stale figure.
  *
+ * OPS-042 (docs/decisions/0245): the stamp also records the Supabase URL the
+ * build was made against and the BUILD_ID it produced. NEXT_PUBLIC_SUPABASE_URL
+ * is frozen into the client bundle, and the .env* files are not the only place
+ * it comes from (a process env var wins over them), so hashing the files alone
+ * let a build made against one project be served against another. A BUILD_ID
+ * that differs from the stamp's means `next build` ran outside the guard since
+ * the stamp was written, with whatever env that run had.
+ *
  * Pure: the caller (budget.ts) lists and reads the files; this module only
  * hashes and decides, so it is unit-tested without a filesystem.
  */
@@ -45,14 +53,59 @@ export function sourceFingerprint(entries: SourceEntry[]): string {
   return hash.digest("hex");
 }
 
+/** What the guard writes to `.next/budget-source-fingerprint` after its own build. */
+export type BudgetStamp = {
+  fingerprint: string;
+  /** null on a stamp written by a guard older than OPS-042 (a bare hash). */
+  supabaseUrl: string | null;
+  buildId: string | null;
+};
+
+export function formatStamp(stamp: { fingerprint: string; supabaseUrl: string; buildId: string }): string {
+  return JSON.stringify(stamp);
+}
+
+/** Reads a stamp; a bare hash (the pre-OPS-042 format) carries no URL and no build id. */
+export function parseStamp(raw: string): BudgetStamp {
+  const text = raw.trim();
+  if (text.startsWith("{")) {
+    try {
+      const v = JSON.parse(text) as Partial<Record<keyof BudgetStamp, unknown>>;
+      return {
+        fingerprint: typeof v.fingerprint === "string" ? v.fingerprint : "",
+        supabaseUrl: typeof v.supabaseUrl === "string" ? v.supabaseUrl : null,
+        buildId: typeof v.buildId === "string" ? v.buildId : null,
+      };
+    } catch {
+      return { fingerprint: "", supabaseUrl: null, buildId: null };
+    }
+  }
+  return { fingerprint: text, supabaseUrl: null, buildId: null };
+}
+
+function normaliseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "");
+}
+
+/** A Supabase URL for printing: a hosted project's ref is masked, a local URL is shown as it is. */
+export function describeSupabaseUrl(url: string | null | undefined): string {
+  if (!url) return "(no NEXT_PUBLIC_SUPABASE_URL)";
+  return normaliseUrl(url).replace(/^(https?:\/\/)[^./]+(\.supabase\.(co|in))/i, "$1*$2");
+}
+
 export type BuildDecision = { action: "build" | "reuse"; reason: string };
 
 export function buildDecision(input: {
-  buildIdExists: boolean;
+  /** .next/BUILD_ID's content, or null when there is no build. */
+  buildId: string | null;
+  /** The stamp file's raw content, or null when it is missing. */
   stamp: string | null;
+  /** sourceFingerprint() of the sources now. */
   current: string;
+  /** The NEXT_PUBLIC_SUPABASE_URL this run will build with and serve. */
+  supabaseUrl: string;
 }): BuildDecision {
-  if (!input.buildIdExists) {
+  if (input.buildId === null) {
     return { action: "build", reason: "no .next build found" };
   }
   if (input.stamp === null) {
@@ -61,8 +114,24 @@ export function buildDecision(input: {
       reason: ".next has no budget source stamp (built outside `npm run budget`, or by an older guard)",
     };
   }
-  if (input.stamp.trim() !== input.current) {
+  const stamp = parseStamp(input.stamp);
+  if (stamp.supabaseUrl === null || stamp.buildId === null) {
+    return { action: "build", reason: "the stamp records no Supabase URL (written by a guard older than OPS-042)" };
+  }
+  if (stamp.buildId !== input.buildId.trim()) {
+    return {
+      action: "build",
+      reason: "BUILD_ID changed since the stamp: `next build` ran outside `npm run budget`, with an env the guard did not see",
+    };
+  }
+  if (normaliseUrl(stamp.supabaseUrl) !== normaliseUrl(input.supabaseUrl)) {
+    return {
+      action: "build",
+      reason: `the build was made against ${describeSupabaseUrl(stamp.supabaseUrl)}, and this run serves ${describeSupabaseUrl(input.supabaseUrl)}`,
+    };
+  }
+  if (stamp.fingerprint !== input.current) {
     return { action: "build", reason: "sources changed since the last budget build" };
   }
-  return { action: "reuse", reason: "sources unchanged since the last budget build" };
+  return { action: "reuse", reason: "sources and Supabase URL unchanged since the last budget build" };
 }
