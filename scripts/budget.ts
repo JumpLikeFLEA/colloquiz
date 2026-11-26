@@ -466,7 +466,9 @@ async function main() {
       if (overBudget) anyFailed = true;
       const label = route.phone ? `${route.path} (phone)` : route.path;
       console.log(
-        `${label} | ${kb.toFixed(1)} KB | ${route.budgetKB} KB${overBudget ? "  ⚠ OVER BUDGET" : ""}`,
+        // Exact bytes beside the KB: a route with tens of bytes of headroom is judged in bytes
+        // (docs/decisions/0246).
+        `${label} | ${kb.toFixed(1)} KB (${Math.round(kb * 1024)} B) | ${route.budgetKB} KB${overBudget ? "  ⚠ OVER BUDGET" : ""}`,
       );
       if (result.leaks.length > 0) {
         anyFailed = true;

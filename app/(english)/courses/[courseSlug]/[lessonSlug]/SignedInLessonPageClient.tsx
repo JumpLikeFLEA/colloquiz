@@ -9,26 +9,31 @@ import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { LessonFrame, type LessonPageProps } from "./LessonFrame";
 
 /**
- * TCH-006 (docs/decisions/0153) — LessonPageClient for a signed-in student who
- * has a teacher to ask: the same page, plus an "Ask the teacher" link on every
- * exercise and voice-task card. page.tsx renders THIS component only when
- * ask_teacher_options (081) found a teacher; everyone else, the admin preview
- * and the demo keep LessonPageClient, which is untouched, so a visitor who is
- * not linked downloads none of this (docs/decisions/0153, "Budget": the only
- * cost to them is the +0.2 KB loader stub in LinkedLesson.tsx). That is why
- * this is a sibling of LessonPageClient and not a prop on it or on
- * LessonPlayer.
+ * The lesson page for a signed-in learner (PROG-022, docs/decisions/0246 + 0248), reached through
+ * the lazy SignedInLesson stub, so a signed-out visitor downloads none of it. Without a teacher to
+ * ask it is LessonPageClient plus the strip's notebook button; with one (TCH-006,
+ * docs/decisions/0153) it also draws an "Ask the teacher" link on every exercise and voice-task
+ * card. The admin preview and the demo keep LessonPageClient's siblings and get neither.
  *
- * Nothing in LessonPlayer changed to make room for it:
+ * Nothing in LessonPlayer changed to make room for the Ask links:
  *  - an exercise's link rides on the `practiceRenderer` function prop, which
  *    already receives the block and `onScore(result, response)`; wrapping it
  *    is how this component learns the latest response per block;
  *  - a voice task's link is drawn by the voice block's own chunk through
  *    `voiceTasks.renderAsk`.
  * The props type and the page frame are shared with LessonPageClient through
- * LessonFrame.tsx (PLAY-020); only the two hooks above differ.
+ * LessonFrame.tsx (PLAY-020).
  */
-export function LinkedLessonPageClient({
+export function SignedInLessonPageClient({
+  askTeacher,
+  ...page
+}: LessonPageProps & { askTeacher?: AskTeacherConfig }) {
+  if (!askTeacher) return <LessonFrame {...page} practiceRenderer={practiceRenderer} />;
+  return <AskLesson {...page} askTeacher={askTeacher} />;
+}
+
+/** The page with the "Ask the teacher" links (TCH-006, docs/decisions/0153). */
+function AskLesson({
   askTeacher,
   voiceTasks,
   ...page

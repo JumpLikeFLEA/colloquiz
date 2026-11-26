@@ -10,7 +10,7 @@ import { askTeacherCopy } from "@/lib/alliengll/askTeacherCopy";
  * TCH-006 (docs/decisions/0153) — the "Ask the teacher" link at the foot of an
  * exercise or voice-task card. Only a signed-in student with a teacher who
  * edits the course or assigned it ever renders one (the lesson page decides,
- * from ask_teacher_options, 081, and then renders LinkedLessonPageClient). The
+ * from ask_teacher_options, 081, and then renders SignedInLessonPageClient). The
  * dialog behind it is a separate chunk, fetched on the first click.
  */
 const AskTeacherDialog = dynamic(() => import("./AskTeacherDialog").then((m) => m.AskTeacherDialog));

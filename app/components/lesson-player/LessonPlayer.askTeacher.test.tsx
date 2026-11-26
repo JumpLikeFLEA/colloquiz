@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PLAYGROUND_EXAMPLES } from "@/lib/items/__fixtures__/playgroundExamples";
 import { LessonPlayer, practiceRenderer } from "@/app/components/lesson-player";
 import { LessonPageClient } from "@/app/(english)/courses/[courseSlug]/[lessonSlug]/LessonPageClient";
-import { LinkedLessonPageClient } from "@/app/(english)/courses/[courseSlug]/[lessonSlug]/LinkedLessonPageClient";
+import { SignedInLessonPageClient } from "@/app/(english)/courses/[courseSlug]/[lessonSlug]/SignedInLessonPageClient";
 import type { AskTeacherConfig } from "@/lib/askTeacher/options";
 
 /**
  * TCH-006 (docs/decisions/0153) — "Ask the teacher" on an exercise and a voice
- * task card. The link exists only in LinkedLessonPageClient, which the lesson
+ * task card. The link exists only in SignedInLessonPageClient, which the lesson
  * page renders only for a signed-in student with a qualifying teacher; the
  * dialog opens on a frozen snapshot and sends it with the message.
  */
@@ -28,7 +28,7 @@ const VERSION = "11111111-1111-4111-8111-111111111111";
 
 function linked(cfg: AskTeacherConfig) {
   return (
-    <LinkedLessonPageClient
+    <SignedInLessonPageClient
       header={null}
       backLink={null}
       document={document}

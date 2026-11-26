@@ -12,7 +12,7 @@ import { LessonProgressStrip } from "./LessonProgressStrip";
 
 /**
  * PLAY-020 — what page.tsx hands either lesson client. One type, so a prop
- * added here reaches LessonPageClient and LinkedLessonPageClient together.
+ * added here reaches LessonPageClient and SignedInLessonPageClient together.
  * `practiceRenderer` is a function prop and cannot come from the server
  * page.tsx (docs/decisions/0029 Decision 5), so it is not in this type: each
  * client imports it itself.
@@ -52,16 +52,21 @@ export type LessonPageProps = {
 export function LessonFrame({
   header,
   backLink,
+  stripAction,
   practiceRenderer,
   ...player
-}: LessonPageProps & { practiceRenderer: (props: PracticeRendererProps) => ReactNode }) {
+}: LessonPageProps & {
+  practiceRenderer: (props: PracticeRendererProps) => ReactNode;
+  /** PROG-022 (docs/decisions/0246): the strip's right-end node, from the signed-in client only. */
+  stripAction?: ReactNode;
+}) {
   return (
     <div className="grid-paper flex-1 pb-8">
       {header}
       <LessonPlayer
         {...player}
         practiceRenderer={practiceRenderer}
-        renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} />}
+        renderProgress={(progress) => <LessonProgressStrip progress={progress} backLink={backLink} action={stripAction} />}
       />
     </div>
   );

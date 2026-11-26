@@ -23,35 +23,53 @@ import type { LessonProgress } from "@/app/components/lesson-player/LessonPlayer
  * never meet.
  *
  * Rendered only through `LessonPlayer`'s `renderProgress`, which only
- * `LessonPageClient` passes. The admin preview and the demo get no strip.
- * Not rendered at all for a lesson with no exercises, where there is
- * nothing to count.
+ * the two lesson clients pass (through LessonFrame). The admin preview and the
+ * demo get no strip.
+ * Without an `action`, not rendered at all for a lesson with no exercises,
+ * where there is nothing to count. With one (the signed-in learner's notebook
+ * button, PROG-022, docs/decisions/0246 Decision 3), that lesson gets the back
+ * link and the action, with no bar and no count. The action carries its own
+ * `ml-auto`, so no spacer is needed. The shape is the one 0246 measured in
+ * bytes on the anonymous path (+29 B): change it only with a byte figure.
  */
-export function LessonProgressStrip({ progress, backLink }: { progress: LessonProgress; backLink: ReactNode }) {
+export function LessonProgressStrip({
+  progress,
+  backLink,
+  action,
+}: {
+  progress: LessonProgress;
+  backLink: ReactNode;
+  action?: ReactNode;
+}) {
   const { answered, total, complete, percent } = progress;
-  if (total === 0) return null;
+  if (!total && !action) return null;
   const fill = Math.round((answered / total) * 100);
 
   return (
     <div className="sticky top-0 z-20 border-b-2 border-ink bg-paper/90 backdrop-blur">
       <div className={`${LESSON_READING_FRAME_CLASS} flex h-12 items-center gap-3`}>
         {backLink}
-        <div
-          role="progressbar"
-          aria-label={alliengllCopy.player.progressLabel}
-          aria-valuemin={0}
-          aria-valuemax={total}
-          aria-valuenow={answered}
-          className="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-card"
-        >
-          <div
-            className="h-full bg-brand transition-[width] duration-500 motion-reduce:transition-none"
-            style={{ width: `${fill}%` }}
-          />
-        </div>
-        <span className="min-w-10 text-right font-display text-xs font-extrabold tabular-nums text-foreground">
-          {complete && percent !== null ? `${percent}%` : `${answered}/${total}`}
-        </span>
+        {!!total && (
+          <>
+            <div
+              role="progressbar"
+              aria-label={alliengllCopy.player.progressLabel}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-valuenow={answered}
+              className="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-card"
+            >
+              <div
+                className="h-full bg-brand transition-[width] duration-500 motion-reduce:transition-none"
+                style={{ width: `${fill}%` }}
+              />
+            </div>
+            <span className="min-w-10 text-right font-display text-xs font-extrabold tabular-nums text-foreground">
+              {complete && percent !== null ? `${percent}%` : `${answered}/${total}`}
+            </span>
+          </>
+        )}
+        {action}
       </div>
     </div>
   );

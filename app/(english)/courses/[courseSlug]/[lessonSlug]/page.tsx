@@ -18,7 +18,7 @@ import { AccountMenu } from "../../../AccountMenu";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
 import { LessonUnavailable } from "./LessonUnavailable";
-import { LinkedLesson } from "./LinkedLesson";
+import { SignedInLesson } from "./SignedInLesson";
 import { StripBackLink } from "./StripBackLink";
 
 /**
@@ -190,20 +190,25 @@ export default async function LessonPage({
     course: courseContext,
   };
 
-  // TCH-006 (docs/decisions/0153): a student with a teacher to ask gets the
-  // sibling client with the "Ask the teacher" links, as a lazy chunk; everyone
-  // else gets the page client untouched.
-  if (ask) {
+  // PROG-022 (docs/decisions/0246, 0248): every signed-in learner gets the
+  // lazy signed-in client (the strip's notebook button); a student with a
+  // teacher to ask also gets the "Ask the teacher" links in it (TCH-006,
+  // docs/decisions/0153). A signed-out visitor gets the page client untouched.
+  if (lesson.isSignedIn) {
     return (
-      <LinkedLesson
+      <SignedInLesson
         {...pageProps}
-        askTeacher={{
-          studentId: ask.studentId,
-          teachers: ask.teachers,
-          course: { slug: courseSlug, title: lesson.courseTitle },
-          lesson: { id: lesson.lessonId, slug: lessonSlug, title: lesson.title },
-          versionId: lesson.lessonVersionId,
-        }}
+        askTeacher={
+          ask
+            ? {
+                studentId: ask.studentId,
+                teachers: ask.teachers,
+                course: { slug: courseSlug, title: lesson.courseTitle },
+                lesson: { id: lesson.lessonId, slug: lessonSlug, title: lesson.title },
+                versionId: lesson.lessonVersionId,
+              }
+            : undefined
+        }
       />
     );
   }
