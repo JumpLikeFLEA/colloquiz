@@ -5570,6 +5570,24 @@ export const CARDS = [
     notes: 'Deploy after OPS-043 is live and PROG-012 is applied to hosted.',
   },
   {
+    key: 'PROG-021',
+    title: '/my teacher copy names written answers and the notebook',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3475,
+    dependsOn: ['PROG-020'],
+    goal:
+      'Everything that tells a learner what a linked teacher sees names all of it. PROG-020 found teachersLead, leaveConfirm (app/(english)/my/myCopy.ts) and the link statement leave line (lib/teacherLinks.ts) still true but naming only answers and scores, while the statement and privacy-policy.md section 5 also list written answers and notebook entries (docs/decisions/0244).',
+    acceptance: [
+      'teachersLead, leaveConfirm and linkStatement.leave name answers, scores, written answers and notebook entries, in EN and RU; own notes stay named as never shown where the copy says what the teacher sees.',
+      'A test asserts that each of the three, in both languages, names every kind of data the statement sees bullets list, so a future bullet without matching copy fails.',
+      'The wording matches privacy-policy.md section 5 (quoted in the evidence); if it cannot without changing the policy, stop and report rather than edit the policy.',
+      '360px on /my with a linked teacher (the Leave confirm open) and on /join, EN and RU; a docs/ui-decisions.md entry.',
+    ],
+    notes: 'Copy only. No migration and no new dependency.',
+  },
+  {
     key: 'PROG-017',
     title: 'Saving a phrase from inside a lesson (spike)',
     milestone: 'M4',
