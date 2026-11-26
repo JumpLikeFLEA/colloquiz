@@ -3394,3 +3394,15 @@ Appended to in the same commit as the change it records. Referenced from
   1280/1280. `npm run budget` `/my/notebook`: 169.3 / 169.3 KB of 180. Not measured: a phone, dark
   mode, playing the downloaded file on a phone. Do not sign a download for anyone but the take's
   owner, and do not claim which devices play a format.
+- A linked student's notebook in Studio (2026-11-26, PROG-020, docs/decisions/0244). On
+  `/studio/learners/[userId]`, for a student linked to the caller only, a "Notebook" section follows
+  "Answers": a muted lead (what is shown, own notes never, "AI feedback can be wrong. It is not a
+  grade."), then one `rounded-2xl border bg-card` card per course with one native `<details>` per lesson
+  (LinkedAnswers' frame and its muted count pill: "N phrases · N fixes · N summaries"). Open, each AI
+  summary, phrase ("× N" when said in several takes, "(close)" when not exact) and fix is a bordered
+  `rounded-xl` box. Empty: the dashed box. Read-only; no client JS. The join and invite statement gains
+  two bullets (written answers, notebook), EN and RU. Existing classes and tokens; no new colours.
+  Measured: `scrollWidth/innerWidth` and `main` 360/360 with entries (all lessons, one assigned lesson),
+  empty and with no section; 1280/1280; `/join` (signed out and in, EN and RU) and `/invite` 360/360
+  with the longer statement. Not measured: dark mode, a phone. Do not decide in the client which rows a
+  teacher sees, and do not show a student's own notes.

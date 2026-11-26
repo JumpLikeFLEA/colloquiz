@@ -338,11 +338,12 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     purpose: "See who is in your courses, how far they got, and how each exercise is going.",
     steps: [
       "Open **Learners**. Filter by Course and Run to see people, with lessons opened and completed and recordings sent.",
-      "Open a learner's name for their page: lessons, recordings and feedback. For a linked student it also shows **Answers** with their scores.",
+      "Open a learner's name for their page: lessons, recordings and feedback. For a linked student it also shows **Answers** with their scores, and **Notebook**: the phrases, fixes and AI summaries copied from their recordings in lessons you can read.",
       "For a whole course, open it and press **Stats**: how many learners opened and completed each lesson, and the average for each exercise.",
     ],
     tips: [
       "Scores are shown only for students linked to you. Other learners show no scores.",
+      "A linked student's notebook shows only lessons you can read: courses you edit, and lessons or courses you assigned them. Their own notes are never shown, and nothing shows once the link ends.",
       "An exercise's average appears from 5 learners and counts each learner's first try. It restarts when you edit the exercise.",
       "You see only learners of the courses you edit.",
     ],

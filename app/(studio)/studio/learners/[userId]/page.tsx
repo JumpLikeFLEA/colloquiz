@@ -35,6 +35,8 @@ import { getGrantableCourses } from "@/lib/courseGrantsServer";
 import { CourseAccess } from "./CourseAccess";
 import { LearnerGroups } from "./LearnerGroups";
 import { LinkedAnswers } from "./LinkedAnswers";
+import { LinkedNotebook } from "./LinkedNotebook";
+import { teacherNotebook } from "@/lib/notebook/teacherView";
 import { LessonActivityCard } from "./LessonActivityCard";
 import { RecordingItem, type RecordingItemRow } from "./RecordingItem";
 
@@ -76,7 +78,8 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
   // the teacher does not edit.
   // TCH-009: the courses the teacher can open for this student. null when the read
   // fails (087 not applied, a transient error): the page renders without the section.
-  const [attempts, scores, assigned, assignCtx, homework, grantable] = isLinked
+  // PROG-020: the notebook, through linked_student_notebook() (112), which decides every row.
+  const [attempts, scores, assigned, assignCtx, homework, grantable, notebookRes] = isLinked
     ? await Promise.all([
         supabase.rpc("linked_student_attempts", { p_student: userId }),
         supabase.rpc("linked_student_lesson_scores", { p_student: userId }),
@@ -87,8 +90,9 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
           console.error("learner page: course access:", e);
           return null;
         }),
+        supabase.rpc("linked_student_notebook", { p_student: userId }),
       ])
-    : [null, null, null, null, null, null];
+    : [null, null, null, null, null, null, null];
   if (attempts?.error) throw new Error(attempts.error.message);
   if (scores?.error) throw new Error(scores.error.message);
   if (assigned?.error) throw new Error(assigned.error.message);
@@ -236,6 +240,8 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
 
       {linkedAnswers && <LinkedAnswers courses={answerCourses} answers={linkedAnswers} />}
 
+      {isLinked && notebookRes && <LinkedNotebook courses={notebookFor(notebookRes)} />}
+
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Lessons</h2>
         {courses.length === 0 ? (
@@ -316,4 +322,13 @@ export default async function LearnerPage({ params }: { params: Promise<{ userId
       </section>
     </div>
   );
+}
+
+/** A failed read or an unexpected shape is shown as one (null), never as an empty notebook. */
+function notebookFor(res: { data: unknown; error: { message: string } | null }) {
+  if (res.error) {
+    console.error("learner page: notebook:", res.error.message);
+    return null;
+  }
+  return teacherNotebook(res.data);
 }

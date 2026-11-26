@@ -73,6 +73,15 @@ describe("linkStatement", () => {
       }
     }
   });
+  // PROG-020: the two bullets privacy-policy.md section 5 lists (0237), right after the first one.
+  it("states written answers and the notebook, in both languages, own notes excluded", () => {
+    expect(linkStatement.en.sees[1]).toBe("read the written answers you send for those lessons and courses");
+    expect(linkStatement.ru.sees[1]).toBe("читать письменные ответы, которые вы отправляете по этим урокам и курсам");
+    expect(linkStatement.en.sees[2]).toMatch(/^see the phrases, corrections and AI summaries your notebook copied .*but never the notes you write yourself$/);
+    expect(linkStatement.ru.sees[2]).toMatch(/^видеть фразы, исправления и ИИ-разборы, которые ваш блокнот сохранил .*но не ваши собственные заметки$/);
+    expect(linkStatement.en.sees[3]).toMatch(/^write to you/);
+    expect(linkStatement.ru.sees[3]).toMatch(/^писать вам/);
+  });
   it("names the teacher in the lead", () => {
     expect(statementLead("en", "Anna")).toContain("Anna");
     expect(statementLead("ru", "Анна")).toContain("Анна");

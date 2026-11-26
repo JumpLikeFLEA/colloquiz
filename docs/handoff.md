@@ -60,7 +60,7 @@ practice: no drills, resurfacing or scheduling ("Deliberately out of scope
 for v1" stands). The storage, the copy and
 the read and delete rules are built (PROG-012, docs/decisions/0238, migration 112,
 applied to hosted 2026-11-25), and so is the pure model behind the page (PROG-013, docs/decisions/0239);
-the page itself, `/my/notebook`, is built (PROG-014, docs/decisions/0240), so are its ways in from `/my`, the lesson's AI feedback and the course-complete card (PROG-015, docs/decisions/0242, which also removed `/my`'s AI feedback list) own notes with add, edit and delete (PROG-016, docs/decisions/0241), and downloads of a recording and of the notebook as a text file (PROG-019, docs/decisions/0243); the rest is planned (M4, PROG-017, 018, 020).
+the page itself, `/my/notebook`, is built (PROG-014, docs/decisions/0240), so are its ways in from `/my`, the lesson's AI feedback and the course-complete card (PROG-015, docs/decisions/0242, which also removed `/my`'s AI feedback list) own notes with add, edit and delete (PROG-016, docs/decisions/0241), and downloads of a recording and of the notebook as a text file (PROG-019, docs/decisions/0243), and a linked teacher's read-only view at `/studio/learners/[userId]` (PROG-020, docs/decisions/0244); the rest is planned (M4, PROG-017, 018).
 
 **A third line: teachers on manual seats (owner, 2026-10-15,
 docs/decisions/0141).** An English teacher pays, outside the app, for a seat

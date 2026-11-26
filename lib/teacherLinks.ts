@@ -87,6 +87,9 @@ export const linkStatement: Record<"en" | "ru", LinkStatement> = {
     lead: "If you link, {teacher} will be able to:",
     sees: [
       "see each of your attempts, the answer you gave to each exercise and your score, in their own courses and in the lessons or courses they assign you",
+      // PROG-020 (docs/decisions/0237 "Drafted link-statement bullets"): "those" is the bullet above.
+      "read the written answers you send for those lessons and courses",
+      "see the phrases, corrections and AI summaries your notebook copied from your recordings in those lessons and courses (a summary that compares two recordings only if both are in them), but never the notes you write yourself",
       "write to you in one conversation that only the two of you can read",
       "put you in private groups (their own labels, which you aren’t shown) and assign you homework",
     ],
@@ -97,6 +100,8 @@ export const linkStatement: Record<"en" | "ru", LinkStatement> = {
     lead: "Если вы подключитесь, {teacher} сможет:",
     sees: [
       "видеть каждую вашу попытку, ваш ответ на каждое задание и результат — в своих курсах и в уроках или курсах, которые задаст вам",
+      "читать письменные ответы, которые вы отправляете по этим урокам и курсам",
+      "видеть фразы, исправления и ИИ-разборы, которые ваш блокнот сохранил из ваших записей в этих уроках и курсах (разбор, где сравниваются две записи, — только если обе записи из них), но не ваши собственные заметки",
       "писать вам в одной переписке, которую видите только вы двое",
       "добавлять вас в личные группы (это его пометки, вам они не показываются) и задавать домашние задания",
     ],
