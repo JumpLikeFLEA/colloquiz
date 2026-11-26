@@ -42,6 +42,7 @@ function linked(cfg: AskTeacherConfig) {
       previousBestPercent={null}
       voiceTasks={{ mode: "practice" }}
       askTeacher={cfg}
+      notebook={{ lessonId: "les-1", courseId: "c-1", courseTitle: "Course A", lessonTitle: "Lesson 1", lessonPath: "/courses/course-a/lesson-1" }}
     />
   );
 }

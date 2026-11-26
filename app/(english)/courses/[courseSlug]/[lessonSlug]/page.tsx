@@ -198,6 +198,13 @@ export default async function LessonPage({
     return (
       <SignedInLesson
         {...pageProps}
+        notebook={{
+          lessonId: lesson.lessonId,
+          courseId: lesson.courseId,
+          courseTitle: lesson.courseTitle,
+          lessonTitle: lesson.title,
+          lessonPath,
+        }}
         askTeacher={
           ask
             ? {

@@ -7,6 +7,7 @@ import { AskTeacher } from "@/app/components/lesson-player/AskTeacher";
 import type { AskTeacherConfig } from "@/lib/askTeacher/options";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { LessonFrame, type LessonPageProps } from "./LessonFrame";
+import { NotebookStripButton, type LessonNoteTarget } from "./NotebookStripButton";
 
 /**
  * The lesson page for a signed-in learner (PROG-022, docs/decisions/0246 + 0248), reached through
@@ -26,18 +27,21 @@ import { LessonFrame, type LessonPageProps } from "./LessonFrame";
  */
 export function SignedInLessonPageClient({
   askTeacher,
+  notebook,
   ...page
-}: LessonPageProps & { askTeacher?: AskTeacherConfig }) {
-  if (!askTeacher) return <LessonFrame {...page} practiceRenderer={practiceRenderer} />;
-  return <AskLesson {...page} askTeacher={askTeacher} />;
+}: LessonPageProps & { askTeacher?: AskTeacherConfig; notebook: LessonNoteTarget }) {
+  const stripAction = <NotebookStripButton target={notebook} />;
+  if (!askTeacher) return <LessonFrame {...page} practiceRenderer={practiceRenderer} stripAction={stripAction} />;
+  return <AskLesson {...page} askTeacher={askTeacher} stripAction={stripAction} />;
 }
 
 /** The page with the "Ask the teacher" links (TCH-006, docs/decisions/0153). */
 function AskLesson({
   askTeacher,
   voiceTasks,
+  stripAction,
   ...page
-}: LessonPageProps & { askTeacher: AskTeacherConfig }) {
+}: LessonPageProps & { askTeacher: AskTeacherConfig; stripAction: ReactNode }) {
   const { document } = page;
   // The latest checked response per block. State, because the link's dialog
   // reads it when it opens (a new answer must reach the link).
@@ -70,5 +74,5 @@ function AskLesson({
     [voiceTasks, askTeacher, document],
   );
 
-  return <LessonFrame {...page} voiceTasks={voice} practiceRenderer={renderPracticeWithAsk} />;
+  return <LessonFrame {...page} voiceTasks={voice} practiceRenderer={renderPracticeWithAsk} stripAction={stripAction} />;
 }
