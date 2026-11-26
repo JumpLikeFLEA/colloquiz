@@ -157,6 +157,9 @@ can go stale. Not built; the owner's call.
 > reaches them through the stub this section already paid for. A signed-in learner nobody qualifies
 > for now downloads the lazy chunk (Ask code included, +3.1 KB measured in 0246) but still sees no
 > Ask link.
+>
+> **Built in PROG-022 (docs/decisions/0248):** `LinkedLesson` / `LinkedLessonPageClient` are now
+> `SignedInLesson` / `SignedInLessonPageClient`; the rename moved no byte on the anonymous path.
 
 ## Verification
 

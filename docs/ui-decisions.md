@@ -3406,3 +3406,24 @@ Appended to in the same commit as the change it records. Referenced from
   empty and with no section; 1280/1280; `/join` (signed out and in, EN and RU) and `/invite` 360/360
   with the longer statement. Not measured: dark mode, a phone. Do not decide in the client which rows a
   teacher sees, and do not show a student's own notes.
+- "Add a phrase" in the lesson strip (2026-11-27, PROG-022, docs/decisions/0246 + 0248), superseding
+  0079 D5 in part: a signed-in learner's sticky strip ends with a `NotebookPen` icon button (44px,
+  "Add a phrase", `-mr-2 ml-auto`, `text-muted-foreground`, `hover:bg-accent`, the brand focus ring),
+  and on a lesson with no exercises the strip still renders, with the back link and the button only,
+  no bar and no count. A signed-out visitor's strip is unchanged, and the admin preview and the demo
+  have none. The button opens the `ui/dialog` Radix dialog pinned to the top (`top-4 translate-y-0`,
+  `max-h-[calc(100dvh-2rem)] overflow-y-auto`), fetched on the first tap: "Add a phrase", one muted
+  lead, a muted "From: <course> · <lesson>" line, then the notebook's own `NoteForm` (Phrase, Note
+  (optional), counters, the `destructive-subtle` error line, the violet offset Save). An expired
+  session's message ends with a "Sign in again" link (`PAPER_LINK_INLINE_CLASS`) to
+  `/login?next=<lesson>`, and the typed text stays. After a save the dialog stays open: a focused
+  `role="status"` "Added to your notebook" with a `text-success` check, an "Open your notebook" link
+  (`PAPER_LINK_CLASS`) to the notebook on this course, "Add another" (the offset button) and Close
+  (`OUTLINE_CTA_CLASS`); closing, by Close, the X or Escape, puts focus back on the button. Nothing
+  is added to the strip. English lesson chrome. Existing classes and tokens; no new colours. Measured
+  at 360 in webkit-iphone and chromium-pixel (`e2e/lessonNotebook.spec.ts`): `scrollWidth/innerWidth`
+  360/360 with the button, without exercises, with the dialog open, with each refusal and in the added
+  state; 1280/1280 with the dialog open. `npm run budget:local` free lesson anonymous 266,181 B before,
+  266,206 B after, of 266,240. Not measured: a phone, an in-app browser, an on-screen keyboard, dark
+  mode. Do not add a status line to the strip (0248 Decision 6), and do not let the save refresh the
+  lesson page.
