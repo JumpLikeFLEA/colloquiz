@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, BookOpen, Check, ClipboardList, ExternalLink, MessageSquare, Sparkles, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Check, ClipboardList, ExternalLink, MessageSquare, NotebookPen, Video } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
@@ -26,10 +26,7 @@ import { TimeZoneSync } from "@/app/components/calendar/TimeZoneSync";
 import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
 import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
 import { getMyTelegramLinked } from "@/lib/telegram/status";
-import { learnerAnalysisHref, type LearnerAnalysisRow } from "@/lib/voice/analysis/learnerList";
-import { getLearnerAnalyses } from "@/lib/voice/analysis/learnerRead";
-import { authUserFrom } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { NOTEBOOK_PATH } from "@/lib/notebook/href";
 import { AccountMenu } from "../AccountMenu";
 import { BandTopBar } from "../BandTopBar";
 import { LocalDateTime } from "../LocalDateTime";
@@ -78,7 +75,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   // error): /my renders without that section. /studio/calendar and
   // /my/messages read strictly.
   const month = typeof rawMonth === "string" ? rawMonth : undefined;
-  const [home, teachers, threads, homework, calendar, feed, telegramLinked, analyses, signedIn] = await Promise.all([
+  const [home, teachers, threads, homework, calendar, feed, telegramLinked, signedIn] = await Promise.all([
     getLearnerHome(new Date()),
     getMyTeachers(),
     failSoft("/my: message_threads failed", () => getThreads("student"), [] as Thread[]),
@@ -86,7 +83,6 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
     failSoft("/my: my_calendar failed", () => getCalendarPageData("learner", month), null as CalendarPageData | null),
     failSoft("/my: calendar_feed_status failed", () => getCalendarFeedStatus(), null as CalendarFeedStatus | null),
     getMyTelegramLinked(),
-    failSoft("/my: voice analyses failed", getStudentAnalyses, [] as LearnerAnalysisRow[]),
     getSignedInAccount(),
   ]);
   if (!home) redirect(`/login?${new URLSearchParams({ next: "/my" }).toString()}`);
@@ -134,6 +130,19 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
       </section>
 
       <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 pb-12 pt-4 sm:gap-16 sm:pb-16`}>
+        {/* PROG-015 (docs/decisions/0242): the notebook, first and outside Up next, which is
+            capped at three ranked rows (0211). It replaced the AI feedback list (0236 section 7). */}
+        <Link href={NOTEBOOK_PATH} className={`${PAPER_CARD_CLASS} flex items-center gap-3 p-4 sm:p-5`} data-my="notebook">
+          <span className={ICON_TILE_CLASS}>
+            <NotebookPen className="size-4" aria-hidden="true" />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="break-words text-sm font-semibold text-foreground sm:text-base">{m.notebookTitle}</p>
+            <p className="break-words text-xs text-muted-foreground sm:text-sm">{m.notebookLead}</p>
+          </div>
+          <ArrowRight className="size-3.5 flex-none text-brand-text" aria-hidden="true" />
+        </Link>
+
         {upNextItems.length > 0 && <UpNext lang={lang} items={upNextItems} />}
 
         {home.nextCall && !callInUpNext && <NextCall lang={lang} call={home.nextCall} />}
@@ -240,22 +249,6 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           </section>
         )}
 
-        {/* PROG-007: the learner's own finished AI feedback, a doorway to each lesson. Left
-            out while the mode is `off` (no read is made) and when there is none. */}
-        {analyses.length > 0 && (
-          <section className="flex flex-col gap-6" data-my="ai-feedback">
-            <SectionHeading display title={m.aiTitle} />
-            <p className="-mt-3 text-sm text-muted-foreground">{m.aiLead}</p>
-            <ul className="flex flex-col gap-3">
-              {analyses.map((row) => (
-                <li key={row.submissionId}>
-                  <AnalysisRow lang={lang} row={row} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         {(hasEnrolment || home.feedback.length > 0) && (
           <section className="flex flex-col gap-6" data-my="feedback">
             <SectionHeading display title={m.feedbackTitle} />
@@ -286,14 +279,6 @@ function formatFeedDate(iso: string, lang: SurfaceLang): string {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(iso));
-}
-
-// The AI feedback list reads under the learner's own session and returns
-// nothing while the mode is `off`.
-async function getStudentAnalyses(): Promise<LearnerAnalysisRow[]> {
-  const supabase = await createClient();
-  const user = await authUserFrom(supabase);
-  return user ? await getLearnerAnalyses(supabase, user.id) : [];
 }
 
 function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {
@@ -387,42 +372,6 @@ function HomeworkRow({ lang, homework: h }: { lang: SurfaceLang; homework: MyHom
       </div>
       <ArrowRight className="size-3.5 flex-none self-center text-brand-text" aria-hidden="true" />
     </Link>
-  );
-}
-
-// One analysed take (PROG-007, docs/decisions/0191): where it was recorded, when, and a link to
-// that lesson, where the feedback itself is drawn. The whole row is the link when the lesson is
-// still readable; otherwise it is the same row with no link and no arrow.
-function AnalysisRow({ lang, row }: { lang: SurfaceLang; row: LearnerAnalysisRow }) {
-  const m = myCopy[lang];
-  const href = learnerAnalysisHref(row);
-  const where = [row.courseTitle, row.lessonTitle].filter(Boolean).join(" · ");
-  const body = (
-    <>
-      <span className={ICON_TILE_CLASS}>
-        <Sparkles className="size-4" aria-hidden="true" />
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <p className="break-words text-sm font-semibold text-foreground sm:text-base">{where || m.aiFirst}</p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className={SMALL_PILL_CLASS}>{row.kind === "final" ? m.aiFinal : row.kind === "interim" ? m.aiInterim : m.aiFirst}</span>
-          <span className="text-xs text-muted-foreground sm:text-sm">
-            <LocalDateTime iso={row.sentAt} locale={localeFor(lang)} />
-          </span>
-        </div>
-      </div>
-      {href && <ArrowRight className="size-3.5 flex-none self-center text-brand-text" aria-hidden="true" />}
-    </>
-  );
-  return href ? (
-    <Link href={href} className={`${PAPER_CARD_CLASS} flex gap-3 p-4 sm:p-5`} data-analysis-kind={row.kind}>
-      {body}
-      <span className="sr-only">{m.openLesson}</span>
-    </Link>
-  ) : (
-    <div className={`${PAPER_PANEL_CLASS} flex gap-3 p-4 sm:p-5`} data-analysis-kind={row.kind}>
-      {body}
-    </div>
   );
 }
 

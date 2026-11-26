@@ -77,6 +77,8 @@ describe("LessonCompletion — what the card says (docs/decisions/0079 D7)", () 
   it("offers the way back to the course on the last lesson", () => {
     render(<LessonCompletion score={scored} progress={all} review={[]} courseSlug="c" nextLesson={null} />);
     expect(screen.getByRole("link", { name: alliengllCopy.player.backToCourse }).getAttribute("href")).toBe("/courses/c");
+    // Not a course-complete card: no notebook link (PROG-015).
+    expect(screen.queryByRole("link", { name: /Open notebook/ })).toBeNull();
   });
 });
 
@@ -149,6 +151,8 @@ describe("LessonCompletion — course complete and the next lesson (PROG-008)", 
     expect(screen.getByRole("link", { name: /Next course: Other course/ }).getAttribute("href")).toBe("/courses/other");
     expect(screen.getByRole("button", { name: alliengllCopy.completion.share })).toBeDefined();
     expect(screen.getByRole("link", { name: alliengllCopy.player.backToCourse }).getAttribute("href")).toBe("/courses/c");
+    // PROG-015: a signed-in finisher (attempts from the server) gets the notebook link.
+    expect(screen.getByRole("link", { name: /Open notebook/ }).getAttribute("href")).toBe("/my/notebook");
   });
 
   it("offers no next course when there is none", async () => {
@@ -199,6 +203,8 @@ describe("LessonCompletion — course complete and the next lesson (PROG-008)", 
         />,
       );
       expect(await screen.findByText(alliengllCopy.completion.courseComplete)).toBeDefined();
+      // PROG-015: an anonymous finisher has no notebook; the card is as it was.
+      expect(screen.queryByRole("link", { name: /Open notebook/ })).toBeNull();
     } finally {
       window.localStorage.clear();
     }

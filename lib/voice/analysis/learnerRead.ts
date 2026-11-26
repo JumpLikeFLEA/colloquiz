@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { finalAnalysisView, type FinalAnalysisView } from "./finalView";
 import { parseVoiceAnalysisMode, type VoiceAnalysisMode } from "./mode";
-import { LEARNER_ANALYSIS_LIMIT, toLearnerAnalysisRows, type LearnerAnalysisRow } from "./learnerList";
 import { readAnalysisStatus } from "./status";
 import { statusDeps } from "./statusDeps";
 import type { AnalysisStatusBody } from "./view";
@@ -19,28 +18,6 @@ import type { AnalysisStatusBody } from "./view";
 
 export function voiceAnalysisModeNow(): VoiceAnalysisMode {
   return parseVoiceAnalysisMode(process.env.VOICE_ANALYSIS_MODE);
-}
-
-/**
- * The learner's finished, shown analyses, newest take first, for `/my`. Empty while the mode is
- * `off` (nothing is offered to the learner then, 0189 Decision 3) without a read being made.
- */
-export async function getLearnerAnalyses(supabase: SupabaseClient, userId: string): Promise<LearnerAnalysisRow[]> {
-  if (voiceAnalysisModeNow() === "off") return [];
-  const { data, error } = await supabase
-    .from("voice_submissions")
-    // `voice_analyses` has two foreign keys to the take (the take itself and a final's baseline),
-    // so the embed names the one it means.
-    .select(
-      "id, submitted_at, lessons(slug, title), courses(slug, title), voice_analyses!submission_id!inner(status, instruction, hidden_at)",
-    )
-    .eq("user_id", userId)
-    .eq("voice_analyses.status", "done")
-    .is("voice_analyses.hidden_at", null)
-    .order("submitted_at", { ascending: false })
-    .limit(LEARNER_ANALYSIS_LIMIT);
-  if (error) throw new Error(error.message);
-  return toLearnerAnalysisRows(data ?? []);
 }
 
 /**

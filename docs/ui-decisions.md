@@ -3365,3 +3365,20 @@ Appended to in the same commit as the change it records. Referenced from
   and with each confirmation open (said, fix, own, summary); 1280/1280. `npm run budget` `/my/notebook`
   166.5 / 169.3 KB of 180. Not measured: a phone, dark mode, the cap message. Do not add Edit to a copied
   row, and do not delete on the first tap.
+- `/my` loses its AI feedback list and gains a notebook link (2026-11-26, PROG-015, docs/decisions/0242),
+  SUPERSEDING the PROG-007 entry's "AI feedback on your recordings" section (0191) and the VOICE-017
+  entry's third pill on it; the kind lives on the notebook's recording row (PROG-014). `/my` now opens,
+  under its header and above Up next, with one `PAPER_CARD_CLASS` link row to `/my/notebook`: the yellow
+  icon tile with `NotebookPen`, "Notebook" / "Блокнот" over a muted line, a trailing arrow; for every
+  signed-in learner. The lesson's AI feedback, once done, ends with a rule and "The phrases you used and
+  the fix are saved in your notebook. Open notebook →" (`text-brand-text`, `min-h-11`), in
+  `VoiceAnalysisPanel` only (Studio and `/runs` draw `AnalysisResult` without it). The course-complete
+  card gains, for a signed-in learner only, "The phrases you said in this course are saved in your
+  notebook." with an underlined "Open notebook" link under Share and Back to course; an anonymous
+  finisher's card is unchanged. Both lesson strings are English (lesson chrome). The resend note adds
+  "…and removes what your notebook kept from it." Existing classes and tokens; no new colours. Measured
+  at 360px (local stack): `/my` 360/360 EN and RU; the voice lesson with a finished analysis 360/360; the
+  course-complete card 360/360 signed in (and 1280/1280) and anonymous; the resend note 360/360.
+  `npm run budget`: free lesson 259.9 / 259.9 KB of 260, `/my` 175.2 / 175.2; the voice lesson
+  (scratch script, no budget entry) 343.2 / 344.0 KB. Not measured: a phone, dark mode. Do not move
+  the lesson link into `AnalysisResult`, and do not put the notebook link inside Up next.

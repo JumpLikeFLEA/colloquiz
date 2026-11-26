@@ -2,8 +2,10 @@
 
 import { useMemo, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Trophy } from "lucide-react";
+import { ArrowRight, NotebookPen, Trophy } from "lucide-react";
 import { alliengllCopy } from "@/lib/alliengll/copy";
+import { notebookLinkCopy } from "@/lib/alliengll/notebookLinkCopy";
+import { NOTEBOOK_PATH } from "@/lib/notebook/href";
 import type { LessonScoreResult } from "@/lib/items";
 import type { AttemptsByLessonSlug, CourseProgress } from "@/lib/coursePageProgress";
 import { courseCompletionView, type LessonCourseContext } from "@/lib/courseCompletion";
@@ -152,6 +154,20 @@ function CourseCompleteCard({
           {alliengllCopy.player.backToCourse}
         </Link>
       </div>
+      {/* PROG-015 (docs/decisions/0242): signed in only. `attempts` is null exactly for an
+          anonymous visitor, who has no notebook; their card is unchanged. */}
+      {course.attempts !== null && (
+        <p className="flex max-w-sm flex-wrap items-center justify-center gap-x-2 gap-y-1 pt-4 text-sm text-highlight-foreground/80" data-notebook-link="course">
+          {notebookLinkCopy.afterCourse}
+          <Link
+            href={NOTEBOOK_PATH}
+            className="inline-flex min-h-11 items-center gap-1 rounded font-semibold text-highlight-foreground underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <NotebookPen className="size-4" aria-hidden="true" />
+            {notebookLinkCopy.open}
+          </Link>
+        </p>
+      )}
     </section>
   );
 }

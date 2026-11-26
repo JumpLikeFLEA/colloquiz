@@ -29,7 +29,7 @@ export const voiceCopy = {
   capDailyRetry: "You can send again after",
   capDailyLater: "Try again later.",
   capNotSent: "This recording was not sent.",
-  resendNote: "Recording again and sending replaces the recording you sent.",
+  resendNote: "Recording again and sending replaces the recording you sent, and removes what your notebook kept from it.",
   feedbackHeading: "Feedback",
   locked: "Your recording has feedback, so it can't be replaced.",
   removed: "This recording was removed after the course ended.",

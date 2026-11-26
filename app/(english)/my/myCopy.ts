@@ -34,7 +34,9 @@ type MyStrings = {
   openLesson: string;
   openBeforeAfter: string;
   /** The AI feedback section (PROG-007, docs/decisions/0191). */
-  aiTitle: string;
+  /** PROG-015: the notebook link under the header. */
+  notebookTitle: string;
+  notebookLead: string;
   aiLead: string;
   aiFirst: string;
   aiFinal: string;
@@ -99,7 +101,8 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     finalComment: "Итоговый комментарий",
     openLesson: "Открыть урок",
     openBeforeAfter: "До и после",
-    aiTitle: "ИИ-разбор ваших записей",
+    notebookTitle: "Блокнот",
+    notebookLead: "Фразы, которые вы сказали, исправления и ваши заметки.",
     aiLead: "Разбор делается автоматически по расшифровке записи, на английском. Он может ошибаться и не является оценкой.",
     aiFirst: "Запись",
     aiFinal: "Итоговая запись",
@@ -158,7 +161,8 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     finalComment: "Final comment",
     openLesson: "Open lesson",
     openBeforeAfter: "Before and after",
-    aiTitle: "AI feedback on your recordings",
+    notebookTitle: "Notebook",
+    notebookLead: "The phrases you said, your fixes and your own notes.",
     aiLead: "Made automatically from a transcript of each recording. It can be wrong. It is not a grade.",
     aiFirst: "Recording",
     aiFinal: "Final recording",

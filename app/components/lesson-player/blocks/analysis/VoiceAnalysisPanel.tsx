@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
-import { Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { notebookLinkCopy } from "@/lib/alliengll/notebookLinkCopy";
 import { voiceAnalysisCopy as copy } from "@/lib/alliengll/voiceAnalysisCopy";
+import { NOTEBOOK_PATH } from "@/lib/notebook/href";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { parseStoredAnalysis } from "@/lib/voice/analysis/parseStored";
 import { isInProgress, type AnalysisStatus } from "@/lib/voice/analysis/view";
@@ -82,6 +85,18 @@ export function VoiceAnalysisPanel({ submissionId, cohort, listenFor, lang, fetc
       <>
         <AnalysisResult analysis={done.analysis} transcript={done.transcript} baseline={done.baseline} listenFor={listenFor} lessonTargets={body.lessonTargets} offer={body.offer} lang={lang} />
         <p className="mt-3 text-xs text-muted-foreground">{copy.disclaimer}</p>
+        {/* PROG-015 (docs/decisions/0242): a done analysis is copied into the notebook (112).
+            Only here: AnalysisResult is also drawn by Studio and /runs. */}
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-sm text-muted-foreground" data-notebook-link="feedback">
+          {notebookLinkCopy.afterFeedback}
+          <Link
+            href={NOTEBOOK_PATH}
+            className="inline-flex min-h-11 items-center gap-1 rounded font-medium text-brand-text underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            {notebookLinkCopy.open}
+            <ArrowRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        </p>
       </>
     ) : (
       // A result that does not read as an analysis is shown as a failure, never as a half page.

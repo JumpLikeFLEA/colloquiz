@@ -216,9 +216,9 @@ const ROUTES: RouteBudget[] = [
   // `npm run budget` run before raising it.
   { path: "/my", budgetKB: 180, guardForbiddenSignatures: true, signInAs: "prog002-learner@example.com" },
   // PROG-007 (docs/decisions/0191): the same page for the before/after fixture learner, who
-  // has two analysed takes, so with VOICE_ANALYSIS_MODE=on the "AI feedback" list renders.
-  // The list is a Server Component's markup, so the figure equals the entry above (174.4 KB
-  // before and after). budgetKB is that plus ~4.5% headroom (the PLAY-012 precedent, 0057).
+  // has two analysed takes. The "AI feedback" list it was added for is gone (PROG-015,
+  // docs/decisions/0242); the entry stays as /my for a learner with a notebook. It measured 174.4 KB
+  // before and after PROG-007. budgetKB is that plus ~4.5% headroom (the PLAY-012 precedent, 0057).
   { path: "/my", budgetKB: 182, guardForbiddenSignatures: true, signInAs: "prog007-learner@example.com" },
   // PROG-007 (docs/decisions/0191): the before/after screen SIGNED IN, as the fixture learner of
   // a run that started 23 days ago (scripts/seed-local-fixtures.ts): both takes recorded and

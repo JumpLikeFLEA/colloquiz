@@ -149,6 +149,17 @@ describe("a finished analysis", () => {
   it("shows a result that does not read as an analysis as a failure, not a half page", async () => {
     await show(done({ nonsense: true }));
     expect(screen.getByText("We couldn't make feedback for this recording")).toBeTruthy();
+    // PROG-015: nothing was copied, so no way into the notebook either.
+    expect(screen.queryByRole("link", { name: /Open notebook/ })).toBeNull();
+  });
+
+  // PROG-015 (docs/decisions/0242): a done analysis is copied into the notebook, so its view links there.
+  it("links to the notebook under a finished analysis, and in no other state", async () => {
+    await show(done());
+    expect(screen.getByRole("link", { name: /Open notebook/ }).getAttribute("href")).toBe("/my/notebook");
+    cleanup();
+    await show({ ok: true, status: "failed" });
+    expect(screen.queryByRole("link", { name: /Open notebook/ })).toBeNull();
   });
 });
 
