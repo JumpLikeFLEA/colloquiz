@@ -299,6 +299,9 @@ npm run budget                     # cold-load JS byte budget per route (OPS-006
                                     # point at an already-running server; kept out of `check` (slow)
 npm run budget:local               # the same, built and served against the seeded local stack: the one way
                                     # every route (incl. the signed-in ones) prints a figure (OPS-042, 0245)
+npm run e2e [-- --url=<origin>] [playwright args]   # phone engines: WebKit (iPhone 13) and Chromium (Pixel 7)
+                                    # at 360px with touch, built and served against the seeded local stack
+                                    # (OPS-045, 0247; browsers: `npx playwright install webkit chromium`)
 
 node scripts/board/next-card.mjs
 node scripts/board/board-move.mjs <KEY> "In progress"

@@ -68,3 +68,8 @@ instruction_external_LLM.txt
 
 # Desktop app copies of prompts and plans
 /Claude outputs/
+
+# phone-engine e2e (OPS-045)
+/e2e/.auth/
+/e2e/.results/
+/playwright-report/

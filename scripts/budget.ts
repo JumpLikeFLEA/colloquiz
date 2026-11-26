@@ -65,38 +65,10 @@
  */
 
 import { chromium, type CDPSession } from "@playwright/test";
-import { execFileSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
-import {
-  buildDecision,
-  describeSupabaseUrl,
-  formatStamp,
-  sourceFingerprint,
-  type SourceEntry,
-} from "./budgetBuildStamp";
-
-const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
-
-// `next start` (via `npx`) forks its own listener process. A plain
-// `proc.kill()` only signals the immediate child — on Windows that's the cmd
-// wrapper, not the Node process actually holding the port, so the server
-// would leak past this script's exit and squat on LOCAL_PORT for the next
-// run. Kill the whole tree instead.
-function killProcessTree(proc: ChildProcess): void {
-  (proc as ChildProcess & { killedByUs?: boolean }).killedByUs = true;
-  if (proc.pid == null) return;
-  if (process.platform === "win32") {
-    try {
-      execFileSync("taskkill", ["/pid", String(proc.pid), "/t", "/f"], { stdio: "ignore" });
-    } catch {
-      // Already exited.
-    }
-  } else {
-    proc.kill();
-  }
-}
+import type { ChildProcess } from "node:child_process";
+import { describeSupabaseUrl } from "./budgetBuildStamp";
+import { signInThroughForm } from "./fixtureSignIn";
+import { applyLocalStackEnv, die, killProcessTree, SEED_HINT, startLocalServer } from "./localServer";
 
 // ── Configured routes ───────────────────────────────────────────────────
 // Each entry's budgetKB is a recorded decision, not a guess — re-derive it
@@ -135,9 +107,6 @@ type RouteBudget = {
   /** The route's data comes from scripts/seed-local-fixtures.ts: its 404 names the seed (OPS-042). */
   seeded?: boolean;
 };
-
-/** scripts/seed-local-fixtures.ts's PASSWORD: local-stack fixtures only. */
-const FIXTURE_PASSWORD = "password123!";
 
 const ROUTES: RouteBudget[] = [
   { path: "/login", budgetKB: 380, guardForbiddenSignatures: false },
@@ -294,151 +263,17 @@ function getArg(name: string): string | undefined {
   return hit ? hit.slice(prefix.length) : undefined;
 }
 
-function die(msg: string): never {
-  console.error(msg);
-  process.exit(1);
-}
-
 const urlOverride = getArg("url") ?? process.env.BUDGET_BASE_URL;
 const useLocalStack = process.argv.includes("--local");
 if (useLocalStack && urlOverride) die("--local starts its own server against the local stack; it cannot be combined with --url.");
 
-// `npm run seed:local` alone refuses: it reads `.env.local`'s hosted URL and the
-// seed runs against a local URL only, so the hint names the env it needs.
-const SEED_HINT =
-  "seed the local stack with scripts/seed-local-fixtures.ts, passing the local URL and service key " +
-  "(`npx supabase@2.120.0 status -o env`) as NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY " +
-  "(.claude/skills/verify, \"Budget\")";
-
-// ── --local: build and serve against the local Supabase stack (OPS-042) ─
-// The signed-in routes' fixture accounts and the cohort run exist only where
-// scripts/seed-local-fixtures.ts ran, which is the local stack (it refuses any
-// other URL). `.env.local` points at the hosted project, so without this the
-// guard's server signs in against hosted, where the fixtures don't exist
-// (docs/decisions/0245). The local URL and keys are put in this process's
-// env, which `next build` and `next start` inherit and which wins over every
-// `.env*` file (@next/env's processEnv keeps a key already in process.env).
-const LOCAL_STACK_ENV: Record<string, string> = {
-  API_URL: "NEXT_PUBLIC_SUPABASE_URL",
-  ANON_KEY: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  SERVICE_ROLE_KEY: "SUPABASE_SERVICE_ROLE_KEY",
-};
-
-function applyLocalStackEnv(): void {
-  const result = spawnSync(npxBin, ["supabase@2.120.0", "status", "-o", "env"], { encoding: "utf8", shell: true });
-  const values = new Map<string, string>();
-  for (const line of (result.stdout ?? "").split(/\r?\n/)) {
-    const m = /^([A-Z_]+)="?(.*?)"?$/.exec(line.trim());
-    if (m) values.set(m[1], m[2]);
-  }
-  const missing = Object.keys(LOCAL_STACK_ENV).filter((k) => !values.get(k));
-  if (result.status !== 0 || missing.length > 0) {
-    die(
-      "--local: could not read the local Supabase stack (`npx supabase@2.120.0 status -o env`" +
-        (missing.length > 0 ? `, missing ${missing.join(", ")}` : "") +
-        `). Start it with \`npx supabase@2.120.0 start\`, then ${SEED_HINT}.`,
-    );
-  }
-  for (const [from, to] of Object.entries(LOCAL_STACK_ENV)) process.env[to] = values.get(from);
-}
-
-if (useLocalStack) applyLocalStackEnv();
+// --local (OPS-042): build and serve against the local Supabase stack;
+// scripts/localServer.ts holds the how and the why (docs/decisions/0245).
+if (useLocalStack) applyLocalStackEnv("--local");
 const servedSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
-// ── Local server lifecycle ──────────────────────────────────────────────
+// ── Local server ────────────────────────────────────────────────────────
 const LOCAL_PORT = 4173; // arbitrary, unlikely to collide with `next dev`'s 3000
-
-async function waitForServer(origin: string, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(origin, { redirect: "manual" });
-      // Any response at all (including a redirect) means the server is up.
-      if (res.status > 0) return;
-    } catch {
-      // Not listening yet.
-    }
-    await delay(200);
-  }
-  die(`Server at ${origin} did not become ready within ${timeoutMs}ms.`);
-}
-
-// The env files `next build` loads in production mode
-// (node_modules/next/dist/docs/01-app/02-guides/environment-variables.md).
-// They are gitignored, so `git ls-files` never lists them.
-const BUILD_ENV_FILES = [".env", ".env.production", ".env.local", ".env.production.local"];
-const STAMP_PATH = join(process.cwd(), ".next", "budget-source-fingerprint");
-
-function currentSourceEntries(): SourceEntry[] {
-  let listed: string;
-  try {
-    listed = execFileSync("git", ["ls-files", "-z", "-co", "--exclude-standard"], {
-      encoding: "utf8",
-      maxBuffer: 64 * 1024 * 1024,
-    });
-  } catch (e) {
-    // Without the file list there is no telling a fresh build from a stale
-    // one, so refuse rather than reuse.
-    die(`Cannot list sources with \`git ls-files\` to check .next for staleness: ${(e as Error).message}`);
-  }
-  const paths = [...listed.split("\0").filter(Boolean), ...BUILD_ENV_FILES.filter((p) => existsSync(p))];
-  return paths.map((path) => ({ path, content: existsSync(path) ? readFileSync(path) : null }));
-}
-
-const BUILD_ID_PATH = join(process.cwd(), ".next", "BUILD_ID");
-
-function readBuildId(): string | null {
-  return existsSync(BUILD_ID_PATH) ? readFileSync(BUILD_ID_PATH, "utf8").trim() : null;
-}
-
-function buildIfNeeded(): void {
-  const current = sourceFingerprint(currentSourceEntries());
-  const decision = buildDecision({
-    buildId: readBuildId(),
-    stamp: existsSync(STAMP_PATH) ? readFileSync(STAMP_PATH, "utf8") : null,
-    current,
-    supabaseUrl: servedSupabaseUrl,
-  });
-  if (decision.action === "reuse") {
-    console.log(`Reusing .next: ${decision.reason}.`);
-    return;
-  }
-  console.log(`Rebuilding: ${decision.reason} — running \`next build\`...`);
-  const result = spawnSync(npxBin, ["next", "build"], { stdio: "inherit", shell: true });
-  if (result.status !== 0) die("`next build` failed.");
-  // Stamp the fingerprint taken BEFORE the build: a file edited while the
-  // build ran then mismatches next time and rebuilds, instead of being
-  // recorded as built. The URL is the one this process handed the build
-  // (OPS-042), and BUILD_ID is the one it produced.
-  const buildId = readBuildId();
-  if (buildId === null) die("`next build` succeeded but left no .next/BUILD_ID.");
-  writeFileSync(STAMP_PATH, formatStamp({ fingerprint: current, supabaseUrl: servedSupabaseUrl, buildId }));
-}
-
-async function startLocalServer(): Promise<{ origin: string; proc: ChildProcess }> {
-  buildIfNeeded();
-  const origin = `http://localhost:${LOCAL_PORT}`;
-  console.log(`Starting \`next start -p ${LOCAL_PORT}\`...`);
-  // shell: true is required to spawn npx's .cmd shim on Windows; the resulting
-  // wrapper-process tree is why killProcessTree (below) kills by tree, not by
-  // this immediate pid alone.
-  const proc = spawn(npxBin, ["next", "start", "-p", String(LOCAL_PORT)], {
-    stdio: ["ignore", "pipe", "pipe"],
-    shell: true,
-  });
-  let out = "";
-  proc.stdout?.on("data", (d) => (out += d.toString()));
-  proc.stderr?.on("data", (d) => (out += d.toString()));
-  proc.on("exit", (code) => {
-    // killProcessTree below sets this before it kills the server, so its
-    // expected non-zero exit isn't logged as if the server had crashed.
-    if (!(proc as ChildProcess & { killedByUs?: boolean }).killedByUs && code !== null && code !== 0) {
-      console.error(`next start exited early (code ${code}):\n${out}`);
-    }
-  });
-  await waitForServer(origin, 30_000);
-  return { origin, proc };
-}
 
 // ── Commons-chunk content-signature guard (OPS-013) ─────────────────────
 // no-restricted-imports (eslint.config.mjs) catches an explicit import
@@ -469,26 +304,13 @@ async function signInCookies(
   const context = await browser.newContext();
   try {
     const page = await context.newPage();
-    await page.goto(`${origin}/login`, { waitUntil: "networkidle", timeout: 15_000 });
-    await page.fill("#email", email);
-    await page.fill("#password", FIXTURE_PASSWORD);
-    // OPS-042: wait for whichever comes first, leaving /login or the form's
-    // error box (AuthScreen's `bg-destructive-subtle` <p>). A fixture that
-    // doesn't exist on the server's project answers "Invalid login
-    // credentials" at once; waiting on the URL alone sat out the full 15 s.
-    const errorBox = page.locator("form p.bg-destructive-subtle");
-    await page.click("button[type=submit]");
-    const outcome = await Promise.race([
-      page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 15_000 }).then(() => "signed-in" as const),
-      errorBox.waitFor({ state: "visible", timeout: 15_000 }).then(() => "refused" as const),
-    ]);
-    if (outcome === "refused") {
-      const message = ((await errorBox.textContent()) ?? "").trim();
-      throw new Error(
-        `the login form answered "${message}": fixture ${email} is missing on ${describeSupabaseUrl(servedSupabaseUrl)} (or has another password than the seed's). ` +
-          `To measure it: ${SEED_HINT}, then run \`npm run budget:local\``,
-      );
-    }
+    await signInThroughForm(
+      page,
+      origin,
+      email,
+      `is missing on ${describeSupabaseUrl(servedSupabaseUrl)} (or has another password than the seed's). ` +
+        `To measure it: ${SEED_HINT}, then run \`npm run budget:local\``,
+    );
     return await context.cookies();
   } finally {
     await context.close();
@@ -599,7 +421,7 @@ async function main() {
     console.log(
       `Supabase: ${describeSupabaseUrl(servedSupabaseUrl)} (${useLocalStack ? "--local: the local stack" : "from the environment / .env.local"}).`,
     );
-    const started = await startLocalServer();
+    const started = await startLocalServer(LOCAL_PORT, servedSupabaseUrl);
     origin = started.origin;
     localProc = started.proc;
   }

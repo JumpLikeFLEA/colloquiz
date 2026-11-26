@@ -16,6 +16,7 @@
     "viewport360": "tsx scripts/viewport360.ts",
     "budget": "tsx --env-file=.env.local scripts/budget.ts",
     "budget:local": "tsx --env-file=.env.local scripts/budget.ts --local",
+    "e2e": "tsx --env-file=.env.local scripts/e2e.ts",
     "seed:local": "tsx --env-file=.env.local scripts/seed-local-fixtures.ts",
     "backfill:images": "tsx --env-file=.env.local scripts/backfill-image-webp.ts"
   },

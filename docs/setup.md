@@ -71,6 +71,7 @@ npm run lint         # eslint only (lint:fix to auto-fix)
 npm test             # unit tests (vitest; test:watch to watch)
 npm run bench        # latency benchmark, see below
 npm run budget       # cold-load JavaScript budget per route
+npm run e2e          # phone engines (WebKit, Chromium) at 360px, see below
 npm run seed:local   # seed local fixtures
 
 # One-off CLIs (tsx does not auto-load .env — pass --env-file):
@@ -83,6 +84,39 @@ npx tsx --env-file=.env.local scripts/import-authored-questions.ts <file.json> [
 
 Course content has its own CLIs (`scripts/validate-course-file.ts`,
 `scripts/import-lesson.ts`); see `CLAUDE.md`, "Repo map".
+
+## Phone engines (e2e)
+
+There are no test phones, so phone behaviour is checked in Playwright's two phone
+engines (docs/decisions/0246, 0247): `webkit-iphone` (`devices["iPhone 13"]`, the
+engine of iOS Safari and every iOS in-app browser) and `chromium-pixel`
+(`devices["Pixel 7"]`, Android Chrome and Android in-app browsers), both at 360px
+wide with touch. Specs live in `e2e/`. A pass is evidence about the engines, not
+about a phone. Not CI: it runs on your machine, like `npm run budget:local`.
+
+One-time: install the two browsers. They go to Playwright's own cache
+(`%LOCALAPPDATA%\ms-playwright` on Windows) and are never committed.
+
+```bash
+npx playwright install webkit chromium
+```
+
+Each time:
+
+```bash
+npx supabase@2.120.0 start          # the local stack, then seed it (the verify skill's "Budget" line)
+npm run e2e                         # build if needed, serve on :4174 against the local stack, run every spec
+npm run e2e -- --project=webkit-iphone e2e/smoke.spec.ts   # extra arguments go to `playwright test`
+npm run e2e -- --url=http://localhost:3000                 # against a server you already started
+```
+
+`npm run e2e` shares `npm run budget:local`'s build and build stamp, so one
+reuses the other's build when the sources and the Supabase URL are unchanged
+(editing `e2e/` or `playwright.config.ts` doesn't force a rebuild). With the
+stack down it stops and says how to start and seed it. The `setup` project
+signs each fixture in through the login form, fresh every run, and writes
+its session to `e2e/.auth/` (gitignored). A missing fixture fails at once with
+the form's own message.
 
 ## Benchmarking
 
