@@ -10,6 +10,7 @@ export type TakeRow = {
   submitted_at: string;
   enrolment_id: string | null;
   object_name: string | null;
+  content_type: string | null;
   run_enrolments: { course_runs: { ends_at: string } | null } | null;
 };
 
@@ -33,6 +34,7 @@ export function toTakes(
     enrolmentId: r.enrolment_id,
     runEndsAt: r.run_enrolments?.course_runs?.ends_at ?? null,
     objectName: r.object_name,
+    contentType: r.content_type ?? null,
   }));
 }
 

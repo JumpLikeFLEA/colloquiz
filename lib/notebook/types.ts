@@ -57,6 +57,8 @@ export type NotebookTake = {
   runEndsAt: string | null;
   /** Null once the 6-month purge removed the audio (060). */
   objectName: string | null;
+  /** The stored container's MIME type (060); the download states its format from it (PROG-019). */
+  contentType: string | null;
 };
 
 /** What the caller's own session can read now, for current titles and links. */

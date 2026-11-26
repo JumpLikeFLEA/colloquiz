@@ -24,6 +24,22 @@ export async function signVoicePlaybackUrl(
   return { url: data.signedUrl, expiresAt: new Date(issuedAt + ttlSeconds * 1000) };
 }
 
+/**
+ * PROG-019 (0243): a short-lived URL that downloads the object as `fileName`. Signed under the
+ * caller's session like playback, so the bucket policy still applies; the caller has already
+ * checked the take is the caller's own (`decideRecordingDownload`), which the policy alone does not.
+ */
+export async function signVoiceDownloadUrl(
+  client: SupabaseClient,
+  objectName: string,
+  fileName: string,
+  ttlSeconds = 60,
+): Promise<string | null> {
+  const { data, error } = await client.storage.from(VOICE_BUCKET).createSignedUrl(objectName, ttlSeconds, { download: fileName });
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+}
+
 /** Storage API's remove() takes a list; kept well under its request size. */
 export const VOICE_REMOVE_BATCH = 100;
 

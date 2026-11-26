@@ -31,7 +31,7 @@ export async function getNotebookView(filters: { tab: unknown; course: unknown }
     supabase.rpc("notebook_try_gate"),
     supabase
       .from("voice_submissions")
-      .select("id, course_id, lesson_id, submitted_at, enrolment_id, object_name, run_enrolments(course_runs(ends_at))")
+      .select("id, course_id, lesson_id, submitted_at, enrolment_id, object_name, content_type, run_enrolments(course_runs(ends_at))")
       .eq("user_id", user.id)
       .order("submitted_at", { ascending: false }),
   ]);

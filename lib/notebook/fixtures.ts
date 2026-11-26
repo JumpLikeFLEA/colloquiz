@@ -64,6 +64,7 @@ export const take = (over: Partial<NotebookTake> = {}): NotebookTake => ({
   enrolmentId: null,
   runEndsAt: null,
   objectName: "c1/u/x.webm",
+  contentType: "audio/webm",
   ...over,
 });
 

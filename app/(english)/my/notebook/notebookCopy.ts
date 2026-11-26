@@ -46,6 +46,12 @@ type NotebookStrings = {
   audioDeleted: string;
   audioDeletedNotesKept: string;
   listen: string;
+  /** PROG-019 (0243). */
+  download: string;
+  /** "{format}" is WEBM, OGG or M4A. */
+  fileFormat: string;
+  unknownFormat: string;
+  downloadNotebook: string;
 };
 
 export const notebookCopy: Record<SurfaceLang, NotebookStrings> = {
@@ -90,6 +96,10 @@ export const notebookCopy: Record<SurfaceLang, NotebookStrings> = {
     audioDeleted: "Аудио удалено",
     audioDeletedNotesKept: "Аудио удалено, заметки сохранены",
     listen: "Послушать в уроке",
+    download: "Скачать",
+    fileFormat: "файл {format}",
+    unknownFormat: "аудиофайл",
+    downloadNotebook: "Скачать блокнот (.txt)",
   },
   en: {
     metaTitle: "Notebook",
@@ -132,5 +142,9 @@ export const notebookCopy: Record<SurfaceLang, NotebookStrings> = {
     audioDeleted: "Audio deleted",
     audioDeletedNotesKept: "Audio deleted, notes kept",
     listen: "Listen in the lesson",
+    download: "Download",
+    fileFormat: "{format} file",
+    unknownFormat: "audio file",
+    downloadNotebook: "Download notebook (.txt)",
   },
 };

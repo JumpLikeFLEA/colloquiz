@@ -15,7 +15,8 @@ export type SummaryCard = {
 
 const filled = (s: string | null): string | null => (s !== null && s.trim() !== "" ? s : null);
 
-function toCard(summary: NotebookSummary): SummaryCard | null {
+/** One summary as the card draws it, or null when it has nothing to draw (the text file uses it too). */
+export function toCard(summary: NotebookSummary): SummaryCard | null {
   const first = summary.kind === "first";
   const follow = filled(first ? summary.goal : summary.nextStep);
   const text = filled(summary.summary);

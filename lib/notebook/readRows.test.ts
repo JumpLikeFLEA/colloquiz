@@ -10,6 +10,7 @@ const takeRow = (over: Partial<TakeRow> = {}): TakeRow => ({
   submitted_at: "2026-11-01T10:00:00+00:00",
   enrolment_id: null,
   object_name: "x",
+  content_type: "audio/webm",
   run_enrolments: null,
   ...over,
 });

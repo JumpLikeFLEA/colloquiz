@@ -25,13 +25,16 @@ import { alliengllCopy } from "@/lib/alliengll/copy";
 export function BandTopBar({
   back,
   toggle,
+  action,
   account,
 }: {
   back?: { href: string; label: string };
   toggle?: ReactNode;
+  /** PROG-019: one icon control before the back link (the notebook's download). Crowds like the toggle. */
+  action?: ReactNode;
   account?: ReactNode;
 }) {
-  const crowded = Boolean(toggle && account);
+  const crowded = Boolean((toggle || action) && account);
   return (
     <header className="flex items-center justify-between gap-3">
       <Link
@@ -40,9 +43,10 @@ export function BandTopBar({
       >
         {alliengllCopy.wordmark}
       </Link>
-      {(toggle || back || account) && (
+      {(toggle || action || back || account) && (
         <div className="flex items-center gap-1.5">
           {toggle}
+          {action}
           {back && (
             <Link
               href={back.href}

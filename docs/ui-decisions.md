@@ -3382,3 +3382,15 @@ Appended to in the same commit as the change it records. Referenced from
   `npm run budget`: free lesson 259.9 / 259.9 KB of 260, `/my` 175.2 / 175.2; the voice lesson
   (scratch script, no budget entry) 343.2 / 344.0 KB. Not measured: a phone, dark mode. Do not move
   the lesson link into `AnalysisResult`, and do not put the notebook link inside Up next.
+- Notebook downloads (2026-11-26, PROG-019, docs/decisions/0243). `/my/notebook`'s top bar gains a
+  `Download` icon link (44x44, the back link's hover and focus classes) before "← My courses", named
+  "Download notebook (.txt)" / "Скачать блокнот (.txt)"; it goes in `BandTopBar`'s new `action` slot,
+  which crowds like the toggle. It downloads the notebook as a UTF-8 text file built on the server
+  (0236 section 8). Each recording row whose audio is kept gains, beside "Listen in the lesson", a
+  "Download" link (`PAPER_LINK_INLINE_CLASS`, `Download` icon, `min-h-11`) and the format as muted
+  text ("WEBM file" / "файл WEBM"); a purged row has none. Both are plain links: no client JS.
+  Existing classes and tokens; no new colours. Measured at 360px: `scrollWidth/innerWidth` 360/360 on
+  `/my/notebook` EN, RU and empty (`npm run viewport360`), and with Recordings open, EN and RU, plus
+  1280/1280. `npm run budget` `/my/notebook`: 169.3 / 169.3 KB of 180. Not measured: a phone, dark
+  mode, playing the downloaded file on a phone. Do not sign a download for anyone but the take's
+  owner, and do not claim which devices play a format.

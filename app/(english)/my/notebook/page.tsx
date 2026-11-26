@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Download } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLang";
 import { NOTEBOOK_PATH } from "@/lib/notebook/href";
 import { getNotebookView } from "@/lib/notebookData";
@@ -46,6 +47,18 @@ export default async function NotebookPage({
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-6 pt-5 lg:pt-6`}>
           <BandTopBar
             back={{ href: "/my", label: m.backToMy }}
+            action={
+              // PROG-019 (0243): the whole notebook as a text file, built on the server.
+              <a
+                href="/api/notebook/download"
+                aria-label={m.downloadNotebook}
+                title={m.downloadNotebook}
+                data-download="notebook"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <Download className="size-5" aria-hidden="true" />
+              </a>
+            }
             account={<AccountMenu account={signedIn} lang={lang} next="/" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Mic, Pencil, Plus, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Download, Mic, Pencil, Plus, Sparkles } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { notebookHref } from "@/lib/notebook/href";
 import type { NotebookView } from "@/lib/notebook/notebookView";
@@ -9,6 +9,7 @@ import { openLessonHref, rowSource, type SourceRow } from "@/lib/notebook/source
 import type { SummaryCard as Card } from "@/lib/notebook/summaryCard";
 import { NOTEBOOK_TABS } from "@/lib/notebook/tabs";
 import type { SummaryKind } from "@/lib/notebook/types";
+import { recordingFormat } from "@/lib/voice/download";
 import { LocalDateTime } from "../../LocalDateTime";
 import { OFFSET_CTA_CLASS, PAPER_EMPTY_BOX_CLASS, PAPER_LINK_INLINE_CLASS, PAPER_PANEL_CLASS } from "../../surfaceClasses";
 import { myCopy } from "../myCopy";
@@ -315,16 +316,47 @@ export function RecordingsSection({ lang, view, now }: Props & { now: Date }) {
               <p className="text-xs text-muted-foreground">
                 <AudioState lang={lang} row={row} now={now} />
               </p>
-              {href && (
-                <Link href={href} prefetch={false} className={`${PAPER_LINK_INLINE_CLASS} inline-flex min-h-11 w-fit items-center rounded-lg text-sm`}>
-                  {m.listen}
-                </Link>
+              {row.audio.state === "kept" && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {href && (
+                    <Link href={href} prefetch={false} className={`${PAPER_LINK_INLINE_CLASS} inline-flex min-h-11 w-fit items-center rounded-lg text-sm`}>
+                      {m.listen}
+                    </Link>
+                  )}
+                  <DownloadRecording lang={lang} takeId={row.take.id} contentType={row.take.contentType} />
+                </div>
               )}
             </li>
           );
         })}
       </ul>
     </details>
+  );
+}
+
+/**
+ * PROG-019 (0243): the owner's take as a file, through the route that checks the owner before it
+ * signs. A plain link, no client JS. The container is stated beside it, never a device claim (0097
+ * left phones, Safari and in-app browsers untested).
+ */
+function DownloadRecording({ lang, takeId, contentType }: { lang: SurfaceLang; takeId: string; contentType: string | null }) {
+  const m = notebookCopy[lang];
+  const format = recordingFormat(contentType);
+  const formatText = format ? m.fileFormat.replace("{format}", format.toUpperCase()) : m.unknownFormat;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2">
+      <a
+        href={`/api/voice/submissions/${takeId}/download`}
+        className={`${PAPER_LINK_INLINE_CLASS} inline-flex min-h-11 w-fit items-center gap-1.5 rounded-lg text-sm`}
+        data-download="recording"
+      >
+        <Download className="size-4 flex-none" aria-hidden="true" />
+        {m.download}
+      </a>
+      <span className="text-xs text-muted-foreground" data-download-format>
+        {formatText}
+      </span>
+    </span>
   );
 }
 
