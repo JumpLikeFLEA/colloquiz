@@ -3346,3 +3346,22 @@ Appended to in the same commit as the change it records. Referenced from
   "Measured"), RU and dark included; 1280/1280 light and dark. `npm run budget`: `/my/notebook` 166.5 KB of
   180, `/my` 175.2 before and after. Not measured: a phone, a screen reader. Copy is pending owner review.
   Do not put `SignedAudio` on this page (0120 Decision 3), and do not read To try's lists with the service role.
+- Notebook: own notes and delete (2026-11-26, PROG-016, docs/decisions/0241). `/my/notebook` gains an
+  "Add a phrase" / "Добавить фразу" native `<details>` in the panel frame (`PAPER_PANEL_CLASS`, a `Plus`
+  icon, the Recordings fold's chevron) between the record and the list, shown in an empty notebook too.
+  Open, it holds one muted line and the form: Phrase (an input) and Note (optional, a textarea that grows),
+  both `.paper-input` (VIS-006's 2px ink outline and offset focus shadow), each with a `N / 200` or
+  `N / 500` counter (`text-destructive-text` over the limit) and a muted hint naming the limit (the note's
+  also names the 1,000-note cap), a `destructive-subtle` error line, and the violet offset "Save". A
+  refused field gets `border-destructive-border` and `aria-invalid`. A saved note opens Phrases, All
+  courses. Every phrase, fix and the summary card end with right-aligned `min-h-11` text buttons:
+  "Edit" (`Pencil`, own notes only: copied text is never editable) and "Delete" (`Trash2`). Edit opens
+  the same form in place in an `border-ink/30` box, with Cancel. Delete opens, in place, a
+  `border-destructive-border bg-destructive-subtle` box (`role="alertdialog"`) naming what goes and
+  saying it can't be undone, with a `bg-destructive` "Yes, delete" (focused) and an outlined Cancel.
+  EN/RU with the saved choice. Existing classes and tokens; no new colours. Measured at 360px (local
+  stack, Edge, the fixture learner, a 150-character unbroken word in the phrase): `scrollWidth/innerWidth`
+  360/360, EN and RU, on load, with the form open, with each error, after an add, with the edit form open
+  and with each confirmation open (said, fix, own, summary); 1280/1280. `npm run budget` `/my/notebook`
+  166.5 / 169.3 KB of 180. Not measured: a phone, dark mode, the cap message. Do not add Edit to a copied
+  row, and do not delete on the first tap.

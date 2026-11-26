@@ -74,6 +74,21 @@ describe("toTryRows, minus what was said", () => {
     expect(phrases(open, [list], [])).toContain("keep");
   });
 
+  // PROG-016: notebook_delete_entry removes a merged phrase's rows of every take in the course
+  // (112), and that is what brings it back. One take's row left behind would keep it said.
+  it("a merged phrase comes back only once every take's row is gone", () => {
+    const first = said("keep", { id: "e1", submissionId: "t1" });
+    const second = said("Keep", { id: "e2", submissionId: "t2" });
+    expect(phrases(open, [list], [first, second])).not.toContain("keep");
+    expect(phrases(open, [list], [second])).not.toContain("keep");
+    expect(phrases(open, [list], [])).toContain("keep");
+  });
+
+  it("deleting an own note of the same phrase changes nothing in To try", () => {
+    expect(phrases(open, [list], [own("keep")])).toContain("keep");
+    expect(phrases(open, [list], [said("keep"), own("keep")])).not.toContain("keep");
+  });
+
   it("lists a phrase once, in lesson order, from the first lesson that has it", () => {
     const later = lesson({ id: "l2", ordinal: 2, document: [voice("w", ["KEEP", "new"])] });
     const rows = toTryRows(open, [later, list], []);

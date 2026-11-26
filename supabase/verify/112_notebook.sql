@@ -291,6 +291,23 @@ BEGIN
     pg_temp.q('SELECT count(*) FROM notebook_entries WHERE id = %L', v_own) || '/' ||
     pg_temp.as_user(m, format($q$ SELECT public.notebook_delete_entry(%L)->>'deleted' $q$, v_own)) || '/' ||
     pg_temp.q('SELECT count(*) FROM notebook_entries WHERE id = %L', v_own), 'not_found/1/1/0');
+  -- PROG-016: a Cyrillic note is stored as sent, 500 Cyrillic letters is the limit (char_length
+  -- counts letters, not bytes), and a repeated phrase is allowed, not merged (0236 section 4).
+  PERFORM pg_temp.check_eq('a Cyrillic note round-trips; 500 Cyrillic letters ok [positive control], 501 note_too_long',
+    pg_temp.as_user(m, $q$ SELECT public.notebook_add_note('be about to', 'Когда что-то вот-вот случится')->>'ok' $q$) || '/' ||
+    pg_temp.q($q$ SELECT note FROM notebook_entries WHERE user_id = %L AND phrase = 'be about to' $q$, m) || '/' ||
+    pg_temp.as_user(m, $q$ SELECT public.notebook_add_note('ж', repeat('ж', 500))->>'ok' $q$) || '/' ||
+    pg_temp.as_user(m, $q$ SELECT public.notebook_add_note('ж', repeat('ж', 501))->>'error' $q$),
+    'true/Когда что-то вот-вот случится/true/note_too_long');
+  PERFORM pg_temp.check_eq('a duplicate phrase is a second row, each with its own note',
+    pg_temp.as_user(m, $q$ SELECT public.notebook_add_note('Be about to', 'second')->>'ok' $q$) || '/' ||
+    pg_temp.q($q$ SELECT count(*) FROM notebook_entries WHERE user_id = %L AND kind = 'own' AND phrase_key = 'be about to' $q$, m),
+    'true/2');
+  PERFORM pg_temp.check_eq('deleting one own row of the phrase deletes 1 and leaves the other',
+    pg_temp.as_user(m, format($q$ SELECT public.notebook_delete_entry(%L)->>'deleted' $q$,
+      (SELECT id FROM notebook_entries WHERE user_id = m AND note = 'second'))) || '/' ||
+    pg_temp.q($q$ SELECT string_agg(note, ',') FROM notebook_entries WHERE user_id = %L AND kind = 'own' AND phrase_key = 'be about to' $q$, m),
+    '1/Когда что-то вот-вот случится');
   INSERT INTO notebook_entries (user_id, kind, phrase)
   SELECT m, 'own', 'n' || i FROM generate_series(1, 999 - (SELECT count(*)::int FROM notebook_entries WHERE user_id = m)) i;
   PERFORM pg_temp.check_eq('the 1,000th note is accepted [positive control], the 1,001st is PT429, another learner is unaffected',

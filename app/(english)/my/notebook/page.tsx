@@ -10,7 +10,7 @@ import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/colum
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
 import { HERO_ENTER_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../surfaceClasses";
-import { EmptyNotebook, ListSection, RecordingsSection, RecordRow, SummarySection } from "./NotebookSections";
+import { AddNote, EmptyNotebook, ListSection, RecordingsSection, RecordRow, SummarySection } from "./NotebookSections";
 import { notebookCopy } from "./notebookCopy";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,6 +61,8 @@ export default async function NotebookPage({
       <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-6 pb-12 pt-4 sm:pb-16`}>
         {view.summary && <SummarySection lang={lang} view={view} card={view.summary} />}
         {(view.empty !== "notebook" || hasRecord) && <RecordRow lang={lang} view={view} />}
+        {/* PROG-016 (0241): an own note can be added from an empty notebook too. */}
+        <AddNote lang={lang} />
         {view.empty === "notebook" ? <EmptyNotebook lang={lang} /> : <ListSection lang={lang} view={view} />}
         <RecordingsSection lang={lang} view={view} now={new Date()} />
       </div>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Mic, Pencil, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Mic, Pencil, Plus, Sparkles } from "lucide-react";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { notebookHref } from "@/lib/notebook/href";
 import type { NotebookView } from "@/lib/notebook/notebookView";
@@ -12,7 +12,10 @@ import type { SummaryKind } from "@/lib/notebook/types";
 import { LocalDateTime } from "../../LocalDateTime";
 import { OFFSET_CTA_CLASS, PAPER_EMPTY_BOX_CLASS, PAPER_LINK_INLINE_CLASS, PAPER_PANEL_CLASS } from "../../surfaceClasses";
 import { myCopy } from "../myCopy";
+import { EntryActions } from "./EntryActions";
+import { NoteForm } from "./NoteForm";
 import { notebookCopy } from "./notebookCopy";
+import { noteFormCopy, type NoteFormStrings } from "./noteFormCopy";
 
 /**
  * The notebook page's sections (PROG-014, docs/decisions/0240). Server Components: the tabs and the
@@ -23,6 +26,12 @@ import { notebookCopy } from "./notebookCopy";
  * be in any language and does not.
  */
 type Props = { lang: SurfaceLang; view: NotebookView };
+
+/** One language's form strings, without the confirmation builders: what a client component gets. */
+function formStrings(lang: SurfaceLang): NoteFormStrings {
+  const { confirm: _confirm, ...strings } = noteFormCopy[lang];
+  return strings;
+}
 
 const SMALL_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-brand-subtle px-2 py-0.5 text-xs font-medium text-brand-text";
 const MUTED_PILL_CLASS = "inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground";
@@ -80,6 +89,13 @@ export function SummarySection({ lang, view, card }: Props & { card: Card }) {
       )}
       <Source row={summary} view={view} />
       <p className="text-xs text-muted-foreground">{myCopy[lang].aiLead}</p>
+      <EntryActions
+        strings={formStrings(lang)}
+        kind="summary"
+        id={summary.submissionId}
+        confirm={noteFormCopy[lang].confirm.summary()}
+        label={m.summaryTitle}
+      />
     </section>
   );
 }
@@ -189,6 +205,14 @@ function ListRows({ lang, view }: Props) {
             p.note && <p className="whitespace-pre-line break-words text-sm text-muted-foreground">{p.note}</p>
           )}
           <Source row={p} view={view} />
+          <EntryActions
+            strings={formStrings(lang)}
+            kind="entry"
+            id={p.id}
+            label={p.phrase}
+            confirm={p.kind === "said" ? noteFormCopy[lang].confirm.said(p.phrase, p.takes) : noteFormCopy[lang].confirm.own(p.phrase)}
+            edit={p.kind === "own" ? { phrase: p.phrase, note: p.note } : undefined}
+          />
         </div>
       </Row>
     ));
@@ -204,6 +228,13 @@ function ListRows({ lang, view }: Props) {
             <span className="font-medium text-brand-text">{m.better}:</span> <span lang="en">{f.correction}</span>
           </p>
           <Source row={f} view={view} />
+          <EntryActions
+            strings={formStrings(lang)}
+            kind="entry"
+            id={f.id}
+            label={f.correction}
+            confirm={noteFormCopy[lang].confirm.fix(f.quote, f.correction)}
+          />
         </div>
       </Row>
     ));
@@ -309,5 +340,25 @@ export function EmptyNotebook({ lang }: { lang: SurfaceLang }) {
         <ArrowRight className="size-4" aria-hidden="true" />
       </Link>
     </section>
+  );
+}
+
+/** PROG-016 — "Add a phrase": a native `<details>`, closed on every load. A new note has no lesson. */
+export function AddNote({ lang }: { lang: SurfaceLang }) {
+  const f = noteFormCopy[lang];
+  return (
+    <details className={`${PAPER_PANEL_CLASS} group`} data-notebook="add">
+      <summary
+        className={`flex min-h-12 cursor-pointer list-none items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-foreground sm:text-base ${FOCUS_CLASS} [&::-webkit-details-marker]:hidden`}
+      >
+        <Plus className="size-4 flex-none text-brand-text" aria-hidden="true" />
+        {f.addTitle}
+        <ChevronDown className="ml-auto size-4 flex-none transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+      </summary>
+      <div className="flex flex-col gap-3 border-t border-border p-4">
+        <p className="text-sm text-muted-foreground">{f.addLead}</p>
+        <NoteForm strings={formStrings(lang)} />
+      </div>
+    </details>
   );
 }
