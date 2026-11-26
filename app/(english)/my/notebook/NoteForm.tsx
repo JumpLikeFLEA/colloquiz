@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { NOTE_MAX, noteFormError, noteLength, PHRASE_MAX, type NoteError } from "@/lib/notebook/noteForm";
 import { OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS } from "../../surfaceClasses";
 import { saveNote, type NoteActionState } from "./actions";
@@ -10,6 +10,10 @@ import type { NoteFormStrings } from "./noteFormCopy";
  * PROG-016 (docs/decisions/0241) — add or edit an own note. The limits are shown as counters and
  * checked before sending (lib/notebook/noteForm, 112's rule mirrored); `notebook_add_note` /
  * `notebook_edit_note` decide. The field keeps what was typed when a save is refused.
+ *
+ * PROG-022 (docs/decisions/0248): the lesson's "Add a phrase" dialog reuses this form with its own
+ * `action` (no redirect), its English `strings`, the lesson id as a `hidden` field, and `onDone`
+ * as its success callback. Without those props the notebook page's form is unchanged.
  */
 const INITIAL: NoteActionState = { error: null, done: 0 };
 const FIELD_CLASS = "paper-input w-full rounded-xl px-3 py-2.5 text-base";
@@ -24,19 +28,38 @@ function Counter({ value, max, id }: { value: string; max: number; id: string })
   );
 }
 
+/** What the form draws; the notebook passes its whole copy, the lesson dialog only these. */
+export type NoteFormFieldStrings = Pick<
+  NoteFormStrings,
+  "phraseLabel" | "phraseHint" | "noteLabel" | "noteHint" | "save" | "saving" | "cancel" | "errors"
+>;
+
 export function NoteForm({
   strings,
   id,
   initial,
   onDone,
+  action: save = saveNote,
+  hidden,
+  errorExtra,
+  autoFocus,
 }: {
-  strings: NoteFormStrings;
+  strings: NoteFormFieldStrings;
   /** Present when editing. */
   id?: string;
   initial?: { phrase: string; note: string | null };
+  /** Called after each successful save. */
   onDone?: () => void;
+  /** The Server Action; the notebook page's `saveNote` when absent. */
+  action?: (prev: NoteActionState, form: FormData) => Promise<NoteActionState>;
+  /** Extra hidden fields sent with the form (the lesson id). */
+  hidden?: Record<string, string>;
+  /** Drawn after a refusal's message (the expired session's sign-in link). */
+  errorExtra?: Partial<Record<NoteError, ReactNode>>;
+  /** Focus the phrase field on mount. */
+  autoFocus?: boolean;
 }) {
-  const [state, action, pending] = useActionState(saveNote, INITIAL);
+  const [state, action, pending] = useActionState(save, INITIAL);
   const [phrase, setPhrase] = useState(initial?.phrase ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [local, setLocal] = useState<NoteError | null>(null);
@@ -68,6 +91,8 @@ export function NoteForm({
       data-notebook={id ? "edit-form" : "add-form"}
     >
       {id && <input type="hidden" name="id" value={id} />}
+      {hidden &&
+        Object.entries(hidden).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between gap-3">
           <label htmlFor={`${uid}-phrase`} className="text-sm font-semibold text-foreground">
@@ -80,6 +105,7 @@ export function NoteForm({
           name="phrase"
           lang="en"
           autoComplete="off"
+          autoFocus={autoFocus}
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}
           aria-invalid={phraseBad || undefined}
@@ -115,6 +141,7 @@ export function NoteForm({
         {error && (
           <p id={`${uid}-error`} className={ERROR_CLASS} data-notebook="form-error">
             {strings.errors[error]}
+            {errorExtra?.[error]}
           </p>
         )}
       </div>
