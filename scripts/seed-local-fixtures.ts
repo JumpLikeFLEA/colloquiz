@@ -383,6 +383,49 @@ async function main() {
       ],
       archived: false,
     },
+    {
+      // PROG-022 (docs/decisions/0248): text only, no exercise and no task, for
+      // the strip's notebook button on a lesson with nothing to count.
+      slug: "theory-lesson",
+      title: "Theory lesson",
+      description: "Text only, with no exercises.",
+      accessLevel: "anyone",
+      ordinal: 8,
+      document: [
+        VALID_DOCUMENT[0],
+        { id: "p2", kind: "theory", type: "prose", text: [{ text: "Keep the phrase on second thought for later." }] },
+      ],
+      archived: false,
+    },
+    {
+      // PROG-022: one typed gap, so a spec can show typed text survives a save from the dialog.
+      slug: "gaps-lesson",
+      title: "Gaps lesson",
+      description: "One exercise with typed gaps.",
+      accessLevel: "anyone",
+      ordinal: 9,
+      document: [
+        VALID_DOCUMENT[0],
+        {
+          id: "g1",
+          kind: "practice",
+          type: "slots",
+          payload: {
+            prompt: "Fill in the gaps: I ___ (go) to the cinema ___ Friday evenings.",
+            input: "typed",
+            gaps: [
+              { id: "gap-1", acceptedAnswers: ["go"], explanationRef: "gap-1-exp" },
+              { id: "gap-2", acceptedAnswers: ["on"], explanationRef: "gap-2-exp" },
+            ],
+            explanations: {
+              "gap-1-exp": 'A habitual action uses the simple present: "I go."',
+              "gap-2-exp": 'Days of the week take the preposition "on": "on Friday evenings."',
+            },
+          },
+        },
+      ],
+      archived: false,
+    },
   ];
 
   await upsertLessons(courseId, lessons);

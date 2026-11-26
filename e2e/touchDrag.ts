@@ -30,7 +30,7 @@ const SENSOR_BY_ACTIVATOR: Record<string, string> = {
 };
 
 /** Records, on window (after React's root listener), which sensor captured each press. */
-async function watchCaptures(page: Page): Promise<void> {
+export async function watchCaptures(page: Page): Promise<void> {
   await page.evaluate((names) => {
     const w = window as unknown as { __dndCaptured: string[] };
     w.__dndCaptured = [];
@@ -47,7 +47,7 @@ async function watchCaptures(page: Page): Promise<void> {
   }, SENSOR_BY_ACTIVATOR);
 }
 
-async function readCaptures(page: Page): Promise<string[]> {
+export async function readCaptures(page: Page): Promise<string[]> {
   return page.evaluate(() => (window as unknown as { __dndCaptured: string[] }).__dndCaptured);
 }
 
