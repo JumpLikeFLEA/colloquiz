@@ -11,6 +11,7 @@ import { threadPath } from "@/lib/messages/messages";
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
+import { MyTabs } from "../MyTabs";
 import {
   HERO_ENTER_CLASS,
   PAPER_CARD_CLASS,
@@ -52,11 +53,8 @@ export default async function MyMessagesPage() {
     <main className="grid-paper flex-1">
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
-          <BandTopBar
-           
-            back={{ href: "/my", label: m.backToMy }}
-            account={<AccountMenu account={signedIn} lang={lang} next="/" />}
-          />
+          <BandTopBar account={<AccountMenu account={signedIn} lang={lang} next="/" />} />
+          <MyTabs current="messages" lang={lang} messages={{ show: threads.length > 0, unread: signedIn.unreadMessages }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
             <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{m.title}</h1>

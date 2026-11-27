@@ -3427,3 +3427,24 @@ Appended to in the same commit as the change it records. Referenced from
   266,206 B after, of 266,240. Not measured: a phone, an in-app browser, an on-screen keyboard, dark
   mode. Do not add a status line to the strip (0248 Decision 6), and do not let the save refresh the
   lesson page.
+- Tabs across the personal area (2026-11-27, SHELL-039, docs/decisions/0251). Every /my page (`/my`,
+  `/my/notebook`, `/my/messages`, a thread, `/my/settings`) gains, under the top bar and above the
+  eyebrow, one `<nav>` ("My learning" / "Кабинет") of plain links: Overview, Notebook, Messages,
+  Settings (Обзор, Блокнот, Сообщения, Настройки); `MyTabs.tsx`, zero client JS, `prefetch={false}`.
+  A boxed rail: `rounded-xl border-2 border-ink bg-card p-1 gap-1`, segments `rounded-lg min-h-11
+  flex-auto`, `text-xs` below `sm`; the current one `bg-foreground text-background` with
+  `aria-current="page"` (19.79:1 light, 18.96:1 dark), the rest `text-muted-foreground hover:bg-muted`.
+  Not violet: that is LanguageToggle's look, and on Settings the rail sits above the Appearance rail
+  (a grey `border-border` box with a `bg-brand-subtle` selection), a switch. The notebook's underline
+  tabs and yellow course chips stay different objects. Messages shows with a thread, with an unread
+  reply ("Messages (2)") and always on the Messages pages. The back links to /my on the notebook, the
+  messages list and settings are gone (Overview replaces them). `/my/settings` opens with an "Account"
+  section: a paper panel with "Signed in as <who>" and an `OUTLINE_CTA_CLASS` Sign out (form POST,
+  `next=/`). An editor gets a Studio row on `/my` after the notebook card (`PAPER_CARD_CLASS`,
+  `PenTool` tile, a plain `<a href="/studio">`). The account menu is unchanged until SHELL-040.
+  Existing classes and tokens; no new colours. Measured at 360px (local stack; a learner with no
+  teacher, a linked learner with unread replies, an editor; EN and RU): `scrollWidth/innerWidth`
+  360/360 on every page, the rail 324/324 with no label overflowing (RU, four tabs, "Сообщения (2)":
+  54/66/103/81 px); 1280/1280 on the notebook and settings. `npm run budget:local`: identical on all
+  17 routes. Not measured: a phone, dark-mode screenshots. Do not fill the current tab violet, and do
+  not add a fifth tab without re-measuring RU at 360.

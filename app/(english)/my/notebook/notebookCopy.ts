@@ -14,7 +14,6 @@ type NotebookStrings = {
   eyebrow: string;
   title: string;
   lead: string;
-  backToMy: string;
   summaryTitle: string;
   goal: string;
   nextStep: string;
@@ -60,7 +59,6 @@ export const notebookCopy: Record<SurfaceLang, NotebookStrings> = {
     eyebrow: "Ваш аккаунт",
     title: "Блокнот",
     lead: "Что вы уже говорите по-английски и что сохранили.",
-    backToMy: "Мои курсы",
     summaryTitle: "Последний разбор",
     goal: "Цель",
     nextStep: "Следующий шаг",
@@ -106,7 +104,6 @@ export const notebookCopy: Record<SurfaceLang, NotebookStrings> = {
     eyebrow: "Your account",
     title: "Notebook",
     lead: "What you can already say in English, and what you have saved.",
-    backToMy: "My courses",
     summaryTitle: "Latest summary",
     goal: "Goal",
     nextStep: "Next step",

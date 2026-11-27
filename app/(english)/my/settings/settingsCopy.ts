@@ -16,6 +16,15 @@ import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
  *
  * New copy, pending owner/partner review.
  */
+/** SHELL-039 (0251): the account menu's "Signed in as" and Sign out, moved to the top of this page. */
+export type AccountLabels = {
+  title: string;
+  signedInAs: string;
+  /** When the account has neither an email nor a username. */
+  signedIn: string;
+  signOut: string;
+};
+
 export type AppearanceLabels = {
   legend: string;
   light: string;
@@ -82,7 +91,7 @@ type SettingsStrings = {
   eyebrow: string;
   title: string;
   lead: string;
-  backToMy: string;
+  account: AccountLabels;
   appearanceTitle: string;
   appearanceLead: string;
   signInTitle: string;
@@ -104,7 +113,7 @@ export const settingsCopy: Record<SurfaceLang, SettingsStrings> = {
     eyebrow: "Ваш аккаунт",
     title: "Настройки",
     lead: "Тема, способы входа и ваши данные.",
-    backToMy: "Мои курсы",
+    account: { title: "Аккаунт", signedInAs: "Вы вошли как", signedIn: "Вы вошли в аккаунт", signOut: "Выйти" },
     appearanceTitle: "Оформление",
     appearanceLead: "Как выглядит сайт. Меняется сразу.",
     signInTitle: "Способы входа",
@@ -185,7 +194,7 @@ export const settingsCopy: Record<SurfaceLang, SettingsStrings> = {
     eyebrow: "Your account",
     title: "Settings",
     lead: "Theme, sign-in methods and your data.",
-    backToMy: "My courses",
+    account: { title: "Account", signedInAs: "Signed in as", signedIn: "You are signed in", signOut: "Sign out" },
     appearanceTitle: "Appearance",
     appearanceLead: "How the site looks. Changes apply straight away.",
     signInTitle: "Sign-in methods",

@@ -8,12 +8,17 @@ import { authUserFrom } from "@/lib/auth";
 import type { OAuthProvider } from "@/lib/authRedirect";
 import { isOAuthProviderAvailable } from "@/lib/inAppBrowser";
 import { getSignedInAccount } from "@/lib/signedInAccount";
+import { failSoft } from "@/lib/failSoft";
+import type { Thread } from "@/lib/messages/messages";
+import { getThreads } from "@/lib/messages/messagesServer";
 import { createClient } from "@/lib/supabase/server";
 import { getThemePreference } from "@/lib/themePreferenceServer";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
+import { MyTabs } from "../MyTabs";
+import { AccountSection } from "./AccountSection";
 import { SectionHeading } from "../../SectionHeading";
 import { HERO_ENTER_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../surfaceClasses";
 import { AppearanceSettings } from "./AppearanceSettings";
@@ -49,11 +54,13 @@ export default async function MySettingsPage() {
   const [user, signedIn] = await Promise.all([authUserFrom(supabase), getSignedInAccount()]);
   if (!user || !signedIn) redirect(`/login?${new URLSearchParams({ next: "/my/settings" }).toString()}`);
 
-  const [identityResult, themePreference, langCookie, requestHeaders] = await Promise.all([
+  const [identityResult, themePreference, langCookie, requestHeaders, threads] = await Promise.all([
     supabase.auth.getUserIdentities(),
     getThemePreference(),
     cookies(),
     headers(),
+    // SHELL-039 (0251): only decides the Messages tab; a failure hides it.
+    failSoft("/my/settings: message_threads failed", () => getThreads("student"), [] as Thread[]),
   ]);
   // A failure degrades to an empty list with the reason shown, which keeps the
   // last-method guard on rather than off (the Colloquiz page's rule).
@@ -72,12 +79,11 @@ export default async function MySettingsPage() {
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
-           
-            back={{ href: "/my", label: s.backToMy }}
             // Sign-out from here returns to `/`: `/my/settings` would only
             // bounce a signed-out visitor to the sign-in page.
             account={<AccountMenu account={signedIn} lang={lang} next="/" />}
           />
+          <MyTabs current="settings" lang={lang} messages={{ show: threads.length > 0, unread: signedIn.unreadMessages }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{s.eyebrow}</span>
             <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{s.title}</h1>
@@ -87,6 +93,8 @@ export default async function MySettingsPage() {
       </section>
 
       <div className={`${LESSON_HEADER_COLUMN_CLASS} flex w-full flex-col gap-12 pb-12 pt-4 sm:gap-16 sm:pb-16`}>
+        <AccountSection account={signedIn} labels={s.account} />
+
         <section className="flex flex-col gap-6" data-settings="appearance">
           <SectionHeading display title={s.appearanceTitle} />
           <p className="-mt-3 text-sm text-muted-foreground">{s.appearanceLead}</p>

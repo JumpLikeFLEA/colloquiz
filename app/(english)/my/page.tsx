@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowRight, BookOpen, Check, ClipboardList, ExternalLink, MessageSquare, NotebookPen, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Check, ClipboardList, ExternalLink, MessageSquare, NotebookPen, PenTool, Video } from "lucide-react";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
 import { feedbackKey, type FeedbackItem } from "@/lib/learnerHome";
 import { getLearnerHome, type HomeCourseCard, type LearnerHome } from "@/lib/learnerHomeData";
@@ -29,6 +29,7 @@ import { getMyTelegramLinked } from "@/lib/telegram/status";
 import { NOTEBOOK_PATH } from "@/lib/notebook/href";
 import { AccountMenu } from "../AccountMenu";
 import { BandTopBar } from "../BandTopBar";
+import { MyTabs } from "./MyTabs";
 import { LocalDateTime } from "../LocalDateTime";
 import { SectionHeading } from "../SectionHeading";
 import { HERO_ENTER_CLASS, PAPER_CARD_CLASS, PAPER_PANEL_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../surfaceClasses";
@@ -121,6 +122,8 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             // bounce a signed-out visitor to the sign-in page.
             account={signedIn && <AccountMenu account={signedIn} lang={lang} next="/" />}
           />
+          {/* SHELL-039 (0251): the area's tabs, from the thread read above. */}
+          <MyTabs current="overview" lang={lang} messages={{ show: threads.length > 0, unread: signedIn?.unreadMessages ?? 0 }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
             <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{m.title}</h1>
@@ -142,6 +145,21 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           </div>
           <ArrowRight className="size-3.5 flex-none text-brand-text" aria-hidden="true" />
         </Link>
+
+        {/* SHELL-039 (0251): an editor's way into Studio, after the notebook. A plain <a>:
+            Studio is another root layout (0109), so the navigation is a full load anyway. */}
+        {signedIn?.isEditor && (
+          <a href="/studio" className={`${PAPER_CARD_CLASS} flex items-center gap-3 p-4 sm:p-5`} data-my="studio">
+            <span className={ICON_TILE_CLASS}>
+              <PenTool className="size-4" aria-hidden="true" />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p className="break-words text-sm font-semibold text-foreground sm:text-base">{m.studioTitle}</p>
+              <p className="break-words text-xs text-muted-foreground sm:text-sm">{m.studioLead}</p>
+            </div>
+            <ArrowRight className="size-3.5 flex-none text-brand-text" aria-hidden="true" />
+          </a>
+        )}
 
         {upNextItems.length > 0 && <UpNext lang={lang} items={upNextItems} />}
 

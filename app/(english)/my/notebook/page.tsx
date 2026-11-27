@@ -6,10 +6,14 @@ import { parseSurfaceLang, SURFACE_LANG_COOKIE } from "@/lib/alliengll/surfaceLa
 import { NOTEBOOK_PATH } from "@/lib/notebook/href";
 import { getNotebookView } from "@/lib/notebookData";
 import { getSignedInAccount } from "@/lib/signedInAccount";
+import { failSoft } from "@/lib/failSoft";
+import type { Thread } from "@/lib/messages/messages";
+import { getThreads } from "@/lib/messages/messagesServer";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { AccountMenu } from "../../AccountMenu";
 import { BandTopBar } from "../../BandTopBar";
+import { MyTabs } from "../MyTabs";
 import { HERO_ENTER_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../surfaceClasses";
 import { AddNote, EmptyNotebook, ListSection, RecordingsSection, RecordRow, SummarySection } from "./NotebookSections";
 import { notebookCopy } from "./notebookCopy";
@@ -32,7 +36,13 @@ export default async function NotebookPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { tab, course } = await searchParams;
-  const [view, signedIn, cookieStore] = await Promise.all([getNotebookView({ tab, course }), getSignedInAccount(), cookies()]);
+  // SHELL-039 (0251): the thread read only decides the Messages tab; a failure hides it.
+  const [view, signedIn, cookieStore, threads] = await Promise.all([
+    getNotebookView({ tab, course }),
+    getSignedInAccount(),
+    cookies(),
+    failSoft("/my/notebook: message_threads failed", () => getThreads("student"), [] as Thread[]),
+  ]);
   if (!view || !signedIn) redirect(`/login?${new URLSearchParams({ next: NOTEBOOK_PATH }).toString()}`);
 
   const lang = parseSurfaceLang(cookieStore.get(SURFACE_LANG_COOKIE)?.value);
@@ -46,7 +56,6 @@ export default async function NotebookPage({
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-6 pt-5 lg:pt-6`}>
           <BandTopBar
-            back={{ href: "/my", label: m.backToMy }}
             action={
               // PROG-019 (0243): the whole notebook as a text file, built on the server.
               <a
@@ -61,6 +70,7 @@ export default async function NotebookPage({
             }
             account={<AccountMenu account={signedIn} lang={lang} next="/" />}
           />
+          <MyTabs current="notebook" lang={lang} messages={{ show: threads.length > 0, unread: signedIn.unreadMessages }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
             <h1 className="text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">

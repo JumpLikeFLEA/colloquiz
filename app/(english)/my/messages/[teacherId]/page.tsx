@@ -13,6 +13,7 @@ import { MessageComposer } from "@/app/components/messages/MessageComposer";
 import { MessageThread } from "@/app/components/messages/MessageThread";
 import { AccountMenu } from "../../../AccountMenu";
 import { BandTopBar } from "../../../BandTopBar";
+import { MyTabs } from "../../MyTabs";
 import { HERO_ENTER_CLASS, PAPER_EMPTY_BOX_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../../surfaceClasses";
 import { messagesCopy } from "../messagesCopy";
 
@@ -62,7 +63,6 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
-           
             back={{ href: "/my/messages", label: m.backToList }}
             account={
               signedIn && (
@@ -70,6 +70,8 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
               )
             }
           />
+          {/* SHELL-039 (0251): Messages is current, so MyTabs shows it anyway. */}
+          <MyTabs current="messages" lang={lang} messages={{ show: threads.length > 0, unread: signedIn?.unreadMessages ?? 0 }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.title}</span>
             <h1 className="text-balance break-words font-display text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">

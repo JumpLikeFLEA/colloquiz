@@ -16,7 +16,6 @@ type MessagesStrings = {
   eyebrow: string;
   title: string;
   lead: string;
-  backToMy: string;
   backToList: string;
   listEmpty: string;
   startConversation: string;
@@ -40,7 +39,6 @@ export const messagesCopy: Record<SurfaceLang, MessagesStrings> = {
     eyebrow: "Ваш аккаунт",
     title: "Сообщения",
     lead: "Пишите преподавателю, к которому вы подключены. Переписку видите только вы двое.",
-    backToMy: "Мои курсы",
     backToList: "Все сообщения",
     listEmpty: "Вы пока не подключены ни к одному преподавателю. Когда подключитесь, сможете писать ему здесь.",
     startConversation: "Начать переписку",
@@ -78,7 +76,6 @@ export const messagesCopy: Record<SurfaceLang, MessagesStrings> = {
     eyebrow: "Your account",
     title: "Messages",
     lead: "Write to a teacher you are linked to. Only the two of you can read the conversation.",
-    backToMy: "My courses",
     backToList: "All messages",
     listEmpty: "You aren’t linked to a teacher yet. Once you are, you can write to them here.",
     startConversation: "Start a conversation",
