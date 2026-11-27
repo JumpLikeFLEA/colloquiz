@@ -5692,6 +5692,55 @@ export const CARDS = [
     ],
     notes: 'PROG-012\'s own reader requires _is_teacher whichever card lands first (0236).',
   },
+  {
+    key: 'SHELL-039',
+    title: 'Tabs across the personal area (Overview, Notebook, Messages, Settings); Sign out moves to Settings; Studio on /my',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 3520,
+    dependsOn: [],
+    goal:
+      'Owner, 2026-11-27: the account circle will become a one-tap link to /my (SHELL-040), and its menu will go. Before it can, everything the menu holds needs another home, and the /my pages need to read as one place. ' +
+      'This card adds one row of tabs to the /my pages, moves "Signed in as" and Sign out to the top of /my/settings, and gives editors a Studio row on /my. ' +
+      'AccountMenu is not touched here, so for one card its items exist twice. That is expected.',
+    acceptance: [
+      'Tabs: one new Server Component, app/(english)/my/MyTabs.tsx, with zero client JS: a <nav> named "My learning" / "Кабинет" holding plain links, Overview (/my), Notebook (/my/notebook), Messages (/my/messages) and Settings (/my/settings). EN: Overview, Notebook, Messages, Settings. RU: Обзор, Блокнот, Сообщения, Настройки. The current page’s link has aria-current="page" and the active look. Strings live in a new copy module imported only by Server Components (accountCopy’s rule, 0079 "Budget"). It is rendered under BandTopBar, above the eyebrow, on /my, /my/notebook, /my/settings, /my/messages and /my/messages/[teacherId] (Messages current there).',
+      'Look: composed from classes already in app/, tokens only, and the hex-literal guard passes. On /my/notebook the area row must read as a different level from the notebook’s own underline tabs and course chips (NotebookSections.tsx Tabs and Chips): the plan names the classes it reuses and why the three rows can’t be confused. A screenshot of /my/notebook at 360 and 1280 is looked at and described in the evidence.',
+      'Messages tab: shown when the learner has at least one row in message_threads(\'student\') (a conversation or a linked teacher, the same set /my/messages lists), or unreadMessages > 0, and always on the Messages pages themselves. /my and /my/messages reuse the read they already make. /my/notebook and /my/settings add one failSoft read, and a failure hides the tab. With unread replies the tab reads "Messages (2)" / "Сообщения (2)" from getSignedInAccount’s unreadMessages. A learner with no teacher sees three tabs, and a linked learner four: both shown.',
+      'Back links: the back link to /my is removed from /my/notebook, /my/settings and /my/messages, because Overview replaces it. /my keeps "All courses" and /my/messages/[teacherId] keeps its link to /my/messages. The notebook’s download icon stays. Strings that are no longer used are deleted, not left behind.',
+      'Settings: a first section on /my/settings, above Appearance: "Signed in as <who>" with the menu’s own fallback (email, else @username, else "You are signed in"), and a Sign out button, the same plain form POST to /auth/sign-out with next="/". Strings in settingsCopy, EN and RU. The data section stays last and set apart (0181).',
+      'Studio: an editor (getSignedInAccount’s isEditor) gets a Studio row card on /my right after the notebook card, in the same row-card classes with the PenTool icon, as a plain <a href="/studio"> (another root layout, 0109). A learner sees nothing new. Both are shown.',
+      'Tests: a MyTabs test (current link, Messages hidden and shown, the unread count, both languages) and a test that /my/settings renders the sign-out form with next=/. Measured with npm run viewport360 at 360 for every /my page, EN and RU, as a learner with no teacher, a linked learner with an unread reply, and an editor. scrollWidth/innerWidth printed. The tab row fits at 360 in RU with four tabs and no horizontal scroll; if it does not, stop and report the widths. npm run budget:local before and after, every route printed, /my and /my/notebook named. npm run check && npm test. A decision file (next free number) and a docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'Defaults set in chat, open to change at the plan checkpoint: Studio as a row on /my rather than a tab (a tab that leaves the area for another root layout would read oddly, and a fifth tab may not fit at 360 in RU), and a conditional Messages tab (most hobby learners have no teacher). ' +
+      'The landing "Welcome back" card (option D) was not chosen; do not build it.',
+  },
+  {
+    key: 'SHELL-040',
+    title: 'The account circle becomes the "My learning" / "Кабинет" pill: one tap to /my, no menu',
+    milestone: 'M4',
+    epic: 'SHELL',
+    type: 'task',
+    rank: 3521,
+    dependsOn: ['SHELL-039'],
+    goal:
+      'Owner, 2026-11-27 (option B in chat): the only way into /my was the account circle, then "My courses", two taps behind an unlabelled control. ' +
+      'The circle becomes a pill, the initial plus a visible label (EN "My learning", RU "Кабинет"), that links straight to /my. The <details> card is deleted; SHELL-039 gave each of its items a new home.',
+    acceptance: [
+      'The pill: AccountMenu becomes a plain <a href="/my"> and is renamed (for example AccountPill.tsx); tsc finds every caller. It shows the initial circle (accountInitial; the person icon with no email or username) and the label, has a tap target of at least 44px and the focus ring, and uses tokens only. It stays a Server Component with zero client JS. The unread dot stays. Accessible name: the label, plus "Unread messages: N" when N > 0. title keeps "Signed in as <who>". On /my itself it carries aria-current="page". The <details>, its full-viewport ::before layer and the card are deleted, and accountCopy keeps only what the pill uses.',
+      'Everywhere: every file `grep -rl AccountMenu app` prints (15 at 5b40815, comments included) renders or names the pill instead: the landing in both languages (the per-language pattern, 0086), the course page, the lesson page (English, 0080), the five /my pages, runs/[runId], join and invite. rg AccountMenu over app/ and lib/ then finds nothing.',
+      '360px: no bar overflows. The label stays visible on the landing and on every /my page, EN and RU. Where a bar does not fit (expected, not yet measured: the course page with toggle and back link, and the lesson band with "Back to course"), BandTopBar decides in one place what yields: first the back link shrinks to its arrow (crowded’s existing behaviour, extended to the pill), and only if that is still not enough, the pill’s label below sm. The evidence lists, per page and language, what yielded, with scrollWidth/innerWidth.',
+      'Copy, EN and RU, each string printed before and after: "My courses" / «Мои курсы» as the name of the place becomes the new label in lib/teacherLinks.ts (leave), join/joinCopy.ts (body and the "Go to My courses" CTA) and the Studio Guide (lib/studioGuide/articles.ts:189, so its test stays green). /my’s metaTitle and h1 become the label. The RU eyebrow «Личный кабинет» would then sit above «Кабинет»: the plan proposes keeping or changing it, and the owner decides at the checkpoint. A repo-wide rg for "My courses" and «Мои курсы» in app/ and lib/ is printed after, and every remaining hit is explained.',
+      'Join and invite: "Not you? Sign out from the menu at the top…" (inviteCopy EN, joinCopy EN and RU, plus inviteCopy RU if it has one) is no longer true. The line keeps its sentence and gets an inline Sign out button: the same POST to /auth/sign-out with next set to the same join or invite path, so the learner comes back to it signed out and sees its sign-in CTA. A test covers the form’s next.',
+      'Tests: AccountMenu.test.tsx is rewritten for the pill (href, label per language, the dot, the accessible name, aria-current on /my) and no menu assertion remains. A new Playwright spec in e2e/ runs on both phone engines (npm run e2e): signed in on a course page, one tap on the pill opens /my; the tabs reach Notebook and Settings; Sign out on Settings lands on / signed out, with "Log in" visible.',
+      'Measured: npm run viewport360 on every page that renders the pill, in each language the page has, light, as a learner and as an editor, with and without an unread reply. scrollWidth/innerWidth printed. A dark-theme screenshot of the pill on the landing and the course page is looked at. npm run budget:local before and after, every route: the signed-out routes print unchanged. npm run check && npm test. A decision file (next free number) that supersedes the menu parts of 0086, 0109 Decision 4, 0120, 0151 and 0181 Decision 7, and a docs/ui-decisions.md entry.',
+    ],
+    notes:
+      'Research the owner saw in chat: NN/g found hidden navigation cuts discoverability almost in half (nngroup.com/articles/hamburger-menus) and advises visible, labelled utilities in the top right (nngroup.com/articles/utility-navigation); Udemy and LinkedIn Learning put "My learning" in the always-visible top bar. ' +
+      'Sign out moves from one tap away (menu) to two (pill, Settings tab, then the button); the owner accepted that on 2026-11-27.',
+  },
 
   // ---------------------------------------------------------------- MIG ---
   // M6, separation from Colloquiz (docs/decisions/0226). No date: the owner
