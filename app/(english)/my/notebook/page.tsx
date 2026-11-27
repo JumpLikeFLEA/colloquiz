@@ -11,7 +11,7 @@ import type { Thread } from "@/lib/messages/messages";
 import { getThreads } from "@/lib/messages/messagesServer";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
 import { BandTopBar } from "../../BandTopBar";
 import { MyTabs } from "../MyTabs";
 import { HERO_ENTER_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../surfaceClasses";
@@ -68,7 +68,7 @@ export default async function NotebookPage({
                 <Download className="size-5" aria-hidden="true" />
               </a>
             }
-            account={<AccountMenu account={signedIn} lang={lang} next="/" />}
+            account={<AccountPill account={signedIn} lang={lang} />}
           />
           <MyTabs current="notebook" lang={lang} messages={{ show: threads.length > 0, unread: signedIn.unreadMessages }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>

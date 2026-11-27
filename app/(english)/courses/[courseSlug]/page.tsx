@@ -20,7 +20,7 @@ import { courseProgress, lessonRowProgress, courseTotals, firstOpenLesson } from
 // barrel-import issue; out of scope to fix here since it's a Colloquiz admin
 // route the OPS-006 budget guard doesn't cover.
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
 import { SectionHeading } from "../../SectionHeading";
 import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemindersPanel";
 import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
@@ -170,7 +170,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         progress={progress}
         completed={completed}
         anonymousFinish={anonymousFinish}
-        account={signedIn && <AccountMenu account={signedIn} lang={lang} next={`/courses/${courseSlug}`} />}
+        account={signedIn && <AccountPill account={signedIn} lang={lang} />}
         cta={
           continueLesson
             ? { href: `/courses/${courseSlug}/${continueLesson.slug}`, label: `${c.continuePrefix}${continueLesson.title}` }

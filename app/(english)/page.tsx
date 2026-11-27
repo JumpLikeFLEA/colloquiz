@@ -5,7 +5,7 @@ import { firstOpenLesson } from "@/lib/coursePageProgress";
 import { getPublishedCourses } from "@/lib/publicCatalogue";
 import { getSignedInAccount } from "@/lib/signedInAccount";
 import { parseSurfaceLang, SURFACE_LANG_COOKIE, type SurfaceLang } from "@/lib/alliengll/surfaceLang";
-import { AccountMenu } from "./AccountMenu";
+import { AccountPill } from "./AccountPill";
 import { ComicPanel } from "./ComicPanel";
 import { HeroBio } from "./HeroBio";
 import { HeroTitle } from "./HeroTitle";
@@ -59,8 +59,8 @@ export default async function EnglishLandingPage() {
   const signedIn = await getSignedInAccount();
   const account = signedIn
     ? {
-        en: <AccountMenu account={signedIn} lang="en" next="/" />,
-        ru: <AccountMenu account={signedIn} lang="ru" next="/" />,
+        en: <AccountPill account={signedIn} lang="en" />,
+        ru: <AccountPill account={signedIn} lang="ru" />,
       }
     : null;
 

@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getThemePreference } from "@/lib/themePreferenceServer";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
 import { BandTopBar } from "../../BandTopBar";
 import { MyTabs } from "../MyTabs";
 import { AccountSection } from "./AccountSection";
@@ -81,7 +81,7 @@ export default async function MySettingsPage() {
           <BandTopBar
             // Sign-out from here returns to `/`: `/my/settings` would only
             // bounce a signed-out visitor to the sign-in page.
-            account={<AccountMenu account={signedIn} lang={lang} next="/" />}
+            account={<AccountPill account={signedIn} lang={lang} />}
           />
           <MyTabs current="settings" lang={lang} messages={{ show: threads.length > 0, unread: signedIn.unreadMessages }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>

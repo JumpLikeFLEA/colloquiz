@@ -81,9 +81,9 @@ type MyStrings = {
 
 export const myCopy: Record<SurfaceLang, MyStrings> = {
   ru: {
-    metaTitle: "Мои курсы",
-    eyebrow: "Личный кабинет",
-    title: "Мои курсы",
+    metaTitle: "Кабинет",
+    eyebrow: "Ваш аккаунт",
+    title: "Кабинет",
     lead: "Ваши курсы, прогресс и отзывы преподавателя в одном месте.",
     backToCatalogue: "Все курсы",
     nextCallTitle: "Следующий созвон",
@@ -143,9 +143,9 @@ export const myCopy: Record<SurfaceLang, MyStrings> = {
     upNextCall: "Созвон",
   },
   en: {
-    metaTitle: "My courses",
+    metaTitle: "My learning",
     eyebrow: "Your account",
-    title: "My courses",
+    title: "My learning",
     lead: "Your courses, your progress and your teacher's feedback in one place.",
     backToCatalogue: "All courses",
     nextCallTitle: "Next call",

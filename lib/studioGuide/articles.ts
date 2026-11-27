@@ -186,7 +186,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       "Open **Homework** in the menu and press **Assign homework**.",
       "Choose the course and what to assign: one lesson or **The whole course**.",
       "Pick a due date if you want one, add a note, and tick who it is for: groups or single students.",
-      "Press **Assign**. Students see it on their **My courses** page and on the lesson.",
+      "Press **Assign**. Students see it on their **My learning** page and on the lesson.",
     ],
     tips: [
       "A due date is information only. Nothing locks when it passes.",

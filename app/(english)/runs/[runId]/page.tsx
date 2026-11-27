@@ -14,7 +14,7 @@ import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/colum
 import { InlineContentView } from "@/app/components/lesson-player/InlineContent";
 import { FeedbackContentView } from "@/app/components/lesson-player/blocks/FeedbackContentView";
 import { SignedAudio } from "@/app/components/voice/SignedAudio";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
 import { BandTopBar } from "../../BandTopBar";
 import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS, PAPER_PANEL_CLASS, PAPER_PILL_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../surfaceClasses";
 import { finalCopy } from "./finalCopy";
@@ -85,7 +85,7 @@ export default async function FinalScreenPage({ params }: { params: Promise<{ ru
           <BandTopBar
            
             back={{ href: `/courses/${screen.courseSlug}`, label: finalCopy.backToCourse }}
-            account={signedIn && <AccountMenu account={signedIn} lang="en" next={here} />}
+            account={signedIn && <AccountPill account={signedIn} lang="en" />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{finalCopy.eyebrow}</span>

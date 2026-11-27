@@ -4,7 +4,8 @@ import { safeNext } from '@/lib/safeNext'
 
 /**
  * SHELL-019 (docs/decisions/0086) — sign-out for the English surface. The
- * account menu posts a plain HTML form here (`next` = the page it sits on),
+ * Sign out button on /my/settings and the join/invite "Not you?" line
+ * (SHELL-040, 0252) post a plain HTML form here (`next` = where to land),
  * so signing out needs no client JS and no @supabase/ssr browser client on
  * an English route (docs/handoff.md, "Performance boundary").
  *

@@ -14,7 +14,7 @@ import { getWritingTasksContext } from "@/lib/writingTaskContext";
 import { getAskTeacherOptions } from "@/lib/askTeacher/askTeacherServer";
 import { homeworkForLesson, homeworkPillText } from "@/lib/homework/homework";
 import { getMyHomework } from "@/lib/homework/homeworkServer";
-import { AccountMenu } from "../../../AccountMenu";
+import { AccountPill } from "../../../AccountPill";
 import { LessonBand } from "./LessonBand";
 import { LessonPageClient } from "./LessonPageClient";
 import { LessonUnavailable } from "./LessonUnavailable";
@@ -95,7 +95,7 @@ export default async function LessonPage({
       estimatedMinutes={lesson.estimatedMinutes}
       itemCount={lesson.itemCount}
       homework={homework}
-      account={signedIn && <AccountMenu account={signedIn} lang="en" next={lessonPath} />}
+      account={signedIn && <AccountPill account={signedIn} lang="en" />}
     />
   );
 

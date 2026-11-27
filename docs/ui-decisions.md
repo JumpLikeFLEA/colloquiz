@@ -3448,3 +3448,27 @@ Appended to in the same commit as the change it records. Referenced from
   54/66/103/81 px); 1280/1280 on the notebook and settings. `npm run budget:local`: identical on all
   17 routes. Not measured: a phone, dark-mode screenshots. Do not fill the current tab violet, and do
   not add a fifth tab without re-measuring RU at 360.
+- The account circle is the "My learning" / «Кабинет» pill (2026-11-28, SHELL-040,
+  docs/decisions/0252), SUPERSEDING the menu parts of the SHELL-019 "Account chip" entry (0086),
+  SHELL-021's Studio link, PROG-002's "My courses" link, TCH-004's "Messages (N)" link and 0181's
+  Settings link (SHELL-039 gave each a home on the /my pages). A signed-in learner's top bar shows
+  `AccountPill`: one plain `<a href="/my">`, a 2px ink outline on `bg-card`, `rounded-full`,
+  `min-h-11`, the brand focus ring, holding the violet initial circle (the person icon with no email
+  or username) and the label. Below `sm` the circle is `size-7` and the padding tighter; the label
+  stays `text-sm`. The unread dot stays on the circle; `aria-current="page"` on /my. No `<details>`,
+  no card, zero client JS. Two top bars change shape on a phone (below `sm`), signed in:
+  - The course page (and the notebook, which carries the download action) is TWO ROWS: the wordmark
+    and the pill, then "← All courses" with its label and the EN/RU toggle (the notebook: the
+    download icon). From `sm` one row, as before.
+  - Other bars with the pill (lesson, /my, a thread, /runs, join, invite) stay one row; the back
+    link shows only its arrow below `sm`.
+  - The landing header is two rows signed in AND signed out: the wordmark and the pill or "Log in",
+    then the tagline with the toggle and "Courses". The toggle moved from beside "Log in" to beside
+    "Courses" (a change to the 0165 landing); from `sm` the one row is unchanged.
+  Join and invite: "Not you? Sign out from the menu at the top…" is now "Not you? [Sign out] and sign
+  in with the right account.", the button an inline link-styled form POST back to the same page.
+  Existing classes and tokens; no new colours. Measured at 360px in WebKit and Chromium: every top
+  bar keeps at least 13px per row (landing EN; RU 23), `npm run viewport360` 360/360 on every page
+  with the pill, EN and RU, learner, linked learner with an unread reply and editor, and on `/`
+  signed out. Not measured: a phone, an in-app browser, browser text scaling. Do not hide the
+  pill's label, and do not let a bar's row drop under 8px of slack (`e2e/accountPill.spec.ts`).

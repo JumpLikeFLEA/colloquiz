@@ -7,7 +7,8 @@ import { joinPath, type TeacherJoinPreview } from "@/lib/teacherLinks";
 import { getTeacherJoinPreview } from "@/lib/teacherLinksServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
+import { SignOutLine } from "../../SignOutLine";
 import { BandTopBar } from "../../BandTopBar";
 import { LinkStatementCard } from "../../LinkStatementCard";
 import {
@@ -65,7 +66,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
         <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
           <BandTopBar
            
-            account={signedIn && <AccountMenu account={signedIn} lang={lang} next={here} />}
+            account={signedIn && <AccountPill account={signedIn} lang={lang} />}
           />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>
@@ -152,7 +153,7 @@ function JoinState({
               {m.join}
             </button>
           </form>
-          <p className="max-w-sm text-xs text-muted-foreground">{m.otherAccount}</p>
+          <SignOutLine copy={m.otherAccount} next={here} />
         </>
       )}
     </>

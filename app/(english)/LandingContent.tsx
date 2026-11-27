@@ -43,7 +43,7 @@ import { HERO_ENTER_CLASS, OFFSET_CTA_CLASS, PAPER_LINK_CLASS } from "./surfaceC
  * no "no account" line. `heroTitle`, `heroBio` and `comic` are
  * rendered server-side once per language by page.tsx and this component picks
  * one, so their markup costs no client JS (0078's rule, `account`'s pattern
- * from 0086); `account` is the header's account chip the same way, null for a
+ * from 0086); `account` is the header's account pill the same way, null for a
  * signed-out visitor, who gets the "Log in" link. Sections below the hero fade
  * up on scroll via the CSS-only `.reveal-on-scroll` (app/globals.css), no
  * observer, no script.

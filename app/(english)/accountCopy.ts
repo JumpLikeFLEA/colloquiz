@@ -1,57 +1,37 @@
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 
 /**
- * The account menu's strings (SHELL-019, docs/decisions/0086), in both
- * languages because the menu sits on all three English pages and each page
- * picks its own language: the landing and the course page follow the EN/RU
- * toggle, the lesson page is always English (docs/decisions/0080).
+ * The account pill's strings (SHELL-040, docs/decisions/0252), in both
+ * languages because each English page picks its own: the landing and the
+ * course page follow the EN/RU toggle, the lesson page is always English
+ * (docs/decisions/0080).
  *
- * Imported only by Server Components (AccountMenu and the pages that render
+ * Imported only by Server Components (AccountPill and the pages that render
  * it), so neither language reaches a client bundle; keep it out of Client
  * Components (docs/decisions/0079, "Budget").
- *
- * New copy, pending owner/partner review.
  */
 type AccountStrings = {
-  /** Before the email: "Signed in as gleb@…". */
+  /** The pill's visible label and the name of the place it opens (/my). */
+  label: string;
+  /** The tooltip, before the email: "Signed in as gleb@…". */
   signedInAs: string;
-  /** When the session carries no email. */
+  /** The tooltip when the session carries no email or username. */
   signedIn: string;
-  signOut: string;
-  /** The link to the learner home at /my (PROG-002, docs/decisions/0120). */
-  myCourses: string;
-  /** The editor-only link to /studio (SHELL-021). Studio's own chrome is
-   * English (docs/decisions/0109), and "Studio" is its name, so both
-   * languages use it. */
-  studio: string;
-  /** The link to /my/messages, shown only while a teacher reply is unread
-   * (TCH-004, docs/decisions/0151): "Messages (2)". */
-  messages: string;
-  /** The chip's accessible name when there are unread replies: "Unread messages: 2". */
+  /** Added to the accessible name while a reply is unread: "Unread messages: 2". */
   unreadLabel: string;
-  /** The link to /my/settings (docs/decisions/0181). */
-  settings: string;
 };
 
 export const accountCopy: Record<SurfaceLang, AccountStrings> = {
   ru: {
+    label: "Кабинет",
     signedInAs: "Вы вошли как",
     signedIn: "Вы вошли в аккаунт",
-    signOut: "Выйти",
-    myCourses: "Мои курсы",
-    studio: "Studio",
-    messages: "Сообщения",
     unreadLabel: "Непрочитанные сообщения:",
-    settings: "Настройки",
   },
   en: {
+    label: "My learning",
     signedInAs: "Signed in as",
     signedIn: "You are signed in",
-    signOut: "Sign out",
-    myCourses: "My courses",
-    studio: "Studio",
-    messages: "Messages",
     unreadLabel: "Unread messages:",
-    settings: "Settings",
   },
 };

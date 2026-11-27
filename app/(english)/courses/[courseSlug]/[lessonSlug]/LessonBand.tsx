@@ -24,7 +24,7 @@ import { HERO_ENTER_CLASS, PAPER_PILL_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "
  * (the 0078 Decision 5 pattern). The paid "not_available" state renders
  * the same band (D8), which is why the lesson-specific fields are plain
  * props rather than a `PublicLesson`. `account` is the signed-in learner's
- * `AccountMenu` (SHELL-019, docs/decisions/0086), English like the rest of
+ * `AccountPill` (SHELL-040, docs/decisions/0252), English like the rest of
  * the lesson chrome; null for a signed-out visitor.
  */
 export function LessonBand({

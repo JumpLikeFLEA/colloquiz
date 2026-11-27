@@ -1,6 +1,6 @@
 /**
  * SHELL-019 (docs/decisions/0086) — the letter shown in the English
- * surface's account chip: the first character of the signed-in learner's
+ * surface's account pill (SHELL-040): the first character of the signed-in learner's
  * email, upper-cased. Null when there is nothing usable (no email in the
  * JWT, which a future non-email sign-in such as Telegram may produce), so
  * the chip falls back to a generic person icon instead of a blank circle.

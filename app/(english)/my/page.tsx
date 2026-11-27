@@ -27,7 +27,7 @@ import { TelegramRemindersPanel } from "@/app/components/telegram/TelegramRemind
 import { telegramPanelCopy } from "@/app/components/telegram/telegramCopy";
 import { getMyTelegramLinked } from "@/lib/telegram/status";
 import { NOTEBOOK_PATH } from "@/lib/notebook/href";
-import { AccountMenu } from "../AccountMenu";
+import { AccountPill } from "../AccountPill";
 import { BandTopBar } from "../BandTopBar";
 import { MyTabs } from "./MyTabs";
 import { LocalDateTime } from "../LocalDateTime";
@@ -120,7 +120,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             back={{ href: "/#catalogue", label: m.backToCatalogue }}
             // Sign-out from here returns to `/`: `/my` itself would only
             // bounce a signed-out visitor to the sign-in page.
-            account={signedIn && <AccountMenu account={signedIn} lang={lang} next="/" />}
+            account={signedIn && <AccountPill account={signedIn} lang={lang} current />}
           />
           {/* SHELL-039 (0251): the area's tabs, from the thread read above. */}
           <MyTabs current="overview" lang={lang} messages={{ show: threads.length > 0, unread: signedIn?.unreadMessages ?? 0 }} />
@@ -304,7 +304,7 @@ function localeFor(lang: SurfaceLang): "ru-RU" | "en-GB" {
 }
 
 // Leave is a native <details> with a confirm button inside, so the step is
-// confirmed with no client JS (the AccountMenu <details> precedent,
+// confirmed with no client JS (the former account menu's <details> precedent,
 // docs/decisions/0086). The button posts a plain form to
 // /api/teacher-links/leave.
 function TeacherRow({ lang, teacher }: { lang: SurfaceLang; teacher: MyTeacher }) {

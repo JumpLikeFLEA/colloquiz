@@ -1,3 +1,4 @@
+import type { SignOutLineCopy } from "../../SignOutLine";
 import type { SurfaceLang } from "@/lib/alliengll/surfaceLang";
 
 /**
@@ -16,7 +17,8 @@ type JoinStrings = {
   signedOutCta: string;
   joiningAs: string;
   joiningSignedIn: string;
-  otherAccount: string;
+  /** "Not you? [Sign out] and sign in…": the button signs out and returns here (SHELL-040). */
+  otherAccount: SignOutLineCopy;
   join: string;
   alreadyLinked: { title: string; body: string };
   self: { title: string; body: string };
@@ -35,11 +37,11 @@ export const joinCopy: Record<SurfaceLang, JoinStrings> = {
     signedOutCta: "Sign in or create an account",
     joiningAs: "You’ll link as",
     joiningSignedIn: "You’ll link with the account you’re signed in to.",
-    otherAccount: "Not you? Sign out from the menu at the top and sign in with the right account.",
+    otherAccount: { before: "Not you?", signOut: "Sign out", after: "and sign in with the right account." },
     join: "Join",
     alreadyLinked: {
       title: "You’re already linked",
-      body: "This account is already linked to this teacher. You can leave at any time in My courses.",
+      body: "This account is already linked to this teacher. You can leave at any time in My learning.",
     },
     self: {
       title: "This is your own student link",
@@ -49,7 +51,7 @@ export const joinCopy: Record<SurfaceLang, JoinStrings> = {
       title: "This link isn’t valid",
       body: "Check that you opened the whole link, or ask your teacher for a new one. A teacher’s link stops working when they replace it.",
     },
-    myCourses: "Go to My courses",
+    myCourses: "Go to My learning",
     home: "Go to the home page",
     back: "All courses",
   },
@@ -61,11 +63,11 @@ export const joinCopy: Record<SurfaceLang, JoinStrings> = {
     signedOutCta: "Войти или создать аккаунт",
     joiningAs: "Вы подключитесь как",
     joiningSignedIn: "Вы подключитесь с аккаунтом, в который вошли.",
-    otherAccount: "Это не вы? Выйдите из аккаунта в меню сверху и войдите в нужный.",
+    otherAccount: { before: "Это не вы?", signOut: "Выйдите", after: "и войдите в нужный аккаунт." },
     join: "Подключиться",
     alreadyLinked: {
       title: "Вы уже подключены",
-      body: "Этот аккаунт уже подключён к этому преподавателю. Отключиться можно в любой момент в разделе «Мои курсы».",
+      body: "Этот аккаунт уже подключён к этому преподавателю. Отключиться можно в любой момент в разделе «Кабинет».",
     },
     self: {
       title: "Это ваша собственная ссылка для учеников",
@@ -75,7 +77,7 @@ export const joinCopy: Record<SurfaceLang, JoinStrings> = {
       title: "Эта ссылка не работает",
       body: "Проверьте, что открыли ссылку целиком, или попросите у преподавателя новую. Ссылка перестаёт работать, когда преподаватель заменяет её.",
     },
-    myCourses: "Перейти в «Мои курсы»",
+    myCourses: "Перейти в «Кабинет»",
     home: "На главную",
     back: "Все курсы",
   },

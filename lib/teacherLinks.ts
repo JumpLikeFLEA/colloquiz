@@ -94,7 +94,7 @@ export const linkStatement: Record<"en" | "ru", LinkStatement> = {
       "put you in private groups (their own labels, which you aren’t shown) and assign you homework",
     ],
     cannot: "They can’t see your answers in other courses, your quiz results or anything else in your account.",
-    leave: "You can leave at any time in My courses. Then they can no longer see your answers or scores.",
+    leave: "You can leave at any time in My learning. Then they can no longer see your answers or scores.",
   },
   ru: {
     lead: "Если вы подключитесь, {teacher} сможет:",
@@ -106,7 +106,7 @@ export const linkStatement: Record<"en" | "ru", LinkStatement> = {
       "добавлять вас в личные группы (это его пометки, вам они не показываются) и задавать домашние задания",
     ],
     cannot: "Ответы в других курсах, результаты квизов и остальное в вашем аккаунте преподаватель не видит.",
-    leave: "Отключиться можно в любой момент в разделе «Мои курсы». После этого преподаватель больше не видит ваши ответы и результаты.",
+    leave: "Отключиться можно в любой момент в разделе «Кабинет». После этого преподаватель больше не видит ваши ответы и результаты.",
   },
 };
 

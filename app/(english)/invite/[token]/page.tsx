@@ -5,7 +5,8 @@ import { invitePath, type InvitePreview } from "@/lib/runInvites";
 import { getInvitePreview } from "@/lib/runInvitesServer";
 // Direct paths, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_READING_FRAME_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
+import { SignOutLine } from "../../SignOutLine";
 import { BandTopBar } from "../../BandTopBar";
 import { LinkStatementCard } from "../../LinkStatementCard";
 import {
@@ -62,7 +63,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     <main className="grid-paper flex flex-1 flex-col" data-invite-state={preview.state}>
       <section>
         <div className={`${LESSON_READING_FRAME_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
-          <BandTopBar account={signedIn && <AccountMenu account={signedIn} lang="en" next={here} />} />
+          <BandTopBar account={signedIn && <AccountPill account={signedIn} lang="en" />} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{inviteCopy.eyebrow}</span>
             {preview.state === "not_found" ? (
@@ -164,7 +165,7 @@ function InviteState({
             {inviteCopy.pending.join}
           </button>
         </form>
-        <p className="max-w-sm text-xs text-muted-foreground">{inviteCopy.pending.otherAccount}</p>
+        <SignOutLine copy={inviteCopy.pending.otherAccount} next={here} />
       </>
     );
   }

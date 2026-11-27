@@ -9,7 +9,7 @@ import { getThreads } from "@/lib/messages/messagesServer";
 import { threadPath } from "@/lib/messages/messages";
 // Direct path, not the lesson-player barrel (docs/decisions/0059).
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
-import { AccountMenu } from "../../AccountMenu";
+import { AccountPill } from "../../AccountPill";
 import { BandTopBar } from "../../BandTopBar";
 import { MyTabs } from "../MyTabs";
 import {
@@ -53,7 +53,7 @@ export default async function MyMessagesPage() {
     <main className="grid-paper flex-1">
       <section>
         <div className={`${LESSON_HEADER_COLUMN_CLASS} relative flex flex-col gap-8 pb-8 pt-5 sm:pb-10 lg:pt-6`}>
-          <BandTopBar account={<AccountMenu account={signedIn} lang={lang} next="/" />} />
+          <BandTopBar account={<AccountPill account={signedIn} lang={lang} />} />
           <MyTabs current="messages" lang={lang} messages={{ show: threads.length > 0, unread: signedIn.unreadMessages }} />
           <div className={`${HERO_ENTER_CLASS} flex flex-col items-start gap-3`}>
             <span className={PAPER_PILL_HIGHLIGHT_CLASS}>{m.eyebrow}</span>

@@ -156,8 +156,10 @@ The learner home
 (PROG-002, docs/decisions/0120) lives on the English surface at `/my`,
 under that surface's budget, reusing Studio's components but not its
 shell: the learner's courses with the two progress numbers, the next call
-for an extended enrolee, and the feedback they received. It is linked
-from the account menu and needs a sign-in. Beside it, `/my/settings`
+for an extended enrolee, and the feedback they received. A signed-in
+learner reaches it in one tap from the "My learning" / «Кабинет» pill in
+every English top bar (SHELL-040, docs/decisions/0252, which replaced the
+account menu), and it needs a sign-in. Beside it, `/my/settings`
 (owner, 2026-10-19, docs/decisions/0181) carries the theme, sign-in methods,
 data export and account deletion for an English learner, so the privacy
 policy's "Settings › Data and privacy" exists on this surface too. Name,

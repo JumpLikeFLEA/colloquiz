@@ -11,7 +11,7 @@ import { PEER_ID_PATTERN } from "@/lib/messages/messages";
 import { LESSON_HEADER_COLUMN_CLASS } from "@/app/components/lesson-player/columnLayout";
 import { MessageComposer } from "@/app/components/messages/MessageComposer";
 import { MessageThread } from "@/app/components/messages/MessageThread";
-import { AccountMenu } from "../../../AccountMenu";
+import { AccountPill } from "../../../AccountPill";
 import { BandTopBar } from "../../../BandTopBar";
 import { MyTabs } from "../../MyTabs";
 import { HERO_ENTER_CLASS, PAPER_EMPTY_BOX_CLASS, PAPER_PILL_HIGHLIGHT_CLASS } from "../../../surfaceClasses";
@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
  *
  * Order matters: the messages are read first (so "New" can be shown), then the
  * thread is marked read, and only THEN is getSignedInAccount first called,
- * because it caches the unread count for the account chip's dot for the rest
+ * because it caches the unread count for the account pill's dot for the rest
  * of the request (lib/signedInAccount.ts).
  */
 export default async function MyMessageThreadPage({ params }: { params: Promise<{ teacherId: string }> }) {
@@ -66,7 +66,7 @@ export default async function MyMessageThreadPage({ params }: { params: Promise<
             back={{ href: "/my/messages", label: m.backToList }}
             account={
               signedIn && (
-                <AccountMenu account={signedIn} lang={lang} next="/" />
+                <AccountPill account={signedIn} lang={lang} />
               )
             }
           />

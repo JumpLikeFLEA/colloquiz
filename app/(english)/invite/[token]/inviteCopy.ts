@@ -23,7 +23,8 @@ export const inviteCopy = {
     /** Followed by the learner's email. */
     joiningAs: "You’ll join as",
     joiningSignedIn: "You’ll join with the account you’re signed in to.",
-    otherAccount: "Not you? Sign out from the menu at the top and sign in with the right account.",
+    /** "Not you? [Sign out] and sign in…": the button signs out and returns here (SHELL-040). */
+    otherAccount: { before: "Not you?", signOut: "Sign out", after: "and sign in with the right account." },
     join: "Join the course",
   },
   alreadyEnrolled: {

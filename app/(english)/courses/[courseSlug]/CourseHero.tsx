@@ -41,8 +41,8 @@ import { courseCopy } from "./courseCopy";
  *
  * The top bar carries the EN/RU toggle shared with the landing page
  * (docs/decisions/0080); every string here comes from `courseCopy[lang]`.
- * `account` is the signed-in learner's `AccountMenu` (SHELL-019,
- * docs/decisions/0086), null for a signed-out visitor.
+ * `account` is the signed-in learner's `AccountPill` (SHELL-040,
+ * docs/decisions/0252), null for a signed-out visitor.
  */
 export function CourseHero({
   lang,
