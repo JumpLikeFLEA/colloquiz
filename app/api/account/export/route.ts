@@ -4,6 +4,7 @@ import { authUserFrom } from "@/lib/auth";
 import { ACHIEVEMENTS } from "@/lib/achievements";
 import { buildExportPayload, exportFilename, type AuthorSeatExportRow, type CalendarFeedExportRow, type NotebookExport, type TelegramLinkExportRow, type VoiceAnalysisExportRow, type VoiceSubmissionRow, type WritingSubmissionRow } from "@/lib/accountExport";
 import { VOICE_BUCKET } from "@/lib/voice/recording";
+import { readAccountExportSections } from "@/lib/accountExportReads";
 
 /**
  * GET /api/account/export — the caller's own data, as a downloadable JSON file.
@@ -18,8 +19,9 @@ import { VOICE_BUCKET } from "@/lib/voice/recording";
  * the size of the catalogue, and results at one row per quiz taken. There is no
  * join fan-out and no per-row work. Queuing this to a job runner would add a
  * store, a status endpoint and a delivery mechanism to save a few hundred
- * milliseconds. If results ever grow past what one response can carry, the
- * honest fix is pagination or a job — not a bigger timeout.
+ * milliseconds. PostgREST cuts one response at max_rows without an error, so
+ * every set is read in pages (lib/accountExportReads.ts, OPS-044,
+ * docs/decisions/0250).
  */
 export async function GET() {
   try {
@@ -65,114 +67,12 @@ export async function GET() {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    const [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes, notebookRes] =
-      await Promise.all([
-        supabase
-          .from("profiles")
-          .select(
-            "id, display_name, full_name, city, avatar_url, role, is_author, total_xp, current_streak, longest_streak, last_quiz_at, leaderboard_opt_out, created_at",
-          )
-          .eq("id", user.id)
-          .single(),
-        supabase
-          .from("results")
-          .select(
-            "id, quiz_id, mode, score, total_questions, correct, tag_breakdown, wrong_question_ids, grading_type, time_taken, taken_at",
-          )
-          .eq("user_id", user.id)
-          .order("taken_at", { ascending: false }),
-        supabase
-          .from("user_achievements")
-          .select("achievement_id, unlocked_at")
-          .eq("user_id", user.id)
-          .order("unlocked_at", { ascending: false }),
-        supabase
-          .from("group_members")
-          .select("group_id, role, created_at, groups(name, description, created_at)")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase.rpc("get_my_duels"),
-        supabase
-          .from("lesson_attempts")
-          .select("id, lesson_version_id, block_id, earned, possible, response, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("signup_acquisitions")
-          .select("course_id, source, created_at, courses(slug, title)")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("lesson_opens")
-          .select("lesson_id, first_opened_at, last_opened_at, lessons(slug, title, courses(slug, title))")
-          .eq("user_id", user.id)
-          .order("last_opened_at", { ascending: false }),
-        supabase
-          .from("course_entitlements")
-          .select("course_id, granted_at, source, source_ref, revoked_at, courses(slug, title)")
-          .eq("user_id", user.id)
-          .order("granted_at", { ascending: false }),
-        supabase
-          .from("run_enrolments")
-          .select("id, run_id, tier, enrolled_at, revoked_at, course_runs(title, starts_at, ends_at, courses(slug, title))")
-          .eq("user_id", user.id)
-          .order("enrolled_at", { ascending: false }),
-        // COH-003: run_invites has no grants; this function returns the
-        // caller's own claimed invites only (059).
-        supabase.rpc("my_claimed_run_invites"),
-        // VOICE-004: own takes, and only PUBLISHED feedback (060's policies).
-        supabase
-          .from("voice_submissions")
-          .select(
-            "id, lesson_id, block_id, lesson_version_id, object_name, content_type, size_bytes, submitted_at, purged_at, lessons(slug, title, courses(slug, title)), voice_feedback(body, published_at, updated_at)",
-          )
-          .eq("user_id", user.id)
-          .order("submitted_at", { ascending: false }),
-        // COH-008: the author's final comment per enrolment, PUBLISHED only
-        // (061's owner policy; the filter also keeps an editor's own drafts out).
-        supabase
-          .from("run_final_comments")
-          .select("enrolment_id, run_id, body, published_at, updated_at, course_runs(title, starts_at, ends_at), courses(slug, title)")
-          .eq("user_id", user.id)
-          .not("published_at", "is", null)
-          .order("published_at", { ascending: false }),
-        // TCH-001: links the caller is the student in, ended ones too (076).
-        supabase.rpc("my_teacher_links"),
-        // TCH-002: names of the groups a teacher put the caller in (077).
-        supabase.rpc("my_group_memberships"),
-        // TCH-004: conversations the caller is the student in (079).
-        supabase.rpc("my_conversations_export"),
-        // TCH-005: homework that applies to the caller (080).
-        supabase.rpc("my_homework_export"),
-        // TCH-007: the caller's own author seat, if any (082).
-        supabase.rpc("my_author_seat_export"),
-        // COH-016: whether the caller has a calendar feed address (086). Never the address.
-        supabase.rpc("calendar_feed_status"),
-        // COH-010: the caller's own Telegram reminders link, if any (090).
-        supabase.rpc("my_telegram_link"),
-        // VOICE-016: the caller's own transcripts and AI analyses, withdrawn ones too (098).
-        supabase.rpc("my_voice_analyses_export"),
-        // WRITE-005: own written answers, and only PUBLISHED feedback (109's policies). Strict like
-        // every other section, so this ships only once 109 is on hosted (0225 Decision 14).
-        supabase
-          .from("writing_submissions")
-          .select(
-            "id, lesson_id, block_id, lesson_version_id, enrolment_id, body, submitted_at, updated_at, lessons(slug, title), courses(slug, title), writing_feedback(body, published_at, updated_at)",
-          )
-          .eq("user_id", user.id)
-          .order("submitted_at", { ascending: false }),
-        // PROG-012: the caller's notebook, one JSON value (112). Strict like every other section,
-        // so this ships only once 112 is on hosted.
-        supabase.rpc("my_notebook"),
-      ]);
-
-    // A partial export is worse than none: the user would have no way to tell a
-    // genuinely empty section from a section that failed to load.
-    const failed = [profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes, notebookRes]
-      .find(r => r.error);
-    if (failed?.error) {
-      return NextResponse.json({ error: failed.error.message }, { status: 500 });
+    // Every set is read in pages past PostgREST's max_rows (OPS-044, docs/decisions/0250).
+    const sections = await readAccountExportSections(supabase, user.id);
+    if (!sections.ok) {
+      return NextResponse.json({ error: sections.message }, { status: 500 });
     }
+    const { profileRes, resultsRes, achievementsRes, membershipsRes, duelsRes, lessonAttemptsRes, acquisitionRes, lessonOpensRes, entitlementsRes, enrolmentsRes, invitesRes, voiceRes, finalCommentsRes, teacherLinksRes, teacherGroupsRes, conversationsRes, homeworkRes, authorSeatRes, calendarFeedRes, telegramLinkRes, voiceAnalysesRes, writingRes, notebookRes } = sections;
 
     // my_notebook() always returns both lists; anything else is a failed section, not an empty one.
     const notebook = notebookRes.data as NotebookExport | null;
