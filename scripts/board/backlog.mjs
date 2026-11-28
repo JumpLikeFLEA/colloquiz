@@ -5677,6 +5677,29 @@ export const CARDS = [
       'Not built here: a chip next to the selection (0253’s alternative, if feedback asks for it), pre-filling the strip button’s dialog from a selection, and saving before sign-up. ' +
       'Copy is English (lesson chrome, 0080 D5), new, pending owner/partner review. The bar’s strings ship on the signed-in first load in a small module of their own; the edit mode’s strings stay in the dialog’s lazy chunk.',
   },
+  {
+    key: 'PROG-024',
+    title: 'Save chip under the selection, replacing the bar under the strip; selection colour on the English surface',
+    milestone: 'M4',
+    epic: 'PROG',
+    type: 'task',
+    rank: 3495,
+    dependsOn: ['PROG-023'],
+    goal:
+      'The Save control appears under the learner’s selection, as browser extensions do, instead of in a bar under the lesson strip, which the owner saw lag on a phone with a selection near the top of the screen (owner, 2026-11-28, docs/decisions/0255). The old bar is removed, not fixed. ' +
+      'Selected text on the English surface is drawn in the app’s light violet instead of the browser’s default blue. Everything else PROG-023 built (the phrase rule, the watcher, saving, Undo, Add a note, the single dialog owner) stays as it is.',
+    acceptance: [
+      'The old mechanism removed: nothing is drawn from the strip’s action slot but NotebookStripButton’s button, and LessonStrip.notebook.test.tsx asserts the button is the strip row’s last child again (PROG-022’s shape). LessonProgressStrip and LessonFrame do not change.',
+      'The chip: placed under the end of the selection in page coordinates (rendered outside the lesson tree, positioned from the selection’s last client rect plus the scroll offset), so it moves with the text when the page scrolls, with no scroll listener. Recomputed on a selection change and on resize. A gap below the selection leaves room for the phone’s selection handle; the decision file gives the figure and says it is not checked against a real handle. Kept at least 16px inside the viewport at 360px; flipped above the selection when below would end past the bottom of the viewport. After a tap clears the highlight it stays where the selection was. It is still excluded from counting selections. States, refusals, the 8 s timer, the one dialog owner, focus return and the saved-phrase rule are PROG-023’s, unchanged.',
+      'Selection colour: a ::selection rule scoped to the English surface (surface-alina), background --brand-subtle and text --brand-text, both existing tokens with .dark values; no new token or hex literal. The highlight’s height is not changed (it is the line box). Computed values printed in both engines, light and dark, with a screenshot of a selected line in each. iOS Safari, which may keep the system tint, is listed as not tested. Studio and Colloquiz keep the browser default.',
+      'e2e (OPS-045) in both projects at 360 with touch, selection made from code (the long-press is not emulated): every PROG-023 case still passes against the chip; the chip’s top is within the stated gap under the selection’s bottom; inside the viewport for a selection at the left edge, at the right edge and on the last line above the viewport bottom (flipped above, measured); still attached to the same text after a scroll (offset unchanged, printed); signed out, no chip but the violet selection (the colour is CSS, for everyone), with the signed-in run as the control for the chip.',
+      'Budgets: npm run budget:local before and after; the anonymous free lesson’s bytes unchanged (before and after in B, a change traced as in 0254) and every other route printed; the signed-in free lesson with 0254’s probe. No budget is raised: a figure over a limit is a stop.',
+      'Measured at 360 in every chip state (ready, too long, saving, saved, removed, each refusal, flipped above) with scrollWidth/innerWidth printed, and once at 1280. A docs/ui-decisions.md entry superseding PROG-023’s Save bar entry. npm run check && npm test. A decision file.',
+    ],
+    notes:
+      'Not fixed: the lag of the bar under the strip; it is removed (owner, 2026-11-28). Not built here: pre-filling the strip dialog from a selection, saving before sign-up. ' +
+      'Hypothesis, unverified: the phones draw their own selection menu above the selection, which is why the chip goes below.',
+  },
 
   // Found in PROG-011 (docs/decisions/0236, "Found on the way"), filed by the owner 2026-11-25.
   {
