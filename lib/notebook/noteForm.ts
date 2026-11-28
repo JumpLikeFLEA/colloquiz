@@ -61,3 +61,13 @@ export function noteRpcOutcome(data: unknown, error: { code?: string } | null): 
   const code = d?.error;
   return { ok: false, error: typeof code === "string" && KNOWN.has(code as NoteError) ? (code as NoteError) : "failed" };
 }
+
+/**
+ * The new row's id from `notebook_add_note`'s `{ ok: true, id }` (112:535), or null. PROG-023
+ * (docs/decisions/0254) needs it for Undo and Add a note; a success without a readable id is
+ * treated as failed by its caller, since nothing could then be undone.
+ */
+export function noteAddedId(data: unknown): string | null {
+  const id = (data as { id?: unknown } | null)?.id;
+  return typeof id === "string" && id !== "" ? id : null;
+}

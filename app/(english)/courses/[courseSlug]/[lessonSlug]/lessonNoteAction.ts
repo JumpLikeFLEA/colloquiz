@@ -49,3 +49,30 @@ export async function addLessonNote(prev: NoteActionState, form: FormData): Prom
   }
   return { error: null, done: prev.done + 1 };
 }
+
+/**
+ * PROG-023 (docs/decisions/0254) — "Add a note" on a phrase the Save bar just saved: the same
+ * dialog's edit mode, `notebook_edit_note` (112:541) under the learner's session. No refresh, for
+ * the same reason as above.
+ */
+export async function editLessonNote(prev: NoteActionState, form: FormData): Promise<NoteActionState> {
+  const id = str(form, "id");
+  const phrase = str(form, "phrase");
+  const note = str(form, "note");
+  const early = noteFormError(phrase, note);
+  if (early) return { error: early, done: prev.done };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "unauthenticated", done: prev.done };
+
+  const { data, error } = await supabase.rpc("notebook_edit_note", { p_id: id, p_phrase: phrase, p_note: note });
+  const outcome = noteRpcOutcome(data, error);
+  if (!outcome.ok) {
+    if (outcome.error === "failed") console.error("lesson: editing a notebook note failed", error?.message ?? data);
+    return { error: outcome.error, done: prev.done };
+  }
+  return { error: null, done: prev.done + 1 };
+}

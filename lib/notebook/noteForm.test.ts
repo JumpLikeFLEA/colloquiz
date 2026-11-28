@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NOTE_MAX, noteFormError, noteLength, noteRpcOutcome, PHRASE_MAX, trimNote } from "./noteForm";
+import { NOTE_MAX, noteAddedId, noteFormError, noteLength, noteRpcOutcome, PHRASE_MAX, trimNote } from "./noteForm";
 
 describe("noteFormError, 112's limits mirrored", () => {
   it("an empty or blank phrase is refused, whatever the note", () => {
@@ -61,5 +61,15 @@ describe("noteRpcOutcome", () => {
   it("the cap is the trigger's PT429; any other error is failed", () => {
     expect(noteRpcOutcome(null, { code: "PT429" })).toEqual({ ok: false, error: "note_cap" });
     expect(noteRpcOutcome(null, { code: "42501" })).toEqual({ ok: false, error: "failed" });
+  });
+});
+
+describe("noteAddedId", () => {
+  it("reads the new row's id [positive control beside each null]", () => {
+    expect(noteAddedId({ ok: true, id: "8c1d" })).toBe("8c1d");
+    expect(noteAddedId({ ok: true })).toBeNull();
+    expect(noteAddedId({ ok: true, id: "" })).toBeNull();
+    expect(noteAddedId({ ok: true, id: 3 })).toBeNull();
+    expect(noteAddedId(null)).toBeNull();
   });
 });
