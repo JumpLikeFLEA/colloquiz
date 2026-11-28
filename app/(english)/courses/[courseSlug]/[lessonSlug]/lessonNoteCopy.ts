@@ -34,7 +34,7 @@ export const lessonNoteCopy = {
       ...saveRefusals,
     },
   } satisfies NoteFormFieldStrings,
-  /** PROG-023 (docs/decisions/0254): "Add a note" on a phrase the Save bar just saved. */
+  /** PROG-023 (docs/decisions/0254): "Add a note" on a phrase the Save chip (PROG-024, 0256) just saved. */
   edit: {
     title: "Add a note",
     lead: "Add a note to the phrase you saved, or correct the phrase.",

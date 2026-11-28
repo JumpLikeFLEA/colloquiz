@@ -3500,3 +3500,24 @@ Appended to in the same commit as the change it records. Referenced from
   measured: a phone, a real long-press, an in-app browser, dark mode. Do not move the bar into
   LessonProgressStrip, and do not give it its own dialog: the timer would hide it mid-note (0254
   Decision 4).
+- Save chip under the selection; selection in violet (2026-11-28, PROG-024, docs/decisions/0255 +
+  0256), SUPERSEDING the PROG-023 "Save bar under the lesson strip" entry's placement and look (its
+  states, wording, 8 s timer, edit dialog and signed-in-only rule stand). The bar is removed: the
+  strip's action slot holds only the "Add a phrase" button again, and LessonProgressStrip and
+  LessonFrame are unchanged. The Save control is a chip portalled to `<body>`, `absolute`, `z-30`,
+  placed (`lib/notebook/chipPlacement`) 28px under the selection's last line, centred on its end and
+  kept 16px inside the viewport; flipped 28px above the first line when below would end past the
+  viewport bottom. It moves with the text on scroll (document coordinates, no scroll listener) and,
+  after a tap clears the highlight, stays where the selection was. Ready and saving: the violet button
+  alone, now with `shadow-offset`. Every other state: a `rounded-xl border-2 border-ink bg-card p-1
+  shadow-offset` panel; saved is two rows (status and X, then Add a note, Undo, Notebook). Width
+  `w-max`, at most `min(22rem, 100vw - 2rem)`. Separately, on the English surface for everyone,
+  selected text is `--brand-subtle` behind `--brand-text` (`.surface-alina ::selection`); Studio and
+  Colloquiz keep the browser's. Existing classes and tokens; no new colours. Measured at 360 in WebKit
+  and Chromium with touch: `scrollWidth/innerWidth` 360/360 in hidden, ready, left edge, right edge,
+  flipped, too long, saving, saved, removed, each refusal and the edit dialog; 1280/1280 saved;
+  `::selection` computed `rgb(242, 240, 252)` / `rgb(91, 63, 217)` light and `rgb(43, 35, 81)` /
+  `rgb(165, 149, 234)` dark in both engines. `npm run budget:local` identical on every route. Not
+  measured: a phone, a real long-press, the phone's own handles and menu, iOS's selection tint. Do
+  not put the control back in the strip, and do not attach the chip to the strip or the lesson tree:
+  in `<body>` is what makes it follow the text without a scroll listener.

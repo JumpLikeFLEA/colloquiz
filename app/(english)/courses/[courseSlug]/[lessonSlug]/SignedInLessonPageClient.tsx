@@ -44,7 +44,7 @@ export function SignedInLessonPageClient({
 }
 
 /**
- * PROG-023 (docs/decisions/0254): the band and the player, as the Save bar's selection scope. A
+ * PROG-023 (docs/decisions/0254): the band and the player, as the Save chip's selection scope (PROG-024, 0256). A
  * `display: contents` box, so it lays nothing out (LessonFrame's `flex-1` still reaches the English
  * layout's column), and it lives here, so the signed-out path and LessonFrame are unchanged.
  */

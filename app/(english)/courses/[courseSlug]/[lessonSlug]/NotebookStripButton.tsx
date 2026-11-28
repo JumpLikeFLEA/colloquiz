@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { NotebookPen } from "lucide-react";
-import { SelectionSaveBar } from "./SelectionSaveBar";
+import { SelectionSaveChip } from "./SelectionSaveChip";
 
 /** Where a phrase added from this lesson is filed (notebook_add_note's lesson, 112). */
 export type LessonNoteTarget = {
@@ -22,9 +22,10 @@ export type LessonNoteTarget = {
  * with its animation and hand focus back here.
  *
  * PROG-023 (docs/decisions/0254 Decision 4): this is the dialog's one owner. The button opens it in
- * add mode; the Save bar under the strip (SelectionSaveBar) opens it in edit mode for the phrase it
- * just saved, and its idle timer waits while the dialog is open. On close focus goes back to the
- * bar's "Add a note" while the bar still shows it, else to this button.
+ * add mode; the Save chip under the selection (SelectionSaveChip, PROG-024, 0256) opens it in edit
+ * mode for the phrase it just saved, and its idle timer waits while the dialog is open. On close
+ * focus goes back to the chip's "Add a note" while the chip still shows it, else to this button.
+ * The chip is portalled to <body>, so nothing but this button is drawn in the strip's action slot.
  */
 export type NotebookDialogMode = { kind: "add" } | { kind: "edit"; id: string; phrase: string };
 const NotebookStripDialog = dynamic(() => import("./NotebookStripDialog").then((m) => m.NotebookStripDialog));
@@ -54,8 +55,9 @@ export function NotebookStripButton({ target }: { target: LessonNoteTarget }) {
       >
         <NotebookPen className="size-5" aria-hidden="true" />
       </button>
-      <SelectionSaveBar
+      <SelectionSaveChip
         target={target}
+        stripRef={buttonRef}
         dialogOpen={open}
         onAddNote={(id, phrase) => openDialog({ kind: "edit", id, phrase })}
         addNoteRef={addNoteRef}

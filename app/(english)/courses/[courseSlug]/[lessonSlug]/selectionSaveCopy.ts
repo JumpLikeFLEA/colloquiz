@@ -1,5 +1,5 @@
 /**
- * PROG-023 (docs/decisions/0254) — the Save bar's strings. English lesson chrome (docs/decisions/
+ * PROG-023 (docs/decisions/0254) — the Save chip's strings (PROG-024, 0256). English lesson chrome (docs/decisions/
  * 0080 Decision 5), no toggle. Its own small module because it ships on the signed-in learner's
  * first load; the dialog's edit-mode strings stay in lessonNoteCopy, in the dialog's lazy chunk.
  *

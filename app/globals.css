@@ -322,6 +322,17 @@
   --brand-border: #392b78;
 }
 
+/* PROG-024 (docs/decisions/0255 Decision 3, 0256): selected text on the English surface is the
+   app's light violet, not the browser's blue. Existing tokens, which the two blocks above set for
+   light and dark (--brand-text on --brand-subtle: 5.90:1 light, 5.53:1 dark, 0163). Only colours:
+   the highlight's height is the line box, left as it is. Studio and Colloquiz carry no
+   surface-alina and keep the browser's default. */
+.surface-alina ::selection,
+.surface-alina::selection {
+  background-color: var(--brand-subtle);
+  color: var(--brand-text);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -25,7 +25,7 @@ import type { LessonNoteTarget, NotebookDialogMode } from "./NotebookStripButton
  * `role="status"` line that takes focus, a link to the notebook on this course, "Add another" and
  * Close. Nothing is added to the strip.
  *
- * PROG-023 (docs/decisions/0254): an edit mode for the phrase the Save bar just saved ("Add a
+ * PROG-023 (docs/decisions/0254): an edit mode for the phrase the Save chip (PROG-024, 0256) just saved ("Add a
  * note"): the same NoteForm with the row's id and phrase and `editLessonNote`, its own title and
  * success line, and no "Add another".
  */

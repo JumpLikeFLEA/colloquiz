@@ -1,11 +1,11 @@
 /**
- * PROG-023 (docs/decisions/0254) — which text selection on a lesson page counts for the Save bar,
+ * PROG-023 (docs/decisions/0254) — which text selection on a lesson page counts for the Save chip (PROG-024, 0256),
  * and what it hands lib/notebook/selectionPhrase.
  *
  * A selection counts only when both its ends are inside the lesson scope (the `display: contents`
  * wrapper SignedInLessonPageClient draws round the band and the player) and neither is inside a
  * field, a contenteditable, a dnd-kit draggable or sortable (`aria-roledescription`), a dialog, the
- * strip or the bar.
+ * strip or the Save chip (portalled to <body>, so outside the scope anyway).
  *
  * A selection inside an input or textarea reports the field's PARENT as its node, not something
  * inside the field (measured in both engines, 0254 step 0: anchor SPAN, activeElement INPUT), so
@@ -16,9 +16,9 @@
  * the wrong ends.
  */
 export const LESSON_SCOPE_ATTR = "data-lesson-scope";
-export const SELECTION_BAR_ATTR = "data-selection-bar";
+export const SELECTION_CHIP_ATTR = "data-selection-chip";
 
-const EXCLUDED = `input, textarea, select, [contenteditable]:not([contenteditable="false"]), [aria-roledescription], [role="dialog"], [${SELECTION_BAR_ATTR}]`;
+const EXCLUDED = `input, textarea, select, [contenteditable]:not([contenteditable="false"]), [aria-roledescription], [role="dialog"], [${SELECTION_CHIP_ATTR}]`;
 /** What the phrase rule needs (lib/notebook/selectionPhrase). */
 export type LessonSelection = { text: string; before: string; after: string };
 

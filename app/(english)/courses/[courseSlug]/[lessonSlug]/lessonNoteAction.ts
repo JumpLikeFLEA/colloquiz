@@ -51,7 +51,7 @@ export async function addLessonNote(prev: NoteActionState, form: FormData): Prom
 }
 
 /**
- * PROG-023 (docs/decisions/0254) — "Add a note" on a phrase the Save bar just saved: the same
+ * PROG-023 (docs/decisions/0254) — "Add a note" on a phrase the Save chip (PROG-024, 0256) just saved: the same
  * dialog's edit mode, `notebook_edit_note` (112:541) under the learner's session. No refresh, for
  * the same reason as above.
  */

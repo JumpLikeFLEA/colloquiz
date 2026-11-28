@@ -4,7 +4,7 @@ import { noteAddedId, noteFormError, noteRpcOutcome, type NoteError } from "@/li
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * PROG-023 (docs/decisions/0253, 0254) — the Save bar's two writes, each one migration-112 RPC under
+ * PROG-023 (docs/decisions/0253, 0254) — the Save chip's two writes (the bar's until PROG-024, 0256), each one migration-112 RPC under
  * the learner's own session. Like addLessonNote (PROG-022), nothing redirects or refreshes: the
  * lesson's answers, drag positions and typed inputs stay as they are.
  *
@@ -47,7 +47,7 @@ export async function saveSelectedPhrase(phrase: unknown, lessonId: unknown): Pr
   return { ok: true, id };
 }
 
-/** Undo: the row the bar just saved. Already gone (another tab) is what the learner asked for. */
+/** Undo: the row the chip just saved. Already gone (another tab) is what the learner asked for. */
 export async function undoSelectedPhrase(id: unknown): Promise<SelectionUndoResult> {
   const supabase = await createClient();
   const {
