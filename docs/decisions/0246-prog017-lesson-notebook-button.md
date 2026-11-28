@@ -38,11 +38,11 @@ dialog, which is why it is pinned to the top of the screen.
 **Pre-filling A's form from the current text selection.** Reasoning: iOS gives a page no way to add an
 item to its own selection menu, so reading the selection at the moment of the tap competes with
 the native callout, and in-app browsers differ in how they keep a selection when focus moves.
-None of it can be shown to work without the phones. Left out of v1, not designed away.
+None of it can be shown to work without the phones. Left out of v1, not designed away. Superseded in part by 0253.
 
 **An action over selected text.** Same reasoning as the pre-fill, plus the gesture clash measured above:
 the long-press that starts a selection is the gesture that starts a drag here (TouchSensor, delay
-200). Not picked.
+200). Not picked. Superseded in part by 0253.
 
 **B. Save chips under author-marked phrases** (theory phrases, the fix in the AI feedback, an
 explanation). It needs authoring: the existing `english` inline mark tags language, not phrases
