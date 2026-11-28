@@ -50,7 +50,13 @@ describe("lesson strip — Add a phrase (PROG-022)", () => {
     render(<SignedInLessonPageClient {...common} document={[prose, exercise]} isSignedIn notebook={notebook} />);
     expect(await screen.findByRole("progressbar")).toBeTruthy();
     const button = screen.getByRole("button", { name: "Add a phrase" });
-    expect(button.parentElement?.lastElementChild).toBe(button);
+    // The last in-flow child; after it only PROG-023's Save bar, out of flow and empty until a
+    // selection (docs/decisions/0254).
+    const bar = button.parentElement?.lastElementChild;
+    expect(bar?.hasAttribute("data-selection-bar")).toBe(true);
+    expect(bar?.className).toContain("absolute");
+    expect(bar?.childElementCount).toBe(0);
+    expect(bar?.previousElementSibling).toBe(button);
   });
 
   it("signed in, no exercises: back link and button, no bar and no count", async () => {
@@ -59,6 +65,8 @@ describe("lesson strip — Add a phrase (PROG-022)", () => {
     expect(screen.getByText("Back")).toBeTruthy();
     const button = screen.getByRole("button", { name: "Add a phrase" });
     expect(screen.queryByRole("progressbar")).toBeNull();
-    expect(button.parentElement?.children.length).toBe(2);
+    // Back link, button, and the empty out-of-flow Save bar (PROG-023).
+    expect(button.parentElement?.children.length).toBe(3);
+    expect(button.nextElementSibling?.hasAttribute("data-selection-bar")).toBe(true);
   });
 });

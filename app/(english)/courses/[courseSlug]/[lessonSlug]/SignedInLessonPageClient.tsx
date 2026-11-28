@@ -7,6 +7,7 @@ import { AskTeacher } from "@/app/components/lesson-player/AskTeacher";
 import type { AskTeacherConfig } from "@/lib/askTeacher/options";
 import type { VoiceTasksContext } from "@/lib/voice/taskContext";
 import { LessonFrame, type LessonPageProps } from "./LessonFrame";
+import { LESSON_SCOPE_ATTR } from "./lessonSelection";
 import { NotebookStripButton, type LessonNoteTarget } from "./NotebookStripButton";
 
 /**
@@ -31,8 +32,28 @@ export function SignedInLessonPageClient({
   ...page
 }: LessonPageProps & { askTeacher?: AskTeacherConfig; notebook: LessonNoteTarget }) {
   const stripAction = <NotebookStripButton target={notebook} />;
-  if (!askTeacher) return <LessonFrame {...page} practiceRenderer={practiceRenderer} stripAction={stripAction} />;
-  return <AskLesson {...page} askTeacher={askTeacher} stripAction={stripAction} />;
+  return (
+    <LessonScope>
+      {askTeacher ? (
+        <AskLesson {...page} askTeacher={askTeacher} stripAction={stripAction} />
+      ) : (
+        <LessonFrame {...page} practiceRenderer={practiceRenderer} stripAction={stripAction} />
+      )}
+    </LessonScope>
+  );
+}
+
+/**
+ * PROG-023 (docs/decisions/0254): the band and the player, as the Save bar's selection scope. A
+ * `display: contents` box, so it lays nothing out (LessonFrame's `flex-1` still reaches the English
+ * layout's column), and it lives here, so the signed-out path and LessonFrame are unchanged.
+ */
+function LessonScope({ children }: { children: ReactNode }) {
+  return (
+    <div className="contents" {...{ [LESSON_SCOPE_ATTR]: "" }}>
+      {children}
+    </div>
+  );
 }
 
 /** The page with the "Ask the teacher" links (TCH-006, docs/decisions/0153). */

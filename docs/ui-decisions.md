@@ -3472,3 +3472,31 @@ Appended to in the same commit as the change it records. Referenced from
   with the pill, EN and RU, learner, linked learner with an unread reply and editor, and on `/`
   signed out. Not measured: a phone, an in-app browser, browser text scaling. Do not hide the
   pill's label, and do not let a bar's row drop under 8px of slack (`e2e/accountPill.spec.ts`).
+- Save bar under the lesson strip (2026-11-28, PROG-023, docs/decisions/0253 + 0254). For a signed-in
+  learner, selecting text in the lesson (band or player; not in a field, a drag item, a dialog, the
+  strip or the bar) shows a bar directly under the sticky strip: `absolute inset-x-0 top-full` from the
+  strip's action slot, full width, `border-b-2 border-ink bg-paper/95 backdrop-blur` (the strip's
+  look), its content in `LESSON_READING_FRAME_CLASS`. It covers the strip's 2px bottom border and
+  draws its own. LessonProgressStrip and LessonFrame are unchanged. States:
+  - ready: one 44px violet button (`bg-brand text-white border-2 border-ink rounded-xl`, the brand
+    focus ring), `BookmarkPlus`, "Save “<phrase>”" cut to one line;
+  - too long: one line, "Select up to 200 characters to save a phrase. This selection has N.", no
+    button;
+  - saving: the button disabled, "Saving…";
+  - saved: a `role="status"` line with a `text-success` check, "Saved to your notebook", then text
+    buttons Add a note and Undo (`min-h-11`, `hover:bg-accent`), a "Notebook" link
+    (`PAPER_LINK_INLINE_CLASS`) to the notebook on this course, and an X;
+  - removed: "Removed from your notebook" and the X;
+  - refused: one `text-destructive-text` line in the dialog's wording, with "Sign in again" after an
+    expired session, and Undo again after a failed undo.
+
+  A collapsed selection hides ready and too long. Saved, removed and refused stay until the X, a new
+  selection, or 8 s with neither focus nor pointer in the bar and the dialog closed. "Add a note"
+  opens the strip's dialog in an edit mode ("Add a note", "Save note", "Note saved", no "Add another")
+  and focus returns to it. Nothing redirects or refreshes. A signed-out visitor sees nothing, and the
+  anonymous free lesson reads 266,207 B (+1 B, traced to a chunk name in 0254). English lesson
+  chrome; existing classes and tokens, no new colours. Measured at 360 in WebKit and Chromium with
+  touch: `scrollWidth/innerWidth` 360/360 in every state and in the edit dialog; 1280/1280 saved. Not
+  measured: a phone, a real long-press, an in-app browser, dark mode. Do not move the bar into
+  LessonProgressStrip, and do not give it its own dialog: the timer would hide it mid-note (0254
+  Decision 4).

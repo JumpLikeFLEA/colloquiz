@@ -1,4 +1,5 @@
 import type { NoteFormFieldStrings } from "../../../my/notebook/NoteForm";
+import { saveRefusals } from "./selectionSaveCopy";
 
 /**
  * PROG-022 (docs/decisions/0248) — the lesson's "Add a phrase" dialog. English, like the rest of
@@ -29,11 +30,15 @@ export const lessonNoteCopy = {
       phrase_empty: "Write a phrase.",
       phrase_too_long: "The phrase is longer than 200 characters.",
       note_too_long: "The note is longer than 500 characters.",
-      note_cap: "You have 1,000 notes, which is the limit. Delete one in your notebook to add another.",
       not_found: "This note is no longer in your notebook.",
-      not_readable: "This lesson isn't open to you now, so the phrase wasn't saved.",
-      unauthenticated: "Your session has ended, so the phrase wasn't saved.",
-      failed: "Couldn't save. Try again.",
+      ...saveRefusals,
     },
   } satisfies NoteFormFieldStrings,
+  /** PROG-023 (docs/decisions/0254): "Add a note" on a phrase the Save bar just saved. */
+  edit: {
+    title: "Add a note",
+    lead: "Add a note to the phrase you saved, or correct the phrase.",
+    done: "Note saved",
+    save: "Save note",
+  },
 };

@@ -426,6 +426,34 @@ async function main() {
       ],
       archived: false,
     },
+    {
+      // PROG-023 (docs/decisions/0254): the Save bar's selection spec (e2e/selectionSave.spec.ts):
+      // an English sentence, a Russian line and a paragraph over 200 characters. Its own lesson,
+      // because this script publishes a lesson's document only the first time.
+      slug: "selection-lesson",
+      title: "Selection lesson",
+      description: "Text to select and save.",
+      accessLevel: "anyone",
+      ordinal: 10,
+      document: [
+        VALID_DOCUMENT[0],
+        { id: "p2", kind: "theory", type: "prose", text: [{ text: "Keep the phrase on second thought for later." }] },
+        { id: "p3", kind: "theory", type: "prose", text: [{ text: "Другими словами, не торопись." }] },
+        {
+          id: "p4",
+          kind: "theory",
+          type: "prose",
+          text: [
+            {
+              text:
+                "This paragraph is deliberately long so that selecting all of it gives more than two hundred characters, " +
+                "which is more than a notebook phrase may hold, and the Save bar asks the learner for a shorter selection instead of saving it.",
+            },
+          ],
+        },
+      ],
+      archived: false,
+    },
   ];
 
   await upsertLessons(courseId, lessons);

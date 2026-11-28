@@ -7,9 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { notebookHref } from "@/lib/notebook/href";
 import { NoteForm } from "../../../my/notebook/NoteForm";
 import { OFFSET_CTA_CLASS, OUTLINE_CTA_CLASS, PAPER_LINK_CLASS, PAPER_LINK_INLINE_CLASS } from "../../../surfaceClasses";
-import { addLessonNote } from "./lessonNoteAction";
+import { addLessonNote, editLessonNote } from "./lessonNoteAction";
 import { lessonNoteCopy as t } from "./lessonNoteCopy";
-import type { LessonNoteTarget } from "./NotebookStripButton";
+import type { LessonNoteTarget, NotebookDialogMode } from "./NotebookStripButton";
 
 /**
  * PROG-022 (docs/decisions/0248) — the "Add a phrase" dialog: Phrase, Note, where the note will be
@@ -24,15 +24,21 @@ import type { LessonNoteTarget } from "./NotebookStripButton";
  * After a save the dialog stays open on its own success state (owner, 2026-11-26, 0248): a
  * `role="status"` line that takes focus, a link to the notebook on this course, "Add another" and
  * Close. Nothing is added to the strip.
+ *
+ * PROG-023 (docs/decisions/0254): an edit mode for the phrase the Save bar just saved ("Add a
+ * note"): the same NoteForm with the row's id and phrase and `editLessonNote`, its own title and
+ * success line, and no "Add another".
  */
 export function NotebookStripDialog({
   open,
   onOpenChange,
+  mode,
   target,
   returnFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode: NotebookDialogMode;
   target: LessonNoteTarget;
   returnFocus: () => void;
 }) {
@@ -46,6 +52,7 @@ export function NotebookStripDialog({
   }, [added]);
 
   const signIn = `/login?next=${encodeURIComponent(target.lessonPath)}`;
+  const edit = mode.kind === "edit" ? mode : null;
 
   return (
     <Dialog
@@ -64,8 +71,8 @@ export function NotebookStripDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{t.title}</DialogTitle>
-          <DialogDescription>{t.lead}</DialogDescription>
+          <DialogTitle>{edit ? t.edit.title : t.title}</DialogTitle>
+          <DialogDescription>{edit ? t.edit.lead : t.lead}</DialogDescription>
         </DialogHeader>
         <p className="break-words text-sm text-muted-foreground" data-notebook="from">
           {t.from} {target.courseTitle} · {target.lessonTitle}
@@ -79,22 +86,24 @@ export function NotebookStripDialog({
               className="flex items-center gap-2 rounded-lg text-base font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <CheckCircle2 className="size-5 flex-none text-success" aria-hidden="true" />
-              {t.added}
+              {edit ? t.edit.done : t.added}
             </div>
             <Link href={notebookHref("phrases", target.courseId)} className={PAPER_LINK_CLASS}>
               {t.openNotebook}
             </Link>
             <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setFormKey((k) => k + 1);
-                  setAdded(false);
-                }}
-                className={OFFSET_CTA_CLASS}
-              >
-                {t.addAnother}
-              </button>
+              {!edit && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormKey((k) => k + 1);
+                    setAdded(false);
+                  }}
+                  className={OFFSET_CTA_CLASS}
+                >
+                  {t.addAnother}
+                </button>
+              )}
               <button type="button" onClick={() => onOpenChange(false)} className={OUTLINE_CTA_CLASS}>
                 {t.close}
               </button>
@@ -102,12 +111,15 @@ export function NotebookStripDialog({
           </div>
         ) : (
           <NoteForm
-            key={formKey}
-            strings={t.form}
-            action={addLessonNote}
-            hidden={{ lessonId: target.lessonId }}
+            key={edit ? `edit-${edit.id}` : formKey}
+            strings={edit ? { ...t.form, save: t.edit.save } : t.form}
+            action={edit ? editLessonNote : addLessonNote}
+            id={edit?.id}
+            initial={edit ? { phrase: edit.phrase, note: null } : undefined}
+            hidden={edit ? undefined : { lessonId: target.lessonId }}
             onDone={() => setAdded(true)}
-            autoFocus={formKey > 0}
+            onCancel={edit ? () => onOpenChange(false) : undefined}
+            autoFocus={edit ? false : formKey > 0}
             errorExtra={{
               unauthenticated: (
                 <>

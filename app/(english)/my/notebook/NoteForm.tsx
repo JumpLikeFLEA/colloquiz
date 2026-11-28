@@ -39,6 +39,7 @@ export function NoteForm({
   id,
   initial,
   onDone,
+  onCancel,
   action: save = saveNote,
   hidden,
   errorExtra,
@@ -50,6 +51,8 @@ export function NoteForm({
   initial?: { phrase: string; note: string | null };
   /** Called after each successful save. */
   onDone?: () => void;
+  /** Cancel while editing; `onDone` when absent (the notebook page). */
+  onCancel?: () => void;
   /** The Server Action; the notebook page's `saveNote` when absent. */
   action?: (prev: NoteActionState, form: FormData) => Promise<NoteActionState>;
   /** Extra hidden fields sent with the form (the lesson id). */
@@ -149,8 +152,8 @@ export function NoteForm({
         <button type="submit" disabled={pending} className={`${OFFSET_CTA_CLASS} disabled:pointer-events-none disabled:opacity-60`}>
           {pending ? strings.saving : strings.save}
         </button>
-        {onDone && id && (
-          <button type="button" onClick={onDone} className={OUTLINE_CTA_CLASS}>
+        {(onCancel ?? onDone) && id && (
+          <button type="button" onClick={onCancel ?? onDone} className={OUTLINE_CTA_CLASS}>
             {strings.cancel}
           </button>
         )}
